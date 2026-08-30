@@ -8,6 +8,7 @@ reports/
 
 # Lokalne pliki źródłowe i archiwum; runtime jest tylko w public/game-assets/.
 art/
+source-assets/mixamo/
 tools/
 Hunyuan3D-2GP/
 TrellisStudio/

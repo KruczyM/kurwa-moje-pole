@@ -64,6 +64,7 @@ public/game-assets/       jedyne zasoby serwowane działającej grze
 source-assets/            wersjonowane źródła techniczne postaci
   characters/<id>/t-pose.glb
                            model ze skórą i kośćmi w pozycji spoczynkowej
+  characters/<id>/mixamo/ kanoniczne eksporty FBX potrzebne do odbudowy rigu
 
 docs/                     dokumentacja projektu
 art/                      lokalne źródła i archiwum; ignorowane przez Git
@@ -77,10 +78,18 @@ art/                      lokalne źródła i archiwum; ignorowane przez Git
 - `source-assets/characters/<id>/t-pose.glb` zachowuje model do ponownego rigowania; nie jest ładowany przez grę.
 - Pliki robocze (`.blend`, FBX z Mixamo, referencje, stare eksporty) przechowuj w `art/`; nie trafiają do repozytorium.
 - Po dodaniu modelu lub tekstury wykonaj `npm run build` przed commitem.
+- Pipeline rigu, ustawienia Mixamo oraz odbudowa biblioteki są opisane w
+  [`docs/character-animation-pipeline.md`](docs/character-animation-pipeline.md).
+
+Rig i bibliotekę animacji wszystkich postaci sprawdzisz poleceniem:
+
+```powershell
+npm run check:rigs
+```
 
 ## Git LFS
 
-Reguły Git LFS są w `.gitattributes` i obejmują `.glb`, obrazy oraz `.mp4`. Nowy asset runtime dodaj normalnie:
+Reguły Git LFS są w `.gitattributes` i obejmują `.glb`, `.fbx`, obrazy oraz `.mp4`. Nowy asset runtime dodaj normalnie:
 
 ```powershell
 git add public/game-assets/sciezka/do/modelu.glb

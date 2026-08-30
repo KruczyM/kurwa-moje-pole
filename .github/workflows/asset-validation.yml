@@ -25,10 +25,15 @@ jobs:
       - name: Validate runtime assets
         run: npm run check:assets
 
+      - name: Validate character rigs and animation contract
+        run: npm run check:rigs
+
       - name: Upload validation report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: asset-validation-report
-          path: reports/asset-validation.json
+          path: |
+            reports/asset-validation.json
+            reports/character-rig-validation.json
           if-no-files-found: warn
