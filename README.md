@@ -38,7 +38,8 @@ Walidator korzysta z tego samego katalogu danych co manifest gry. Sprawdza
 istnienie plików, strukturę GLB, meshe, materiały, tekstury, bounding boxy,
 skiny, kości oraz wymagane animacje `Idle`, `Walk` i `Run`. Pełny raport zapisuje
 w `reports/asset-validation.json`. Katalog raportów jest lokalny i nie trafia do
-repozytorium.
+repozytorium. Znany problem może zostać tymczasowo oznaczony jako jawny blocker
+z numerem Issue; wszystkie pozostałe błędy zatrzymują test i CI.
 
 ## Struktura
 

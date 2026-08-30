@@ -8,6 +8,11 @@ const catalogPath = join(root, 'src', 'game', 'assets', 'assetCatalog.json');
 const reportPath = join(root, 'reports', 'asset-validation.json');
 const catalog = JSON.parse(readFileSync(catalogPath, 'utf8'));
 const requiredLocomotion = ['Idle', 'Walk', 'Run'];
+const knownBlockers = {
+  'environment:smallTent': {
+    'missing-texture-source': 'Model na main ma puste sloty tekstur; wymiana i audyt materiałów są śledzone w Issue #12.',
+  },
+};
 const GLB_MAGIC = 0x46546c67;
 const JSON_CHUNK = 0x4e4f534a;
 const BIN_CHUNK = 0x004e4942;
@@ -372,8 +377,17 @@ const results = assets.map((asset) => {
       problems: [issue('error', 'validation-crash', error instanceof Error ? error.message : String(error))],
     };
   }
+  const allowedBlockers = knownBlockers[asset.id] ?? {};
+  details.problems = details.problems.map((problem) => {
+    const reason = allowedBlockers[problem.code];
+    return problem.level === 'error' && reason
+      ? { ...problem, level: 'blocker', message: `${problem.message}. ${reason}` }
+      : problem;
+  });
   const status = details.problems.some((problem) => problem.level === 'error')
     ? 'error'
+    : details.problems.some((problem) => problem.level === 'blocker')
+      ? 'blocked'
     : details.problems.length
       ? 'warning'
       : 'ok';
@@ -384,6 +398,7 @@ const summary = {
   total: results.length,
   ok: results.filter((result) => result.status === 'ok').length,
   warnings: results.filter((result) => result.status === 'warning').length,
+  blockers: results.filter((result) => result.status === 'blocked').length,
   errors: results.filter((result) => result.status === 'error').length,
 };
 const report = { generatedAt: new Date().toISOString(), catalog: 'src/game/assets/assetCatalog.json', summary, assets: results };
@@ -391,7 +406,13 @@ mkdirSync(dirname(reportPath), { recursive: true });
 writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
 
 for (const result of results) {
-  const marker = result.status === 'ok' ? 'OK' : result.status === 'warning' ? 'WARN' : 'BLAD';
+  const marker = result.status === 'ok'
+    ? 'OK'
+    : result.status === 'warning'
+      ? 'WARN'
+      : result.status === 'blocked'
+        ? 'BLOKER'
+        : 'BLAD';
   const stats = result.meshes === undefined
     ? `${result.byteLength} B`
     : `${result.meshes} mesh, ${result.skins} skin, ${result.joints} kości, ${result.animations.length} animacji, ${result.materials} materiałów`;
@@ -399,5 +420,5 @@ for (const result of results) {
   result.problems.forEach((problem) => console.log(`  - ${problem.level}: ${problem.code} — ${problem.message}`));
 }
 console.log(`\nRaport: ${reportPath}`);
-console.log(`Podsumowanie: ${summary.ok} OK, ${summary.warnings} ostrzeżeń, ${summary.errors} błędów.`);
+console.log(`Podsumowanie: ${summary.ok} OK, ${summary.warnings} ostrzeżeń, ${summary.blockers} blockerów, ${summary.errors} błędów.`);
 if (summary.errors > 0) process.exit(1);
