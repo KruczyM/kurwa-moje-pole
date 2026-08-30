@@ -1,19 +1,17 @@
 import * as THREE from 'three';
+import { textureAssets } from '../assets/assetManifest';
 
-const HORIZON_URL =
-  '/assets/textures/leafy_grass/HdrOutdoorFieldBaseballDayClear001/HdrOutdoorFieldBaseballDayClear001_JPG_2K.JPG';
-
-/** Uses the equirectangular field photo as a background, never as a dome mesh. */
+/** Używa panoramicznego zdjęcia pola jako tła, bez dodatkowej geometrii sceny. */
 export function addHorizonSkybox(scene: THREE.Scene) {
   const texture = new THREE.TextureLoader().load(
-    HORIZON_URL,
+    textureAssets.horizon,
     () => {
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.mapping = THREE.EquirectangularReflectionMapping;
       scene.background = texture;
     },
     undefined,
-    () => console.error(`Nie udało się wczytać panoramy horyzontu: ${HORIZON_URL}`),
+    () => console.error(`Nie udało się wczytać panoramy horyzontu: ${textureAssets.horizon}`),
   );
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.mapping = THREE.EquirectangularReflectionMapping;

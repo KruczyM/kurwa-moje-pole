@@ -1,47 +1,22 @@
 # Kurwa, moje pole!
 
-Przeglądarkowa gra 3D z obozem, postaciami NPC, animacjami, interakcjami oraz efektami wizualnymi. Projekt działa w **Three.js** i jest budowany przez **Vite**.
+Przeglądarkowa gra 3D z obozem, NPC, animacjami i interakcjami. Kod używa Three.js oraz Vite.
 
 ## Wymagania
 
 - Node.js 20 LTS lub nowszy;
-- npm (instalowany razem z Node.js);
-- Git;
-- Git LFS — wymagany do pobrania modeli, tekstur i muzyki.
-
-Sprawdzenie instalacji:
-
-```powershell
-node --version
-npm --version
-git --version
-git lfs version
-```
-
-Jeżeli `git lfs` nie jest dostępny, zainstaluj go ze strony [git-lfs.com](https://git-lfs.com/) i wykonaj jednorazowo:
+- Git oraz Git LFS.
 
 ```powershell
 git lfs install
-```
-
-## Pobranie projektu
-
-```powershell
 git clone https://github.com/KruczyM/kurwa-moje-pole.git
 cd kurwa-moje-pole
 git lfs pull
 npm install
-```
-
-`git lfs pull` jest istotne: bez niego pliki `.glb`, tekstury oraz muzyka zostaną pobrane jedynie jako małe wskaźniki Git LFS, a gra nie załaduje zasobów 3D.
-
-## Uruchomienie lokalne
-
-```powershell
 npm run dev
 ```
 
-Vite pokaże w konsoli lokalny adres, zwykle `http://localhost:5173/`. Otwórz go w przeglądarce.
+`git lfs pull` jest wymagane: modele `.glb`, tekstury i muzyka są przechowywane przez Git LFS.
 
 ## Build produkcyjny
 
@@ -49,71 +24,50 @@ Vite pokaże w konsoli lokalny adres, zwykle `http://localhost:5173/`. Otwórz g
 npm run build
 ```
 
-Gotowa wersja trafia do katalogu `dist/` (ten katalog nie jest zapisywany w Git — jest odtwarzany przez build).
+Wynik trafia do `dist/`, które nie jest wersjonowane.
 
-## Struktura projektu
+## Struktura
 
 ```text
 src/
-  main.ts                 punkt wejścia aplikacji
-  style.css               główne style interfejsu
-  preview.css             style podglądu postaci w menu
-  ui-additions.css        dodatkowe style HUD/interakcji
-  game/                   logika gry Three.js
-    assetManifest.ts      centralna lista ścieżek modeli i zasobów
-    Game.ts               inicjalizacja sceny, świata i pętli gry
-    Player.ts             sterowanie postacią gracza
-    NPCController.ts      ruch, animacje i unikanie przeszkód przez NPC
-    InteractableSystem.ts interakcje z przedmiotami i ekran inspekcji
-    CharacterPreview.ts   przezroczysty podgląd postaci w menu
+  game/
+    assets/               loader i centralny manifest adresów assetów
+    audio/ effects/ interactions/ npc/ player/ ui/ world/
+  main.ts                 wejście aplikacji
+  *.css                   interfejs gry i menu
 
-public/assets/
-  characters/             modele postaci i ich animacje
-  world/                  namioty oraz flaga obozu
-  interactables/          stół i przedmioty do interakcji
-  accessories/            dodatkowe elementy sceny
-  textures/               tekstury trawy i HDR otoczenia
-  music/                  muzyka używana przez grę
+public/game-assets/       jedyne zasoby serwowane działającej grze
+  characters/<id>/
+    preview.glb           model menu postaci
+    npc-animations.glb    model NPC z animacjami
+  world/                  namioty i flaga
+  interactables/          stół oraz przedmioty interaktywne
+  props/                  pozostałe rekwizyty świata
+  textures/               trawa i panorama horyzontu
+  audio/                  muzyka gry
+
+docs/                     dokumentacja projektu
+art/                      lokalne źródła i archiwum; ignorowane przez Git
 ```
 
-## Modele i animacje
+## Zasady pracy z zasobami
 
-- `public/assets/characters/meshy/` zawiera modele używane przez NPC z zestawami animacji;
-- katalogi poszczególnych postaci zawierają modele podglądu/menu i warianty animowane;
-- aktywne ścieżki do modeli są zebrane w `src/game/assetManifest.ts`. Przy zmianie modelu należy aktualizować tę listę, zamiast wpisywać ścieżki w wielu plikach.
+- Do gry dodawaj tylko gotowe pliki runtime w `public/game-assets/`.
+- Wszystkie ścieżki klienta definiuj w `src/game/assets/assetManifest.ts`.
+- Nazwy techniczne stosuj w ASCII i kebab-case/lowercase, np. `pierscien`, `main.glb`.
+- Pliki robocze (`.blend`, FBX z Mixamo, referencje, stare eksporty) przechowuj w `art/`; nie trafiają do repozytorium.
+- Po dodaniu modelu lub tekstury wykonaj `npm run build` przed commitem.
 
 ## Git LFS
 
-Git LFS przechowuje duże pliki binarne. W tym projekcie dotyczy to przede wszystkim:
-
-- modeli `.glb`;
-- tekstur `.png`, `.jpg`, `.JPG`;
-- muzyki `.mp4`.
-
-Przed wysłaniem zmian z nowym dużym zasobem wykonaj zwykłe:
+Reguły Git LFS są w `.gitattributes` i obejmują `.glb`, obrazy oraz `.mp4`. Nowy asset runtime dodaj normalnie:
 
 ```powershell
-git add public/assets/sciezka/do/pliku.glb
+git add public/game-assets/sciezka/do/modelu.glb
 git commit -m "Dodaj model"
 git push
 ```
 
-Reguły LFS są już zapisane w `.gitattributes`; nie trzeba ich dodawać ponownie dla wymienionych rozszerzeń.
+## Celowo pominięte pliki
 
-## Co celowo nie znajduje się w repozytorium
-
-Repozytorium zawiera wyłącznie to, co jest potrzebne do dalszego tworzenia i uruchamiania gry. Celowo pominięto między innymi:
-
-- `Hunyuan3D-2GP/` i `TrellisStudio/` — lokalne generatory AI oraz ich zależności;
-- `node_modules/`, `.venv/`, cache i pliki builda;
-- źródłowe pliki Blender, robocze zrzuty, duplikaty modeli i eksporty diagnostyczne;
-- stare skrypty testowe i jednorazowe narzędzia pomocnicze;
-- sekrety lokalne, np. `token.txt` oraz pliki `.env`.
-
-## Typowy przepływ pracy
-
-1. Pobierz aktualne zmiany: `git pull` oraz `git lfs pull`.
-2. Uruchom projekt przez `npm run dev`.
-3. Zmieniaj kod w `src/` i zasoby runtime w `public/assets/`.
-4. Zweryfikuj build: `npm run build`.
-5. Zapisz zmiany: `git add`, `git commit`, `git push`.
+`art/`, `Hunyuan3D-2GP/`, `TrellisStudio/`, `node_modules/`, cache, build, tokeny i środowiska lokalne nie są częścią repozytorium. Są to materiały źródłowe albo lokalne narzędzia, a nie zależności potrzebne do uruchomienia gry.

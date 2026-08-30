@@ -4,17 +4,15 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Lokalne pliki źródłowe i archiwum; runtime jest tylko w public/game-assets/.
+art/
 Hunyuan3D-2GP/
 TrellisStudio/
-assets/source/
-assets/mixamo-upload-obj/
-assets/characters/
-assets/akcesoria/
-assets/stoły/
-assets/namiotduzy/
+
 *.blend1
 *.log
 __pycache__/
 .pytest_cache/
 .tmp*/
-docs/animation-renders/
+token.txt
