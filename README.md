@@ -46,6 +46,10 @@ public/game-assets/       jedyne zasoby serwowane działającej grze
   textures/               trawa i panorama horyzontu
   audio/                  muzyka gry
 
+source-assets/            wersjonowane źródła techniczne postaci
+  characters/<id>/t-pose.glb
+                           model ze skórą i kośćmi w pozycji spoczynkowej
+
 docs/                     dokumentacja projektu
 art/                      lokalne źródła i archiwum; ignorowane przez Git
 ```
@@ -55,6 +59,7 @@ art/                      lokalne źródła i archiwum; ignorowane przez Git
 - Do gry dodawaj tylko gotowe pliki runtime w `public/game-assets/`.
 - Wszystkie ścieżki klienta definiuj w `src/game/assets/assetManifest.ts`.
 - Nazwy techniczne stosuj w ASCII i kebab-case/lowercase, np. `pierscien`, `main.glb`.
+- `source-assets/characters/<id>/t-pose.glb` zachowuje model do ponownego rigowania; nie jest ładowany przez grę.
 - Pliki robocze (`.blend`, FBX z Mixamo, referencje, stare eksporty) przechowuj w `art/`; nie trafiają do repozytorium.
 - Po dodaniu modelu lub tekstury wykonaj `npm run build` przed commitem.
 
