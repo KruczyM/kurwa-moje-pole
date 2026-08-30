@@ -1,0 +1,37 @@
+{
+  "characters": [
+    { "id": "amper", "name": "Amper" },
+    { "id": "antena", "name": "Antena" },
+    { "id": "gruczol", "name": "Gruczoł" },
+    { "id": "klatwa", "name": "Klątwa" },
+    { "id": "krwiak", "name": "Krwiak" },
+    { "id": "pien", "name": "Pień" },
+    { "id": "pierscien", "name": "Pierścień" },
+    { "id": "zawor", "name": "Zawór" }
+  ],
+  "environment": {
+    "largeTent": "world/tents/main.glb",
+    "smallTent": "world/tents/small.glb",
+    "flag": "world/flag.glb",
+    "speaker": "props/speaker.glb"
+  },
+  "interactives": {
+    "table": "interactables/table.glb",
+    "joint": "interactables/joint.glb",
+    "cocaine": "interactables/cocaine.glb",
+    "mdma": "interactables/mdma.glb",
+    "mushrooms": "interactables/mushrooms.glb",
+    "lsd": "interactables/lsd.glb"
+  },
+  "textures": {
+    "grass": {
+      "color": "textures/grass/color.jpg",
+      "normal": "textures/grass/normal.jpg",
+      "roughness": "textures/grass/roughness.jpg"
+    },
+    "horizon": "textures/horizon/field.jpg"
+  },
+  "audio": {
+    "music": "audio/camp-track.mp4"
+  }
+}

@@ -1,3 +1,5 @@
+import catalog from './assetCatalog.json';
+
 export type CharacterAsset = {
   id: string;
   name: string;
@@ -8,19 +10,8 @@ export type CharacterAsset = {
 const gameAsset = (path: string) =>
   `/game-assets/${path.split('/').map(encodeURIComponent).join('/')}`;
 
-const characters: ReadonlyArray<[string, string]> = [
-  ['amper', 'Amper'],
-  ['antena', 'Antena'],
-  ['gruczol', 'Gruczoł'],
-  ['klatwa', 'Klątwa'],
-  ['krwiak', 'Krwiak'],
-  ['pien', 'Pień'],
-  ['pierscien', 'Pierścień'],
-  ['zawor', 'Zawór'],
-];
-
 /** Jedyny rejestr adresów binarnych zasobów używanych przez klienta. */
-export const characterAssets: CharacterAsset[] = characters.map(([id, name]) => ({
+export const characterAssets: CharacterAsset[] = catalog.characters.map(({ id, name }) => ({
   id,
   name,
   url: gameAsset(`characters/${id}/npc-animations.glb`),
@@ -28,28 +19,28 @@ export const characterAssets: CharacterAsset[] = characters.map(([id, name]) => 
 }));
 
 export const environmentAssets = {
-  largeTent: gameAsset('world/tents/main.glb'),
-  smallTent: gameAsset('world/tents/small.glb'),
-  flag: gameAsset('world/flag.glb'),
-  speaker: gameAsset('props/speaker.glb'),
+  largeTent: gameAsset(catalog.environment.largeTent),
+  smallTent: gameAsset(catalog.environment.smallTent),
+  flag: gameAsset(catalog.environment.flag),
+  speaker: gameAsset(catalog.environment.speaker),
 };
 
 export const interactiveAssets = {
-  table: gameAsset('interactables/table.glb'),
-  joint: gameAsset('interactables/joint.glb'),
-  cocaine: gameAsset('interactables/cocaine.glb'),
-  mdma: gameAsset('interactables/mdma.glb'),
-  mushrooms: gameAsset('interactables/mushrooms.glb'),
-  lsd: gameAsset('interactables/lsd.glb'),
+  table: gameAsset(catalog.interactives.table),
+  joint: gameAsset(catalog.interactives.joint),
+  cocaine: gameAsset(catalog.interactives.cocaine),
+  mdma: gameAsset(catalog.interactives.mdma),
+  mushrooms: gameAsset(catalog.interactives.mushrooms),
+  lsd: gameAsset(catalog.interactives.lsd),
 };
 
 export const textureAssets = {
   grass: {
-    color: gameAsset('textures/grass/color.jpg'),
-    normal: gameAsset('textures/grass/normal.jpg'),
-    roughness: gameAsset('textures/grass/roughness.jpg'),
+    color: gameAsset(catalog.textures.grass.color),
+    normal: gameAsset(catalog.textures.grass.normal),
+    roughness: gameAsset(catalog.textures.grass.roughness),
   },
-  horizon: gameAsset('textures/horizon/field.jpg'),
+  horizon: gameAsset(catalog.textures.horizon),
 };
 
-export const musicAsset = gameAsset('audio/camp-track.mp4');
+export const musicAsset = gameAsset(catalog.audio.music);
