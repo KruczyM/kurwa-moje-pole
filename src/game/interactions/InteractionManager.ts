@@ -6,4 +6,6 @@ export class InteractionManager{
  get current(){return this.target?.userData.interaction||null}
  private findRoot(object:THREE.Object3D){let current:THREE.Object3D|null=object;while(current&&!current.userData.interaction)current=current.parent;return current}
  private highlight(root:THREE.Object3D,on:boolean){root.traverse(object=>{const material=(object as THREE.Mesh).material;if(material instanceof THREE.MeshStandardMaterial){material.emissive.setHex(on?0x233c16:0);material.emissiveIntensity=on?.25:0}})}
+ clear(){if(this.target)this.highlight(this.target,false);this.target=null}
+ dispose(){this.clear()}
 }

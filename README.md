@@ -80,6 +80,8 @@ art/                      lokalne źródła i archiwum; ignorowane przez Git
 - Po dodaniu modelu lub tekstury wykonaj `npm run build` przed commitem.
 - Pipeline rigu, ustawienia Mixamo oraz odbudowa biblioteki są opisane w
   [`docs/character-animation-pipeline.md`](docs/character-animation-pipeline.md).
+- Stany aplikacji, priorytet `Escape`, Pointer Lock i zasady sprzątania opisuje
+  [`docs/app-lifecycle.md`](docs/app-lifecycle.md).
 
 Rig i bibliotekę animacji wszystkich postaci sprawdzisz poleceniem:
 
