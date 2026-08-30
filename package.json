@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "check:encoding": "node scripts/check-text-encoding.mjs",
     "check:assets": "node scripts/validate-assets.mjs",
-    "test": "npm run check:encoding && npm run check:assets && vitest run"
+    "check:rigs": "node scripts/validate-character-rigs.mjs",
+    "test": "npm run check:encoding && npm run check:assets && npm run check:rigs && vitest run"
   },
   "dependencies": {
     "three": "^0.179.1"

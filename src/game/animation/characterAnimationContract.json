@@ -1,0 +1,47 @@
+{
+  "rig": {
+    "name": "mixamo-humanoid",
+    "requiredBones": {
+      "hips": "mixamorig:Hips",
+      "spine": "mixamorig:Spine",
+      "chest": "mixamorig:Spine2",
+      "neck": "mixamorig:Neck",
+      "head": "mixamorig:Head",
+      "leftShoulder": "mixamorig:LeftShoulder",
+      "leftUpperArm": "mixamorig:LeftArm",
+      "leftForearm": "mixamorig:LeftForeArm",
+      "leftHand": "mixamorig:LeftHand",
+      "rightShoulder": "mixamorig:RightShoulder",
+      "rightUpperArm": "mixamorig:RightArm",
+      "rightForearm": "mixamorig:RightForeArm",
+      "rightHand": "mixamorig:RightHand",
+      "leftUpperLeg": "mixamorig:LeftUpLeg",
+      "leftLowerLeg": "mixamorig:LeftLeg",
+      "leftFoot": "mixamorig:LeftFoot",
+      "rightUpperLeg": "mixamorig:RightUpLeg",
+      "rightLowerLeg": "mixamorig:RightLeg",
+      "rightFoot": "mixamorig:RightFoot"
+    }
+  },
+  "clips": {
+    "breakdance1990": "Breakdance1990",
+    "capoeira": "Capoeira",
+    "drunkWalkingTurn": "DrunkWalkingTurn",
+    "floating": "Floating",
+    "hipHopDancing": "HipHopDancing",
+    "idle": "Idle",
+    "lowCrawl": "LowCrawl",
+    "run": "Run",
+    "sittingLaughing": "SittingLaughing",
+    "sneakWalk": "SneakWalk",
+    "swimmingToEdge": "SwimmingToEdge",
+    "swingToLand": "SwingToLand",
+    "walk": "Walk"
+  },
+  "locomotion": ["Idle", "Walk", "Run"],
+  "aliases": {
+    "Idle Neutral": "Idle",
+    "Walking": "Walk",
+    "Running": "Run"
+  }
+}
