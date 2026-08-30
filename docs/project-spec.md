@@ -1,6 +1,6 @@
 # Specyfikacja projektu gry 3D „#KURWAMOJEPOLE”
 
-Wersja dokumentu: 1.0
+Wersja dokumentu: 1.1
 Status: docelowa specyfikacja funkcjonalna i techniczna
 Platforma: przeglądarki desktopowe
 
@@ -52,6 +52,9 @@ Główna pętla rozgrywki:
 ### 2.4. Toi-toi
 
 - Jeden toi-toi znajduje się w rogu mapy.
+- Zatwierdzonym źródłem modelu jest `art/wcTron.glb`. Przed użyciem w grze należy
+  wyeksportować go do `public/game-assets/world/toilet.glb`, sprawdzić materiały
+  i dopisać do manifestu assetów.
 - Ma być obiektem stałym z kolizją.
 - Podejście do wejścia musi pozostać dostępne.
 - Toi-toi może mieć interakcję oraz osobną sekwencję animacji wejścia/wyjścia, jeśli zostanie przewidziana w zestawie animacji.
@@ -71,12 +74,12 @@ Do projektu dołączona jest robocza mapa `camp-layout-provisional.svg`. Jest to
 | T07 | zachodnia część obozu       | pionowo ustawiony namiot                        | —                                    |
 | T08 | zachód, poniżej T07          | mały namiot                                    | —                                    |
 | T09 | południowy zachód od Mad Dog | smukły namiot                                  | —                                    |
-| T10 | południe, lewa część       | duży namiot                                    | —                                    |
+| T10 | południe, lewa część       | duży namiot                                    | `art/dużynamiot.glb` → wariant runtime |
 | T11 | południe, środek             | duży namiot                                    | —                                    |
 | T12 | południowy wschód            | podłużny namiot                               | —                                    |
 | T13 | dolny prawy sektor             | mały namiot                                    | —                                    |
 | T14 | dolny lewy sektor              | średni namiot                                  | —                                    |
-| T15 | dolny środkowy sektor         | średni namiot                                  | —                                    |
+| T15 | dolny środkowy sektor         | duży namiot                                    | `art/dużynamiot.glb` → wariant runtime |
 
 Pozycje, rotacje, skale i użyte modele nie mogą być zapisane bezpośrednio w kodzie sceny. Powinny znajdować się w jednym pliku konfiguracyjnym, np. `campLayout.ts`, z polami:
 
@@ -134,11 +137,19 @@ type CampObjectConfig = {
 7. pierścień
 8. zawór
 
-Modele animowane są ładowane zgodnie ze schematem:
+Każda postać ma trzy rozdzielone, kanoniczne artefakty:
 
 ```text
 public/game-assets/characters/<id>/preview.glb
+public/game-assets/characters/<id>/npc-animations.glb
+source-assets/characters/<id>/t-pose.glb
 ```
+
+`preview.glb` jest materiałowo poprawnym modelem do menu i podglądów;
+`npc-animations.glb` jest paczką używaną przez grę i zawiera rig oraz klipy;
+`t-pose.glb` to stabilne źródło do dalszego rigowania. Nie wolno zastępować
+jednego z nich innym plikiem tylko dlatego, że ma podobną nazwę. Zmiana wymaga
+walidacji zgodności szkieletu, wag i materiałów.
 
 Każdy model powinien:
 
@@ -688,3 +699,248 @@ Poniższe informacje nie powinny być zgadywane przez Codex:
 - docelowy adres serwera i konfiguracja TURN.
 
 Do czasu uzupełnienia tych danych należy korzystać z identyfikatorów roboczych i placeholderów opisowych, ale nie z przypadkowych namiotów ani nowych elementów środowiska.
+
+## 16. Rozszerzony kierunek artystyczny i atmosfera
+
+### 16.1. Wrażenie miejsca
+
+Obóz ma wyglądać jak mała, zamieszkała wyspa w środku festiwalowego pola:
+barwny, lekko chaotyczny i przyjazny, ale nie sterylny. Czytelność wygrywa z
+fotorealizmem. Z daleka gracz powinien natychmiast rozpoznać trzy dominanty:
+wysoki maszt z flagą, ciemne zadaszenie Mad Dog oraz grupę różnych namiotów.
+
+- Sylwetki obiektów mają być rozróżnialne już z odległości kilkudziesięciu metrów.
+- Kolorystyka tkanin jest żywa, ale zgaszona słońcem: oliwki, granaty, czerwienie,
+  beże i turkusowe akcenty; nie należy zalewać świata jednolitą zielenią.
+- Na pierwszym planie postać, trawa i przedmiot interakcji muszą być wyraźniejsze
+  niż dalekie tło. Nie dodajemy mgły tak gęstej, by ukrywała obóz.
+- Horyzont fotograficzny pełni rolę dalekiego tła, nie może mieć własnej kolizji
+  ani konkurować z obozem. Powinien łączyć się z kolorem nieba bez widocznej
+  „kopuły” lub ostrej krawędzi.
+
+### 16.2. Trawa i teren — aksamitny, ale wydajny
+
+Trawa ma sprawiać wrażenie bardzo gęstej, krótkiej i miękkiej — jak warstwa,
+w której „pływa” kamera — bez prześwitów brązowej ziemi i losowych plam zieleni.
+Nie oznacza to milionów osobnych obiektów JavaScript.
+
+- Źdźbła są instancjami GPU, a nie osobnymi meshami; gęstość, długość, kolor,
+  wiatr i zasięg są parametrami jakości.
+- Bazowo trawa pokrywa cały kwadrat gry, a jej część bliska kamerze otrzymuje
+  największą gęstość i najwyższą jakość. Dalsze pierścienie stosują LOD oraz
+  rzadsze instancje, zachowując ciągłość bez nagłego końca pola.
+- Teren ma mieć niewielkie, łagodne falowanie. Różnice wysokości nie mogą
+  zasłaniać namiotów, tworzyć nienaturalnych skarp ani psuć kolizji.
+- Materiał ziemi pod trawą musi mieć trawiasty albedo/roughness/normal i być
+  kolorystycznie dopasowany do źdźbeł. Widoczna gleba jest dopuszczalna tylko
+  w bardzo małych miejscach wydeptanych, zaprojektowanych świadomie.
+- Wiatr jest subtelny i spójny dla trawy, flagi oraz lekkich tkanin. Nie może
+  wyglądać jak niezależne losowe drganie każdego obiektu.
+- Należy udostępnić presety `low`, `medium`, `high` i `ultra`; `ultra` może
+  obciążać mocny sprzęt, ale nie może zawieszać menu ani blokować wejścia do gry.
+
+### 16.3. Światło i pora dnia
+
+Wersją bazową jest jasny dzień z miękkim światłem nieba i kierunkowym słońcem.
+W dalszym etapie można dodać przełączany wariant „golden hour”, lecz nie jako
+osobny świat ani skybox. Każdy wariant musi utrzymać czytelne twarze i kolory
+materiałów, zwłaszcza pod zadaszeniem i w preview postaci.
+
+### 16.4. Małe sygnały życia
+
+Po ukończeniu podstawowych funkcji można dodać wyłącznie lekkie, powtarzalne
+detale: łagodnie poruszającą się flagę, poruszane wiatrem płachty, pojedyncze
+odgłosy obozu i delikatne reakcje NPC na bliskość. Detale nie mogą zmieniać
+układu obozu, tworzyć nowych atrakcji ani zwiększać liczby aktywnych draw calli
+bez budżetu wydajnościowego.
+
+## 17. Asset pipeline, rig i kontrola jakości
+
+### 17.1. Jedno źródło prawdy dla assetów
+
+```text
+public/game-assets/               # tylko pliki serwowane przez aplikację
+  characters/<id>/
+    preview.glb                   # menu / inspekcja postaci
+    npc-animations.glb            # rig + zatwierdzone klipy dla gry
+  world/                          # namioty, flaga, toi-toi, teren
+  interactables/                  # stół i przedmioty interakcji
+  textures/                       # tekstury świata i horyzontu
+source-assets/                    # źródła do dalszego przetwarzania
+  characters/<id>/t-pose.glb
+art/                              # tymczasowe materiały wejściowe, nie runtime
+```
+
+`src/game/assets/assetManifest.ts` jest jedynym miejscem, z którego kod pobiera
+adresy runtime. Żaden moduł sceny nie może odwoływać się bezpośrednio do `art/`,
+`dist/`, katalogów pobierania ani do plików o „domyślnej” nazwie.
+
+### 17.2. Proces dodawania modelu
+
+1. Zarchiwizować plik wejściowy w `art/` i odnotować licencję/źródło.
+2. Otworzyć go w Blenderze, potwierdzić skalę, orientację, materiały, UV i pełny
+   bounding box.
+3. Dla modelu statycznego poprawić materiały i wyeksportować pojedynczy GLB do
+   `public/game-assets/world` albo `interactables`.
+4. Dla postaci zachować jednocześnie t-pose, model preview i osobną paczkę
+   animacji; nie mieszać ich bez jawnej migracji.
+5. Dopisać asset do manifestu oraz konfiguracji sceny.
+6. Sprawdzić w devtools, że ładowanie nie generuje `404`, czarnego modelu ani
+   brakujących tekstur.
+
+### 17.3. Rigowanie i animacje
+
+- Najpierw wybieramy jeden kanoniczny model spoczynkowy danej postaci. To on
+  definiuje wygląd, skalę, kierunek przodu i materiał — nie przypadkowy drugi
+  eksport o podobnej nazwie.
+- Ruch z Mixamo lub innego źródła można przenosić tylko na zgodny rig albo po
+  retargetingu. Samo podpięcie kości bez poprawnych wag jest błędem.
+- Przed przyjęciem paczki należy odtworzyć każdy klip na modelu w Blenderze i w
+  przeglądarce: `Idle`, `Walk`, `Run` oraz przynajmniej jeden klip dodatkowy.
+- Walidator assetów ma raportować nazwę klipu, liczbę kości, obecność skina,
+  długość klipu, orientację, wysokość stóp i bounding box. Błąd walidacji ma
+  zatrzymać użycie assetu, a nie kończyć się czarnym ekranem.
+- Wielka kula/wielościan w Blenderze może być niestandardowym kształtem kontrolnym
+  kości. Nie jest częścią modelu gry i nie należy jej eksportować jako geometrii.
+- Postać `pierścień` wymaga szczególnej ostrożności: paczka animacji ma bazować
+  na zatwierdzonym modelu spoczynkowym, a nie na innym, wizualnie niezgodnym
+  eksporcie. Dopóki nie przejdzie walidacji, jej animacje pozostają oznaczone
+  jako eksperymentalne.
+
+### 17.4. Tekstury i eksporty z Blendera
+
+- GLB jest preferowanym formatem runtime, ponieważ może zawierać siatkę,
+  materiały i tekstury w jednym pliku.
+- Base Color i Emission są sRGB; normal, roughness, metallic i AO są liniowe.
+- Materiał złożony z węzłów proceduralnych należy wypiec do obrazów przed
+  eksportem. Każda część modelu musi otrzymać właściwy obraz Base Color, nie
+  wspólny pusty placeholder.
+- Eksport należy sprawdzić w nowym, pustym pliku Blendera oraz w aplikacji —
+  poprawny widok tylko w bieżącym pliku roboczym nie jest wystarczający.
+- Paczki dla Mixamo są materiałem pośrednim. Brak kolorów w podglądzie Mixamo
+  nie może być traktowany jako dowód, że tekstury runtime są uszkodzone;
+  decydują test w Blenderze i rendererze gry.
+
+## 18. Menu startowe i preview postaci
+
+Preview jest częścią jednego responsywnego ekranu startowego, nie popupem ani
+drugą stroną. Warstwa WebGL jest przezroczysta i nie może przechwytywać kliknięć.
+
+```css
+.start-screen { position: relative; }
+.character-preview-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  background: transparent;
+  overflow: visible;
+}
+.character-preview-layer canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: transparent !important;
+}
+```
+
+- Renderer preview używa `alpha: true`, `setClearColor(0x000000, 0)`,
+  `setClearAlpha(0)` i `scene.background = null`.
+- Na szerokim ekranie model zajmuje wolną część po prawej od menu; gdy jej
+  brakuje, przechodzi pod wybór postaci. Nie może zakrywać krytycznych przycisków.
+- Po załadowaniu modelu kamera jest dopasowywana do pełnego bounding boxu z
+  bezpiecznym marginesem. Ten sam pomiar uruchamia się przy zmianie postaci,
+  rozmiaru kontenera i zmianie orientacji ekranu.
+- Jeśli model, materiał lub tekstura nie załadują się poprawnie, warstwa preview
+  znika, a menu pozostaje widoczne wraz z czytelną informacją diagnostyczną.
+  Błąd pojedynczej postaci nigdy nie może zasłonić całej strony czarnym ekranem.
+- Komponent usuwa animation frame, `ResizeObserver`, renderer, geometrie,
+  materiały i tekstury podczas odmontowania.
+
+## 19. Zachowanie NPC i czytelna nawigacja
+
+NPC mają wyglądać na ludzi przebywających w obozie, a nie na agentów krążących
+w małym promieniu wokół spawnu.
+
+- Każdy NPC ma stan `idle`, `walk`, `run-home`, `avoid` albo `social`.
+- Punkty celu losowane są na całej dostępnej powierzchni kwadratu trawy, z
+  marginesem bezpieczeństwa od granicy oraz od colliderów.
+- Tylko część NPC pozostaje bez ruchu w danym momencie; inni wędrują po różnych
+  sektorach. Stany są zmieniane asynchronicznie, aby nie ruszali jednocześnie.
+- NPC przechodzi do `run-home` wyłącznie po zbliżeniu do granicy pola; celem jest
+  wtedy wybrany punkt wewnątrz centralnego obozu, a po dotarciu wraca do `walk`
+  lub `idle`.
+- Unikanie przeszkód używa uproszczonych colliderów namiotów, toi-toia, masztu,
+  stołu, gracza i innych NPC. Linki namiotowe nie blokują ruchu.
+- Kontroler mierzy czas bez postępu. Po wykryciu utknięcia wybiera nowy cel lub
+  wykonuje ograniczoną korektę, zamiast odbijać się wielokrotnie w tym samym
+  miejscu. W development dostępny jest widok celów, colliderów i stanu AI.
+
+## 20. Interakcje, sekwencje i efekty wizualne
+
+### 20.1. Stół i inspekcja
+
+Stół jest stałym punktem interakcji w obozie. Leżą na nim: blant, kokaina,
+MDMA, grzyby i LSD. Zasięg interakcji, collider i pozycja przedmiotu są danymi
+w konfiguracji, a nie wartościami zaszytymi w modelu.
+
+Inspekcja zawsze pokazuje model w neutralnej „próżni”, wolny obrót, nazwę,
+opis oraz podpowiedzi `E — użyj` i `Esc — zamknij`. `Escape` kończy inspekcję,
+przywraca wejście i Pointer Lock; podczas inspekcji ruch świata jest wstrzymany.
+
+| Przedmiot | Tekst inspekcji | Kierunek efektu (stylizowany, nie medyczny) |
+| --- | --- | --- |
+| Blant | „blant, ktoś oślinił, ale zioło dobre” | ciepła miękkość, powolne kołysanie i łagodny bloom |
+| Kokaina | „wczoraj padało, trochę wilgotne, ale trzepie jak trzeba” | wyostrzenie kontrastu, krótkie przyspieszenie rytmu obrazu |
+| MDMA | „ktoś kiedyś powiedział, weź najpierw ćwierć, ale tutaj próbują najpierw po jednej” | nasycenie, pulsujące światło i przyjazne miękkie kolory |
+| Grzyby | „czas, przestrzeń, jesteśmy wszystkim, jesteśmy niczym, nie chemia, nie proszki, ale hemoglobina” | organiczne falowanie, oddech kolorów i deformacja peryferii |
+| LSD | „jak chcesz zbliżyć się do boga purpury, to weź od razu dwa” | geometryczne, purpurowe wzory i neonowe przesunięcia barw |
+
+Efekty są wyłącznie fikcyjną stylistyką gry. Każdy ma płynne wejście/wyjście,
+czas trwania widoczny na HUD oraz ustawienia intensywności, ograniczenia ruchu,
+wyłączenia błysków i natychmiastowego przerwania.
+
+### 20.2. Sekwencja użycia
+
+1. Gracz wybiera przedmiot w inspekcji.
+2. Kamera przechodzi do bezpiecznego, krótkiego ujęcia trzecioosobowego.
+3. Odtwarzana jest animacja całej postaci i ewentualny rekwizyt w dłoni.
+4. Kamera wraca do perspektywy pierwszoosobowej, a efekt przejmuje obraz.
+5. Po zakończeniu wszystkie parametry postprocessingu, audio i kamery wracają
+   do wartości bazowych.
+
+## 21. Budżet wydajności i odporność aplikacji
+
+- Należy mierzyć FPS, czas klatki, liczbę draw calli, trójkątów i pamięć tekstur
+  w panelu developerskim. Optymalizacja opiera się na pomiarach, nie zgadywaniu.
+- Limit DPR powinien być rozsądny (np. 1.5–2 zależnie od presetu), aby ekran 4K
+  nie tworzył niepotrzebnie kosztownego render targetu.
+- Scena ma jeden renderer gry. Preview może posiadać własny renderer tylko w
+  obrębie menu i musi go zwolnić po przejściu do gry.
+- Ładowanie assetów następuje etapami: najpierw UI i świat bazowy, potem postać,
+  trawa wysokiej jakości oraz klipy dodatkowe. Widok nie może pozostać czarny
+  podczas czekania na którykolwiek z nich.
+- Błąd modelu lub tekstury ma obsługę lokalną: log diagnostyczny, fallback,
+  zachowane UI i możliwość wyboru innej postaci. Nie wolno dodawać globalnej
+  nakładki, która nie znika po błędzie.
+- Przed wydaniem testujemy co najmniej 1280×720, 1920×1080 i szeroki ekran;
+  menu, preview, HUD i granice trawy muszą zachować działanie na każdym z nich.
+
+## 22. Plan dalszego rozwoju po stabilnym MVP
+
+Kolejne pomysły wolno realizować dopiero po spełnieniu Definition of Done dla
+MVP. Preferowana kolejność:
+
+1. Dopracować obóz: rzeczywiste przypisania namiotów, `wcTron`, duży namiot dla
+   `T10` i `T15`, materiały oraz oświetlenie pod Mad Dog.
+2. Dokończyć bibliotekę animacji na kanonicznych modelach, ze szczególnym
+   testem pierścienia i jego modelu spoczynkowego.
+3. Wprowadzić profile jakości trawy, łagodny teren, horyzont i audyt wydajności.
+4. Dodać bogatsze, lecz lekkie zachowania NPC: krótkie grupy rozmów, reakcję na
+   gracza i różne strefy zainteresowania.
+5. Dopiero potem rozwijać multiplayer, głos, dodatkowe interakcje i wariant
+   światła „golden hour”.
+
+Każdy nowy pomysł musi wskazać: cel dla gracza, assety, wpływ na wydajność,
+kolizje/nawigację, dostępność oraz kryterium odbioru. Dzięki temu dokument
+pozostaje planem rozwoju, a nie listą efektownych, lecz niezweryfikowanych funkcji.
