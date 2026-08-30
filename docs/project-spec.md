@@ -1,8 +1,8 @@
 # Specyfikacja projektu gry 3D „#KURWAMOJEPOLE”
 
-Wersja dokumentu: 1.0  
-Status: docelowa specyfikacja funkcjonalna i techniczna  
-Platforma: przeglądarki desktopowe  
+Wersja dokumentu: 1.0
+Status: docelowa specyfikacja funkcjonalna i techniczna
+Platforma: przeglądarki desktopowe
 
 ## 1. Opis projektu
 
@@ -27,11 +27,6 @@ Główna pętla rozgrywki:
 
 ### 2.1. Teren
 
-- Cały grywalny obszar stanowi kwadrat trawy. Jedna jednostka Three.js odpowiada jednemu metrowi.
-- Roboczy rozmiar pola to 50 × 50 m, ale musi być konfigurowalny po dokładnym dopasowaniu modeli.
-- Podłoże ma mieć naturalny, jasny wygląd: sucha trawa, fragmenty zieleni i miejscami wydeptana ziemia.
-- Granica kwadratu jest granicą obozu i obszarem ruchu graczy oraz NPC.
-- Gracz nie może wyjść poza granicę. NPC po zbliżeniu się do granicy mają wracać w stronę środka.
 - Namioty muszą być ustawione nieregularnie, podobnie do ręcznego szkicu, a nie w idealnych rzędach.
 - Pomiędzy namiotami stojącymi blisko siebie mają pozostać wąskie, ale przechodnie ścieżki. Minimalne światło przejścia powinno wynosić około 1–1,2 m.
 
@@ -65,23 +60,23 @@ Główna pętla rozgrywki:
 
 Do projektu dołączona jest robocza mapa `camp-layout-provisional.svg`. Jest to uporządkowana interpretacja szkicu, a nie ostateczny pomiar geodezyjny. Wszystkie namioty otrzymują stabilne identyfikatory `T01`–`T15`, aby można było później przypisać im właścicieli, opisy i właściwe modele bez zmieniania kodu.
 
-| ID | Położenie robocze | Charakter miejsca | Model / właściciel do uzupełnienia |
-|---|---|---|---|
-| T01 | północny zachód | duży, podłużny namiot ze szkicu „Namiot 1” | — |
-| T02 | północ, lewa część | mały namiot | — |
-| T03 | północ, środek | mały namiot | — |
-| T04 | północny wschód | mały namiot | — |
-| T05 | skrajny północny wschód | nieregularny namiot | — |
-| T06 | na wschód od Mad Dog | średni namiot | — |
-| T07 | zachodnia część obozu | pionowo ustawiony namiot | — |
-| T08 | zachód, poniżej T07 | mały namiot | — |
-| T09 | południowy zachód od Mad Dog | smukły namiot | — |
-| T10 | południe, lewa część | duży namiot | — |
-| T11 | południe, środek | duży namiot | — |
-| T12 | południowy wschód | podłużny namiot | — |
-| T13 | dolny prawy sektor | mały namiot | — |
-| T14 | dolny lewy sektor | średni namiot | — |
-| T15 | dolny środkowy sektor | średni namiot | — |
+| ID  | Położenie robocze            | Charakter miejsca                               | Model / właściciel do uzupełnienia |
+| --- | ------------------------------ | ----------------------------------------------- | ------------------------------------- |
+| T01 | północny zachód             | duży, podłużny namiot ze szkicu „Namiot 1” | —                                    |
+| T02 | północ, lewa część        | mały namiot                                    | —                                    |
+| T03 | północ, środek              | mały namiot                                    | —                                    |
+| T04 | północny wschód             | mały namiot                                    | —                                    |
+| T05 | skrajny północny wschód     | nieregularny namiot                             | —                                    |
+| T06 | na wschód od Mad Dog          | średni namiot                                  | —                                    |
+| T07 | zachodnia część obozu       | pionowo ustawiony namiot                        | —                                    |
+| T08 | zachód, poniżej T07          | mały namiot                                    | —                                    |
+| T09 | południowy zachód od Mad Dog | smukły namiot                                  | —                                    |
+| T10 | południe, lewa część       | duży namiot                                    | —                                    |
+| T11 | południe, środek             | duży namiot                                    | —                                    |
+| T12 | południowy wschód            | podłużny namiot                               | —                                    |
+| T13 | dolny prawy sektor             | mały namiot                                    | —                                    |
+| T14 | dolny lewy sektor              | średni namiot                                  | —                                    |
+| T15 | dolny środkowy sektor         | średni namiot                                  | —                                    |
 
 Pozycje, rotacje, skale i użyte modele nie mogą być zapisane bezpośrednio w kodzie sceny. Powinny znajdować się w jednym pliku konfiguracyjnym, np. `campLayout.ts`, z polami:
 
@@ -306,16 +301,16 @@ Każda czynność składa się z trzech osobnych elementów:
 
 Efekty są zarządzane centralnie przez `SubstanceEffectManager` i przechodzą przez stany `fadeIn`, `active`, `fadeOut`, `inactive`. Po zakończeniu wszystkie parametry kamery i postprocessingu muszą wrócić dokładnie do stanu bazowego.
 
-| Efekt | Charakter obrazu |
-|---|---|
-| Piwo | kołysanie, delikatne podwójne widzenie, okresowe rozmycie, ciemniejsza winieta |
-| Papieros | krótki dym i kaszlnięcie/wydech; bez mocnego zniekształcania przestrzeni |
-| Marihuana | ciepłe kolory, łagodny bloom, spokojne „oddychanie” FOV i delikatne smużenie |
-| Blant | silniejszy i bardziej senny efekt konopny, ciężkie powieki, większy afterimage i wolniejsze kołysanie |
-| LSD | geometryczne/neonowe zniekształcenia, hue shift, pulsująca aberracja i smugi |
-| MDMA | ciepłe nasycenie, miękki różowo-fioletowy bloom, łagodny puls i rozświetlenie ludzi |
-| Kokaina | zimniejszy, ostry i kontrastowy obraz, widzenie tunelowe, szybki puls i minimalne drgania |
-| Grzyby | organiczne falowanie, „oddychanie” otoczenia, ciepłe kolory i miękkie smugi |
+| Efekt     | Charakter obrazu                                                                                          |
+| --------- | --------------------------------------------------------------------------------------------------------- |
+| Piwo      | kołysanie, delikatne podwójne widzenie, okresowe rozmycie, ciemniejsza winieta                          |
+| Papieros  | krótki dym i kaszlnięcie/wydech; bez mocnego zniekształcania przestrzeni                               |
+| Marihuana | ciepłe kolory, łagodny bloom, spokojne „oddychanie” FOV i delikatne smużenie                         |
+| Blant     | silniejszy i bardziej senny efekt konopny, ciężkie powieki, większy afterimage i wolniejsze kołysanie |
+| LSD       | geometryczne/neonowe zniekształcenia, hue shift, pulsująca aberracja i smugi                            |
+| MDMA      | ciepłe nasycenie, miękki różowo-fioletowy bloom, łagodny puls i rozświetlenie ludzi                 |
+| Kokaina   | zimniejszy, ostry i kontrastowy obraz, widzenie tunelowe, szybki puls i minimalne drgania                 |
+| Grzyby    | organiczne falowanie, „oddychanie” otoczenia, ciepłe kolory i miękkie smugi                           |
 
 Efekty nie mogą całkowicie uniemożliwiać poruszania się. HUD i podpowiedzi pozostają czytelne. Muszą istnieć ustawienia ograniczenia ruchu kamery i wyłączenia błysków.
 
