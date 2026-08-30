@@ -8,7 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "check:encoding": "node scripts/check-text-encoding.mjs",
-    "test": "npm run check:encoding && vitest run"
+    "check:assets": "node scripts/validate-assets.mjs",
+    "test": "npm run check:encoding && npm run check:assets && vitest run"
   },
   "dependencies": {
     "three": "^0.179.1"
