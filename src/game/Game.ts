@@ -9,6 +9,7 @@ import { InteractionManager } from './interactions/InteractionManager';
 import { SpeakerAudio } from './audio/SpeakerAudio';
 import { InspectableItemId, itemById } from './interactions/itemConfig';
 import { itemPresentation } from './interactions/itemPresentationConfig';
+import { centerInspectModel } from './interactions/inspectPresentation';
 import { AppState, AppStateMachine, escapeTarget } from './lifecycle/AppStateMachine';
 import { EventScope } from './lifecycle/EventScope';
 import { cloneDisposableModel, disposeObjectTree } from './lifecycle/disposeThree';
@@ -50,6 +51,7 @@ export class Game {
   private inspectScene?: THREE.Scene;
   private inspectCamera?: THREE.PerspectiveCamera;
   private inspectModel?: THREE.Object3D;
+  private inspectPivot?: THREE.Group;
   private inspectId?: string;
   private events = new EventScope();
   private unsubscribeState: () => void;
@@ -261,10 +263,9 @@ export class Game {
     this.inspectModel.scale.setScalar(
       presentation.inspectSize / Math.max(0.01, dimensions.x, dimensions.y, dimensions.z),
     );
-    box.setFromObject(this.inspectModel);
-    const center = box.getCenter(new THREE.Vector3());
-    dimensions.copy(box.getSize(dimensions));
-    this.inspectModel.position.set(-center.x, -center.y + presentation.inspectOffsetY, -center.z);
+    const centered = centerInspectModel(this.inspectModel, presentation.inspectOffsetY);
+    this.inspectPivot = centered.pivot;
+    dimensions.copy(centered.dimensions);
 
     // Dopasowanie uwzględnia zarówno pionowy, jak i poziomy kąt widzenia podglądu.
     const verticalFov = THREE.MathUtils.degToRad(this.inspectCamera.fov);
@@ -272,7 +273,7 @@ export class Game {
     const verticalDistance = dimensions.y / (2 * Math.tan(verticalFov / 2));
     const horizontalDistance = dimensions.x / (2 * Math.tan(horizontalFov / 2));
     this.inspectCamera.position.z = Math.max(verticalDistance, horizontalDistance, dimensions.z) * 1.28;
-    this.inspectScene.add(this.inspectModel);
+    this.inspectScene.add(this.inspectPivot);
   }
 
   /** Zamyka inspekcję bez użycia przedmiotu. */
@@ -396,7 +397,7 @@ export class Game {
         this.effects?.settings.reduceMotion === true,
       );
       if (state === 'inspecting' && this.inspectRenderer && this.inspectScene && this.inspectCamera) {
-        if (this.inspectModel) this.inspectModel.rotation.y += dt * 0.75;
+        if (this.inspectPivot) this.inspectPivot.rotation.y += dt * 0.75;
         this.inspectRenderer.render(this.inspectScene, this.inspectCamera);
       }
     }
@@ -459,6 +460,7 @@ export class Game {
     this.inspectScene = undefined;
     this.inspectCamera = undefined;
     this.inspectModel = undefined;
+    this.inspectPivot = undefined;
     this.inspectId = undefined;
   }
 
