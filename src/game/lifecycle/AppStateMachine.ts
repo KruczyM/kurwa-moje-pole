@@ -27,6 +27,7 @@ export const modalStates:readonly AppState[]=['inspecting','dialog','inventory',
 export function escapeTarget(state:AppState):AppState|null{
  if(state==='inspecting'||state==='dialog'||state==='inventory')return'playing';
  if(state==='playing')return'paused';
+ if(state==='paused')return'playing';
  return null;
 }
 

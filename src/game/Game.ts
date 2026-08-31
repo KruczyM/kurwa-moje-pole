@@ -13,6 +13,7 @@ import {EventScope} from './lifecycle/EventScope';
 import {cloneDisposableModel,disposeObjectTree} from './lifecycle/disposeThree';
 import {AnimationLoop} from './lifecycle/AnimationLoop';
 import {MushroomWireframeEffect} from './effects/MushroomWireframeEffect';
+import {VoiceReactionManager} from './audio/VoiceReactionManager';
 
 const qs=<T extends HTMLElement>(selector:string)=>document.querySelector<T>(selector)!;
 const interactiveStates:readonly AppState[]=['playing','inspecting','dialog','inventory'];
@@ -29,6 +30,7 @@ export class Game{
  readonly camera=new THREE.PerspectiveCamera(65,1,.1,100);
  readonly clock=new THREE.Clock();
  readonly speakerAudio=new SpeakerAudio(musicAsset);
+ readonly voiceReactions=new VoiceReactionManager();
  player?:PlayerController;
  world?:CampWorld;
  npcs?:NpcManager;
@@ -49,6 +51,7 @@ export class Game{
  private disposed=false;
  private animationLoop=new AnimationLoop(()=>this.updateFrame());
  private mushroomWireframe=new MushroomWireframeEffect(this.scene);
+ private speakerReactionPlayed=false;
 
  constructor(readonly state:AppStateMachine){
   try{this.renderer=new THREE.WebGLRenderer({canvas:this.canvas,antialias:true})}
@@ -77,6 +80,7 @@ export class Game{
  async start(){
   if(this.started||this.disposed)return;
   this.started=true;
+  this.voiceReactions.playGameEntry();
   const text=qs('#load-text'),error=qs('#load-error');
   error.hidden=true;
   error.textContent='';
@@ -108,8 +112,9 @@ export class Game{
  private key(event:KeyboardEvent){
   if(this.disposed)return;
   if(event.key==='Escape'){
+   const menuEscape=this.state.current==='playing'||this.state.current==='paused';
    const target=escapeTarget(this.state.current);
-   if(target){event.preventDefault();this.closeCurrentState(target)}
+   if(target){event.preventDefault();if(menuEscape)this.voiceReactions.playMenuEscape();this.closeCurrentState(target)}
    return;
   }
   if(event.key==='Tab'&&(this.state.current==='playing'||this.state.current==='inventory')){
@@ -124,7 +129,7 @@ export class Game{
  }
 
  private closeCurrentState(target:AppState){
-  if(this.state.current==='inspecting')this.disposeInspectScene();
+  if(this.state.current==='inspecting'){this.voiceReactions.playInspectCancel();this.disposeInspectScene()}
   this.state.transition(target);
  }
 
@@ -142,10 +147,12 @@ export class Game{
   const interaction=this.interactions.current;
   if(!interaction)return;
   if(interaction.kind==='speaker'){
+   if(!this.speakerReactionPlayed){this.speakerReactionPlayed=true;this.voiceReactions.playFirstSpeaker()}
    this.speakerAudio.toggle().then(playing=>this.toast(playing?'Głośnik: muzyka włączona':'Głośnik: muzyka wyłączona'));
    return;
   }
   if(interaction.kind==='toilet'){
+   this.voiceReactions.playToilet();
    this.toiletTimer=2;
    if(this.player)this.player.enabled=false;
    qs('#fade').classList.add('show');
@@ -174,6 +181,7 @@ export class Game{
   this.inspectId=id;
   this.createInspectScene(id);
   this.state.transition('inspecting');
+  this.voiceReactions.playInspectEnter();
  }
 
  private createInspectScene(id:string){
@@ -224,6 +232,7 @@ export class Game{
   if(this.state.current==='inspecting')this.disposeInspectScene();
   if(this.state.current!=='playing')this.state.transition('playing');
   this.effects.use(id);
+  this.voiceReactions.effectStarted(id);
   this.toast(`${id}: efekt uruchomiony`);
  }
  cancelEffect(){this.effects?.cancel();this.toast('Efekt wygaszany')}
@@ -287,6 +296,9 @@ export class Game{
    if(state==='playing')this.updateInteractionPrompt();
    this.world?.update(this.clock.elapsedTime);
    this.effects?.update(dt);
+   this.voiceReactions.update(
+    dt,this.effects?.active||null,this.effects?.phase||'inactive',
+   );
    this.mushroomWireframe.update(
     this.effects?.active==='Grzyb',dt,this.effects?.visualIntensity||0,this.effects?.settings.reduceMotion===true,
    );
@@ -368,6 +380,7 @@ export class Game{
   this.effects?.dispose();
   this.mushroomWireframe.dispose();
   this.speakerAudio.dispose();
+  this.voiceReactions.dispose();
   if(document.pointerLockElement===this.canvas)document.exitPointerLock();
   disposeObjectTree(this.scene);
   this.renderer.renderLists.dispose();

@@ -5,8 +5,17 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const publicAssets = join(root, 'public', 'game-assets');
 const catalogPath = join(root, 'src', 'game', 'assets', 'assetCatalog.json');
+const voiceCatalogPath = join(root, 'src', 'game', 'audio', 'voiceReactionCatalog.json');
 const reportPath = join(root, 'reports', 'asset-validation.json');
 const catalog = JSON.parse(readFileSync(catalogPath, 'utf8'));
+const voiceCatalog = JSON.parse(readFileSync(voiceCatalogPath, 'utf8'));
+const voiceNames = new Set();
+const collectVoiceNames = (value) => {
+  if (typeof value === 'string') voiceNames.add(value);
+  else if (Array.isArray(value)) value.forEach(collectVoiceNames);
+  else if (value && typeof value === 'object') Object.values(value).forEach(collectVoiceNames);
+};
+collectVoiceNames(voiceCatalog);
 const requiredLocomotion = ['Idle', 'Walk', 'Run'];
 const knownBlockers = {
   'environment:smallTent': {
@@ -68,10 +77,27 @@ const assets = [
     path: catalog.audio.music,
     kind: 'file',
   },
+  ...[...voiceNames].map((name) => ({
+    id: `audio:voice:${name}`,
+    label: `voice ${name}`,
+    path: `${catalog.audio.voiceBase}/${name}.wav`,
+    kind: 'file',
+  })),
 ];
 
 function issue(level, code, message) {
   return { level, code, message };
+}
+
+function validateWav(filePath) {
+  const bytes = readFileSync(filePath);
+  const valid = bytes.length >= 12
+    && bytes.toString('ascii', 0, 4) === 'RIFF'
+    && bytes.toString('ascii', 8, 12) === 'WAVE';
+  return {
+    byteLength: bytes.length,
+    problems: valid ? [] : [issue('error', 'invalid-wav', 'plik nie ma nagłówka RIFF/WAVE')],
+  };
 }
 
 function parseGlb(filePath) {
@@ -376,7 +402,9 @@ const results = assets.map((asset) => {
   try {
     details = extension === '.glb'
       ? validateGlb(asset, filePath)
-      : { byteLength: readFileSync(filePath).length, problems: [] };
+      : extension === '.wav'
+        ? validateWav(filePath)
+        : { byteLength: readFileSync(filePath).length, problems: [] };
   } catch (error) {
     details = {
       byteLength: readFileSync(filePath).length,
