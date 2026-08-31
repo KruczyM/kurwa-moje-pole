@@ -14,6 +14,8 @@ export class CharacterPreview {
   private scene = new THREE.Scene();
   private camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 5_000);
   private current?: THREE.Group;
+  private currentModel?: THREE.Object3D;
+  private currentName = '';
   private mixer?: THREE.AnimationMixer;
   private cache = new Map<string, Cached>();
   private token = 0;
@@ -21,6 +23,7 @@ export class CharacterPreview {
   private frame = 0;
   private observer: ResizeObserver;
   private bounds?: THREE.Box3;
+  private boundsCheckElapsed = 0;
   private disposed = false;
   private readonly onContextLost: (event: Event) => void;
 
@@ -72,7 +75,7 @@ export class CharacterPreview {
         this.cache.set(key, source);
       }
       if (this.disposed || token !== this.token) return;
-      this.replaceModel(source);
+      this.replaceModel(name, source);
       this.onStatus({ state: 'ready' });
     } catch (error) {
       if (this.disposed || token !== this.token) return;
@@ -114,7 +117,7 @@ export class CharacterPreview {
     });
   }
 
-  private replaceModel(source: Cached) {
+  private replaceModel(name: string, source: Cached) {
     const model = cloneDisposableSkinnedModel(source.scene);
     const group = new THREE.Group();
     group.add(model);
@@ -131,7 +134,10 @@ export class CharacterPreview {
       disposeObjectTree(this.current);
     }
     this.current = group;
+    this.currentModel = model;
+    this.currentName = name;
     this.bounds = bounds;
+    this.boundsCheckElapsed = 0;
     this.mixer = new THREE.AnimationMixer(model);
     const idle = source.animations.find(clip => /^idle(?: neutral)?$/i.test(clip.name))
       || source.animations.find(clip => /idle/i.test(clip.name))
@@ -167,6 +173,34 @@ export class CharacterPreview {
     this.applyLayout(this.calculateLayout(this.bounds));
   }
 
+  private includeAnimatedBounds() {
+    if (!this.current || !this.currentModel || !this.bounds) return;
+    this.currentModel.traverse(object => {
+      const mesh = object as THREE.SkinnedMesh;
+      if (mesh.isSkinnedMesh) mesh.computeBoundingBox();
+    });
+    this.current.updateWorldMatrix(true, true);
+    const animatedBounds = new THREE.Box3().setFromObject(this.currentModel);
+    animatedBounds.applyMatrix4(this.current.matrixWorld.clone().invert());
+    if (animatedBounds.isEmpty()) return;
+
+    const previous = this.bounds.clone();
+    const expanded = this.bounds.clone().union(animatedBounds);
+    if (expanded.equals(previous)) return;
+    const oldSize = previous.getSize(new THREE.Vector3());
+    const newSize = expanded.getSize(new THREE.Vector3());
+    const growth = Math.max(
+      newSize.x / Math.max(oldSize.x, 1e-6),
+      newSize.y / Math.max(oldSize.y, 1e-6),
+      newSize.z / Math.max(oldSize.z, 1e-6),
+    );
+    this.bounds.copy(expanded);
+    this.fitToLayer();
+    if (growth > 1.25) {
+      console.warn(`CharacterPreview: skorygowano powiększony model „${this.currentName}” (${growth.toFixed(2)}×).`);
+    }
+  }
+
   private resize() {
     const rect = this.layer.getBoundingClientRect();
     const width = Math.max(1, Math.round(rect.width));
@@ -179,7 +213,13 @@ export class CharacterPreview {
   private draw = () => {
     if (this.disposed) return;
     this.frame = requestAnimationFrame(this.draw);
-    this.mixer?.update(Math.min(this.clock.getDelta(), 0.05));
+    const delta = Math.min(this.clock.getDelta(), 0.05);
+    this.mixer?.update(delta);
+    this.boundsCheckElapsed += delta;
+    if (this.boundsCheckElapsed >= 0.5) {
+      this.boundsCheckElapsed = 0;
+      this.includeAnimatedBounds();
+    }
     this.renderer.render(this.scene, this.camera);
   };
 
@@ -192,6 +232,7 @@ export class CharacterPreview {
     this.mixer?.stopAllAction();
     if (this.current) disposeObjectTree(this.current);
     this.current = undefined;
+    this.currentModel = undefined;
     this.cache.forEach(source => disposeObjectTree(source.scene));
     this.cache.clear();
     const canvas = this.renderer.domElement;
