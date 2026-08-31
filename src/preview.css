@@ -1,1 +1,49 @@
-#start{position:relative}.character-preview-layer{position:absolute;inset:0;z-index:999;pointer-events:none;background:transparent;overflow:visible}.character-preview-layer canvas{position:absolute!important;inset:0!important;display:block;width:100%!important;height:100%!important;background:transparent!important}@media(max-width:900px){#start .character-preview-layer{position:relative;inset:auto;width:min(100%,520px);height:min(48vh,420px);z-index:999;flex:none;background:transparent;overflow:visible}}
+#start {
+  position: relative;
+}
+
+.character-preview-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  background: transparent;
+  overflow: visible;
+}
+
+.character-preview-layer canvas {
+  position: absolute !important;
+  inset: 0 !important;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+#character-preview-status {
+  max-width: 520px;
+  margin: 10px 0 0 !important;
+  color: #ffb5bd;
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  #start {
+    justify-content: flex-start;
+    overflow-y: auto;
+    padding: clamp(24px, 8vw, 64px);
+  }
+
+  #start .character-preview-layer {
+    position: relative;
+    inset: auto;
+    width: min(100%, 520px);
+    height: clamp(220px, 38vh, 360px);
+    z-index: 999;
+    flex: none;
+    background: transparent;
+    overflow: visible;
+  }
+}
