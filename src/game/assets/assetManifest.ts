@@ -41,6 +41,11 @@ export const textureAssets = {
     roughness: gameAsset(catalog.textures.grass.roughness),
   },
   horizon: gameAsset(catalog.textures.horizon),
+  skyboxes: {
+    day: catalog.textures.skyboxes.day.map(gameAsset),
+    evening: catalog.textures.skyboxes.evening.map(gameAsset),
+    night: catalog.textures.skyboxes.night.map(gameAsset),
+  },
 };
 
 export const effectAssets = {

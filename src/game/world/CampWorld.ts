@@ -4,7 +4,7 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { inspectableItems } from '../interactions/itemConfig';
 import { itemPresentation } from '../interactions/itemPresentationConfig';
-import { addHorizonSkybox } from './HorizonSkybox';
+import { TimeOfDaySkybox } from './HorizonSkybox';
 import { Grass } from './vendor/three-stylized/index';
 
 const WORLD_SIZE = 117.6;
@@ -49,13 +49,14 @@ export class CampWorld {
   colliders: ({ x: number; z: number; r: number } | { box: THREE.Box3 })[] = [];
   interactables: WorldObject[] = [];
   private grass: Grass;
+  private skybox: TimeOfDaySkybox;
 
   constructor(scene: THREE.Scene, models: WorldModels) {
     const sky = new Sky();
     sky.scale.setScalar(450000);
     sky.visible = false;
     scene.add(sky);
-    addHorizonSkybox(scene);
+    this.skybox = new TimeOfDaySkybox(scene);
 
     scene.add(new THREE.HemisphereLight(0xb9dcff, 0x4b3c23, 1.7));
     const sun = new THREE.DirectionalLight(0xffe0b0, 3.2);
@@ -263,10 +264,12 @@ export class CampWorld {
   /** Aktualizuje proceduralną animację trawy. */
   update(time: number) {
     this.grass.update(time);
+    this.skybox.update();
   }
 
   /** Zwalnia zasoby trawy oraz tablice runtime świata. */
   dispose() {
+    this.skybox.dispose();
     this.grass.dispose();
     this.colliders.length = 0;
     this.interactables.length = 0;
