@@ -42,9 +42,12 @@ export class NpcManager {
       let animator: NpcAnimator | undefined;
       if (model) {
         const visual = clone(model.scene);
+        animator = new NpcAnimator(visual, model.animations);
+        // Pierwsza klatka musi zostać zastosowana przed pomiarem SkinnedMesh.
+        // Inaczej rig Pierścienia zmienia bounds dopiero po rozpoczęciu pętli.
+        animator.update(0);
         this.fit(visual, 2.45);
         root.add(visual);
-        animator = new NpcAnimator(visual, model.animations);
       } else {
         const fallback = new THREE.Mesh(
           new THREE.CapsuleGeometry(0.34, 0.75, 4, 10),
