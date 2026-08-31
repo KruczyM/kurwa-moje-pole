@@ -201,7 +201,7 @@ export class CampWorld {
     const table = models.get('table')
       ? clone(models.get('table')!.scene)
       : new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.16, 1.2), simpleMaterial(0x73451f));
-    let box = new THREE.Box3().setFromObject(table);
+    const box = new THREE.Box3().setFromObject(table);
     table.scale.setScalar(1.12 / Math.max(0.01, box.max.y - box.min.y));
     box.setFromObject(table);
     table.position.y = -box.min.y;
