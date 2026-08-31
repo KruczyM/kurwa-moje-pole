@@ -1,11 +1,39 @@
-name: Asset validation
+name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  code-quality:
+    name: Lint, types and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run code quality gates
+        run: npm run ci:code
+
   validate-assets:
+    name: Assets and character rigs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout with Git LFS assets
@@ -22,11 +50,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate runtime assets
-        run: npm run check:assets
-
-      - name: Validate character rigs and animation contract
-        run: npm run check:rigs
+      - name: Validate runtime assets and character rigs
+        run: npm run ci:assets
 
       - name: Upload validation report
         if: always()
@@ -37,3 +62,32 @@ jobs:
             reports/asset-validation.json
             reports/character-rig-validation.json
           if-no-files-found: warn
+
+  production-build:
+    name: Production build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with Git LFS assets
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Build production client
+        run: npm run build
+
+      - name: Upload production build
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-build
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7

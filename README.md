@@ -21,15 +21,26 @@ npm run dev
 
 ```powershell
 npm run dev          # lokalny serwer deweloperski
-npm test             # testy jednostkowe
+npm run lint         # statyczna kontrola kodu TypeScript i JavaScript
+npm run typecheck    # kontrola typów bez generowania plików
+npm run test:unit    # szybkie testy jednostkowe Vitest
+npm test             # pełna kontrola lokalna: kodowanie, assety, rigi i testy
 npm run build        # kontrola TypeScriptu i build do dist/
 npm run check:assets # modele, tekstury, dźwięki i klipy animacji
 npm run check:rigs   # zgodność rigów i bibliotek animacji postaci
 npm run format       # automatyczne formatowanie własnego kodu
 npm run format:check # sprawdzenie formatowania bez zmiany plików
+npm run ci:code      # te same bramki kodu, które wykonuje GitHub Actions
+npm run ci:assets    # te same bramki assetów, które wykonuje GitHub Actions
 ```
 
 Katalog `dist/` jest generowany i nie jest wersjonowany. Raporty walidacji trafiają do lokalnego `reports/`.
+
+## Continuous Integration
+
+Workflow `.github/workflows/asset-validation.yml` uruchamia się dla każdego push i pull requestu. Trzy niezależne zadania sprawdzają kod, assety oraz build produkcyjny. Raporty walidacji i gotowy katalog `dist/` są dołączane jako artefakty, dlatego błąd można przypisać do konkretnej bramki bez analizowania jednego długiego logu.
+
+CI używa `npm ci` oraz pliku `package-lock.json`. Po zmianie zależności należy commitować oba pliki: `package.json` i `package-lock.json`.
 
 ## Gdzie znajdują się pliki
 

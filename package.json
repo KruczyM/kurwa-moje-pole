@@ -6,21 +6,30 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "format": "prettier --write src scripts vite.config.ts README.md docs",
-    "format:check": "prettier --check src scripts vite.config.ts README.md docs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src scripts vite.config.ts eslint.config.js --max-warnings 0",
+    "format": "prettier --write src scripts vite.config.ts eslint.config.js package*.json .github README.md docs",
+    "format:check": "prettier --check src scripts vite.config.ts eslint.config.js package*.json .github README.md docs",
     "preview": "vite preview",
     "check:encoding": "node scripts/check-text-encoding.mjs",
     "check:assets": "node scripts/validate-assets.mjs",
     "check:rigs": "node scripts/validate-character-rigs.mjs",
-    "test": "npm run check:encoding && npm run check:assets && npm run check:rigs && vitest run"
+    "test:unit": "vitest run",
+    "test": "npm run check:encoding && npm run check:assets && npm run check:rigs && npm run test:unit",
+    "ci:code": "npm run check:encoding && npm run format:check && npm run lint && npm run typecheck && npm run test:unit",
+    "ci:assets": "npm run check:assets && npm run check:rigs"
   },
   "dependencies": {
     "three": "^0.179.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/three": "^0.185.4",
+    "eslint": "^10.9.1",
+    "globals": "^17.11.0",
     "prettier": "^3.9.6",
     "typescript": "^5.8.3",
+    "typescript-eslint": "^8.69.0",
     "vite": "^7.1.3",
     "vitest": "^4.1.11"
   }
