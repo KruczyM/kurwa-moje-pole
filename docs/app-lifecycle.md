@@ -11,7 +11,8 @@ Priorytet klawisza `Escape` jest stały:
 
 1. inspekcja, dialog lub ekwipunek wracają do `playing`;
 2. w `playing` klawisz przechodzi do `paused`;
-3. w `paused` kolejne, osobne naciśnięcie `Escape` albo przycisk „Wróć do gry” wznawia grę.
+3. w `paused` kolejne, osobne naciśnięcie `Escape` wraca do głównego ekranu wyboru postaci;
+4. przycisk „Wróć do gry” w menu pauzy wznawia rozgrywkę.
 
 Utrata Pointer Lock w stanie `playing` również przełącza grę do `paused`.
 Programowe wyjście z Pointer Lock po otwarciu modala nie otwiera pauzy, ponieważ

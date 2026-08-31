@@ -63,7 +63,10 @@ export class Game {
   private speakerReactionPlayed = false;
   private pointerLockPause = new PointerLockPauseGate();
 
-  constructor(readonly state: AppStateMachine) {
+  constructor(
+    readonly state: AppStateMachine,
+    private readonly exitToStart: () => void,
+  ) {
     try {
       this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     } catch {
@@ -148,8 +151,12 @@ export class Game {
       const target = escapeTarget(source);
       if (target) {
         // To samo Escape nie może zamknąć preview i chwilę później otworzyć pauzy.
-        if (source === 'inspecting') this.pointerLockPause.suppressLossesUntil(performance.now() + 1_000);
+        if (source === 'inspecting') this.pointerLockPause.suppressLossesUntil(performance.now() + 50);
         if (menuEscape) this.voiceReactions.playMenuEscape();
+        if (target === 'start') {
+          this.exitToStart();
+          return;
+        }
         this.closeCurrentState(target);
       }
       return;

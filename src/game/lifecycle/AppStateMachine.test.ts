@@ -23,7 +23,7 @@ describe('AppStateMachine', () => {
     expect(escapeTarget('dialog')).toBe('playing');
     expect(escapeTarget('inventory')).toBe('playing');
     expect(escapeTarget('playing')).toBe('paused');
-    expect(escapeTarget('paused')).toBe('playing');
+    expect(escapeTarget('paused')).toBe('start');
     expect(escapeTarget('loading')).toBeNull();
   });
 
