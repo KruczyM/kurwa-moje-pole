@@ -236,7 +236,7 @@ export class Game {
     this.inspectScene = new THREE.Scene();
     this.inspectScene.background = new THREE.Color(0x09070f);
     this.inspectCamera = new THREE.PerspectiveCamera(35, 360 / 280, 0.01, 100);
-    this.inspectCamera.position.set(0, 0.3, 2.8);
+    this.inspectCamera.position.set(0, 0, 2.8);
     this.inspectScene.add(new THREE.HemisphereLight(0xbdd8ff, 0x241630, 2.2));
     const light = new THREE.DirectionalLight(0xffffff, 2.5);
     light.position.set(2, 3, 3);
@@ -256,7 +256,16 @@ export class Game {
       presentation.inspectSize / Math.max(0.01, dimensions.x, dimensions.y, dimensions.z),
     );
     box.setFromObject(this.inspectModel);
-    this.inspectModel.position.y = -(box.min.y + box.max.y) / 2;
+    const center = box.getCenter(new THREE.Vector3());
+    dimensions.copy(box.getSize(dimensions));
+    this.inspectModel.position.set(-center.x, -center.y + presentation.inspectOffsetY, -center.z);
+
+    // Dopasowanie uwzględnia zarówno pionowy, jak i poziomy kąt widzenia podglądu.
+    const verticalFov = THREE.MathUtils.degToRad(this.inspectCamera.fov);
+    const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * this.inspectCamera.aspect);
+    const verticalDistance = dimensions.y / (2 * Math.tan(verticalFov / 2));
+    const horizontalDistance = dimensions.x / (2 * Math.tan(horizontalFov / 2));
+    this.inspectCamera.position.z = Math.max(verticalDistance, horizontalDistance, dimensions.z) * 1.28;
     this.inspectScene.add(this.inspectModel);
   }
 

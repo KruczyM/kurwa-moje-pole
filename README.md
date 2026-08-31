@@ -91,23 +91,25 @@ Katalog `src/game/world/vendor/three-stylized/` jest wydzielonym kodem bibliotec
 
 ## Skala i pozycja używek
 
-Wszystkie ustawienia prezentacji są w `src/game/interactions/itemPresentationConfig.ts`. Każdy przedmiot ma cztery wartości:
+Wszystkie ustawienia prezentacji są w `src/game/interactions/itemPresentationConfig.ts`. Każdy przedmiot ma sześć wartości:
 
 - `tableSize` — największy wymiar modelu na stole;
 - `tableRotation` — obrót modelu na stole w radianach `[X, Y, Z]`;
+- `tablePosition` — bezpieczna pozycja `[X, Z]` względem środka obróconego blatu;
 - `inspectSize` — największy wymiar modelu w podglądzie;
 - `inspectRotation` — naturalna orientacja modelu w podglądzie.
+- `inspectOffsetY` — przesunięcie modelu w górę lub w dół w podglądzie.
 
 Przykład zmniejszenia LSD bez wpływu na interakcję lub podgląd:
 
 ```ts
 lsd: {
-  ...lying(0.16),
+  ...lying(0.16, [0.82, -0.18]),
   tableSize: 0.12,
 },
 ```
 
-Obecnie wszystkie używki są obrócone o 90 stopni i leżą na stole. Podczas inspekcji używany jest czysty klon modelu z naturalnym obrotem, więc stoi on tak, jak został wyeksportowany. Niewidoczna strefa interakcji ma niezależną skalę i nie kurczy się razem z modelem.
+Obecnie wszystkie używki są obrócone o 90 stopni i leżą na stole. Ich pozycje są liczone lokalnie względem stołu, dlatego pozostają na blacie również po jego obróceniu. Podczas inspekcji używany jest czysty klon modelu z naturalnym obrotem, automatycznym dopasowaniem kamery i regulowanym przesunięciem pionowym. Niewidoczna strefa interakcji ma niezależną skalę i nie kurczy się razem z modelem.
 
 ## Zasady pracy z assetami
 

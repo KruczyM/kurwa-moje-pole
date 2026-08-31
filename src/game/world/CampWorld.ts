@@ -9,7 +9,6 @@ import { Grass } from './vendor/three-stylized/index';
 
 const WORLD_SIZE = 117.6;
 const WORLD_LIMIT = WORLD_SIZE / 2;
-const TABLE_TOP_Y = 1.17;
 
 export type WorldObject = { object: THREE.Object3D; label: string; action: 'toilet' | 'item' };
 type WorldModels = {
@@ -193,18 +192,25 @@ export class CampWorld {
 
   /** Buduje stół i układa na nim wszystkie używki w pozycji leżącej. */
   private table(scene: THREE.Scene, models: Map<string, GLTF>) {
+    const tableRoot = new THREE.Group();
+    tableRoot.name = 'CampTable';
+    tableRoot.position.set(3, 0, 4);
+    tableRoot.rotation.y = -0.5;
+
     const table = models.get('table')
       ? clone(models.get('table')!.scene)
       : new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.16, 1.2), simpleMaterial(0x73451f));
     let box = new THREE.Box3().setFromObject(table);
     table.scale.setScalar(1.12 / Math.max(0.01, box.max.y - box.min.y));
     box.setFromObject(table);
-    table.position.set(3, -box.min.y, 4);
-    table.rotation.y = -0.5;
-    scene.add(table);
+    table.position.y = -box.min.y;
+    box.setFromObject(table);
+    const tableTop = box.max.y;
+    tableRoot.add(table);
+    scene.add(tableRoot);
     this.colliders.push({ x: 3, z: 4, r: 1.35 });
 
-    inspectableItems.forEach((item, index) => {
+    inspectableItems.forEach((item) => {
       const source = models.get(item.id);
       const model = source
         ? clone(source.scene)
@@ -218,7 +224,7 @@ export class CampWorld {
       // Osobny, nieskalowany korzeń zapobiega kurczeniu strefy interakcji razem z modelem.
       const interactionRoot = new THREE.Group();
       interactionRoot.name = `InspectableItem_${item.id}`;
-      interactionRoot.position.set(2.25 + index * 0.37, TABLE_TOP_Y, 3.7 + (index % 2) * 0.28);
+      interactionRoot.position.set(presentation.tablePosition[0], tableTop, presentation.tablePosition[1]);
       interactionRoot.userData.interaction = { kind: 'item', itemId: item.id };
       interactionRoot.add(model);
 
@@ -230,7 +236,7 @@ export class CampWorld {
       hitbox.position.y = 0.18;
       interactionRoot.add(hitbox);
       interactionRoot.traverse((child) => (child.userData.interactionRoot = interactionRoot));
-      scene.add(interactionRoot);
+      tableRoot.add(interactionRoot);
       this.interactables.push({ object: interactionRoot, label: `Obejrzyj: ${item.label}`, action: 'item' });
     });
   }

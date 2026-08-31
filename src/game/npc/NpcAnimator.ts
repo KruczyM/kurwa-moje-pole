@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { LocomotionClip, resolveCanonicalAnimationName } from '../animation/animationContract';
 export const LOCOMOTION_ROOT_LIMIT = 4;
 
-/** Usuwa tylko nadmierne przesunięcie Hips, zachowując pozostałe tracki klipu locomotion. */
+/** Usuwa tylko nadmierne przesunięcie Hips, zachowując pozostałe tracki animacji. */
 export function stabilizeLocomotionRoot(root: THREE.Object3D, clip: THREE.AnimationClip) {
   let corrected = false;
   const tracks = clip.tracks.map((track) => {
@@ -52,7 +52,8 @@ export class NpcAnimator {
     for (const clip of clips) {
       const canonical = resolveCanonicalAnimationName(clip.name);
       if (canonical) {
-        const safe = canonical === 'Walk' || canonical === 'Run' ? stabilizeLocomotionRoot(root, clip) : clip;
+        // Wadliwy eksport Pierścienia ma nadmierny root motion także w klipie Idle.
+        const safe = stabilizeLocomotionRoot(root, clip);
         this.actions.set(canonical, this.mixer.clipAction(safe));
       }
     }
