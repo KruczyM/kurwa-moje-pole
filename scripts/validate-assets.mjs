@@ -67,6 +67,14 @@ const assets = [
     path: catalog.textures.horizon,
     kind: 'file',
   },
+  ...Object.entries(catalog.textures.skyboxes).flatMap(([period, paths]) =>
+    paths.map((path, index) => ({
+      id: `texture:skybox:${period}:${index}`,
+      label: `skybox ${period} ${index + 1}/6`,
+      path,
+      kind: 'file',
+    })),
+  ),
   ...catalog.effects.lsdOverlays.map((path, index) => ({
     id: `effect:lsd-overlay:${index + 1}`,
     label: `LSD overlay ${index + 1}`,

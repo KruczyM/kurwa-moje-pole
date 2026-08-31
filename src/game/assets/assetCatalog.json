@@ -29,7 +29,33 @@
       "normal": "textures/grass/normal.jpg",
       "roughness": "textures/grass/roughness.jpg"
     },
-    "horizon": "textures/horizon/field.jpg"
+    "horizon": "textures/horizon/field.jpg",
+    "skyboxes": {
+      "day": [
+        "textures/skybox/dzień/sky_126_cubemap_2k/px.png",
+        "textures/skybox/dzień/sky_126_cubemap_2k/nx.png",
+        "textures/skybox/dzień/sky_126_cubemap_2k/py.png",
+        "textures/skybox/dzień/sky_126_cubemap_2k/ny.png",
+        "textures/skybox/dzień/sky_126_cubemap_2k/pz.png",
+        "textures/skybox/dzień/sky_126_cubemap_2k/nz.png"
+      ],
+      "evening": [
+        "textures/skybox/wieczór/sky_02_cubemap_2k/px.png",
+        "textures/skybox/wieczór/sky_02_cubemap_2k/nx.png",
+        "textures/skybox/wieczór/sky_02_cubemap_2k/py.png",
+        "textures/skybox/wieczór/sky_02_cubemap_2k/ny.png",
+        "textures/skybox/wieczór/sky_02_cubemap_2k/pz.png",
+        "textures/skybox/wieczór/sky_02_cubemap_2k/nz.png"
+      ],
+      "night": [
+        "textures/skybox/noc/sky_78_cubemap_2k/px.png",
+        "textures/skybox/noc/sky_78_cubemap_2k/nx.png",
+        "textures/skybox/noc/sky_78_cubemap_2k/py.png",
+        "textures/skybox/noc/sky_78_cubemap_2k/ny.png",
+        "textures/skybox/noc/sky_78_cubemap_2k/pz.png",
+        "textures/skybox/noc/sky_78_cubemap_2k/nz.png"
+      ]
+    }
   },
   "effects": {
     "lsdOverlays": ["mandale/3.webp", "mandale/4.webp"]
