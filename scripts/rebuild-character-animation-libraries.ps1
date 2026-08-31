@@ -54,11 +54,11 @@ foreach ($character in $characters) {
   if ($character -eq 'pierscien') {
     $mixamo = Join-Path $repoRoot 'source-assets\characters\pierscien\mixamo'
     $arguments += @(
-      '--clip',
+      '--retarget-clip',
       "Idle=$(Join-Path $mixamo 'idle-neutral.fbx')",
-      '--clip',
+      '--retarget-clip',
       "Walk=$(Join-Path $mixamo 'walking.fbx')",
-      '--clip',
+      '--retarget-clip',
       "Run=$(Join-Path $mixamo 'running.fbx')"
     )
   } else {

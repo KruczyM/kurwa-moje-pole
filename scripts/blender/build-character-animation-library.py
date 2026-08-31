@@ -30,7 +30,9 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--library", action="append", default=[], type=Path)
     parser.add_argument("--exclude-library-clip", action="append", default=[])
     parser.add_argument("--retarget-library", action="append", default=[], type=Path)
+    parser.add_argument("--retarget-clip", action="append", default=[])
     parser.add_argument("--exclude-retarget-clip", action="append", default=[])
+    parser.add_argument("--base-unit-scale", type=float, default=1.0)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--t-pose-output", type=Path)
     return parser.parse_args(argv)
@@ -109,6 +111,26 @@ def remove_base_helpers(
         if pose_bone.custom_shape in helper_set:
             pose_bone.custom_shape = None
     remove_imported_objects(helpers)
+
+
+def normalize_base_units(
+    objects: list[bpy.types.Object],
+    armature: bpy.types.Object,
+    factor: float,
+) -> None:
+    """Scale mesh coordinates and rest bones together without changing skin weights."""
+    if factor <= 0:
+        raise RuntimeError("--base-unit-scale must be greater than zero")
+    if abs(factor - 1.0) < 1e-9:
+        return
+    transform = Matrix.Scale(factor, 4)
+    armature.data.transform(transform)
+    transformed_meshes = set()
+    for obj in objects:
+        if obj.type == "MESH" and obj.data not in transformed_meshes:
+            obj.data.transform(transform)
+            transformed_meshes.add(obj.data)
+    bpy.context.view_layer.update()
 
 
 def collect_action(
@@ -279,6 +301,26 @@ def collect_retargeted_library(
     return kept
 
 
+def collect_retargeted_action(
+    path: Path,
+    wanted_name: str,
+    target_armature: bpy.types.Object,
+) -> bpy.types.Action:
+    """Import one clip and bake it onto the target rig, including unit conversion."""
+    objects, actions = import_asset(path)
+    source_armature = armature_from(objects, path)
+    missing = sorted(bone_names(target_armature) - bone_names(source_armature))
+    if missing:
+        raise RuntimeError(f"{path}: donor rig is missing target bones: {missing}")
+    if len(actions) != 1:
+        raise RuntimeError(f"{path}: expected one action, found {len(actions)}")
+    source_action = actions[0]
+    result = retarget_action(source_armature, source_action, target_armature, wanted_name)
+    bpy.data.actions.remove(source_action)
+    remove_imported_objects(objects)
+    return result
+
+
 def select_canonical(objects: list[bpy.types.Object]) -> None:
     bpy.ops.object.select_all(action="DESELECT")
     for obj in objects:
@@ -326,6 +368,7 @@ def main() -> None:
     base_armature = armature_from(imported_base_objects, args.base)
     base_objects = canonical_objects(imported_base_objects, base_armature)
     remove_base_helpers(imported_base_objects, base_objects, base_armature)
+    normalize_base_units(base_objects, base_armature, args.base_unit_scale)
     canonical_bones = bone_names(base_armature)
     canonical_armature_name = base_armature.name
     for action in base_actions:
@@ -358,6 +401,18 @@ def main() -> None:
             if action.name in named_actions:
                 bpy.data.actions.remove(named_actions[action.name])
             named_actions[action.name] = action
+
+    for item in args.retarget_clip:
+        if "=" not in item:
+            raise RuntimeError(f"Invalid --retarget-clip value: {item}; expected Name=path")
+        name, raw_path = item.split("=", 1)
+        if name in named_actions:
+            bpy.data.actions.remove(named_actions[name])
+        named_actions[name] = collect_retargeted_action(
+            Path(raw_path),
+            name,
+            base_armature,
+        )
 
     for item in args.clip:
         if "=" not in item:
