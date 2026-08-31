@@ -2,6 +2,11 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+/**
+ * Tworzy kopię GLB bez klipów animacji. Skrypt zachowuje siatkę, rig,
+ * materiały, tekstury i pozostałe binarne chunki pliku źródłowego.
+ */
+
 const GLB_MAGIC = 0x46546c67;
 const JSON_CHUNK = 0x4e4f534a;
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');

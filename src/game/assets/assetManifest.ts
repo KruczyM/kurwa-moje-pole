@@ -7,8 +7,8 @@ export type CharacterAsset = {
   previewUrl: string;
 };
 
-const gameAsset = (path: string) =>
-  `/game-assets/${path.split('/').map(encodeURIComponent).join('/')}`;
+/** Buduje bezpieczny URL do pliku udostępnianego z public/game-assets. */
+const gameAsset = (path: string) => `/game-assets/${path.split('/').map(encodeURIComponent).join('/')}`;
 
 /** Jedyny rejestr adresów binarnych zasobów używanych przez klienta. */
 export const characterAssets: CharacterAsset[] = catalog.characters.map(({ id, name }) => ({
@@ -48,4 +48,5 @@ export const effectAssets = {
 };
 
 export const musicAsset = gameAsset(catalog.audio.music);
-export const voiceAsset = (name:string) => gameAsset(`${catalog.audio.voiceBase}/${name}.wav`);
+/** Zwraca URL nagrania głosowego o podanej nazwie bez rozszerzenia. */
+export const voiceAsset = (name: string) => gameAsset(`${catalog.audio.voiceBase}/${name}.wav`);

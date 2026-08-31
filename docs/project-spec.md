@@ -63,23 +63,23 @@ Główna pętla rozgrywki:
 
 Do projektu dołączona jest robocza mapa `camp-layout-provisional.svg`. Jest to uporządkowana interpretacja szkicu, a nie ostateczny pomiar geodezyjny. Wszystkie namioty otrzymują stabilne identyfikatory `T01`–`T15`, aby można było później przypisać im właścicieli, opisy i właściwe modele bez zmieniania kodu.
 
-| ID  | Położenie robocze            | Charakter miejsca                               | Model / właściciel do uzupełnienia |
-| --- | ------------------------------ | ----------------------------------------------- | ------------------------------------- |
-| T01 | północny zachód             | duży, podłużny namiot ze szkicu „Namiot 1” | —                                    |
-| T02 | północ, lewa część        | mały namiot                                    | —                                    |
-| T03 | północ, środek              | mały namiot                                    | —                                    |
-| T04 | północny wschód             | mały namiot                                    | —                                    |
-| T05 | skrajny północny wschód     | nieregularny namiot                             | —                                    |
-| T06 | na wschód od Mad Dog          | średni namiot                                  | —                                    |
-| T07 | zachodnia część obozu       | pionowo ustawiony namiot                        | —                                    |
-| T08 | zachód, poniżej T07          | mały namiot                                    | —                                    |
-| T09 | południowy zachód od Mad Dog | smukły namiot                                  | —                                    |
-| T10 | południe, lewa część       | duży namiot                                    | `art/dużynamiot.glb` → wariant runtime |
-| T11 | południe, środek             | duży namiot                                    | —                                    |
-| T12 | południowy wschód            | podłużny namiot                               | —                                    |
-| T13 | dolny prawy sektor             | mały namiot                                    | —                                    |
-| T14 | dolny lewy sektor              | średni namiot                                  | —                                    |
-| T15 | dolny środkowy sektor         | duży namiot                                    | `art/dużynamiot.glb` → wariant runtime |
+| ID  | Położenie robocze            | Charakter miejsca                          | Model / właściciel do uzupełnienia     |
+| --- | ---------------------------- | ------------------------------------------ | -------------------------------------- |
+| T01 | północny zachód              | duży, podłużny namiot ze szkicu „Namiot 1” | —                                      |
+| T02 | północ, lewa część           | mały namiot                                | —                                      |
+| T03 | północ, środek               | mały namiot                                | —                                      |
+| T04 | północny wschód              | mały namiot                                | —                                      |
+| T05 | skrajny północny wschód      | nieregularny namiot                        | —                                      |
+| T06 | na wschód od Mad Dog         | średni namiot                              | —                                      |
+| T07 | zachodnia część obozu        | pionowo ustawiony namiot                   | —                                      |
+| T08 | zachód, poniżej T07          | mały namiot                                | —                                      |
+| T09 | południowy zachód od Mad Dog | smukły namiot                              | —                                      |
+| T10 | południe, lewa część         | duży namiot                                | `art/dużynamiot.glb` → wariant runtime |
+| T11 | południe, środek             | duży namiot                                | —                                      |
+| T12 | południowy wschód            | podłużny namiot                            | —                                      |
+| T13 | dolny prawy sektor           | mały namiot                                | —                                      |
+| T14 | dolny lewy sektor            | średni namiot                              | —                                      |
+| T15 | dolny środkowy sektor        | duży namiot                                | `art/dużynamiot.glb` → wariant runtime |
 
 Pozycje, rotacje, skale i użyte modele nie mogą być zapisane bezpośrednio w kodzie sceny. Powinny znajdować się w jednym pliku konfiguracyjnym, np. `campLayout.ts`, z polami:
 
@@ -91,7 +91,7 @@ type CampObjectConfig = {
   position: [number, number, number];
   rotationY: number;
   scale: number | [number, number, number];
-  collider: "box" | "capsule" | "cylinder" | "none";
+  collider: 'box' | 'capsule' | 'cylinder' | 'none';
   description?: string;
 };
 ```
@@ -312,15 +312,15 @@ Każda czynność składa się z trzech osobnych elementów:
 
 Efekty są zarządzane centralnie przez `SubstanceEffectManager` i przechodzą przez stany `fadeIn`, `active`, `fadeOut`, `inactive`. Po zakończeniu wszystkie parametry kamery i postprocessingu muszą wrócić dokładnie do stanu bazowego.
 
-| Efekt     | Charakter obrazu                                                                                          |
-| --------- | --------------------------------------------------------------------------------------------------------- |
-| Piwo      | kołysanie, delikatne podwójne widzenie, okresowe rozmycie, ciemniejsza winieta                          |
-| Papieros  | krótki dym i kaszlnięcie/wydech; bez mocnego zniekształcania przestrzeni                               |
-| Marihuana | ciepłe kolory, łagodny bloom, spokojne „oddychanie” FOV i delikatne smużenie                         |
+| Efekt     | Charakter obrazu                                                                                      |
+| --------- | ----------------------------------------------------------------------------------------------------- |
+| Piwo      | kołysanie, delikatne podwójne widzenie, okresowe rozmycie, ciemniejsza winieta                        |
+| Papieros  | krótki dym i kaszlnięcie/wydech; bez mocnego zniekształcania przestrzeni                              |
+| Marihuana | ciepłe kolory, łagodny bloom, spokojne „oddychanie” FOV i delikatne smużenie                          |
 | Blant     | silniejszy i bardziej senny efekt konopny, ciężkie powieki, większy afterimage i wolniejsze kołysanie |
-| LSD       | geometryczne/neonowe zniekształcenia, hue shift, pulsująca aberracja i smugi                            |
-| MDMA      | ciepłe nasycenie, miękki różowo-fioletowy bloom, łagodny puls i rozświetlenie ludzi                 |
-| Kokaina   | zimniejszy, ostry i kontrastowy obraz, widzenie tunelowe, szybki puls i minimalne drgania                 |
+| LSD       | geometryczne/neonowe zniekształcenia, hue shift, pulsująca aberracja i smugi                          |
+| MDMA      | ciepłe nasycenie, miękki różowo-fioletowy bloom, łagodny puls i rozświetlenie ludzi                   |
+| Kokaina   | zimniejszy, ostry i kontrastowy obraz, widzenie tunelowe, szybki puls i minimalne drgania             |
 | Grzyby    | organiczne falowanie, „oddychanie” otoczenia, ciepłe kolory i miękkie smugi                           |
 
 Efekty nie mogą całkowicie uniemożliwiać poruszania się. HUD i podpowiedzi pozostają czytelne. Muszą istnieć ustawienia ograniczenia ruchu kamery i wyłączenia błysków.
@@ -827,7 +827,9 @@ Preview jest częścią jednego responsywnego ekranu startowego, nie popupem ani
 drugą stroną. Warstwa WebGL jest przezroczysta i nie może przechwytywać kliknięć.
 
 ```css
-.start-screen { position: relative; }
+.start-screen {
+  position: relative;
+}
 .character-preview-layer {
   position: absolute;
   inset: 0;
@@ -888,13 +890,13 @@ Inspekcja zawsze pokazuje model w neutralnej „próżni”, wolny obrót, nazw�
 opis oraz podpowiedzi `E — użyj` i `Esc — zamknij`. `Escape` kończy inspekcję,
 przywraca wejście i Pointer Lock; podczas inspekcji ruch świata jest wstrzymany.
 
-| Przedmiot | Tekst inspekcji | Kierunek efektu (stylizowany, nie medyczny) |
-| --- | --- | --- |
-| Blant | „blant, ktoś oślinił, ale zioło dobre” | ciepła miękkość, powolne kołysanie i łagodny bloom |
-| Kokaina | „wczoraj padało, trochę wilgotne, ale trzepie jak trzeba” | wyostrzenie kontrastu, krótkie przyspieszenie rytmu obrazu |
-| MDMA | „ktoś kiedyś powiedział, weź najpierw ćwierć, ale tutaj próbują najpierw po jednej” | nasycenie, pulsujące światło i przyjazne miękkie kolory |
-| Grzyby | „czas, przestrzeń, jesteśmy wszystkim, jesteśmy niczym, nie chemia, nie proszki, ale hemoglobina” | organiczne falowanie, oddech kolorów i deformacja peryferii |
-| LSD | „jak chcesz zbliżyć się do boga purpury, to weź od razu dwa” | geometryczne, purpurowe wzory i neonowe przesunięcia barw |
+| Przedmiot | Tekst inspekcji                                                                                   | Kierunek efektu (stylizowany, nie medyczny)                 |
+| --------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Blant     | „blant, ktoś oślinił, ale zioło dobre”                                                            | ciepła miękkość, powolne kołysanie i łagodny bloom          |
+| Kokaina   | „wczoraj padało, trochę wilgotne, ale trzepie jak trzeba”                                         | wyostrzenie kontrastu, krótkie przyspieszenie rytmu obrazu  |
+| MDMA      | „ktoś kiedyś powiedział, weź najpierw ćwierć, ale tutaj próbują najpierw po jednej”               | nasycenie, pulsujące światło i przyjazne miękkie kolory     |
+| Grzyby    | „czas, przestrzeń, jesteśmy wszystkim, jesteśmy niczym, nie chemia, nie proszki, ale hemoglobina” | organiczne falowanie, oddech kolorów i deformacja peryferii |
+| LSD       | „jak chcesz zbliżyć się do boga purpury, to weź od razu dwa”                                      | geometryczne, purpurowe wzory i neonowe przesunięcia barw   |
 
 Efekty są wyłącznie fikcyjną stylistyką gry. Każdy ma płynne wejście/wyjście,
 czas trwania widoczny na HUD oraz ustawienia intensywności, ograniczenia ruchu,

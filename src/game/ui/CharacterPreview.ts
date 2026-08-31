@@ -44,7 +44,7 @@ export class CharacterPreview {
     const key = new THREE.DirectionalLight(0xffffff, 2.6);
     key.position.set(2, 4, 4);
     this.scene.add(key);
-    this.onContextLost = event => {
+    this.onContextLost = (event) => {
       event.preventDefault();
       this.onStatus({
         state: 'error',
@@ -58,8 +58,9 @@ export class CharacterPreview {
     this.draw();
   }
 
+  /** Ładuje lub pobiera z cache wybraną postać i bezpiecznie podmienia podgląd. */
   async show(name: string) {
-    const asset = characterAssets.find(character => character.name === name);
+    const asset = characterAssets.find((character) => character.name === name);
     if (!asset || this.disposed) return;
     const token = ++this.token;
     const key = `${asset.id}:${asset.previewUrl || asset.url}`;
@@ -88,6 +89,7 @@ export class CharacterPreview {
     }
   }
 
+  /** Ładuje GLB z limitem czasu oraz sprzątaniem spóźnionej odpowiedzi. */
   private loadWithTimeout(url: string): Promise<Cached> {
     return new Promise((resolve, reject) => {
       let settled = false;
@@ -97,7 +99,7 @@ export class CharacterPreview {
       }, LOAD_TIMEOUT_MS);
       new GLTFLoader().load(
         url,
-        gltf => {
+        (gltf) => {
           if (settled) {
             disposeObjectTree(gltf.scene);
             return;
@@ -107,7 +109,7 @@ export class CharacterPreview {
           resolve({ scene: gltf.scene, animations: gltf.animations });
         },
         undefined,
-        error => {
+        (error) => {
           if (settled) return;
           settled = true;
           window.clearTimeout(timeout);
@@ -117,6 +119,7 @@ export class CharacterPreview {
     });
   }
 
+  /** Klonuje model, uruchamia Idle i oblicza pierwsze bezpieczne kadrowanie. */
   private replaceModel(name: string, source: Cached) {
     const model = cloneDisposableSkinnedModel(source.scene);
     const group = new THREE.Group();
@@ -139,20 +142,23 @@ export class CharacterPreview {
     this.bounds = bounds;
     this.boundsCheckElapsed = 0;
     this.mixer = new THREE.AnimationMixer(model);
-    const idle = source.animations.find(clip => /^idle(?: neutral)?$/i.test(clip.name))
-      || source.animations.find(clip => /idle/i.test(clip.name))
-      || source.animations[0];
+    const idle =
+      source.animations.find((clip) => /^idle(?: neutral)?$/i.test(clip.name)) ||
+      source.animations.find((clip) => /idle/i.test(clip.name)) ||
+      source.animations[0];
     if (idle) this.mixer.clipAction(idle).reset().play();
     this.scene.add(group);
     this.applyLayout(layout);
   }
 
+  /** Przelicza responsywny układ dla bieżącego rozmiaru warstwy. */
   private calculateLayout(bounds: THREE.Box3) {
     const width = Math.max(1, this.layer.clientWidth);
     const height = Math.max(1, this.layer.clientHeight);
     return calculatePreviewLayout({ width, height }, { min: bounds.min, max: bounds.max });
   }
 
+  /** Nakłada skalę, pozycję i frustum kamery na aktywny model. */
   private applyLayout(layout: ReturnType<typeof calculatePreviewLayout>) {
     if (!this.current || !this.bounds) return;
     this.camera.left = layout.camera.left;
@@ -168,14 +174,16 @@ export class CharacterPreview {
     }
   }
 
+  /** Ponownie dopasowuje model po zmianie rozmiaru lub bounding boxu. */
   private fitToLayer() {
     if (!this.current || !this.bounds) return;
     this.applyLayout(this.calculateLayout(this.bounds));
   }
 
+  /** Rozszerza bounds o deformacje animowanego skina i koryguje przeskalowanie. */
   private includeAnimatedBounds() {
     if (!this.current || !this.currentModel || !this.bounds) return;
-    this.currentModel.traverse(object => {
+    this.currentModel.traverse((object) => {
       const mesh = object as THREE.SkinnedMesh;
       if (mesh.isSkinnedMesh) mesh.computeBoundingBox();
     });
@@ -197,10 +205,13 @@ export class CharacterPreview {
     this.bounds.copy(expanded);
     this.fitToLayer();
     if (growth > 1.25) {
-      console.warn(`CharacterPreview: skorygowano powiększony model „${this.currentName}” (${growth.toFixed(2)}×).`);
+      console.warn(
+        `CharacterPreview: skorygowano powiększony model „${this.currentName}” (${growth.toFixed(2)}×).`,
+      );
     }
   }
 
+  /** Dopasowuje renderer do fizycznego rozmiaru przezroczystej warstwy. */
   private resize() {
     const rect = this.layer.getBoundingClientRect();
     const width = Math.max(1, Math.round(rect.width));
@@ -210,6 +221,7 @@ export class CharacterPreview {
     this.fitToLayer();
   }
 
+  /** Aktualizuje Idle, kontroluje bounds i renderuje następną klatkę podglądu. */
   private draw = () => {
     if (this.disposed) return;
     this.frame = requestAnimationFrame(this.draw);
@@ -223,6 +235,7 @@ export class CharacterPreview {
     this.renderer.render(this.scene, this.camera);
   };
 
+  /** Zatrzymuje podgląd i zwalnia modele, cache, renderer oraz obserwatory. */
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
@@ -233,7 +246,7 @@ export class CharacterPreview {
     if (this.current) disposeObjectTree(this.current);
     this.current = undefined;
     this.currentModel = undefined;
-    this.cache.forEach(source => disposeObjectTree(source.scene));
+    this.cache.forEach((source) => disposeObjectTree(source.scene));
     this.cache.clear();
     const canvas = this.renderer.domElement;
     canvas.removeEventListener('webglcontextlost', this.onContextLost);
