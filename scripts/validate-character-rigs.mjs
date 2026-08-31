@@ -68,6 +68,21 @@ function structuralHash(value) {
   return hash(JSON.stringify(value ?? []));
 }
 
+/** Zwraca największy wymiar surowej geometrii na podstawie min/max accessorów POSITION. */
+function geometrySpan(gltf) {
+  let span = 0;
+  for (const mesh of gltf.meshes ?? []) {
+    for (const primitive of mesh.primitives ?? []) {
+      const accessor = gltf.accessors?.[primitive.attributes?.POSITION];
+      if (!accessor?.min || !accessor?.max) continue;
+      for (let axis = 0; axis < Math.min(accessor.min.length, accessor.max.length); axis++) {
+        span = Math.max(span, Math.abs(accessor.max[axis] - accessor.min[axis]));
+      }
+    }
+  }
+  return span;
+}
+
 /** Waliduje rig, klipy, siatkę, materiały i tekstury jednej postaci. */
 function validateCharacter(character) {
   const problems = [];
@@ -174,11 +189,34 @@ function validateCharacter(character) {
     meshHash: structuralHash(runtime.json.meshes),
     materialHash: structuralHash(runtime.json.materials),
     textureHashes: runtimeImages,
+    geometrySpan: geometrySpan(runtime.json),
     problems,
   };
 }
 
 const characters = catalog.characters.map(validateCharacter);
+const validSpans = characters
+  .map((character) => character.geometrySpan)
+  .filter((span) => Number.isFinite(span) && span > 0)
+  .sort((a, b) => a - b);
+const medianSpan = validSpans.length ? validSpans[Math.floor(validSpans.length / 2)] : 0;
+
+// Postacie mogą różnić się proporcjami, ale nie jednostkami o dwa rzędy wielkości.
+// Ten test wykrywa przypadek Pierścienia, którego mesh i rig były około 100× większe.
+if (medianSpan > 0) {
+  for (const character of characters) {
+    if (!character.geometrySpan) continue;
+    const ratio = character.geometrySpan / medianSpan;
+    if (ratio > 4 || ratio < 0.25) {
+      character.problems.push({
+        level: 'error',
+        code: 'geometry-unit-outlier',
+        message: `rozmiar geometrii ${character.geometrySpan.toPrecision(4)} odbiega ${ratio.toFixed(1)}× od mediany ${medianSpan.toPrecision(4)}`,
+      });
+      character.status = 'error';
+    }
+  }
+}
 const summary = {
   total: characters.length,
   ok: characters.filter((character) => character.status === 'ok').length,

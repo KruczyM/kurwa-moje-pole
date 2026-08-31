@@ -38,12 +38,22 @@ export class CharacterPreview {
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.setClearAlpha(0);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.35;
     this.scene.background = null;
     this.camera.position.z = 1_000;
-    this.scene.add(new THREE.HemisphereLight(0xd9ecff, 0x25152f, 2.7));
-    const key = new THREE.DirectionalLight(0xffffff, 2.6);
-    key.position.set(2, 4, 4);
+    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8b718f, 3.4));
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const key = new THREE.DirectionalLight(0xffffff, 4);
+    key.position.set(3, 5, 6);
     this.scene.add(key);
+    const fill = new THREE.DirectionalLight(0xd8e8ff, 2.2);
+    fill.position.set(-4, 2, 5);
+    this.scene.add(fill);
+    const rim = new THREE.DirectionalLight(0xffdfc7, 1.5);
+    rim.position.set(2, 3, -4);
+    this.scene.add(rim);
     this.onContextLost = (event) => {
       event.preventDefault();
       this.onStatus({

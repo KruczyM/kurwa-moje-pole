@@ -18,6 +18,7 @@ export class PlayerController {
     readonly canMove: (x: number, z: number) => boolean,
   ) {
     camera.position.set(0, this.baseY, 15);
+    canvas.tabIndex = -1;
     this.events.listen(window, 'keydown', (event) =>
       this.keys.add((event as KeyboardEvent).key.toLowerCase()),
     );
@@ -41,7 +42,10 @@ export class PlayerController {
   }
   /** Aktualizuje ruch FPS, kolizje, kołysanie, drganie oraz pozycję kamery. */
   update(dt: number, mod: PlayerModifiers) {
-    if (!this.enabled || document.pointerLockElement !== this.canvas) return;
+    // Pointer Lock jest potrzebny tylko do rozglądania. Po zamknięciu pauzy
+    // przeglądarka może odmówić jego natychmiastowego odzyskania, ale nie
+    // powinno to blokować klawiatury ani wymuszać dodatkowego kliknięcia.
+    if (!this.enabled) return;
     const forward = this.axis(['w', 'arrowup'], ['s', 'arrowdown']);
     const right = this.axis(['d', 'arrowright'], ['a', 'arrowleft']);
     const direction = calculateLocalMove(this.yaw, { forward, right });
@@ -76,7 +80,9 @@ export class PlayerController {
   }
   /** Próbuje przejąć kursor bez zgłaszania błędu po odmowie przeglądarki. */
   requestPointerLock() {
-    if (!this.disposed && document.pointerLockElement !== this.canvas)
+    if (this.disposed) return;
+    this.canvas.focus({ preventScroll: true });
+    if (document.pointerLockElement !== this.canvas)
       this.canvas.requestPointerLock().catch?.(() => undefined);
   }
   /** Wyłącza sterowanie i usuwa wszystkie listenery kontrolera. */
