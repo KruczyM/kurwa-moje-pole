@@ -35,6 +35,7 @@
     "lsdOverlays": ["mandale/3.webp", "mandale/4.webp"]
   },
   "audio": {
-    "music": "audio/camp-track.mp4"
+    "music": "audio/camp-track.mp4",
+    "voiceBase": "audio/Teksty Kolesia"
   }
 }

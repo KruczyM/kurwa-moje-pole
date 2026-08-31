@@ -48,3 +48,4 @@ export const effectAssets = {
 };
 
 export const musicAsset = gameAsset(catalog.audio.music);
+export const voiceAsset = (name:string) => gameAsset(`${catalog.audio.voiceBase}/${name}.wav`);
