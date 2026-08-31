@@ -5,16 +5,22 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const catalog = JSON.parse(readFileSync(join(root, 'src/game/assets/assetCatalog.json'), 'utf8'));
-const contract = JSON.parse(readFileSync(join(root, 'src/game/animation/characterAnimationContract.json'), 'utf8'));
-const approvals = JSON.parse(readFileSync(join(root, 'src/game/animation/characterRigApproval.json'), 'utf8'));
+const contract = JSON.parse(
+  readFileSync(join(root, 'src/game/animation/characterAnimationContract.json'), 'utf8'),
+);
+const approvals = JSON.parse(
+  readFileSync(join(root, 'src/game/animation/characterRigApproval.json'), 'utf8'),
+);
 const reportPath = join(root, 'reports', 'character-rig-validation.json');
 const JSON_CHUNK = 0x4e4f534a;
 const BIN_CHUNK = 0x004e4942;
 
+/** Oblicza stabilny skrót SHA-256 danych używany do porównania struktur GLB. */
 function hash(value) {
   return createHash('sha256').update(value).digest('hex');
 }
 
+/** Odczytuje JSON i binarny chunk z pliku GLB 2.0. */
 function parseGlb(path) {
   const file = readFileSync(path);
   if (file.length < 20 || file.readUInt32LE(0) !== 0x46546c67 || file.readUInt32LE(4) !== 2) {
@@ -34,15 +40,19 @@ function parseGlb(path) {
   return { json, binary };
 }
 
+/** Zwraca uporządkowany zestaw nazw kości używanych przez skiny modelu. */
 function jointNames(gltf) {
-  return [...new Set(
-    (gltf.skins ?? [])
-      .flatMap((skin) => skin.joints ?? [])
-      .map((index) => gltf.nodes?.[index]?.name)
-      .filter(Boolean),
-  )].sort();
+  return [
+    ...new Set(
+      (gltf.skins ?? [])
+        .flatMap((skin) => skin.joints ?? [])
+        .map((index) => gltf.nodes?.[index]?.name)
+        .filter(Boolean),
+    ),
+  ].sort();
 }
 
+/** Oblicza skróty obrazów osadzonych w GLB, aby porównać tekstury plików. */
 function embeddedImageHashes(parsed) {
   return (parsed.json.images ?? []).map((image) => {
     if (!Number.isInteger(image.bufferView)) return image.uri ? hash(image.uri) : 'missing';
@@ -53,15 +63,18 @@ function embeddedImageHashes(parsed) {
   });
 }
 
+/** Oblicza skrót struktury JSON niezależnie od formatowania pliku. */
 function structuralHash(value) {
   return hash(JSON.stringify(value ?? []));
 }
 
+/** Waliduje rig, klipy, siatkę, materiały i tekstury jednej postaci. */
 function validateCharacter(character) {
   const problems = [];
   const runtimePath = join(root, 'public', 'game-assets', 'characters', character.id, 'npc-animations.glb');
   const sourcePath = join(root, 'source-assets', 'characters', character.id, 't-pose.glb');
-  if (!existsSync(runtimePath)) problems.push({ level: 'error', code: 'missing-runtime', message: runtimePath });
+  if (!existsSync(runtimePath))
+    problems.push({ level: 'error', code: 'missing-runtime', message: runtimePath });
   if (!existsSync(sourcePath)) problems.push({ level: 'error', code: 'missing-t-pose', message: sourcePath });
   if (problems.length) return { id: character.id, name: character.name, status: 'error', problems };
 
@@ -71,7 +84,11 @@ function validateCharacter(character) {
     runtime = parseGlb(runtimePath);
     source = parseGlb(sourcePath);
   } catch (error) {
-    problems.push({ level: 'error', code: 'invalid-glb', message: error instanceof Error ? error.message : String(error) });
+    problems.push({
+      level: 'error',
+      code: 'invalid-glb',
+      message: error instanceof Error ? error.message : String(error),
+    });
     return { id: character.id, name: character.name, status: 'error', problems };
   }
 
@@ -93,7 +110,10 @@ function validateCharacter(character) {
   }
 
   const expectedClips = Object.values(contract.clips).sort();
-  const actualClips = (runtime.json.animations ?? []).map((animation) => animation.name).filter(Boolean).sort();
+  const actualClips = (runtime.json.animations ?? [])
+    .map((animation) => animation.name)
+    .filter(Boolean)
+    .sort();
   const missingClips = expectedClips.filter((clip) => !actualClips.includes(clip));
   const additionalClips = actualClips.filter((clip) => !expectedClips.includes(clip));
   if (missingClips.length || additionalClips.length) {
@@ -104,19 +124,35 @@ function validateCharacter(character) {
     });
   }
   if ((source.json.animations ?? []).length) {
-    problems.push({ level: 'error', code: 'animated-t-pose', message: 'źródło T-pose nie może zawierać klipów' });
+    problems.push({
+      level: 'error',
+      code: 'animated-t-pose',
+      message: 'źródło T-pose nie może zawierać klipów',
+    });
   }
 
   const runtimeImages = embeddedImageHashes(runtime);
   const sourceImages = embeddedImageHashes(source);
   if (JSON.stringify(runtimeImages) !== JSON.stringify(sourceImages)) {
-    problems.push({ level: 'error', code: 'texture-mismatch', message: 'tekstury T-pose i paczki NPC nie są identyczne' });
+    problems.push({
+      level: 'error',
+      code: 'texture-mismatch',
+      message: 'tekstury T-pose i paczki NPC nie są identyczne',
+    });
   }
   if (structuralHash(runtime.json.meshes) !== structuralHash(source.json.meshes)) {
-    problems.push({ level: 'error', code: 'mesh-mismatch', message: 'definicja siatki T-pose i paczki NPC nie jest identyczna' });
+    problems.push({
+      level: 'error',
+      code: 'mesh-mismatch',
+      message: 'definicja siatki T-pose i paczki NPC nie jest identyczna',
+    });
   }
   if (structuralHash(runtime.json.materials) !== structuralHash(source.json.materials)) {
-    problems.push({ level: 'error', code: 'material-mismatch', message: 'materiały T-pose i paczki NPC nie są identyczne' });
+    problems.push({
+      level: 'error',
+      code: 'material-mismatch',
+      message: 'materiały T-pose i paczki NPC nie są identyczne',
+    });
   }
 
   const approval = approvals[character.id];
@@ -150,12 +186,19 @@ const summary = {
   errors: characters.filter((character) => character.status === 'error').length,
 };
 mkdirSync(dirname(reportPath), { recursive: true });
-writeFileSync(reportPath, `${JSON.stringify({ generatedAt: new Date().toISOString(), summary, characters }, null, 2)}\n`);
+writeFileSync(
+  reportPath,
+  `${JSON.stringify({ generatedAt: new Date().toISOString(), summary, characters }, null, 2)}\n`,
+);
 
 for (const character of characters) {
   const marker = character.status === 'ok' ? 'OK' : character.status === 'blocked' ? 'BLOKER' : 'BLAD';
-  console.log(`[${marker}] ${character.name}: ${character.joints ?? 0} kości, ${character.clips?.length ?? 0} klipów`);
-  character.problems.forEach((problem) => console.log(`  - ${problem.level}: ${problem.code} — ${problem.message}`));
+  console.log(
+    `[${marker}] ${character.name}: ${character.joints ?? 0} kości, ${character.clips?.length ?? 0} klipów`,
+  );
+  character.problems.forEach((problem) =>
+    console.log(`  - ${problem.level}: ${problem.code} — ${problem.message}`),
+  );
 }
 console.log(`\nRaport: ${reportPath}`);
 console.log(`Podsumowanie: ${summary.ok} OK, ${summary.blockers} blockerów, ${summary.errors} błędów.`);

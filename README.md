@@ -1,11 +1,10 @@
 # Kurwa, moje pole!
 
-Przeglądarkowa gra 3D z obozem, NPC, animacjami i interakcjami. Kod używa Three.js oraz Vite.
+Przeglądarkowa gra 3D z festiwalowym obozem, animowanymi NPC, interakcjami i efektami wizualnymi. Projekt używa Three.js, TypeScriptu oraz Vite.
 
-## Wymagania
+## Uruchomienie
 
-- Node.js 20 LTS lub nowszy;
-- Git oraz Git LFS.
+Wymagane są Node.js 20 LTS (lub nowszy), Git i Git LFS.
 
 ```powershell
 git lfs install
@@ -16,82 +15,118 @@ npm install
 npm run dev
 ```
 
-`git lfs pull` jest wymagane: modele `.glb`, tekstury i muzyka są przechowywane przez Git LFS.
+`git lfs pull` jest obowiązkowe. Modele `.glb` i `.fbx`, tekstury, muzyka oraz nagrania `.wav` są przechowywane przez Git LFS. Bez nich gra uruchomi się z brakującymi albo niepoprawnymi obiektami.
 
-## Build produkcyjny
-
-```powershell
-npm run build
-```
-
-Wynik trafia do `dist/`, które nie jest wersjonowane.
-
-## Walidacja assetów
-
-Po dodaniu lub zmianie modelu uruchom:
+## Najważniejsze polecenia
 
 ```powershell
-npm run check:assets
+npm run dev          # lokalny serwer deweloperski
+npm test             # testy jednostkowe
+npm run build        # kontrola TypeScriptu i build do dist/
+npm run check:assets # modele, tekstury, dźwięki i klipy animacji
+npm run check:rigs   # zgodność rigów i bibliotek animacji postaci
+npm run format       # automatyczne formatowanie własnego kodu
+npm run format:check # sprawdzenie formatowania bez zmiany plików
 ```
 
-Walidator korzysta z tego samego katalogu danych co manifest gry. Sprawdza
-istnienie plików, strukturę GLB, meshe, materiały, tekstury, bounding boxy,
-skiny, kości oraz wymagane animacje `Idle`, `Walk` i `Run`. Pełny raport zapisuje
-w `reports/asset-validation.json`. Katalog raportów jest lokalny i nie trafia do
-repozytorium. Znany problem może zostać tymczasowo oznaczony jako jawny blocker
-z numerem Issue; wszystkie pozostałe błędy zatrzymują test i CI.
+Katalog `dist/` jest generowany i nie jest wersjonowany. Raporty walidacji trafiają do lokalnego `reports/`.
 
-## Struktura
+## Gdzie znajdują się pliki
 
 ```text
-src/
-  game/
-    assets/               loader i centralny manifest adresów assetów
-    audio/ effects/ interactions/ npc/ player/ ui/ world/
-  main.ts                 wejście aplikacji
-  *.css                   interfejs gry i menu
-
-public/game-assets/       jedyne zasoby serwowane działającej grze
+src/                         kod aplikacji
+public/game-assets/          jedyne assety ładowane podczas działania gry
   characters/<id>/
-    preview.glb           model menu postaci
-    npc-animations.glb    model NPC z animacjami
-  world/                  namioty i flaga
-  interactables/          stół oraz przedmioty interaktywne
-  props/                  pozostałe rekwizyty świata
-  textures/               trawa i panorama horyzontu
-  audio/                  muzyka gry
-
-source-assets/            wersjonowane źródła techniczne postaci
-  characters/<id>/t-pose.glb
-                           model ze skórą i kośćmi w pozycji spoczynkowej
-  characters/<id>/mixamo/ kanoniczne eksporty FBX potrzebne do odbudowy rigu
-
-docs/                     dokumentacja projektu
-art/                      lokalne źródła i archiwum; ignorowane przez Git
+    preview.glb              model pokazywany w menu
+    npc-animations.glb       model NPC z klipami Idle, Walk i Run
+  interactables/             stół i używki
+  world/                     namioty, flaga, toi-toi i rekwizyty obozu
+  textures/                  tekstury trawy, horyzontu i nakładek
+  audio/                     muzyka i głos postaci
+source-assets/characters/    źródła potrzebne do ponownego rigowania
+  <id>/t-pose.glb            model ze skórą i kośćmi bez animacji
+  <id>/mixamo/               kanoniczne eksporty FBX
+scripts/                     lokalne walidatory i narzędzia GLB
+docs/                        dokumentacja techniczna i projektowa
+art/                         lokalne pliki robocze; katalog ignorowany przez Git
 ```
 
-## Zasady pracy z zasobami
+## Mapa kodu TypeScript i JavaScript
 
-- Do gry dodawaj tylko gotowe pliki runtime w `public/game-assets/`.
+Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
+
+| Plik lub katalog                                  | Odpowiedzialność                                                       |
+| ------------------------------------------------- | ---------------------------------------------------------------------- |
+| `src/main.ts`                                     | Uruchamia interfejs, podgląd postaci oraz właściwą grę.                |
+| `src/game/Game.ts`                                | Spina scenę, kamerę, sterowanie, stany aplikacji, interakcje i efekty. |
+| `src/game/animation/animationContract.ts`         | Ujednolica nazwy klipów `Idle`, `Walk` i `Run`.                        |
+| `src/game/assets/AssetLoader.ts`                  | Ładuje modele GLB i raportuje brakujące pliki.                         |
+| `src/game/assets/assetManifest.ts`                | Jest jedynym miejscem definiującym adresy assetów runtime.             |
+| `src/game/audio/SpeakerAudio.ts`                  | Steruje muzyką głośnika w obozie.                                      |
+| `src/game/audio/VoiceReactionManager.ts`          | Losuje i odtwarza reakcje głosowe zależnie od zdarzeń.                 |
+| `src/game/effects/EffectManager.ts`               | Obsługuje fazy używek oraz shader i post-processing obrazu.            |
+| `src/game/effects/MushroomWireframeEffect.ts`     | Czasowo przełącza obiekty na efekt siatki po grzybach.                 |
+| `src/game/interactions/InteractionManager.ts`     | Wykrywa obiekt wskazywany przez gracza i zwraca jego akcję.            |
+| `src/game/interactions/itemConfig.ts`             | Zawiera nazwy i teksty inspekcji używek.                               |
+| `src/game/interactions/itemPresentationConfig.ts` | Zawiera skale i orientacje modeli na stole oraz w inspekcji.           |
+| `src/game/interactions/inspectPresentation.ts`    | Centruje modele na osobnej osi obrotu podglądu.                        |
+| `src/game/lifecycle/AppStateMachine.ts`           | Pilnuje przejść między menu, grą, inspekcją i pauzą.                   |
+| `src/game/lifecycle/PointerLockPauseGate.ts`      | Odróżnia wyjście z Pointer Lock od nieudanego przejęcia myszy.         |
+| `src/game/lifecycle/AnimationLoop.ts`             | Prowadzi pojedynczą pętlę `requestAnimationFrame`.                     |
+| `src/game/lifecycle/EventScope.ts`                | Rejestruje zdarzenia i zbiorczo je usuwa podczas sprzątania.           |
+| `src/game/lifecycle/disposeThree.ts`              | Klonuje modele i zwalnia geometrie, materiały i tekstury.              |
+| `src/game/npc/NpcAnimator.ts`                     | Odtwarza animacje NPC i zabezpiecza wadliwy ruch kości bioder.         |
+| `src/game/npc/NpcManager.ts`                      | Steruje celami, ruchem, bezczynnością, kolizjami i skalą NPC.          |
+| `src/game/npc/npcConfig.ts`                       | Definiuje zachowania i parametry ruchu postaci.                        |
+| `src/game/player/PlayerController.ts`             | Obsługuje ruch, kamerę pierwszoosobową i Pointer Lock.                 |
+| `src/game/ui/CharacterPreview.ts`                 | Renderuje przezroczysty podgląd postaci w menu.                        |
+| `src/game/ui/previewLayout.ts`                    | Dopasowuje podgląd tak, aby cały model mieścił się w ekranie.          |
+| `src/game/world/CampWorld.ts`                     | Buduje teren, trawę, namioty, stół, używki, kolizje i granice obozu.   |
+| `src/game/world/HorizonSkybox.ts`                 | Dodaje panoramę horyzontu.                                             |
+| `scripts/check-text-encoding.mjs`                 | Wykrywa uszkodzone UTF-8 i typowe ślady mojibake.                      |
+| `scripts/validate-assets.mjs`                     | Sprawdza kompletność i strukturę assetów runtime.                      |
+| `scripts/validate-character-rigs.mjs`             | Porównuje rigi, siatki, materiały, tekstury i klipy postaci.           |
+| `scripts/strip-glb-animations.mjs`                | Tworzy kopię GLB bez animacji, zachowując model i rig.                 |
+
+Katalog `src/game/world/vendor/three-stylized/` jest wydzielonym kodem bibliotecznym trawy. Nie jest automatycznie formatowany razem z kodem gry.
+
+## Skala i pozycja używek
+
+Wszystkie ustawienia prezentacji są w `src/game/interactions/itemPresentationConfig.ts`. Każdy przedmiot ma sześć wartości:
+
+- `tableSize` — największy wymiar modelu na stole;
+- `tableRotation` — obrót modelu na stole w radianach `[X, Y, Z]`;
+- `tablePosition` — bezpieczna pozycja `[X, Z]` względem środka obróconego blatu;
+- `inspectSize` — największy wymiar modelu w podglądzie;
+- `inspectRotation` — naturalna orientacja modelu w podglądzie.
+- `inspectOffsetY` — przesunięcie modelu w górę lub w dół w podglądzie.
+
+Przykład zmniejszenia LSD bez wpływu na interakcję lub podgląd:
+
+```ts
+lsd: {
+  ...lying(0.16, [0.82, -0.18]),
+  tableSize: 0.12,
+},
+```
+
+Obecnie wszystkie używki są obrócone o 90 stopni i leżą na stole. Ich pozycje są liczone lokalnie względem stołu, dlatego pozostają na blacie również po jego obróceniu. Podczas inspekcji używany jest czysty klon modelu z naturalnym obrotem, automatycznym dopasowaniem kamery i regulowanym przesunięciem pionowym. Niewidoczna strefa interakcji ma niezależną skalę i nie kurczy się razem z modelem.
+
+## Zasady pracy z assetami
+
+- Gotowe pliki runtime dodawaj tylko do `public/game-assets/`.
 - Wszystkie ścieżki klienta definiuj w `src/game/assets/assetManifest.ts`.
-- Nazwy techniczne stosuj w ASCII i kebab-case/lowercase, np. `pierscien`, `main.glb`.
-- `source-assets/characters/<id>/t-pose.glb` zachowuje model do ponownego rigowania; nie jest ładowany przez grę.
-- Pliki robocze (`.blend`, FBX z Mixamo, referencje, stare eksporty) przechowuj w `art/`; nie trafiają do repozytorium.
-- Po dodaniu modelu lub tekstury wykonaj `npm run build` przed commitem.
-- Pipeline rigu, ustawienia Mixamo oraz odbudowa biblioteki są opisane w
-  [`docs/character-animation-pipeline.md`](docs/character-animation-pipeline.md).
-- Stany aplikacji, priorytet `Escape`, Pointer Lock i zasady sprzątania opisuje
-  [`docs/app-lifecycle.md`](docs/app-lifecycle.md).
+- Nazwy techniczne zapisuj w ASCII i kebab-case/lowercase, np. `pierscien`.
+- Zachowuj `source-assets/characters/<id>/t-pose.glb`, ponieważ ułatwia ponowne rigowanie.
+- Pliki robocze `.blend`, próbne eksporty i referencje przechowuj w ignorowanym `art/`.
+- Po zmianie modelu wykonaj `npm run check:assets`, `npm test` i `npm run build`.
+- Nie commituj przypadkowych lokalnych eksportów ani starych wersji modeli.
 
-Rig i bibliotekę animacji wszystkich postaci sprawdzisz poleceniem:
-
-```powershell
-npm run check:rigs
-```
+Pipeline Mixamo i odbudowę bibliotek opisuje [`docs/character-animation-pipeline.md`](docs/character-animation-pipeline.md). Stany aplikacji, priorytet `Escape`, Pointer Lock i sprzątanie zasobów opisuje [`docs/app-lifecycle.md`](docs/app-lifecycle.md).
 
 ## Git LFS
 
-Reguły Git LFS są w `.gitattributes` i obejmują `.glb`, `.fbx`, obrazy oraz `.mp4`. Nowy asset runtime dodaj normalnie:
+Reguły są zapisane w `.gitattributes` i obejmują duże modele, źródła FBX, obrazy, filmy oraz nagrania WAV. Asset dodaje się zwykłym `git add`; Git LFS zapisze w repozytorium wskaźnik, a dane binarne wyśle do magazynu LFS.
 
 ```powershell
 git add public/game-assets/sciezka/do/modelu.glb
@@ -99,6 +134,6 @@ git commit -m "Dodaj model"
 git push
 ```
 
-## Celowo pominięte pliki
+## Celowo pominięte katalogi
 
-`art/`, `Hunyuan3D-2GP/`, `TrellisStudio/`, `node_modules/`, cache, build, tokeny i środowiska lokalne nie są częścią repozytorium. Są to materiały źródłowe albo lokalne narzędzia, a nie zależności potrzebne do uruchomienia gry.
+`art/`, `Hunyuan3D-2GP/`, `TrellisStudio/`, `node_modules/`, cache, build, tokeny i lokalne środowiska nie są częścią repozytorium. Nie są wymagane do uruchomienia gry.

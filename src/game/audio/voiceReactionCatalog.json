@@ -1,22 +1,125 @@
 {
-  "gameEnter": ["dude_todaysthefirst", "dude_uncledaveparty", "dude_vote_whatmoron", "dude_whatabunchoffan", "dude_wherethehellami", "dude_whoeverdesigned", "dude_whydoesthisnot", "dude_blessmefather", "dude_donttheyhavejobs", "dude_everyonesameidea", "dude_lookslikemeeting", "dude_map_getsteaks", "dude_map_hate1"],
+  "gameEnter": [
+    "dude_todaysthefirst",
+    "dude_uncledaveparty",
+    "dude_vote_whatmoron",
+    "dude_whatabunchoffan",
+    "dude_wherethehellami",
+    "dude_whoeverdesigned",
+    "dude_whydoesthisnot",
+    "dude_blessmefather",
+    "dude_donttheyhavejobs",
+    "dude_everyonesameidea",
+    "dude_lookslikemeeting",
+    "dude_map_getsteaks",
+    "dude_map_hate1"
+  ],
   "menuEscape": ["dude_thisgenepoolis", "dude_vote_dimple", "dude_bettergetoutta", "dude_haveaniceday"],
-  "inspectEnter": ["dude_uhuh", "dude_wellwhodathought", "dude_ahjail", "dude_fascinating", "dude_ithinkineedthat", "dude_itsformymother", "dude_map_loc1", "dude_map_loc2", "dude_maybeishouldkeep", "dude_saywhatsthis"],
+  "inspectEnter": [
+    "dude_uhuh",
+    "dude_wellwhodathought",
+    "dude_ahjail",
+    "dude_fascinating",
+    "dude_ithinkineedthat",
+    "dude_itsformymother",
+    "dude_map_loc1",
+    "dude_map_loc2",
+    "dude_maybeishouldkeep",
+    "dude_saywhatsthis"
+  ],
   "inspectCancel": ["dude_notthatone", "dude_notright"],
   "firstSpeaker": ["dude_viagraworks", "dude_heychicoineedan", "dude_nowicanseemusic"],
-  "toilet": ["dude_areyousotring", "dude_coldturkey", "dude_didslaughtergoat", "dude_grandfatherof", "dude_hotnumbertwo", "dude_imreallygonna", "dude_ivereallygotta", "dude_jeezuspeoplemust"],
+  "toilet": [
+    "dude_areyousotring",
+    "dude_coldturkey",
+    "dude_didslaughtergoat",
+    "dude_grandfatherof",
+    "dude_hotnumbertwo",
+    "dude_imreallygonna",
+    "dude_ivereallygotta",
+    "dude_jeezuspeoplemust"
+  ],
   "amperAmbient": ["dude_yeahbabyiam", "dude_yougogirl", "dude_youvegottabe"],
   "midTripRare": ["dude_imsoryapparently", "dude_imthedamngimp"],
   "effectStart": {
     "common": ["dude_iregretnothing", "dude_map_loc3", "dude_oneforthepope"],
     "nonLight": ["dude_sothatswhatthat"],
-    "Piwo": ["dude_whuff", "dude_youjustknowtheres", "dude_aahthatsthestuff", "dude_ak", "dude_huh", "dude_innagadda"],
+    "Piwo": [
+      "dude_whuff",
+      "dude_youjustknowtheres",
+      "dude_aahthatsthestuff",
+      "dude_ak",
+      "dude_huh",
+      "dude_innagadda"
+    ],
     "Papieros": ["dude_gottastopsmoking"],
-    "Joint": ["dude_toodry", "dude_whuff", "dude_yes", "dude_aahthatsthestuff", "dude_alittlescruffy", "dude_andonetogrowon", "dude_healthpipemy", "dude_hehhehheh", "dude_howconvenient", "dude_innagadda", "dude_map_getnapalm", "dude_ohlikethatsnot", "dude_ohyeah"],
-    "Kreska": ["dude_ughnowmyspleens", "dude_whatsthataweful", "dude_whuff", "dude_aahthatsthestuff", "dude_aughthatsgonnabe", "dude_damnthatstings", "dude_dontcrowdtheres", "dude_fuck", "dude_golong", "dude_healthcantbegood", "dude_heynowicantfeel", "dude_ifeelbetter", "dude_imboredalready", "dude_imsorryimeantto", "dude_map_exit5", "dude_map_exit4", "dude_map_loc5", "dude_nomore", "dude_owsothatswhatthat", "dude_sigh"],
-    "Grzyb": ["dude_thatstuffreally", "dude_thewallsare", "dude_wasthatsupposed", "dude_wherethehellami", "dude_whuff", "dude_wonderhowmuchon", "dude_youthoughtyou", "dude_idefinitelyneed", "dude_map_confess"],
-    "MDMA": ["dude_thisisgonnabe", "dude_aahthatsthestuff", "dude_dontcrowdtheres", "dude_healthcantbegood", "dude_howconvenient", "dude_map_exit4"],
-    "LSD": ["dude_thatstuffreally", "dude_thewallsare", "dude_wasthatsupposed", "dude_wherethehellami", "dude_whuff", "dude_wonderhowmuchon", "dude_youthoughtyou", "dude_idefinitelyneed", "dude_map_confess"]
+    "Joint": [
+      "dude_toodry",
+      "dude_whuff",
+      "dude_yes",
+      "dude_aahthatsthestuff",
+      "dude_alittlescruffy",
+      "dude_andonetogrowon",
+      "dude_healthpipemy",
+      "dude_hehhehheh",
+      "dude_howconvenient",
+      "dude_innagadda",
+      "dude_map_getnapalm",
+      "dude_ohlikethatsnot",
+      "dude_ohyeah"
+    ],
+    "Kreska": [
+      "dude_ughnowmyspleens",
+      "dude_whatsthataweful",
+      "dude_whuff",
+      "dude_aahthatsthestuff",
+      "dude_aughthatsgonnabe",
+      "dude_damnthatstings",
+      "dude_dontcrowdtheres",
+      "dude_fuck",
+      "dude_golong",
+      "dude_healthcantbegood",
+      "dude_heynowicantfeel",
+      "dude_ifeelbetter",
+      "dude_imboredalready",
+      "dude_imsorryimeantto",
+      "dude_map_exit5",
+      "dude_map_exit4",
+      "dude_map_loc5",
+      "dude_nomore",
+      "dude_owsothatswhatthat",
+      "dude_sigh"
+    ],
+    "Grzyb": [
+      "dude_thatstuffreally",
+      "dude_thewallsare",
+      "dude_wasthatsupposed",
+      "dude_wherethehellami",
+      "dude_whuff",
+      "dude_wonderhowmuchon",
+      "dude_youthoughtyou",
+      "dude_idefinitelyneed",
+      "dude_map_confess"
+    ],
+    "MDMA": [
+      "dude_thisisgonnabe",
+      "dude_aahthatsthestuff",
+      "dude_dontcrowdtheres",
+      "dude_healthcantbegood",
+      "dude_howconvenient",
+      "dude_map_exit4"
+    ],
+    "LSD": [
+      "dude_thatstuffreally",
+      "dude_thewallsare",
+      "dude_wasthatsupposed",
+      "dude_wherethehellami",
+      "dude_whuff",
+      "dude_wonderhowmuchon",
+      "dude_youthoughtyou",
+      "dude_idefinitelyneed",
+      "dude_map_confess"
+    ]
   },
   "effectEnd": {
     "common": ["dude_igottafindmore", "dude_igotyeraffirm"],
@@ -27,7 +130,16 @@
   },
   "jointExitRare": ["dude_iknewishouldnt"],
   "overdose": {
-    "local": ["dude_augh", "dude_augh2", "dude_augh3", "dude_aughthatsgonnabe", "dude_aughthatsgonnabe2", "dude_coldturkey", "dude_idontfeelsogood", "dude_ifeellikeshit"],
+    "local": [
+      "dude_augh",
+      "dude_augh2",
+      "dude_augh3",
+      "dude_aughthatsgonnabe",
+      "dude_aughthatsgonnabe2",
+      "dude_coldturkey",
+      "dude_idontfeelsogood",
+      "dude_ifeellikeshit"
+    ],
     "distant": ["dude_buttsauce"]
   },
   "future": {

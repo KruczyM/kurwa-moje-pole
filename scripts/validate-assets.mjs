@@ -10,6 +10,7 @@ const reportPath = join(root, 'reports', 'asset-validation.json');
 const catalog = JSON.parse(readFileSync(catalogPath, 'utf8'));
 const voiceCatalog = JSON.parse(readFileSync(voiceCatalogPath, 'utf8'));
 const voiceNames = new Set();
+/** Rekurencyjnie zbiera nazwy nagrań z wielopoziomowego katalogu reakcji. */
 const collectVoiceNames = (value) => {
   if (typeof value === 'string') voiceNames.add(value);
   else if (Array.isArray(value)) value.forEach(collectVoiceNames);
@@ -19,7 +20,8 @@ collectVoiceNames(voiceCatalog);
 const requiredLocomotion = ['Idle', 'Walk', 'Run'];
 const knownBlockers = {
   'environment:smallTent': {
-    'missing-texture-source': 'Model na main ma puste sloty tekstur; wymiana i audyt materiałów są śledzone w Issue #12.',
+    'missing-texture-source':
+      'Model na main ma puste sloty tekstur; wymiana i audyt materiałów są śledzone w Issue #12.',
   },
 };
 const GLB_MAGIC = 0x46546c67;
@@ -85,21 +87,25 @@ const assets = [
   })),
 ];
 
+/** Buduje jednolity wpis problemu do raportu walidacji. */
 function issue(level, code, message) {
   return { level, code, message };
 }
 
+/** Sprawdza podstawowy nagłówek i rozmiar pliku WAV. */
 function validateWav(filePath) {
   const bytes = readFileSync(filePath);
-  const valid = bytes.length >= 12
-    && bytes.toString('ascii', 0, 4) === 'RIFF'
-    && bytes.toString('ascii', 8, 12) === 'WAVE';
+  const valid =
+    bytes.length >= 12 &&
+    bytes.toString('ascii', 0, 4) === 'RIFF' &&
+    bytes.toString('ascii', 8, 12) === 'WAVE';
   return {
     byteLength: bytes.length,
     problems: valid ? [] : [issue('error', 'invalid-wav', 'plik nie ma nagłówka RIFF/WAVE')],
   };
 }
 
+/** Parsuje kontener GLB 2.0 i zwraca JSON oraz jego binarne chunki. */
 function parseGlb(filePath) {
   const bytes = readFileSync(filePath);
   if (bytes.length < 20) throw new Error('plik jest krótszy niż nagłówek GLB');
@@ -132,6 +138,7 @@ function parseGlb(filePath) {
   return { json, binaryChunks, byteLength: bytes.length };
 }
 
+/** Rozwiązuje bufory osadzone, data URI oraz zewnętrzne pliki glTF. */
 function loadBuffers(gltf, binaryChunks, filePath, problems) {
   let embeddedIndex = 0;
   return (gltf.buffers ?? []).map((buffer, index) => {
@@ -175,6 +182,7 @@ const componentCounts = {
   MAT4: 16,
 };
 
+/** Bada pozycje wierzchołków i zgłasza wartości spoza bufora lub NaN. */
 function inspectPositionAccessor(gltf, buffers, accessorIndex, problems) {
   const accessor = gltf.accessors?.[accessorIndex];
   if (!accessor) {
@@ -183,7 +191,9 @@ function inspectPositionAccessor(gltf, buffers, accessorIndex, problems) {
   }
   const viewDefinition = gltf.bufferViews?.[accessor.bufferView];
   if (!viewDefinition) {
-    problems.push(issue('error', 'missing-buffer-view', `POSITION ${accessorIndex} nie ma poprawnego bufferView`));
+    problems.push(
+      issue('error', 'missing-buffer-view', `POSITION ${accessorIndex} nie ma poprawnego bufferView`),
+    );
     return undefined;
   }
   const buffer = buffers[viewDefinition.buffer];
@@ -218,11 +228,48 @@ function inspectPositionAccessor(gltf, buffers, accessorIndex, problems) {
     }
   }
   if (invalidValues > 0) {
-    problems.push(issue('error', 'non-finite-position', `POSITION ${accessorIndex} zawiera ${invalidValues} wartości NaN/Infinity`));
+    problems.push(
+      issue(
+        'error',
+        'non-finite-position',
+        `POSITION ${accessorIndex} zawiera ${invalidValues} wartości NaN/Infinity`,
+      ),
+    );
   }
   return invalidValues === accessor.count * 3 ? undefined : { min, max, vertices: accessor.count };
 }
 
+/** Odczytuje zakres liczbowy dowolnego accessora używanego między innymi przez animacje. */
+function inspectNumericAccessor(gltf, buffers, accessorIndex) {
+  const accessor = gltf.accessors?.[accessorIndex];
+  const viewDefinition = accessor && gltf.bufferViews?.[accessor.bufferView];
+  const reader = accessor && componentReaders[accessor.componentType];
+  const components = accessor && componentCounts[accessor.type];
+  const buffer = viewDefinition && buffers[viewDefinition.buffer];
+  if (!accessor || !viewDefinition || !reader || !components || !buffer) return undefined;
+  const stride = viewDefinition.byteStride ?? reader.bytes * components;
+  const start = (viewDefinition.byteOffset ?? 0) + (accessor.byteOffset ?? 0);
+  const end = start + Math.max(0, accessor.count - 1) * stride + reader.bytes * components;
+  if (end > buffer.length) return undefined;
+  const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  let minimum = Infinity;
+  let maximum = -Infinity;
+  let absoluteMaximum = 0;
+  const componentMaximum = Array.from({ length: components }, () => 0);
+  for (let item = 0; item < accessor.count; item += 1) {
+    for (let component = 0; component < components; component += 1) {
+      const value = reader.read(dataView, start + item * stride + component * reader.bytes);
+      if (!Number.isFinite(value)) continue;
+      minimum = Math.min(minimum, value);
+      maximum = Math.max(maximum, value);
+      absoluteMaximum = Math.max(absoluteMaximum, Math.abs(value));
+      componentMaximum[component] = Math.max(componentMaximum[component], Math.abs(value));
+    }
+  }
+  return { minimum, maximum, absoluteMaximum, componentMaximum };
+}
+
+/** Sprawdza, czy materiały i tekstury wskazują istniejące obrazy. */
 function inspectTextureReferences(gltf, filePath, problems) {
   const textures = gltf.textures ?? [];
   const images = gltf.images ?? [];
@@ -249,13 +296,16 @@ function inspectTextureReferences(gltf, filePath, problems) {
       }
     }
   });
+  /** Rekurencyjnie sprawdza każde pole tekstury w strukturze materiału. */
   const visitMaterial = (value, path) => {
     if (!value || typeof value !== 'object') return;
     for (const [key, child] of Object.entries(value)) {
       const childPath = `${path}.${key}`;
       if (key.endsWith('Texture') && child && typeof child === 'object') {
         if (!Number.isInteger(child.index) || !textures[child.index]) {
-          problems.push(issue('error', 'missing-material-texture', `${childPath} wskazuje brakującą teksturę`));
+          problems.push(
+            issue('error', 'missing-material-texture', `${childPath} wskazuje brakującą teksturę`),
+          );
         }
       }
       visitMaterial(child, childPath);
@@ -264,6 +314,7 @@ function inspectTextureReferences(gltf, filePath, problems) {
   (gltf.materials ?? []).forEach((material, index) => visitMaterial(material, `materiał ${index}`));
 }
 
+/** Przeprowadza pełną walidację pojedynczego modelu GLB z katalogu assetów. */
 function validateGlb(asset, filePath) {
   const problems = [];
   let parsed;
@@ -294,7 +345,9 @@ function validateGlb(asset, filePath) {
     }
     const scale = node.scale ?? [1, 1, 1];
     if (scale.some((value) => !Number.isFinite(value) || Math.abs(value) < 1e-7 || Math.abs(value) > 1e4)) {
-      problems.push(issue('error', 'extreme-node-scale', `node ${index} ma nieprawidłową skalę ${scale.join(', ')}`));
+      problems.push(
+        issue('error', 'extreme-node-scale', `node ${index} ma nieprawidłową skalę ${scale.join(', ')}`),
+      );
     }
   });
 
@@ -303,26 +356,49 @@ function validateGlb(asset, filePath) {
       problems.push(issue('error', 'empty-skin', `skin ${index} nie zawiera kości`));
     } else {
       skin.joints.forEach((joint) => {
-        if (!nodes[joint]) problems.push(issue('error', 'missing-joint', `skin ${index} wskazuje brakujący node kości ${joint}`));
+        if (!nodes[joint])
+          problems.push(
+            issue('error', 'missing-joint', `skin ${index} wskazuje brakujący node kości ${joint}`),
+          );
       });
     }
   });
 
   animations.forEach((animation, index) => {
     if (!animation.channels?.length || !animation.samplers?.length) {
-      problems.push(issue('error', 'empty-animation', `animacja ${animation.name ?? index} nie ma kanałów lub samplerów`));
+      problems.push(
+        issue('error', 'empty-animation', `animacja ${animation.name ?? index} nie ma kanałów lub samplerów`),
+      );
     }
     animation.channels?.forEach((channel, channelIndex) => {
       if (!animation.samplers?.[channel.sampler]) {
-        problems.push(issue('error', 'missing-animation-sampler', `animacja ${index}, kanał ${channelIndex}: brak samplera`));
+        problems.push(
+          issue(
+            'error',
+            'missing-animation-sampler',
+            `animacja ${index}, kanał ${channelIndex}: brak samplera`,
+          ),
+        );
       }
       if (channel.target?.node !== undefined && !nodes[channel.target.node]) {
-        problems.push(issue('error', 'missing-animation-node', `animacja ${index}, kanał ${channelIndex}: brak node celu`));
+        problems.push(
+          issue(
+            'error',
+            'missing-animation-node',
+            `animacja ${index}, kanał ${channelIndex}: brak node celu`,
+          ),
+        );
       }
     });
     animation.samplers?.forEach((sampler, samplerIndex) => {
       if (!gltf.accessors?.[sampler.input] || !gltf.accessors?.[sampler.output]) {
-        problems.push(issue('error', 'missing-animation-accessor', `animacja ${index}, sampler ${samplerIndex}: brak accessora wejścia lub wyjścia`));
+        problems.push(
+          issue(
+            'error',
+            'missing-animation-accessor',
+            `animacja ${index}, sampler ${samplerIndex}: brak accessora wejścia lub wyjścia`,
+          ),
+        );
       }
     });
   });
@@ -331,14 +407,23 @@ function validateGlb(asset, filePath) {
   const bounds = { min: [Infinity, Infinity, Infinity], max: [-Infinity, -Infinity, -Infinity], vertices: 0 };
   const positionAccessors = new Set();
   meshes.forEach((mesh, meshIndex) => {
-    if (!mesh.primitives?.length) problems.push(issue('error', 'empty-mesh', `mesh ${meshIndex} nie ma primitives`));
+    if (!mesh.primitives?.length)
+      problems.push(issue('error', 'empty-mesh', `mesh ${meshIndex} nie ma primitives`));
     mesh.primitives?.forEach((primitive, primitiveIndex) => {
       const accessorIndex = primitive.attributes?.POSITION;
       if (!Number.isInteger(accessorIndex)) {
-        problems.push(issue('error', 'missing-position', `mesh ${meshIndex}, primitive ${primitiveIndex}: brak POSITION`));
+        problems.push(
+          issue('error', 'missing-position', `mesh ${meshIndex}, primitive ${primitiveIndex}: brak POSITION`),
+        );
       } else positionAccessors.add(accessorIndex);
       if (primitive.material !== undefined && !materials[primitive.material]) {
-        problems.push(issue('error', 'missing-material', `mesh ${meshIndex}, primitive ${primitiveIndex}: brak materiału ${primitive.material}`));
+        problems.push(
+          issue(
+            'error',
+            'missing-material',
+            `mesh ${meshIndex}, primitive ${primitiveIndex}: brak materiału ${primitive.material}`,
+          ),
+        );
       }
     });
   });
@@ -357,12 +442,35 @@ function validateGlb(asset, filePath) {
   if (!dimensions || dimensions.every((value) => value <= 1e-7)) {
     problems.push(issue('error', 'empty-bounds', 'nie udało się wyznaczyć niepustego bounding boxu'));
   } else if (Math.max(...dimensions) > 1e4) {
-    problems.push(issue('error', 'extreme-bounds', `bounding box jest ekstremalny: ${dimensions.join(' × ')}`));
+    problems.push(
+      issue('error', 'extreme-bounds', `bounding box jest ekstremalny: ${dimensions.join(' × ')}`),
+    );
   }
 
   const animationNames = animations.map((animation, index) => animation.name || `<bez nazwy ${index}>`);
+  const animationMotion = {
+    scale: { maximum: 0, clip: '', node: '' },
+    translation: { maximum: 0, clip: '', node: '' },
+  };
+  animations.forEach((animation, animationIndex) => {
+    animation.channels?.forEach((channel) => {
+      const path = channel.target?.path;
+      if (path !== 'scale' && path !== 'translation') return;
+      const sampler = animation.samplers?.[channel.sampler];
+      const range = sampler && inspectNumericAccessor(gltf, buffers, sampler.output);
+      if (!range || range.absoluteMaximum <= animationMotion[path].maximum) return;
+      animationMotion[path] = {
+        maximum: range.absoluteMaximum,
+        clip: animationNames[animationIndex],
+        node: nodes[channel.target.node]?.name ?? String(channel.target.node ?? ''),
+        nodeTranslation: nodes[channel.target.node]?.translation ?? [0, 0, 0],
+        components: range.componentMaximum,
+      };
+    });
+  });
   if (asset.kind === 'character-animation') {
-    if (skins.length === 0) problems.push(issue('error', 'character-without-skin', 'paczka NPC nie ma skina'));
+    if (skins.length === 0)
+      problems.push(issue('error', 'character-without-skin', 'paczka NPC nie ma skina'));
     const normalizedNames = new Set(animationNames.map((name) => name.toLowerCase()));
     requiredLocomotion.forEach((name) => {
       if (!normalizedNames.has(name.toLowerCase())) {
@@ -370,7 +478,8 @@ function validateGlb(asset, filePath) {
       }
     });
   }
-  if (materials.length === 0) problems.push(issue('warning', 'no-materials', 'model nie deklaruje materiałów'));
+  if (materials.length === 0)
+    problems.push(issue('warning', 'no-materials', 'model nie deklaruje materiałów'));
 
   const nodeScales = nodes.flatMap((node) => node.scale ?? [1, 1, 1]);
   return {
@@ -382,12 +491,11 @@ function validateGlb(asset, filePath) {
     skins: skins.length,
     joints: skins.reduce((maximum, skin) => Math.max(maximum, skin.joints?.length ?? 0), 0),
     animations: animationNames,
+    animationMotion,
     materials: materials.length,
     textures: gltf.textures?.length ?? 0,
     bounds: dimensions ? { min: bounds.min, max: bounds.max, dimensions } : undefined,
-    nodeScale: nodeScales.length
-      ? { min: Math.min(...nodeScales), max: Math.max(...nodeScales) }
-      : undefined,
+    nodeScale: nodeScales.length ? { min: Math.min(...nodeScales), max: Math.max(...nodeScales) } : undefined,
     problems,
   };
 }
@@ -395,16 +503,21 @@ function validateGlb(asset, filePath) {
 const results = assets.map((asset) => {
   const filePath = join(publicAssets, ...asset.path.split('/'));
   if (!existsSync(filePath)) {
-    return { ...asset, status: 'error', problems: [issue('error', 'missing-file', `brak pliku ${filePath}`)] };
+    return {
+      ...asset,
+      status: 'error',
+      problems: [issue('error', 'missing-file', `brak pliku ${filePath}`)],
+    };
   }
   const extension = extname(filePath).toLowerCase();
   let details;
   try {
-    details = extension === '.glb'
-      ? validateGlb(asset, filePath)
-      : extension === '.wav'
-        ? validateWav(filePath)
-        : { byteLength: readFileSync(filePath).length, problems: [] };
+    details =
+      extension === '.glb'
+        ? validateGlb(asset, filePath)
+        : extension === '.wav'
+          ? validateWav(filePath)
+          : { byteLength: readFileSync(filePath).length, problems: [] };
   } catch (error) {
     details = {
       byteLength: readFileSync(filePath).length,
@@ -422,9 +535,9 @@ const results = assets.map((asset) => {
     ? 'error'
     : details.problems.some((problem) => problem.level === 'blocker')
       ? 'blocked'
-    : details.problems.length
-      ? 'warning'
-      : 'ok';
+      : details.problems.length
+        ? 'warning'
+        : 'ok';
   return { ...asset, status, ...details };
 });
 
@@ -435,24 +548,35 @@ const summary = {
   blockers: results.filter((result) => result.status === 'blocked').length,
   errors: results.filter((result) => result.status === 'error').length,
 };
-const report = { generatedAt: new Date().toISOString(), catalog: 'src/game/assets/assetCatalog.json', summary, assets: results };
+const report = {
+  generatedAt: new Date().toISOString(),
+  catalog: 'src/game/assets/assetCatalog.json',
+  summary,
+  assets: results,
+};
 mkdirSync(dirname(reportPath), { recursive: true });
 writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
 
 for (const result of results) {
-  const marker = result.status === 'ok'
-    ? 'OK'
-    : result.status === 'warning'
-      ? 'WARN'
-      : result.status === 'blocked'
-        ? 'BLOKER'
-        : 'BLAD';
-  const stats = result.meshes === undefined
-    ? `${result.byteLength} B`
-    : `${result.meshes} mesh, ${result.skins} skin, ${result.joints} kości, ${result.animations.length} animacji, ${result.materials} materiałów`;
+  const marker =
+    result.status === 'ok'
+      ? 'OK'
+      : result.status === 'warning'
+        ? 'WARN'
+        : result.status === 'blocked'
+          ? 'BLOKER'
+          : 'BLAD';
+  const stats =
+    result.meshes === undefined
+      ? `${result.byteLength} B`
+      : `${result.meshes} mesh, ${result.skins} skin, ${result.joints} kości, ${result.animations.length} animacji, ${result.materials} materiałów`;
   console.log(`[${marker}] ${result.label}: ${stats}`);
-  result.problems.forEach((problem) => console.log(`  - ${problem.level}: ${problem.code} — ${problem.message}`));
+  result.problems.forEach((problem) =>
+    console.log(`  - ${problem.level}: ${problem.code} — ${problem.message}`),
+  );
 }
 console.log(`\nRaport: ${reportPath}`);
-console.log(`Podsumowanie: ${summary.ok} OK, ${summary.warnings} ostrzeżeń, ${summary.blockers} blockerów, ${summary.errors} błędów.`);
+console.log(
+  `Podsumowanie: ${summary.ok} OK, ${summary.warnings} ostrzeżeń, ${summary.blockers} blockerów, ${summary.errors} błędów.`,
+);
 if (summary.errors > 0) process.exit(1);

@@ -11,11 +11,17 @@ Priorytet klawisza `Escape` jest stały:
 
 1. inspekcja, dialog lub ekwipunek wracają do `playing`;
 2. w `playing` klawisz przechodzi do `paused`;
-3. w `paused` grę wznawia przycisk „Wróć do gry”.
+3. w `paused` kolejne, osobne naciśnięcie `Escape` wraca do głównego ekranu wyboru postaci;
+4. przycisk „Wróć do gry” w menu pauzy wznawia rozgrywkę.
 
 Utrata Pointer Lock w stanie `playing` również przełącza grę do `paused`.
 Programowe wyjście z Pointer Lock po otwarciu modala nie otwiera pauzy, ponieważ
 automat znajduje się już w stanie modala.
+
+`Escape` zamykający preview/inspekcję jest konsumowany w całości. Powtórzone
+zdarzenie klawisza jest ignorowane, a utrata Pointer Lock wywołana przez to samo
+naciśnięcie ma krótki okres ochronny. Dopiero następne świadome naciśnięcie
+`Escape` może otworzyć menu pauzy.
 
 ## Własność zasobów
 
@@ -30,6 +36,10 @@ Każda instancja `Game` ma dokładnie:
 audio, zwalnia postprocessing, trawę, geometrie, materiały, tekstury oraz oba
 renderery. `dispose()` jest idempotentne. Ponowna próba po błędzie zawsze usuwa
 poprzednią instancję przed utworzeniem nowej.
+
+Renderer inspekcji jest tworzony tylko raz i ponownie używany. Zamknięcie
+preview ukrywa modal natychmiast, bez synchronicznego niszczenia kontekstu WebGL.
+Pełne zwolnienie kontekstu następuje dopiero w `Game.dispose()`.
 
 ## Obsługa błędów
 
