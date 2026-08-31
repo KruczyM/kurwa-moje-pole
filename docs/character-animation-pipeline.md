@@ -48,21 +48,37 @@ bazy. Przykład odbudowy Pierścienia w PowerShell:
 & 'C:\Program Files\Blender Foundation\Blender 5.0\blender.exe' `
   --factory-startup --background `
   --python scripts/blender/build-character-animation-library.py -- `
-  --base source-assets/characters/pierscien/mixamo/t-pose.fbx `
-  --library public/game-assets/characters/pierscien/npc-animations.glb `
-  --exclude-library-clip Idle `
-  --exclude-library-clip Walk `
-  --exclude-library-clip Run `
+  --base source-assets/characters/pierscien/t-pose.glb `
+  --retarget-library source-assets/animations/mixamo-motion-library.glb `
+  --exclude-retarget-clip Idle `
+  --exclude-retarget-clip Walk `
+  --exclude-retarget-clip Run `
   --clip 'Idle=source-assets/characters/pierscien/mixamo/idle-neutral.fbx' `
   --clip 'Walk=source-assets/characters/pierscien/mixamo/walking.fbx' `
   --clip 'Run=source-assets/characters/pierscien/mixamo/running.fbx' `
-  --t-pose-output source-assets/characters/pierscien/t-pose.glb `
   --output public/game-assets/characters/pierscien/npc-animations.glb
 ```
 
 Skrypt bierze rig, siatkę, wagi i materiały z `--base`. Importowane kopie mesha
 z plików animacji są usuwane. Pozostałe dziesięć ruchów może zostać przejęte z
-istniejącej zgodnej biblioteki za pomocą `--library`.
+kanonicznej biblioteki za pomocą `--retarget-library`. Nie wolno kopiować akcji
+między postaciami samym `--library`: identyczne nazwy kości nie oznaczają
+identycznych osi pozy spoczynkowej. Takie kopiowanie powodowało odłączoną lewą
+nogę oraz przykurczone ramiona. Retarget zapisuje obrót względem pozy
+spoczynkowej dawcy i nakłada go na kości o proporcjach postaci docelowej.
+
+Pełną odbudowę wszystkich ośmiu paczek wykonuje polecenie:
+
+```powershell
+./scripts/rebuild-character-animation-libraries.ps1
+```
+
+Kanoniczny dawca dodatkowych dziesięciu ruchów znajduje się w
+`source-assets/animations/mixamo-motion-library.glb`. Każda postać zachowuje
+własne `Idle`, `Walk` i `Run`; Pierścień pobiera te trzy klipy bezpośrednio z
+zachowanych FBX. Generator usuwa kamery, światła i pomocnicze kształty kości.
+`Icosphere`, którą Blender pokazuje po imporcie w kolekcji `glTF_not_exported`,
+jest lokalnym kontrolerem utworzonym przez importer i nie występuje w GLB gry.
 
 ## Kontrola deformacji
 
