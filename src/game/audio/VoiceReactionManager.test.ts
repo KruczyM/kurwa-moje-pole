@@ -21,8 +21,8 @@ describe('VoiceReactionManager',()=>{
  it('evaluates the ten-percent trip reaction only once per effect',()=>{
   const foreground=fakeAudio(),distant=fakeAudio(),values=[0.05,0,0];
   const manager=new VoiceReactionManager(()=>values.shift()??.5,(()=>{const channels=[foreground,distant];return()=>channels.shift()!})());
-  manager.update(1,'LSD','active',false);
-  manager.update(1,'LSD','active',false);
+  manager.update(1,'LSD','active');
+  manager.update(1,'LSD','active');
   expect(foreground.play).toHaveBeenCalledTimes(1);
  });
 

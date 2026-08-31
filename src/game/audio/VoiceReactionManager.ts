@@ -50,17 +50,15 @@ export class VoiceReactionManager{
   }
  }
 
- update(dt:number,active:EffectId|null,phase:EffectPhase,amperSelected:boolean){
+ update(dt:number,active:EffectId|null,phase:EffectPhase){
   if(this.trackedEffect&&active===null){this.effectEnded(this.trackedEffect);this.trackedEffect=null}
   if(active&&this.trackedEffect!==active){this.trackedEffect=active;this.rareTripChecked=false}
   if(active&&tripEffects.includes(active)&&phase==='active'&&!this.rareTripChecked){
    this.rareTripChecked=true;
    this.play(catalog.midTripRare,.1);
   }
-  if(amperSelected){
-   this.amperRemaining-=dt;
-   if(this.amperRemaining<=0){this.play(catalog.amperAmbient);this.amperRemaining=this.nextAmperDelay()}
-  }else this.amperRemaining=this.nextAmperDelay();
+  this.amperRemaining-=dt;
+  if(this.amperRemaining<=0){this.play(catalog.amperAmbient);this.amperRemaining=this.nextAmperDelay()}
  }
 
  /** Punkt pod przyszłą animację przedawkowania; głos bliski i cichy głos z oddali są już gotowe. */

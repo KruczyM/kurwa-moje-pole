@@ -298,7 +298,6 @@ export class Game{
    this.effects?.update(dt);
    this.voiceReactions.update(
     dt,this.effects?.active||null,this.effects?.phase||'inactive',
-    localStorage.getItem('camp-player-character')?.toLocaleLowerCase('pl-PL')==='amper',
    );
    this.mushroomWireframe.update(
     this.effects?.active==='Grzyb',dt,this.effects?.visualIntensity||0,this.effects?.settings.reduceMotion===true,
