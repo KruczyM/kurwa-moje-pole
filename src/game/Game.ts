@@ -12,6 +12,7 @@ import {AppState,AppStateMachine,escapeTarget} from './lifecycle/AppStateMachine
 import {EventScope} from './lifecycle/EventScope';
 import {cloneDisposableModel,disposeObjectTree} from './lifecycle/disposeThree';
 import {AnimationLoop} from './lifecycle/AnimationLoop';
+import {MushroomWireframeEffect} from './effects/MushroomWireframeEffect';
 
 const qs=<T extends HTMLElement>(selector:string)=>document.querySelector<T>(selector)!;
 const interactiveStates:readonly AppState[]=['playing','inspecting','dialog','inventory'];
@@ -47,6 +48,7 @@ export class Game{
  private started=false;
  private disposed=false;
  private animationLoop=new AnimationLoop(()=>this.updateFrame());
+ private mushroomWireframe=new MushroomWireframeEffect(this.scene);
 
  constructor(readonly state:AppStateMachine){
   try{this.renderer=new THREE.WebGLRenderer({canvas:this.canvas,antialias:true})}
@@ -285,11 +287,15 @@ export class Game{
    if(state==='playing')this.updateInteractionPrompt();
    this.world?.update(this.clock.elapsedTime);
    this.effects?.update(dt);
+   this.mushroomWireframe.update(
+    this.effects?.active==='Grzyb',dt,this.effects?.visualIntensity||0,this.effects?.settings.reduceMotion===true,
+   );
    if(state==='inspecting'&&this.inspectRenderer&&this.inspectScene&&this.inspectCamera){
     if(this.inspectModel)this.inspectModel.rotation.y+=dt*.75;
     this.inspectRenderer.render(this.inspectScene,this.inspectCamera);
    }
   }
+  if(state==='paused'||state==='error')this.mushroomWireframe.update(false,0,0,false);
   this.effects?.render();
   this.updateEffectHud();
  }
@@ -360,6 +366,7 @@ export class Game{
   this.npcs?.dispose();
   this.world?.dispose();
   this.effects?.dispose();
+  this.mushroomWireframe.dispose();
   this.speakerAudio.dispose();
   if(document.pointerLockElement===this.canvas)document.exitPointerLock();
   disposeObjectTree(this.scene);
