@@ -176,7 +176,7 @@ export class Game {
   private closeCurrentState(target: AppState) {
     if (this.state.current === 'inspecting') {
       this.voiceReactions.playInspectCancel();
-      this.disposeInspectScene();
+      this.inspectId = undefined;
     }
     this.state.transition(target);
   }
@@ -235,7 +235,6 @@ export class Game {
     qs('#inspect-name').textContent = item.label;
     qs('#inspect-text').textContent = item.description;
     qs('#inspect-help').textContent = 'E — uruchom efekt w grze · Esc — wróć do obozu';
-    this.inspectId = id;
     this.createInspectScene(id);
     this.state.transition('inspecting');
     this.voiceReactions.playInspectEnter();
@@ -243,19 +242,21 @@ export class Game {
 
   /** Tworzy osobną, małą scenę podglądu z naturalną orientacją źródłowego modelu. */
   private createInspectScene(id: string) {
-    this.disposeInspectScene();
-    const canvas = qs<HTMLCanvasElement>('#inspect-canvas');
-    this.inspectRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-    this.inspectRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    this.inspectRenderer.setSize(360, 280, false);
-    this.inspectScene = new THREE.Scene();
-    this.inspectScene.background = new THREE.Color(0x09070f);
-    this.inspectCamera = new THREE.PerspectiveCamera(35, 360 / 280, 0.01, 100);
-    this.inspectCamera.position.set(0, 0, 2.8);
-    this.inspectScene.add(new THREE.HemisphereLight(0xbdd8ff, 0x241630, 2.2));
-    const light = new THREE.DirectionalLight(0xffffff, 2.5);
-    light.position.set(2, 3, 3);
-    this.inspectScene.add(light);
+    this.clearInspectModel();
+    if (!this.inspectRenderer || !this.inspectScene || !this.inspectCamera) {
+      const canvas = qs<HTMLCanvasElement>('#inspect-canvas');
+      this.inspectRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+      this.inspectRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      this.inspectRenderer.setSize(360, 280, false);
+      this.inspectScene = new THREE.Scene();
+      this.inspectScene.background = new THREE.Color(0x09070f);
+      this.inspectCamera = new THREE.PerspectiveCamera(35, 360 / 280, 0.01, 100);
+      this.inspectCamera.position.set(0, 0, 2.8);
+      this.inspectScene.add(new THREE.HemisphereLight(0xbdd8ff, 0x241630, 2.2));
+      const light = new THREE.DirectionalLight(0xffffff, 2.5);
+      light.position.set(2, 3, 3);
+      this.inspectScene.add(light);
+    }
     const source = this.propModels.get(id);
     this.inspectModel = source
       ? cloneDisposableModel(source)
@@ -281,6 +282,7 @@ export class Game {
     const horizontalDistance = dimensions.x / (2 * Math.tan(horizontalFov / 2));
     this.inspectCamera.position.z = Math.max(verticalDistance, horizontalDistance, dimensions.z) * 1.28;
     this.inspectScene.add(this.inspectPivot);
+    this.inspectId = id;
   }
 
   /** Zamyka inspekcję bez użycia przedmiotu. */
@@ -292,8 +294,8 @@ export class Game {
     if (this.state.current !== 'inspecting' || !this.inspectId) return;
     const item = itemById.get(this.inspectId as InspectableItemId);
     if (!item) return;
-    this.disposeInspectScene();
     this.state.transition('playing');
+    this.inspectId = undefined;
     this.useEffect(item.effect);
   }
   /** Przełącza pomiędzy rozgrywką i ekranem ekwipunku. */
@@ -311,7 +313,6 @@ export class Game {
       localStorage.setItem('camp-effect-warning', '1');
       if (!proceed) return;
     }
-    if (this.state.current === 'inspecting') this.disposeInspectScene();
     if (this.state.current !== 'playing') this.state.transition('playing');
     this.effects.use(id);
     this.voiceReactions.effectStarted(id);
@@ -459,15 +460,24 @@ export class Game {
     this.toast('Gotowe.');
   }
 
-  /** Zwalnia renderer, model, geometrie i materiały sceny inspekcji. */
+  /** Usuwa wyłącznie bieżący model, pozostawiając renderer do ponownego użycia. */
+  private clearInspectModel() {
+    if (this.inspectPivot) {
+      this.inspectScene?.remove(this.inspectPivot);
+      disposeObjectTree(this.inspectPivot);
+    }
+    this.inspectModel = undefined;
+    this.inspectPivot = undefined;
+  }
+
+  /** Zwalnia renderer, model, geometrie i materiały dopiero przy zamykaniu całej gry. */
   private disposeInspectScene() {
+    this.clearInspectModel();
     if (this.inspectScene) disposeObjectTree(this.inspectScene);
     this.inspectRenderer?.dispose();
     this.inspectRenderer = undefined;
     this.inspectScene = undefined;
     this.inspectCamera = undefined;
-    this.inspectModel = undefined;
-    this.inspectPivot = undefined;
     this.inspectId = undefined;
   }
 

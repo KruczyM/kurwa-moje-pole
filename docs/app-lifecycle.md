@@ -37,6 +37,10 @@ audio, zwalnia postprocessing, trawę, geometrie, materiały, tekstury oraz oba
 renderery. `dispose()` jest idempotentne. Ponowna próba po błędzie zawsze usuwa
 poprzednią instancję przed utworzeniem nowej.
 
+Renderer inspekcji jest tworzony tylko raz i ponownie używany. Zamknięcie
+preview ukrywa modal natychmiast, bez synchronicznego niszczenia kontekstu WebGL.
+Pełne zwolnienie kontekstu następuje dopiero w `Game.dispose()`.
+
 ## Obsługa błędów
 
 Błąd WebGL lub ładowania przechodzi do `error`. Ekran błędu zachowuje działające
