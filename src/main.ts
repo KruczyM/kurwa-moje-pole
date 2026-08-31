@@ -29,10 +29,17 @@ function syncShell(next:AppState){
 function createPreview(){
  preview?.dispose();
  try{
-  preview=new CharacterPreview(qs('#character-preview-layer'));
+  preview=new CharacterPreview(qs('#character-preview-layer'),status=>{
+   const message=qs('#character-preview-status');
+   message.hidden=status.state!=='error';
+   message.textContent=status.message||'';
+  });
   void preview.show(selected);
  }catch(error){
   preview=undefined;
+  const message=qs('#character-preview-status');
+  message.hidden=false;
+  message.textContent='Podgląd 3D jest niedostępny. Menu i wybór postaci nadal działają.';
   console.error('Nie udało się uruchomić podglądu postaci',error);
  }
 }
