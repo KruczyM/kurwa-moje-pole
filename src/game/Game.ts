@@ -137,10 +137,16 @@ export class Game {
   private key(event: KeyboardEvent) {
     if (this.disposed) return;
     if (event.key === 'Escape') {
-      const menuEscape = this.state.current === 'playing' || this.state.current === 'paused';
-      const target = escapeTarget(this.state.current);
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (event.repeat) return;
+
+      const source = this.state.current;
+      const menuEscape = source === 'playing' || source === 'paused';
+      const target = escapeTarget(source);
       if (target) {
-        event.preventDefault();
+        // To samo Escape nie może zamknąć preview i chwilę później otworzyć pauzy.
+        if (source === 'inspecting') this.pointerLockPause.suppressLossesUntil(performance.now() + 1_000);
         if (menuEscape) this.voiceReactions.playMenuEscape();
         this.closeCurrentState(target);
       }
