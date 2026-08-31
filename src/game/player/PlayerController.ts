@@ -10,6 +10,8 @@ export class PlayerController {
   private velocity = new THREE.Vector2();
   private bobTime = 0;
   private readonly baseY = 1.9;
+  private fallbackMousePosition = new THREE.Vector2();
+  private hasFallbackMousePosition = false;
   private events = new EventScope();
   private disposed = false;
   constructor(
@@ -28,13 +30,34 @@ export class PlayerController {
     this.events.listen(canvas, 'click', () => {
       if (this.enabled) this.requestPointerLock();
     });
+    this.events.listen(document, 'pointerlockchange', () => {
+      this.hasFallbackMousePosition = false;
+    });
     this.events.listen(window, 'mousemove', (event) => {
       const mouse = event as MouseEvent;
-      if (document.pointerLockElement === canvas && this.enabled) {
-        this.yaw -= mouse.movementX * 0.0024;
-        this.pitch = THREE.MathUtils.clamp(this.pitch - mouse.movementY * 0.002, -1.18, 1.18);
+      if (!this.enabled) {
+        this.hasFallbackMousePosition = false;
+        return;
       }
+      if (document.pointerLockElement === canvas) {
+        this.rotateView(mouse.movementX, mouse.movementY);
+        return;
+      }
+      if (!this.hasFallbackMousePosition) {
+        this.fallbackMousePosition.set(mouse.clientX, mouse.clientY);
+        this.hasFallbackMousePosition = true;
+        return;
+      }
+      const dx = THREE.MathUtils.clamp(mouse.clientX - this.fallbackMousePosition.x, -80, 80);
+      const dy = THREE.MathUtils.clamp(mouse.clientY - this.fallbackMousePosition.y, -80, 80);
+      this.fallbackMousePosition.set(mouse.clientX, mouse.clientY);
+      this.rotateView(dx, dy);
     });
+  }
+  /** Obraca kamerę wspólnie dla pełnego Pointer Lock i trybu awaryjnego bez kliknięcia. */
+  private rotateView(dx: number, dy: number) {
+    this.yaw -= dx * 0.0024;
+    this.pitch = THREE.MathUtils.clamp(this.pitch - dy * 0.002, -1.18, 1.18);
   }
   /** Łączy alternatywne klawisze dodatnie i ujemne w jedną wartość osi. */
   private axis(positive: string[], negative: string[]) {
@@ -77,6 +100,7 @@ export class PlayerController {
   /** Zeruje prędkość gracza przy wejściu w modal lub pauzę. */
   stop() {
     this.velocity.set(0, 0);
+    this.hasFallbackMousePosition = false;
   }
   /** Próbuje przejąć kursor bez zgłaszania błędu po odmowie przeglądarki. */
   requestPointerLock() {
