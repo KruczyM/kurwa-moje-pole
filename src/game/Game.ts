@@ -80,6 +80,7 @@ export class Game{
  async start(){
   if(this.started||this.disposed)return;
   this.started=true;
+  this.voiceReactions.playGameEntry();
   const text=qs('#load-text'),error=qs('#load-error');
   error.hidden=true;
   error.textContent='';
@@ -100,7 +101,6 @@ export class Game{
    ]);
    this.startLoop();
    this.state.transition('playing');
-   this.voiceReactions.playGameEntry();
   }catch(cause){
    if(this.disposed)return;
    error.textContent=`Nie udało się uruchomić gry: ${cause instanceof Error?cause.message:String(cause)}`;
