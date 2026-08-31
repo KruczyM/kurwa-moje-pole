@@ -14,10 +14,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
 import bpy
+from mathutils import Matrix, Vector
 
 
 def arguments() -> argparse.Namespace:
@@ -27,6 +29,8 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--clip", action="append", default=[])
     parser.add_argument("--library", action="append", default=[], type=Path)
     parser.add_argument("--exclude-library-clip", action="append", default=[])
+    parser.add_argument("--retarget-library", action="append", default=[], type=Path)
+    parser.add_argument("--exclude-retarget-clip", action="append", default=[])
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--t-pose-output", type=Path)
     return parser.parse_args(argv)
@@ -71,6 +75,42 @@ def remove_imported_objects(objects: list[bpy.types.Object]) -> None:
         bpy.data.objects.remove(obj, do_unlink=True)
 
 
+def canonical_objects(
+    objects: list[bpy.types.Object],
+    armature: bpy.types.Object,
+) -> list[bpy.types.Object]:
+    """Keep the rig and only meshes actually skinned to that rig."""
+    skinned_meshes = [
+        obj
+        for obj in objects
+        if obj.type == "MESH"
+        and (
+            obj.parent == armature
+            or any(
+                modifier.type == "ARMATURE" and modifier.object == armature
+                for modifier in obj.modifiers
+            )
+        )
+    ]
+    if not skinned_meshes:
+        raise RuntimeError("Base asset does not contain a mesh skinned to its armature")
+    return [armature, *skinned_meshes]
+
+
+def remove_base_helpers(
+    imported: list[bpy.types.Object],
+    kept: list[bpy.types.Object],
+    armature: bpy.types.Object,
+) -> None:
+    """Remove cameras, lights and custom bone shapes that must not reach runtime GLB."""
+    helpers = [obj for obj in imported if obj not in kept]
+    helper_set = set(helpers)
+    for pose_bone in armature.pose.bones:
+        if pose_bone.custom_shape in helper_set:
+            pose_bone.custom_shape = None
+    remove_imported_objects(helpers)
+
+
 def collect_action(
     path: Path,
     wanted_name: str,
@@ -108,6 +148,133 @@ def collect_library(
             continue
         action.use_fake_user = True
         kept.append(action)
+    remove_imported_objects(objects)
+    return kept
+
+
+def action_source_name(action: bpy.types.Action, excluded: set[str]) -> str:
+    """Recover a glTF clip name when Blender added a numeric collision suffix."""
+    name = action.name
+    base, separator, suffix = name.rpartition(".")
+    if separator and suffix.isdigit() and base in excluded:
+        return base
+    return name
+
+
+def bone_depth(bone: bpy.types.Bone) -> int:
+    """Return hierarchy depth so parents are evaluated before their children."""
+    depth = 0
+    parent = bone.parent
+    while parent:
+        depth += 1
+        parent = parent.parent
+    return depth
+
+
+def skeleton_span(armature: bpy.types.Object) -> float:
+    """Measure a rig in armature space for proportional root translation."""
+    points = [point for bone in armature.data.bones for point in (bone.head_local, bone.tail_local)]
+    low = Vector(tuple(min(point[index] for point in points) for index in range(3)))
+    high = Vector(tuple(max(point[index] for point in points) for index in range(3)))
+    return max((high - low).length, 1e-6)
+
+
+def retarget_action(
+    source_armature: bpy.types.Object,
+    source_action: bpy.types.Action,
+    target_armature: bpy.types.Object,
+    wanted_name: str,
+) -> bpy.types.Action:
+    """Bake rest-pose-relative world rotations onto a differently proportioned rig."""
+    source_data = source_armature.animation_data_create()
+    source_data.action = source_action
+    target_data = target_armature.animation_data_create()
+    target_data.action = None
+
+    source_action.name = f"__RetargetSource_{wanted_name}"
+    result = bpy.data.actions.new(wanted_name)
+    result.use_fake_user = True
+    target_data.action = result
+
+    target_bones = sorted(target_armature.data.bones, key=bone_depth)
+    common_bones = [bone for bone in target_bones if bone.name in source_armature.pose.bones]
+    if not common_bones:
+        raise RuntimeError(f"{wanted_name}: source and target rigs have no common bones")
+
+    scale_ratio = skeleton_span(target_armature) / skeleton_span(source_armature)
+    source_start, source_end = source_action.frame_range
+    sample_count = max(1, round(source_end - source_start))
+    scene = bpy.context.scene
+
+    for sample in range(sample_count + 1):
+        source_frame = source_start + min(sample, source_end - source_start)
+        output_frame = sample + 1
+        integer_frame = math.floor(source_frame)
+        scene.frame_set(integer_frame, subframe=source_frame - integer_frame)
+        bpy.context.view_layer.update()
+
+        source_pose_matrices = {
+            bone.name: source_armature.pose.bones[bone.name].matrix.copy() for bone in common_bones
+        }
+        for pose_bone in target_armature.pose.bones:
+            pose_bone.matrix_basis.identity()
+            pose_bone.rotation_mode = "QUATERNION"
+        bpy.context.view_layer.update()
+
+        for bone in common_bones:
+            source_bone = source_armature.data.bones[bone.name]
+            source_matrix = source_pose_matrices[bone.name]
+            rest_delta = (
+                source_matrix.to_quaternion()
+                @ source_bone.matrix_local.to_quaternion().inverted()
+            )
+            desired_rotation = rest_delta @ bone.matrix_local.to_quaternion()
+            pose_bone = target_armature.pose.bones[bone.name]
+            desired_location = pose_bone.matrix.translation.copy()
+            if bone.parent is None:
+                source_displacement = source_matrix.translation - source_bone.head_local
+                desired_location = bone.head_local + source_displacement * scale_ratio
+            pose_bone.matrix = Matrix.LocRotScale(
+                desired_location,
+                desired_rotation,
+                Vector((1.0, 1.0, 1.0)),
+            )
+            bpy.context.view_layer.update()
+
+        for bone in common_bones:
+            pose_bone = target_armature.pose.bones[bone.name]
+            pose_bone.keyframe_insert("location", frame=output_frame, group=bone.name)
+            pose_bone.keyframe_insert("rotation_quaternion", frame=output_frame, group=bone.name)
+            pose_bone.keyframe_insert("scale", frame=output_frame, group=bone.name)
+
+    source_data.action = None
+    target_data.action = None
+    return result
+
+
+def collect_retargeted_library(
+    path: Path,
+    target_armature: bpy.types.Object,
+    excluded: set[str],
+) -> list[bpy.types.Action]:
+    """Import a donor library and bake its clips onto the canonical target rig."""
+    objects, actions = import_asset(path)
+    source_armature = armature_from(objects, path)
+    target_bones = bone_names(target_armature)
+    source_bones = bone_names(source_armature)
+    missing = sorted(target_bones - source_bones)
+    if missing:
+        raise RuntimeError(f"{path}: donor rig is missing target bones: {missing}")
+
+    kept = []
+    for action in actions:
+        source_name = action_source_name(action, excluded)
+        if source_name in excluded:
+            bpy.data.actions.remove(action)
+            continue
+        kept.append(retarget_action(source_armature, action, target_armature, source_name))
+        bpy.data.actions.remove(action)
+
     remove_imported_objects(objects)
     return kept
 
@@ -155,8 +322,10 @@ def export_glb(path: Path, objects: list[bpy.types.Object], animations: bool) ->
 def main() -> None:
     args = arguments()
     reset()
-    base_objects, base_actions = import_asset(args.base)
-    base_armature = armature_from(base_objects, args.base)
+    imported_base_objects, base_actions = import_asset(args.base)
+    base_armature = armature_from(imported_base_objects, args.base)
+    base_objects = canonical_objects(imported_base_objects, base_armature)
+    remove_base_helpers(imported_base_objects, base_objects, base_armature)
     canonical_bones = bone_names(base_armature)
     canonical_armature_name = base_armature.name
     for action in base_actions:
@@ -177,6 +346,17 @@ def main() -> None:
         for action in collect_library(library_path, canonical_bones, excluded):
             if action.name in named_actions:
                 raise RuntimeError(f"Duplicate action: {action.name}")
+            named_actions[action.name] = action
+
+    retarget_excluded = set(args.exclude_retarget_clip)
+    for library_path in args.retarget_library:
+        for action in collect_retargeted_library(
+            library_path,
+            base_armature,
+            retarget_excluded,
+        ):
+            if action.name in named_actions:
+                bpy.data.actions.remove(named_actions[action.name])
             named_actions[action.name] = action
 
     for item in args.clip:
