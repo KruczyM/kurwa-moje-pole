@@ -43,4 +43,8 @@ export const textureAssets = {
   horizon: gameAsset(catalog.textures.horizon),
 };
 
+export const effectAssets = {
+  lsdOverlays: catalog.effects.lsdOverlays.map(gameAsset),
+};
+
 export const musicAsset = gameAsset(catalog.audio.music);

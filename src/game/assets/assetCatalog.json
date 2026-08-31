@@ -31,6 +31,9 @@
     },
     "horizon": "textures/horizon/field.jpg"
   },
+  "effects": {
+    "lsdOverlays": ["mandale/3.webp", "mandale/4.webp"]
+  },
   "audio": {
     "music": "audio/camp-track.mp4"
   }
