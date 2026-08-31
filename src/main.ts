@@ -21,6 +21,11 @@ function syncShell(next: AppState) {
   qs('#start').hidden = next !== 'start';
   qs('#loading').hidden = next !== 'loading' && next !== 'error';
   qs('#load-actions').hidden = next !== 'error';
+  if (next === 'start' || next === 'loading' || next === 'error') {
+    ['#hud', '#pause', '#inventory', '#dialog', '#inspect'].forEach(
+      (selector) => (qs(selector).hidden = true),
+    );
+  }
   if (next === 'loading') {
     qs('#load-error').hidden = true;
     qs('#load-error').textContent = '';
@@ -99,6 +104,7 @@ qs<HTMLButtonElement>('#play').onclick = () => void startGame();
 qs<HTMLButtonElement>('#retry-load').onclick = () => void startGame();
 qs<HTMLButtonElement>('#back-to-start').onclick = backToStart;
 qs<HTMLButtonElement>('#resume').onclick = () => game?.setPause(false);
+qs<HTMLButtonElement>('#exit-to-start').onclick = backToStart;
 qs<HTMLButtonElement>('#close-dialog').onclick = () => game?.closeDialog();
 qs<HTMLButtonElement>('#inspect-close').onclick = () => game?.closeInspect();
 qs<HTMLButtonElement>('#inspect-use').onclick = () => game?.acceptInspect();
