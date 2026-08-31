@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {AssetLoader} from './assets/AssetLoader';
-import {musicAsset} from './assets/assetManifest';
+import {effectAssets,musicAsset} from './assets/assetManifest';
 import {CampWorld} from './world/CampWorld';
 import {PlayerController} from './player/PlayerController';
 import {NpcManager} from './npc/NpcManager';
@@ -64,6 +64,9 @@ export class Game{
   this.events.listen(document,'pointerlockchange',()=>this.pointerLockChanged());
   this.unsubscribeState=this.state.subscribe(({to})=>this.syncState(to));
   this.syncSettingsUi();
+  const lsdOverlay=qs('#lsd-overlay');
+  lsdOverlay.style.setProperty('--lsd-image-a',`url("${effectAssets.lsdOverlays[0]}")`);
+  lsdOverlay.style.setProperty('--lsd-image-b',`url("${effectAssets.lsdOverlays[1]}")`);
   this.syncState(this.state.current);
  }
 
@@ -305,6 +308,10 @@ export class Game{
   const active=this.effects?.active;
   qs('#effect-hud').textContent=active?`${active} · ${this.effects!.phase} · ${Math.ceil(this.effects!.remaining)} s`:'Brak aktywnego efektu';
   qs('#smoke').hidden=active!=='Papieros';
+  const lsdOverlay=qs('#lsd-overlay');
+  lsdOverlay.hidden=active!=='LSD';
+  lsdOverlay.style.setProperty('--lsd-strength',String(active==='LSD'?this.effects!.visualIntensity:0));
+  lsdOverlay.classList.toggle('reduced-motion',this.effects?.settings.reduceMotion===true);
  }
 
  private finishToilet(){
@@ -360,6 +367,9 @@ export class Game{
   this.renderer.dispose();
   this.propModels.clear();
   qs('#fade').classList.remove('show');
+  const lsdOverlay=qs('#lsd-overlay');
+  lsdOverlay.hidden=true;
+  lsdOverlay.style.removeProperty('--lsd-strength');
   qs('#prompt').hidden=true;
  }
 }

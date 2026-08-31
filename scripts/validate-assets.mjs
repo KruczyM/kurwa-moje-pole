@@ -56,6 +56,12 @@ const assets = [
     path: catalog.textures.horizon,
     kind: 'file',
   },
+  ...catalog.effects.lsdOverlays.map((path, index) => ({
+    id: `effect:lsd-overlay:${index + 1}`,
+    label: `LSD overlay ${index + 1}`,
+    path,
+    kind: 'file',
+  })),
   {
     id: 'audio:music',
     label: 'camp music',
