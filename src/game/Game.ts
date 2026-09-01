@@ -16,7 +16,8 @@ import { cloneDisposableModel, disposeObjectTree } from './lifecycle/disposeThre
 import { AnimationLoop } from './lifecycle/AnimationLoop';
 import { MushroomWireframeEffect } from './effects/MushroomWireframeEffect';
 import { VoiceReactionManager } from './audio/VoiceReactionManager';
-import { PointerLockPauseGate } from './lifecycle/PointerLockPauseGate';
+import { POINTER_LOCK_ESCAPE_SUPPRESSION_MS, PointerLockPauseGate } from './lifecycle/PointerLockPauseGate';
+import { controlHintForState, interactionControlHint, resolveGameInput } from './lifecycle/InputBindings';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -63,10 +64,7 @@ export class Game {
   private speakerReactionPlayed = false;
   private pointerLockPause = new PointerLockPauseGate();
 
-  constructor(
-    readonly state: AppStateMachine,
-    private readonly exitToStart: () => void,
-  ) {
+  constructor(readonly state: AppStateMachine) {
     try {
       this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     } catch {
@@ -141,35 +139,30 @@ export class Game {
   /** Obsługuje globalne skróty Escape, Tab i E zgodnie z aktualnym stanem aplikacji. */
   private key(event: KeyboardEvent) {
     if (this.disposed) return;
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      if (event.repeat) return;
-
+    const action = resolveGameInput(this.state.current, event.key, event.repeat);
+    if (!action) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (action === 'escape') {
       const source = this.state.current;
       const menuEscape = source === 'playing' || source === 'paused';
       const target = escapeTarget(source);
       if (target) {
         // To samo Escape nie może zamknąć preview i chwilę później otworzyć pauzy.
-        if (source === 'inspecting') this.pointerLockPause.suppressLossesUntil(performance.now() + 50);
-        if (menuEscape) this.voiceReactions.playMenuEscape();
-        if (target === 'start') {
-          this.exitToStart();
-          return;
+        if (source === 'inspecting') {
+          this.pointerLockPause.suppressLossesUntil(performance.now() + POINTER_LOCK_ESCAPE_SUPPRESSION_MS);
         }
+        if (menuEscape) this.voiceReactions.playMenuEscape();
         this.closeCurrentState(target);
       }
       return;
     }
-    if (event.key === 'Tab' && (this.state.current === 'playing' || this.state.current === 'inventory')) {
-      event.preventDefault();
+    if (action === 'toggle-inventory') {
       this.toggleInventory();
       return;
     }
-    if (event.key.toLowerCase() === 'e' && !event.repeat) {
-      if (this.state.current === 'inspecting') this.acceptInspect();
-      else if (this.state.current === 'playing') this.interact();
-    }
+    if (this.state.current === 'inspecting') this.acceptInspect();
+    else if (this.state.current === 'playing') this.interact();
   }
 
   /** Sprząta bieżący modal i przechodzi do wskazanego stanu. */
@@ -234,7 +227,7 @@ export class Game {
     if (!item || this.state.current !== 'playing') return;
     qs('#inspect-name').textContent = item.label;
     qs('#inspect-text').textContent = item.description;
-    qs('#inspect-help').textContent = 'E — uruchom efekt w grze · Esc — wróć do obozu';
+    qs('#inspect-help').textContent = controlHintForState('inspecting');
     this.createInspectScene(id);
     this.state.transition('inspecting');
     this.voiceReactions.playInspectEnter();
@@ -365,6 +358,8 @@ export class Game {
     qs('#dialog').hidden = state !== 'dialog';
     qs('#inventory').hidden = state !== 'inventory';
     qs('#pause').hidden = state !== 'paused';
+    qs('#controls-hud').textContent = controlHintForState(state);
+    qs('#crosshair').hidden = state !== 'playing';
     if (this.player) {
       this.player.enabled = state === 'playing' && !this.toiletTimer;
       if (!this.player.enabled) this.player.stop();
@@ -373,7 +368,10 @@ export class Game {
       this.pointerLockPause.reset();
       this.player?.requestPointerLock();
     } else if (document.pointerLockElement === this.canvas) document.exitPointerLock();
-    if (state !== 'playing') this.interactions?.clear();
+    if (state !== 'playing') {
+      this.interactions?.clear();
+      qs('#prompt').hidden = true;
+    }
   }
 
   /** Uruchamia zegar Three.js oraz pojedynczą pętlę renderującą. */
@@ -392,9 +390,11 @@ export class Game {
         this.toiletTimer -= dt;
         if (this.toiletTimer <= 0) this.finishToilet();
       }
-      this.player?.update(dt, this.effects?.modifiers || { speed: 1, sway: 0, shake: 0, bob: 1 });
-      this.npcs?.update(dt, this.clock.elapsedTime);
-      if (state === 'playing') this.updateInteractionPrompt();
+      if (state === 'playing') {
+        this.player?.update(dt, this.effects?.modifiers || { speed: 1, sway: 0, shake: 0, bob: 1 });
+        this.npcs?.update(dt, this.clock.elapsedTime);
+        this.updateInteractionPrompt();
+      }
       this.world?.update(this.clock.elapsedTime);
       this.effects?.update(dt);
       this.voiceReactions.update(dt, this.effects?.active || null, this.effects?.phase || 'inactive');
@@ -422,14 +422,15 @@ export class Game {
       prompt.hidden = true;
       return;
     }
-    prompt.textContent =
+    const action =
       interaction.kind === 'npc'
-        ? `E — Porozmawiaj z ${interaction.name}`
+        ? `Porozmawiaj z ${interaction.name}`
         : interaction.kind === 'speaker'
-          ? 'E — Włącz / wyłącz muzykę'
+          ? 'Włącz / wyłącz muzykę'
           : interaction.kind === 'item'
-            ? `E — ${itemById.get(interaction.itemId)?.label || 'Obejrzyj przedmiot'}`
-            : 'E — Wejdź do toi-toia';
+            ? itemById.get(interaction.itemId)?.label || 'Obejrzyj przedmiot'
+            : 'Wejdź do toi-toia';
+    prompt.textContent = interactionControlHint(action);
     prompt.hidden = false;
   }
 

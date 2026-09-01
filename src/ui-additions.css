@@ -24,6 +24,8 @@
   border: 1px solid #ffffff4a;
   box-shadow: 0 16px 50px #0009;
   pointer-events: auto;
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
 }
 #inspect canvas {
   display: block;
@@ -39,4 +41,13 @@
 }
 #inspect button {
   margin-right: 8px;
+}
+@media (max-width: 680px), (max-height: 720px) {
+  #inspect {
+    width: calc(100vw - 24px);
+    padding: 18px;
+  }
+  #inspect canvas {
+    height: clamp(160px, 36vh, 240px);
+  }
 }

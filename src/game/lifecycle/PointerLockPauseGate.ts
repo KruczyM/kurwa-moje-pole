@@ -1,3 +1,5 @@
+export const POINTER_LOCK_ESCAPE_SUPPRESSION_MS = 250;
+
 export class PointerLockPauseGate {
   private armed = false;
   private suppressedUntil = 0;

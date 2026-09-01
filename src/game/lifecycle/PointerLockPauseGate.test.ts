@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PointerLockPauseGate } from './PointerLockPauseGate';
+import { POINTER_LOCK_ESCAPE_SUPPRESSION_MS, PointerLockPauseGate } from './PointerLockPauseGate';
 
 describe('PointerLockPauseGate', () => {
   it('does not pause when pointer lock cannot be reacquired after inspection', () => {
@@ -17,10 +17,11 @@ describe('PointerLockPauseGate', () => {
 
   it('consumes the pointer-lock loss caused by the Escape closing inspection', () => {
     const gate = new PointerLockPauseGate();
-    gate.suppressLossesUntil(1_000);
-    expect(gate.update(true, 100)).toBe(false);
-    expect(gate.update(false, 150)).toBe(false);
-    expect(gate.update(true, 1_100)).toBe(false);
-    expect(gate.update(false, 1_200)).toBe(true);
+    const startedAt = 1_000;
+    gate.suppressLossesUntil(startedAt + POINTER_LOCK_ESCAPE_SUPPRESSION_MS);
+    expect(gate.update(true, startedAt)).toBe(false);
+    expect(gate.update(false, startedAt + POINTER_LOCK_ESCAPE_SUPPRESSION_MS - 1)).toBe(false);
+    expect(gate.update(true, startedAt + POINTER_LOCK_ESCAPE_SUPPRESSION_MS + 1)).toBe(false);
+    expect(gate.update(false, startedAt + POINTER_LOCK_ESCAPE_SUPPRESSION_MS + 2)).toBe(true);
   });
 });

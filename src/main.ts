@@ -6,6 +6,7 @@ import { Game } from './game/Game';
 import { CharacterPreview } from './game/ui/CharacterPreview';
 import type { EffectId } from './game/effects/EffectManager';
 import { AppState, AppStateMachine } from './game/lifecycle/AppStateMachine';
+import { controlHintForState, inputBindings, startControlHint } from './game/lifecycle/InputBindings';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -62,7 +63,7 @@ async function startGame() {
   localStorage.setItem('camp-player-character', selected);
   state.transition('loading');
   try {
-    const nextGame = new Game(state, backToStart);
+    const nextGame = new Game(state);
     game = nextGame;
     nextGame.canvas.requestPointerLock().catch?.(() => undefined);
     await nextGame.start();
@@ -83,6 +84,12 @@ function backToStart() {
 
 state.subscribe(({ to }) => syncShell(to));
 syncShell(state.current);
+qs('#start-controls').textContent = startControlHint();
+qs('#inventory-help').textContent = controlHintForState('inventory');
+qs('#pause-help').textContent = controlHintForState('paused');
+qs('#dialog-help').textContent = controlHintForState('dialog');
+qs('#inspect-use').textContent = `${inputBindings.interact} — uruchom efekt`;
+qs('#inspect-close').textContent = `${inputBindings.escape} — wróć`;
 createPreview();
 
 const selection = qs('#character-select');

@@ -100,6 +100,7 @@ export class PlayerController {
   /** Zeruje prędkość gracza przy wejściu w modal lub pauzę. */
   stop() {
     this.velocity.set(0, 0);
+    this.keys.clear();
     this.hasFallbackMousePosition = false;
   }
   /** Próbuje przejąć kursor bez zgłaszania błędu po odmowie przeglądarki. */
