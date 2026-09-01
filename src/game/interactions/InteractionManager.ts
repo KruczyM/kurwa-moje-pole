@@ -1,4 +1,8 @@
 import * as THREE from 'three';
+
+const INTERACTION_DISTANCE = 3.4;
+const NPC_INTERACTION_DISTANCE = 4.5;
+
 export class InteractionManager {
   private raycaster = new THREE.Raycaster();
   private target: THREE.Object3D | null = null;
@@ -9,8 +13,17 @@ export class InteractionManager {
   /** Wykonuje raycast ze środka ekranu i aktualizuje najbliższy cel interakcji. */
   update() {
     this.raycaster.setFromCamera(new THREE.Vector2(), this.camera);
-    const hit = this.raycaster.intersectObjects(this.roots(), true).find((item) => item.distance < 3.4);
-    const next = hit ? this.findRoot(hit.object) : null;
+    let next: THREE.Object3D | null = null;
+    for (const hit of this.raycaster.intersectObjects(this.roots(), true)) {
+      const root = this.findRoot(hit.object);
+      if (!root) continue;
+      const distance =
+        root.userData.interaction.kind === 'npc' ? NPC_INTERACTION_DISTANCE : INTERACTION_DISTANCE;
+      if (hit.distance <= distance) {
+        next = root;
+        break;
+      }
+    }
     if (next !== this.target) {
       if (this.target) this.highlight(this.target, false);
       this.target = next;

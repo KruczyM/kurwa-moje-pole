@@ -26,4 +26,17 @@ describe('NpcManager', () => {
     expect(height).toBeCloseTo(2.45, 4);
     manager.dispose();
   });
+
+  it('adds a stable interaction hitbox independent of the animated mesh pose', () => {
+    const scene = new THREE.Scene();
+    const models = new Map([['amper', animatedScaleAsset()]]);
+    const manager = new NpcManager(scene, models, null, () => true);
+    const npc = manager.npcs[0];
+    const hitbox = npc.root.getObjectByName('NpcInteractionHitbox') as THREE.Mesh;
+
+    expect(hitbox).toBeInstanceOf(THREE.Mesh);
+    expect(hitbox.userData.interactionRoot).toBe(npc.root);
+    expect((hitbox.material as THREE.MeshBasicMaterial).opacity).toBe(0);
+    manager.dispose();
+  });
 });

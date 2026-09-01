@@ -9,7 +9,7 @@ import { InteractionManager } from './interactions/InteractionManager';
 import { SpeakerAudio } from './audio/SpeakerAudio';
 import { InspectableItemId, itemById } from './interactions/itemConfig';
 import { itemPresentation } from './interactions/itemPresentationConfig';
-import { centerInspectModel } from './interactions/inspectPresentation';
+import { centerInspectModel, inspectCameraDistance } from './interactions/inspectPresentation';
 import { AppState, AppStateMachine, escapeTarget } from './lifecycle/AppStateMachine';
 import { EventScope } from './lifecycle/EventScope';
 import { cloneDisposableModel, disposeObjectTree } from './lifecycle/disposeThree';
@@ -240,11 +240,9 @@ export class Game {
       const canvas = qs<HTMLCanvasElement>('#inspect-canvas');
       this.inspectRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
       this.inspectRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-      this.inspectRenderer.setSize(360, 280, false);
       this.inspectScene = new THREE.Scene();
       this.inspectScene.background = new THREE.Color(0x09070f);
-      this.inspectCamera = new THREE.PerspectiveCamera(35, 360 / 280, 0.01, 100);
-      this.inspectCamera.position.set(0, 0, 2.8);
+      this.inspectCamera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
       this.inspectScene.add(new THREE.HemisphereLight(0xbdd8ff, 0x241630, 2.2));
       const light = new THREE.DirectionalLight(0xffffff, 2.5);
       light.position.set(2, 3, 3);
@@ -259,23 +257,35 @@ export class Game {
         );
     const presentation = itemPresentation[id as InspectableItemId];
     this.inspectModel.rotation.set(...presentation.inspectRotation);
-    const box = new THREE.Box3().setFromObject(this.inspectModel),
-      dimensions = box.getSize(new THREE.Vector3());
+    const box = new THREE.Box3().setFromObject(this.inspectModel);
+    const dimensions = box.getSize(new THREE.Vector3());
     this.inspectModel.scale.setScalar(
       presentation.inspectSize / Math.max(0.01, dimensions.x, dimensions.y, dimensions.z),
     );
     const centered = centerInspectModel(this.inspectModel, presentation.inspectOffsetY);
     this.inspectPivot = centered.pivot;
-    dimensions.copy(centered.dimensions);
-
-    // Dopasowanie uwzględnia zarówno pionowy, jak i poziomy kąt widzenia podglądu.
-    const verticalFov = THREE.MathUtils.degToRad(this.inspectCamera.fov);
-    const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * this.inspectCamera.aspect);
-    const verticalDistance = dimensions.y / (2 * Math.tan(verticalFov / 2));
-    const horizontalDistance = dimensions.x / (2 * Math.tan(horizontalFov / 2));
-    this.inspectCamera.position.z = Math.max(verticalDistance, horizontalDistance, dimensions.z) * 1.28;
     this.inspectScene.add(this.inspectPivot);
     this.inspectId = id;
+    this.resizeInspectPreview();
+  }
+
+  /** Dopasowuje renderer i kamerę tak, aby obracany model zawsze mieścił się w canvasie. */
+  private resizeInspectPreview() {
+    if (!this.inspectRenderer || !this.inspectCamera || !this.inspectPivot) return;
+    const canvas = qs<HTMLCanvasElement>('#inspect-canvas');
+    const width = Math.max(1, Math.round(canvas.clientWidth || 360));
+    const height = Math.max(1, Math.round(canvas.clientHeight || 280));
+    this.inspectRenderer.setSize(width, height, false);
+    this.inspectCamera.aspect = width / height;
+    this.inspectCamera.updateProjectionMatrix();
+    this.inspectPivot.updateMatrixWorld(true);
+    const bounds = new THREE.Box3().setFromObject(this.inspectPivot);
+    this.inspectCamera.position.set(
+      0,
+      0,
+      inspectCameraDistance(bounds, this.inspectCamera.aspect, this.inspectCamera.fov),
+    );
+    this.inspectCamera.lookAt(0, 0, 0);
   }
 
   /** Zamyka inspekcję bez użycia przedmiotu. */
@@ -368,6 +378,11 @@ export class Game {
       this.pointerLockPause.reset();
       this.player?.requestPointerLock();
     } else if (document.pointerLockElement === this.canvas) document.exitPointerLock();
+    if (state === 'inspecting') {
+      requestAnimationFrame(() => {
+        if (!this.disposed && this.state.current === 'inspecting') this.resizeInspectPreview();
+      });
+    }
     if (state !== 'playing') {
       this.interactions?.clear();
       qs('#prompt').hidden = true;
@@ -489,6 +504,7 @@ export class Game {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(innerWidth, innerHeight);
     this.effects?.resize(innerWidth, innerHeight);
+    if (this.state.current === 'inspecting') this.resizeInspectPreview();
   }
 
   /** Pokazuje krótką wiadomość HUD i odnawia jej czas wygaszenia. */

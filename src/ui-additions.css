@@ -24,30 +24,35 @@
   border: 1px solid #ffffff4a;
   box-shadow: 0 16px 50px #0009;
   pointer-events: auto;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  gap: 10px;
+  height: min(700px, calc(100dvh - 24px));
   max-height: calc(100dvh - 24px);
-  overflow-y: auto;
+  overflow: hidden;
 }
 #inspect canvas {
   display: block;
   width: 100%;
-  height: 280px;
+  height: 100%;
+  min-height: 0;
   background: #09070f;
-  margin: 14px 0;
+  margin: 0;
 }
 #inspect p {
+  margin: 0;
   font-size: 12px;
   line-height: 1.65;
   color: #d8cce5;
 }
-#inspect button {
-  margin-right: 8px;
+.inspect-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 @media (max-width: 680px), (max-height: 720px) {
   #inspect {
     width: calc(100vw - 24px);
     padding: 18px;
-  }
-  #inspect canvas {
-    height: clamp(160px, 36vh, 240px);
   }
 }
