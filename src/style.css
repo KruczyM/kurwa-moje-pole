@@ -381,3 +381,136 @@ h1 i {
     transform: none;
   }
 }
+
+/* Dotykowy HUD jest tworzony tylko na urządzeniach z coarse pointer lub ekranem dotykowym. */
+#mobile-controls {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.mobile-top-actions {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  left: max(10px, env(safe-area-inset-left));
+  display: flex;
+  gap: 7px;
+  pointer-events: auto;
+}
+.mobile-top-actions button {
+  min-height: 46px;
+  padding: 9px 12px;
+  touch-action: manipulation;
+  background: #171421dc;
+  backdrop-filter: blur(6px);
+}
+.mobile-movement {
+  position: absolute;
+  left: max(18px, env(safe-area-inset-left));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: 138px;
+  height: 138px;
+  pointer-events: auto;
+}
+.mobile-joystick {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border: 2px solid #ffffff55;
+  border-radius: 50%;
+  background: #14121f73;
+  box-shadow: inset 0 0 28px #0008;
+  touch-action: none;
+}
+.mobile-joystick::before,
+.mobile-joystick::after {
+  content: '';
+  position: absolute;
+  background: #ffffff24;
+}
+.mobile-joystick::before {
+  left: 50%;
+  top: 16%;
+  bottom: 16%;
+  width: 1px;
+}
+.mobile-joystick::after {
+  top: 50%;
+  left: 16%;
+  right: 16%;
+  height: 1px;
+}
+.mobile-joystick-knob {
+  position: absolute;
+  left: calc(50% - 27px);
+  top: calc(50% - 27px);
+  width: 54px;
+  height: 54px;
+  border: 2px solid #d8ffb8aa;
+  border-radius: 50%;
+  background: #9dff4ebd;
+  box-shadow: 0 4px 18px #0009;
+  will-change: transform;
+  pointer-events: none;
+}
+#mobile-interact {
+  position: absolute;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(22px, env(safe-area-inset-bottom));
+  width: 82px;
+  height: 82px;
+  padding: 0;
+  border: 2px solid #ffe34dcc;
+  border-radius: 50%;
+  background: #f65072d9;
+  box-shadow: 0 5px 24px #0009;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+.mobile-look-hint {
+  position: absolute;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: calc(max(22px, env(safe-area-inset-bottom)) + 96px);
+  color: #ffffff8c;
+  font-size: 8px;
+  line-height: 1.45;
+  text-align: right;
+  text-shadow: 1px 1px 3px #000;
+  animation: mobile-hint-fade 6s forwards;
+}
+.mobile-input #game {
+  touch-action: none;
+}
+.mobile-input #brand {
+  margin-top: 52px;
+}
+.mobile-input #controls-hud {
+  display: none;
+}
+.mobile-input #prompt {
+  bottom: max(118px, calc(env(safe-area-inset-bottom) + 102px));
+}
+@keyframes mobile-hint-fade {
+  0%,
+  65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (max-height: 520px) and (pointer: coarse) {
+  .mobile-movement {
+    width: 112px;
+    height: 112px;
+  }
+  #mobile-interact {
+    width: 70px;
+    height: 70px;
+  }
+  .mobile-look-hint {
+    display: none;
+  }
+}

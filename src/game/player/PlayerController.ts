@@ -12,12 +12,16 @@ export class PlayerController {
   private readonly baseY = 1.9;
   private fallbackMousePosition = new THREE.Vector2();
   private hasFallbackMousePosition = false;
+  private mobileForward = 0;
+  private mobileRight = 0;
+  private mobileRun = false;
   private events = new EventScope();
   private disposed = false;
   constructor(
     readonly camera: THREE.PerspectiveCamera,
     readonly canvas: HTMLCanvasElement,
     readonly canMove: (x: number, z: number) => boolean,
+    private readonly pointerLockEnabled = true,
   ) {
     camera.position.set(0, this.baseY, 15);
     canvas.tabIndex = -1;
@@ -59,6 +63,16 @@ export class PlayerController {
     this.yaw -= dx * 0.0024;
     this.pitch = THREE.MathUtils.clamp(this.pitch - dy * 0.002, -1.18, 1.18);
   }
+  /** Obraca kamerę na podstawie delty myszy albo gestu dotykowego. */
+  lookBy(dx: number, dy: number) {
+    if (this.enabled) this.rotateView(dx, dy);
+  }
+  /** Ustawia analogowy ruch z joysticka ekranowego. */
+  setMobileMove(forward: number, right: number, run: boolean) {
+    this.mobileForward = THREE.MathUtils.clamp(forward, -1, 1);
+    this.mobileRight = THREE.MathUtils.clamp(right, -1, 1);
+    this.mobileRun = run;
+  }
   /** Łączy alternatywne klawisze dodatnie i ujemne w jedną wartość osi. */
   private axis(positive: string[], negative: string[]) {
     return Number(positive.some((k) => this.keys.has(k))) - Number(negative.some((k) => this.keys.has(k)));
@@ -69,10 +83,18 @@ export class PlayerController {
     // przeglądarka może odmówić jego natychmiastowego odzyskania, ale nie
     // powinno to blokować klawiatury ani wymuszać dodatkowego kliknięcia.
     if (!this.enabled) return;
-    const forward = this.axis(['w', 'arrowup'], ['s', 'arrowdown']);
-    const right = this.axis(['d', 'arrowright'], ['a', 'arrowleft']);
+    const forward = THREE.MathUtils.clamp(
+      this.axis(['w', 'arrowup'], ['s', 'arrowdown']) + this.mobileForward,
+      -1,
+      1,
+    );
+    const right = THREE.MathUtils.clamp(
+      this.axis(['d', 'arrowright'], ['a', 'arrowleft']) + this.mobileRight,
+      -1,
+      1,
+    );
     const direction = calculateLocalMove(this.yaw, { forward, right });
-    const run = this.keys.has('shift');
+    const run = this.keys.has('shift') || this.mobileRun;
     const targetSpeed = (run ? 6 : 3.3) * mod.speed;
     const response = direction.x || direction.z ? 12 : 16;
     this.velocity.x = THREE.MathUtils.damp(this.velocity.x, direction.x * targetSpeed, response, dt);
@@ -101,11 +123,12 @@ export class PlayerController {
   stop() {
     this.velocity.set(0, 0);
     this.keys.clear();
+    this.setMobileMove(0, 0, false);
     this.hasFallbackMousePosition = false;
   }
   /** Próbuje przejąć kursor bez zgłaszania błędu po odmowie przeglądarki. */
   requestPointerLock() {
-    if (this.disposed) return;
+    if (this.disposed || !this.pointerLockEnabled) return;
     this.canvas.focus({ preventScroll: true });
     if (document.pointerLockElement !== this.canvas)
       this.canvas.requestPointerLock().catch?.(() => undefined);

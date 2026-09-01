@@ -56,4 +56,29 @@ describe('PlayerController mouse look', () => {
     expect(controller.keys.size).toBe(0);
     controller.dispose();
   });
+
+  it('łączy analogowy joystick i gest dotykowy z ruchem kamery', () => {
+    const windowTarget = new EventTarget();
+    const documentTarget = Object.assign(new EventTarget(), { pointerLockElement: null });
+    const canvas = Object.assign(new EventTarget(), {
+      tabIndex: 0,
+      focus: vi.fn(),
+      requestPointerLock: vi.fn(() => Promise.resolve()),
+    }) as unknown as HTMLCanvasElement;
+    vi.stubGlobal('window', windowTarget);
+    vi.stubGlobal('document', documentTarget);
+
+    const camera = new THREE.PerspectiveCamera();
+    const controller = new PlayerController(camera, canvas, () => true, false);
+    controller.enabled = true;
+    controller.setMobileMove(1, 0, false);
+    controller.lookBy(25, -10);
+    controller.update(0.1, { speed: 1, sway: 0, shake: 0, bob: 1 });
+
+    expect(camera.position.z).toBeLessThan(15);
+    expect(controller.yaw).toBeCloseTo(-0.06);
+    expect(controller.pitch).toBeCloseTo(0.02);
+    expect(canvas.requestPointerLock).not.toHaveBeenCalled();
+    controller.dispose();
+  });
 });

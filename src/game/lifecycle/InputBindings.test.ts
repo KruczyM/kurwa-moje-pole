@@ -32,4 +32,10 @@ describe('InputBindings', () => {
     expect(controlHintForState('paused')).toContain(inputBindings.escape);
     expect(interactionControlHint('Porozmawiaj')).toBe(`${inputBindings.interact} — Porozmawiaj`);
   });
+
+  it('builds touch hints without desktop keys', () => {
+    expect(startControlHint('mobile')).toContain('Joystick');
+    expect(controlHintForState('playing', 'mobile')).toContain('UŻYJ');
+    expect(interactionControlHint('Porozmawiaj', 'mobile')).toBe('UŻYJ — Porozmawiaj');
+  });
 });
