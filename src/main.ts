@@ -7,6 +7,7 @@ import { CharacterPreview } from './game/ui/CharacterPreview';
 import type { EffectId } from './game/effects/EffectManager';
 import { AppState, AppStateMachine } from './game/lifecycle/AppStateMachine';
 import { controlHintForState, inputBindings, startControlHint } from './game/lifecycle/InputBindings';
+import { isMobileInputDevice } from './game/player/MobileControls';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -84,7 +85,7 @@ function backToStart() {
 
 state.subscribe(({ to }) => syncShell(to));
 syncShell(state.current);
-qs('#start-controls').textContent = startControlHint();
+qs('#start-controls').textContent = startControlHint(isMobileInputDevice() ? 'mobile' : 'desktop');
 qs('#inventory-help').textContent = controlHintForState('inventory');
 qs('#pause-help').textContent = controlHintForState('paused');
 qs('#dialog-help').textContent = controlHintForState('dialog');

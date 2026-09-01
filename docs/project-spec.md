@@ -945,3 +945,14 @@ MVP. Preferowana kolejność:
 Każdy nowy pomysł musi wskazać: cel dla gracza, assety, wpływ na wydajność,
 kolizje/nawigację, dostępność oraz kryterium odbioru. Dzięki temu dokument
 pozostaje planem rozwoju, a nie listą efektownych, lecz niezweryfikowanych funkcji.
+
+## 23. Urządzenia mobilne
+
+Mobilny wariant zachowuje tę samą maszynę stanów i akcje świata co desktop.
+Sterowanie podstawowe obejmuje joystick ruchu, gest rozglądania po scenie,
+kontekstowy przycisk `UŻYJ` oraz przyciski `MENU` i `EKWIPUNEK`. Pełne wychylenie
+joysticka uruchamia bieg. Pointer Lock nie jest wymagany na urządzeniu dotykowym.
+
+Każdy modal musi posiadać widoczny przycisk zamknięcia i nie może wymagać
+klawiatury. Dalsze gesty, dostępność, safe area oraz macierz testów są opisane w
+[`docs/mobile-controls.md`](mobile-controls.md).

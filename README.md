@@ -137,6 +137,9 @@ Obecnie wszystkie używki są obrócone o 90 stopni i leżą na stole. Ich pozyc
 
 Pipeline Mixamo i odbudowę bibliotek opisuje [`docs/character-animation-pipeline.md`](docs/character-animation-pipeline.md). Stany aplikacji, priorytet `Escape`, Pointer Lock i sprzątanie zasobów opisuje [`docs/app-lifecycle.md`](docs/app-lifecycle.md).
 
+Sterowanie dotykowe oraz plan kolejnych interakcji telefonicznych opisuje
+[`docs/mobile-controls.md`](docs/mobile-controls.md).
+
 ## Git LFS
 
 Reguły są zapisane w `.gitattributes` i obejmują duże modele, źródła FBX, obrazy, filmy oraz nagrania WAV. Asset dodaje się zwykłym `git add`; Git LFS zapisze w repozytorium wskaźnik, a dane binarne wyśle do magazynu LFS.

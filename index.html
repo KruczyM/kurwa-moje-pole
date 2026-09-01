@@ -25,6 +25,19 @@
         </section>
         <section id="hud" hidden>
             <div id="brand">#KURWAMOJEPOLE</div>
+            <div id="mobile-controls" aria-label="Sterowanie dotykowe" hidden>
+                <div class="mobile-top-actions">
+                    <button id="mobile-menu" type="button" aria-label="Otwórz menu pauzy">MENU</button>
+                    <button id="mobile-inventory" type="button" aria-label="Otwórz ekwipunek">EKWIPUNEK</button>
+                </div>
+                <div class="mobile-movement">
+                    <div class="mobile-joystick" aria-label="Joystick ruchu">
+                        <div class="mobile-joystick-knob"></div>
+                    </div>
+                </div>
+                <div class="mobile-look-hint" aria-hidden="true">PRZECIĄGNIJ PO EKRANIE<br>ABY SIĘ ROZEJRZEĆ</div>
+                <button id="mobile-interact" type="button">UŻYJ</button>
+            </div>
             <div id="effect-hud">Brak aktywnego efektu</div>
             <div id="controls-hud"></div>
             <div id="prompt" role="status" aria-live="polite" hidden></div>

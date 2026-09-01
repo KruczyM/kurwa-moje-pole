@@ -3,6 +3,7 @@ import { AssetLoader } from './assets/AssetLoader';
 import { effectAssets, musicAsset } from './assets/assetManifest';
 import { CampWorld } from './world/CampWorld';
 import { PlayerController } from './player/PlayerController';
+import { isMobileInputDevice, MobileControls } from './player/MobileControls';
 import { NpcManager } from './npc/NpcManager';
 import { EffectManager, EffectId, VisualSettings, defaultVisualSettings } from './effects/EffectManager';
 import { InteractionManager } from './interactions/InteractionManager';
@@ -63,6 +64,8 @@ export class Game {
   private mushroomWireframe = new MushroomWireframeEffect(this.scene);
   private speakerReactionPlayed = false;
   private pointerLockPause = new PointerLockPauseGate();
+  private readonly mobileInput = isMobileInputDevice();
+  private mobileControls?: MobileControls;
 
   constructor(readonly state: AppStateMachine) {
     try {
@@ -119,7 +122,22 @@ export class Game {
       this.npcs = new NpcManager(this.scene, assets.characters, assets.speaker, (x, z) =>
         this.world!.canMove(x, z),
       );
-      this.player = new PlayerController(this.camera, this.canvas, (x, z) => this.world!.canMove(x, z));
+      this.player = new PlayerController(
+        this.camera,
+        this.canvas,
+        (x, z) => this.world!.canMove(x, z),
+        !this.mobileInput,
+      );
+      if (this.mobileInput) {
+        this.mobileControls = new MobileControls(qs('#mobile-controls'), this.canvas, {
+          move: (forward, right, run) => this.player?.setMobileMove(forward, right, run),
+          look: (deltaX, deltaY) => this.player?.lookBy(deltaX, deltaY),
+          interact: () => this.interact(),
+          menu: () => this.setPause(true),
+          inventory: () => this.toggleInventory(),
+        });
+        this.mobileControls.setState(this.state.current);
+      }
       this.effects = new EffectManager(this.renderer, this.scene, this.camera);
       this.effects.setSettings(this.settings);
       this.interactions = new InteractionManager(this.camera, () => [
@@ -227,7 +245,10 @@ export class Game {
     if (!item || this.state.current !== 'playing') return;
     qs('#inspect-name').textContent = item.label;
     qs('#inspect-text').textContent = item.description;
-    qs('#inspect-help').textContent = controlHintForState('inspecting');
+    qs('#inspect-help').textContent = controlHintForState(
+      'inspecting',
+      this.mobileInput ? 'mobile' : 'desktop',
+    );
     this.createInspectScene(id);
     this.state.transition('inspecting');
     this.voiceReactions.playInspectEnter();
@@ -368,7 +389,16 @@ export class Game {
     qs('#dialog').hidden = state !== 'dialog';
     qs('#inventory').hidden = state !== 'inventory';
     qs('#pause').hidden = state !== 'paused';
-    qs('#controls-hud').textContent = controlHintForState(state);
+    const inputMode = this.mobileInput ? 'mobile' : 'desktop';
+    qs('#controls-hud').textContent = controlHintForState(state, inputMode);
+    qs('#inventory-help').textContent = controlHintForState('inventory', inputMode);
+    qs('#pause-help').textContent = controlHintForState('paused', inputMode);
+    qs('#dialog-help').textContent = controlHintForState('dialog', inputMode);
+    if (this.mobileInput) {
+      qs('#inspect-use').textContent = 'UŻYJ';
+      qs('#inspect-close').textContent = 'WRÓĆ';
+    }
+    this.mobileControls?.setState(state);
     qs('#crosshair').hidden = state !== 'playing';
     if (this.player) {
       this.player.enabled = state === 'playing' && !this.toiletTimer;
@@ -445,7 +475,7 @@ export class Game {
           : interaction.kind === 'item'
             ? itemById.get(interaction.itemId)?.label || 'Obejrzyj przedmiot'
             : 'Wejdź do toi-toia';
-    prompt.textContent = interactionControlHint(action);
+    prompt.textContent = interactionControlHint(action, this.mobileInput ? 'mobile' : 'desktop');
     prompt.hidden = false;
   }
 
@@ -526,6 +556,8 @@ export class Game {
     this.unsubscribeState();
     this.disposeInspectScene();
     this.interactions?.dispose();
+    this.mobileControls?.dispose();
+    this.mobileControls = undefined;
     this.player?.dispose();
     this.npcs?.dispose();
     this.world?.dispose();
