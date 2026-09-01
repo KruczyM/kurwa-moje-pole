@@ -66,7 +66,7 @@ async function startGame() {
   try {
     const nextGame = new Game(state);
     game = nextGame;
-    nextGame.canvas.requestPointerLock().catch?.(() => undefined);
+    if (!isMobileInputDevice()) nextGame.canvas.requestPointerLock().catch?.(() => undefined);
     await nextGame.start();
   } catch (cause) {
     qs('#load-error').textContent = cause instanceof Error ? cause.message : String(cause);
@@ -115,6 +115,7 @@ qs<HTMLButtonElement>('#resume').onclick = () => game?.setPause(false);
 qs<HTMLButtonElement>('#exit-to-start').onclick = backToStart;
 qs<HTMLButtonElement>('#close-dialog').onclick = () => game?.closeDialog();
 qs<HTMLButtonElement>('#inspect-close').onclick = () => game?.closeInspect();
+qs<HTMLButtonElement>('#inspect-dismiss').onclick = () => game?.closeInspect();
 qs<HTMLButtonElement>('#inspect-use').onclick = () => game?.acceptInspect();
 qs<HTMLButtonElement>('#cancel-effect').onclick = () => game?.cancelEffect();
 document.querySelectorAll<HTMLButtonElement>('[data-effect]').forEach((button) => {

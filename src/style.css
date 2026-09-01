@@ -9,7 +9,7 @@ body {
   font-family: 'Space Mono', monospace;
   overflow: hidden;
 }
-canvas {
+#game {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -391,6 +391,13 @@ h1 i {
   user-select: none;
   -webkit-user-select: none;
 }
+.mobile-look-zone {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: auto;
+  touch-action: none;
+}
 .mobile-top-actions {
   position: absolute;
   top: max(10px, env(safe-area-inset-top));
@@ -398,6 +405,7 @@ h1 i {
   display: flex;
   gap: 7px;
   pointer-events: auto;
+  z-index: 1;
 }
 .mobile-top-actions button {
   min-height: 46px;
@@ -413,6 +421,7 @@ h1 i {
   width: 138px;
   height: 138px;
   pointer-events: auto;
+  z-index: 1;
 }
 .mobile-joystick {
   position: relative;
@@ -468,6 +477,7 @@ h1 i {
   box-shadow: 0 5px 24px #0009;
   pointer-events: auto;
   touch-action: manipulation;
+  z-index: 1;
 }
 .mobile-look-hint {
   position: absolute;

@@ -129,7 +129,7 @@ export class Game {
         !this.mobileInput,
       );
       if (this.mobileInput) {
-        this.mobileControls = new MobileControls(qs('#mobile-controls'), this.canvas, {
+        this.mobileControls = new MobileControls(qs('#mobile-controls'), {
           move: (forward, right, run) => this.player?.setMobileMove(forward, right, run),
           look: (deltaX, deltaY) => this.player?.lookBy(deltaX, deltaY),
           interact: () => this.interact(),
