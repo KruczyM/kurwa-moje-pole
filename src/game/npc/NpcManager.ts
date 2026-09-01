@@ -27,6 +27,23 @@ const spawns = [
   ],
   FIELD_EDGE = 53,
   CAMP_RADIUS = 13;
+
+/** Dodaje stabilną strefę interakcji niezależną od aktualnej pozy animowanej siatki. */
+function addNpcInteractionHitbox(root: THREE.Group) {
+  const hitbox = new THREE.Mesh(
+    new THREE.BoxGeometry(1.05, 2.5, 0.8),
+    new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      colorWrite: false,
+    }),
+  );
+  hitbox.name = 'NpcInteractionHitbox';
+  hitbox.position.y = 1.25;
+  root.add(hitbox);
+}
+
 export class NpcManager {
   readonly npcs: Npc[] = [];
   private candidate = new THREE.Vector3();
@@ -67,6 +84,7 @@ export class NpcManager {
       }
       root.position.set(spawns[index][0], 0, spawns[index][1]);
       root.userData.interaction = { kind: 'npc', name: asset.name };
+      addNpcInteractionHitbox(root);
       root.traverse((o) => (o.userData.interactionRoot = root));
       scene.add(root);
       const npc = {

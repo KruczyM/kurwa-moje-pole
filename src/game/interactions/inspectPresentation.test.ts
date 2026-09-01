@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { centerInspectModel } from './inspectPresentation';
+import { centerInspectModel, inspectCameraDistance } from './inspectPresentation';
 
 describe('centerInspectModel', () => {
   it('rotates a model with an off-centre origin around its geometric centre', () => {
@@ -17,5 +17,14 @@ describe('centerInspectModel', () => {
     expect(center.x).toBeCloseTo(0, 6);
     expect(center.y).toBeCloseTo(0.1, 6);
     expect(center.z).toBeCloseTo(0, 6);
+  });
+
+  it('moves the camera farther away for a narrow preview without clipping the model', () => {
+    const bounds = new THREE.Box3(new THREE.Vector3(-1, -0.5, -0.25), new THREE.Vector3(1, 0.5, 0.25));
+    const wide = inspectCameraDistance(bounds, 16 / 9, 35);
+    const narrow = inspectCameraDistance(bounds, 9 / 16, 35);
+
+    expect(narrow).toBeGreaterThan(wide);
+    expect(wide).toBeGreaterThan(0);
   });
 });

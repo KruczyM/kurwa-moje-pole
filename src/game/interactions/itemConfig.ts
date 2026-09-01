@@ -5,32 +5,32 @@ export const inspectableItems: InspectableItem[] = [
   {
     id: 'joint',
     label: 'Blant',
-    description: 'Blant, ktoś oślinił, ale zioło dobre. Fikcyjny rekwizyt uruchamiający efekt wizualny gry.',
+    description: 'Blant, ktoś oślinił, ale zioło dobre.',
     effect: 'Joint',
   },
   {
     id: 'cocaine',
     label: 'Kreska',
-    description: 'Wczoraj padało, trochę wilgotne — w grze daje szybki, chłodny efekt percepcji.',
+    description: 'Wczoraj padało, trochę wilgotne, ale trzepie jak trzeba.',
     effect: 'Kreska',
   },
   {
     id: 'mdma',
     label: 'MDMA',
-    description: 'Fikcyjny rekwizyt imprezowy: ciepłe światło, nasycenie i miękka poświata w grze.',
+    description: 'Ktoś kiedyś powiedział: weź najpierw ćwierć, ale tutaj próbują najpierw po jednej.',
     effect: 'MDMA',
   },
   {
     id: 'mushrooms',
     label: 'Grzyby',
     description:
-      'Czas, przestrzeń, jesteśmy wszystkim, jesteśmy niczym — nie chemia, nie proszki, ale hemoglobina.',
+      'Czas, przestrzeń, jesteśmy wszystkim, jesteśmy niczym, nie chemia, nie proszki, ale hemoglobina.',
     effect: 'Grzyb',
   },
   {
     id: 'lsd',
     label: 'LSD',
-    description: 'Jeśli chcesz zbliżyć się do boga purpury, uruchom fikcyjny purpurowy efekt percepcji gry.',
+    description: 'Jak chcesz zbliżyć się do boga purpury, to weź od razu dwa.',
     effect: 'LSD',
   },
 ];
