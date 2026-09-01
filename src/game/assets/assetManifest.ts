@@ -7,8 +7,9 @@ export type CharacterAsset = {
   previewUrl: string;
 };
 
-/** Buduje bezpieczny URL do pliku udostępnianego z public/game-assets. */
-const gameAsset = (path: string) => `/game-assets/${path.split('/').map(encodeURIComponent).join('/')}`;
+/** Buduje bezpieczny URL zasobu, uwzględniając podkatalog używany przez GitHub Pages. */
+const gameAsset = (path: string) =>
+  `${import.meta.env.BASE_URL}game-assets/${path.split('/').map(encodeURIComponent).join('/')}`;
 
 /** Jedyny rejestr adresów binarnych zasobów używanych przez klienta. */
 export const characterAssets: CharacterAsset[] = catalog.characters.map(({ id, name }) => ({
