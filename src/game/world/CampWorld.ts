@@ -9,6 +9,8 @@ import { Grass } from './vendor/three-stylized/index';
 
 const WORLD_SIZE = 117.6;
 const WORLD_LIMIT = WORLD_SIZE / 2;
+/** Wysokość wcTronu: co najmniej dwukrotność nominalnej postaci mierzącej 1,8 m. */
+export const TOILET_HEIGHT_METERS = 3.6;
 
 export type WorldObject = { object: THREE.Object3D; label: string; action: 'toilet' | 'item' };
 type WorldModels = {
@@ -178,9 +180,9 @@ export class CampWorld {
     const toilet = new THREE.Group();
     toilet.name = 'CampToilet_wcTron';
     const cabin = source
-      ? this.prepare(source, 2.65, 0x356ddb)
-      : new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.65, 1.25), simpleMaterial(0x356ddb));
-    if (!source) cabin.position.y = 2.65 / 2;
+      ? this.prepare(source, TOILET_HEIGHT_METERS, 0x356ddb)
+      : new THREE.Mesh(new THREE.BoxGeometry(1.5, TOILET_HEIGHT_METERS, 1.5), simpleMaterial(0x356ddb));
+    if (!source) cabin.position.y = TOILET_HEIGHT_METERS / 2;
     cabin.name = 'ToiletCabin';
     toilet.add(cabin);
 
