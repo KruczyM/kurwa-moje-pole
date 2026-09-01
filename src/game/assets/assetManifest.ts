@@ -23,6 +23,7 @@ export const environmentAssets = {
   smallTent: gameAsset(catalog.environment.smallTent),
   flag: gameAsset(catalog.environment.flag),
   speaker: gameAsset(catalog.environment.speaker),
+  toilet: gameAsset(catalog.environment.toilet),
 };
 
 export const interactiveAssets = {

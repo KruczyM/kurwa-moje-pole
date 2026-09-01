@@ -15,6 +15,7 @@ type WorldModels = {
   largeTent: GLTF | null;
   smallTent: GLTF | null;
   flag: GLTF | null;
+  toilet: GLTF | null;
   interactables: Map<string, GLTF>;
 };
 
@@ -22,16 +23,17 @@ type WorldModels = {
 const simpleMaterial = (color: number) => new THREE.MeshStandardMaterial({ color, roughness: 0.78 });
 
 /** Generuje delikatnie pofalowaną geometrię ziemi. */
+export function terrainHeight(x: number, z: number) {
+  return 0.18 * Math.sin(x * 0.065) * Math.cos(z * 0.055) + 0.09 * Math.sin(x * 0.19 + z * 0.13);
+}
+
 function terrain() {
   const geometry = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE, 96, 96).rotateX(-Math.PI / 2);
   const positions = geometry.attributes.position;
   for (let index = 0; index < positions.count; index++) {
     const x = positions.getX(index),
       z = positions.getZ(index);
-    positions.setY(
-      index,
-      0.18 * Math.sin(x * 0.065) * Math.cos(z * 0.055) + 0.09 * Math.sin(x * 0.19 + z * 0.13),
-    );
+    positions.setY(index, terrainHeight(x, z));
   }
   positions.needsUpdate = true;
   geometry.computeVertexNormals();
@@ -105,7 +107,7 @@ export class CampWorld {
     ).forEach(([x, z, rotation]) =>
       this.placeTent(scene, models.smallTent, new THREE.Vector3(x, 0, z), 1.8, rotation),
     );
-    this.toilet(scene);
+    this.toilet(scene, models.toilet);
     this.mast(scene, models.flag);
     this.table(scene, models.interactables);
   }
@@ -169,18 +171,43 @@ export class CampWorld {
     });
   }
 
-  /** Tworzy tymczasowy toi-toi i jego punkt interakcji. */
-  private toilet(scene: THREE.Scene) {
+  /** Umieszcza docelowy wcTron, collider kabiny i kierunkową interakcję przed drzwiami. */
+  private toilet(scene: THREE.Scene, source: GLTF | null) {
+    const x = -12;
+    const z = 10;
     const toilet = new THREE.Group();
-    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.5, 1.5), simpleMaterial(0x356ddb));
-    cabin.position.y = 1.25;
+    toilet.name = 'CampToilet_wcTron';
+    const cabin = source
+      ? this.prepare(source, 2.65, 0x356ddb)
+      : new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.65, 1.25), simpleMaterial(0x356ddb));
+    if (!source) cabin.position.y = 2.65 / 2;
+    cabin.name = 'ToiletCabin';
     toilet.add(cabin);
-    toilet.position.set(-12, 0, 10);
-    toilet.userData.interaction = { kind: 'toilet' };
-    toilet.traverse((object) => (object.userData.interactionRoot = toilet));
+
+    const localBounds = new THREE.Box3().setFromObject(cabin);
+    const size = localBounds.getSize(new THREE.Vector3());
+    const center = localBounds.getCenter(new THREE.Vector3());
+    const entrance = new THREE.Mesh(
+      new THREE.BoxGeometry(Math.max(0.72, size.x * 0.72), size.y * 0.72, 0.16),
+      new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        colorWrite: false,
+      }),
+    );
+    entrance.name = 'ToiletEntranceInteraction';
+    entrance.position.set(center.x, localBounds.min.y + size.y * 0.48, localBounds.max.z + 0.14);
+    entrance.userData.interaction = { kind: 'toilet' };
+    entrance.userData.interactionFacing = [0, 0, 1];
+    entrance.userData.interactionRoot = entrance;
+    toilet.add(entrance);
+
+    toilet.position.set(x, terrainHeight(x, z), z);
     scene.add(toilet);
-    this.colliders.push({ x: -12, z: 10, r: 1.25 });
-    this.interactables.push({ object: toilet, label: 'Wejdź do toi-toia', action: 'toilet' });
+    toilet.updateMatrixWorld(true);
+    this.colliders.push({ box: new THREE.Box3().setFromObject(cabin) });
+    this.interactables.push({ object: entrance, label: 'Wejdź do toi-toia', action: 'toilet' });
   }
 
   /** Umieszcza maszt z flagą i dodaje jego kolizję. */

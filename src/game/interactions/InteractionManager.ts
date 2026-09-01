@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 const INTERACTION_DISTANCE = 3.4;
 const NPC_INTERACTION_DISTANCE = 4.5;
+const MINIMUM_FACING_DOT = 0.35;
 
 export class InteractionManager {
   private raycaster = new THREE.Raycaster();
@@ -17,6 +18,7 @@ export class InteractionManager {
     for (const hit of this.raycaster.intersectObjects(this.roots(), true)) {
       const root = this.findRoot(hit.object);
       if (!root) continue;
+      if (!this.facesCamera(root)) continue;
       const distance =
         root.userData.interaction.kind === 'npc' ? NPC_INTERACTION_DISTANCE : INTERACTION_DISTANCE;
       if (hit.distance <= distance) {
@@ -40,6 +42,17 @@ export class InteractionManager {
     let current: THREE.Object3D | null = object;
     while (current && !current.userData.interaction) current = current.parent;
     return current;
+  }
+  /** Odrzuca kierunkową interakcję oglądaną od tyłu, np. przez ścianę toi-toia. */
+  private facesCamera(root: THREE.Object3D) {
+    const facing = root.userData.interactionFacing as number[] | undefined;
+    if (!facing) return true;
+    const normal = new THREE.Vector3()
+      .fromArray(facing)
+      .applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion()));
+    const target = root.getWorldPosition(new THREE.Vector3());
+    const camera = this.camera.getWorldPosition(new THREE.Vector3());
+    return normal.dot(camera.sub(target).normalize()) >= MINIMUM_FACING_DOT;
   }
   /** Włącza lub wyłącza delikatne podświetlenie materiałów celu. */
   private highlight(root: THREE.Object3D, on: boolean) {
