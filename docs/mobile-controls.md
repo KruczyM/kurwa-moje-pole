@@ -5,9 +5,10 @@
 - lewy joystick odpowiada za ruch; wychylenie powyżej 88% uruchamia bieg;
 - przeciąganie palcem bezpośrednio po scenie obraca kamerę FPS;
 - `UŻYJ` uruchamia tę samą kontekstową interakcję co klawisz `E`;
+- przycisk `×` w prawym górnym rogu inspekcji zamyka podgląd bez użycia przedmiotu;
 - `MENU` otwiera pauzę;
 - `EKWIPUNEK` otwiera ekwipunek, a w jego wnętrzu zmienia się w `ZAMKNIJ`;
-- istniejące przyciski modali obsługują użycie przedmiotu, powrót z inspekcji,
+- istniejące przyciski modali obsługują użycie przedmiotu, dodatkowy powrót z inspekcji,
   zamknięcie dialogu i wznowienie gry;
 - kontrolki uwzględniają `safe-area-inset-*`, więc nie wchodzą pod notch i pasek systemowy;
 - Pointer Lock jest wyłączony dla sterowania dotykowego i pozostaje aktywny na komputerze.

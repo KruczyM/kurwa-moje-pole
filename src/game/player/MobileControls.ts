@@ -50,6 +50,7 @@ export function isMobileInputDevice() {
 export class MobileControls {
   private readonly events = new EventScope();
   private readonly movement: HTMLElement;
+  private readonly lookZone: HTMLElement;
   private readonly pad: HTMLElement;
   private readonly knob: HTMLElement;
   private readonly menuButton: HTMLButtonElement;
@@ -63,10 +64,10 @@ export class MobileControls {
 
   constructor(
     private readonly root: HTMLElement,
-    private readonly lookSurface: HTMLCanvasElement,
     private readonly actions: MobileControlActions,
   ) {
     this.movement = this.requireElement('.mobile-movement');
+    this.lookZone = this.requireElement('.mobile-look-zone');
     this.pad = this.requireElement('.mobile-joystick');
     this.knob = this.requireElement('.mobile-joystick-knob');
     this.menuButton = this.requireElement('#mobile-menu');
@@ -77,10 +78,10 @@ export class MobileControls {
     this.events.listen(this.pad, 'pointermove', (event) => this.updateMove(event as PointerEvent));
     this.events.listen(this.pad, 'pointerup', (event) => this.finishMove(event as PointerEvent));
     this.events.listen(this.pad, 'pointercancel', (event) => this.finishMove(event as PointerEvent));
-    this.events.listen(this.lookSurface, 'pointerdown', (event) => this.startLook(event as PointerEvent));
-    this.events.listen(this.lookSurface, 'pointermove', (event) => this.updateLook(event as PointerEvent));
-    this.events.listen(this.lookSurface, 'pointerup', (event) => this.finishLook(event as PointerEvent));
-    this.events.listen(this.lookSurface, 'pointercancel', (event) => this.finishLook(event as PointerEvent));
+    this.events.listen(this.lookZone, 'pointerdown', (event) => this.startLook(event as PointerEvent));
+    this.events.listen(this.lookZone, 'pointermove', (event) => this.updateLook(event as PointerEvent));
+    this.events.listen(this.lookZone, 'pointerup', (event) => this.finishLook(event as PointerEvent));
+    this.events.listen(this.lookZone, 'pointercancel', (event) => this.finishLook(event as PointerEvent));
     this.events.listen(this.menuButton, 'click', () => this.actions.menu());
     this.events.listen(this.inventoryButton, 'click', () => this.actions.inventory());
     this.events.listen(this.interactButton, 'click', () => this.actions.interact());
@@ -102,9 +103,13 @@ export class MobileControls {
     this.movement.hidden = !this.playing;
     this.menuButton.hidden = !this.playing;
     this.interactButton.hidden = !this.playing;
+    this.lookZone.hidden = !this.playing;
     this.inventoryButton.textContent = inventoryOpen ? 'ZAMKNIJ' : 'EKWIPUNEK';
     this.inventoryButton.setAttribute('aria-pressed', String(inventoryOpen));
-    if (!this.playing) this.resetMove();
+    if (!this.playing) {
+      this.resetMove();
+      this.resetLook();
+    }
   }
 
   /** Przejmuje palec joysticka bez wpływania na gest kamery. */
@@ -147,7 +152,7 @@ export class MobileControls {
     this.lookPointerId = event.pointerId;
     this.lookX = event.clientX;
     this.lookY = event.clientY;
-    this.lookSurface.setPointerCapture?.(event.pointerId);
+    this.lookZone.setPointerCapture?.(event.pointerId);
   }
 
   /** Przekazuje ograniczoną deltę gestu do kontrolera kamery. */
@@ -168,6 +173,13 @@ export class MobileControls {
     this.lookPointerId = undefined;
   }
 
+  /** Porzuca poprzedni gest, aby pierwszy dotyk po zmianie ekranu zawsze działał. */
+  private resetLook() {
+    this.lookPointerId = undefined;
+    this.lookX = 0;
+    this.lookY = 0;
+  }
+
   /** Zeruje wizualną i logiczną pozycję joysticka. */
   private resetMove() {
     this.movePointerId = undefined;
@@ -178,6 +190,7 @@ export class MobileControls {
   /** Usuwa listenery i przywraca neutralny stan interfejsu. */
   dispose() {
     this.resetMove();
+    this.resetLook();
     this.events.dispose();
     this.root.hidden = true;
     document.body.classList.remove('mobile-input');

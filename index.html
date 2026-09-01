@@ -26,6 +26,7 @@
         <section id="hud" hidden>
             <div id="brand">#KURWAMOJEPOLE</div>
             <div id="mobile-controls" aria-label="Sterowanie dotykowe" hidden>
+                <div class="mobile-look-zone" aria-label="Przeciągnij, aby obrócić kamerę"></div>
                 <div class="mobile-top-actions">
                     <button id="mobile-menu" type="button" aria-label="Otwórz menu pauzy">MENU</button>
                     <button id="mobile-inventory" type="button" aria-label="Otwórz ekwipunek">EKWIPUNEK</button>
@@ -71,8 +72,12 @@
             <h2 id="dialog-name"></h2>
             <p id="dialog-text"></p><small id="dialog-help"></small><button id="close-dialog">Wróć</button>
         </section>
-        <section id="inspect" role="dialog" aria-modal="true" aria-labelledby="inspect-name" hidden>
-            <h2 id="inspect-name"></h2><canvas id="inspect-canvas"></canvas>
+        <section id="inspect" role="dialog" aria-modal="true" aria-labelledby="inspect-name"
+            aria-describedby="inspect-text inspect-help" hidden>
+            <div class="inspect-header">
+                <h2 id="inspect-name"></h2><button id="inspect-dismiss" type="button"
+                    aria-label="Zamknij podgląd przedmiotu">×</button>
+            </div><canvas id="inspect-canvas"></canvas>
             <p id="inspect-text"></p><small id="inspect-help"></small>
             <div class="inspect-actions"><button id="inspect-use"></button><button id="inspect-close"></button></div>
         </section>
