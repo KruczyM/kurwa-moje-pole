@@ -13,7 +13,8 @@
     "largeTent": "world/tents/main.glb",
     "smallTent": "world/tents/small.glb",
     "flag": "world/flag.glb",
-    "speaker": "props/speaker.glb"
+    "speaker": "props/speaker.glb",
+    "toilet": "world/toilet.glb"
   },
   "interactives": {
     "table": "interactables/table.glb",

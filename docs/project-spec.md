@@ -52,8 +52,7 @@ Główna pętla rozgrywki:
 ### 2.4. Toi-toi
 
 - Jeden toi-toi znajduje się w rogu mapy.
-- Zatwierdzonym źródłem modelu jest `art/wcTron.glb`. Przed użyciem w grze należy
-  wyeksportować go do `public/game-assets/world/toilet.glb`, sprawdzić materiały
+- Zatwierdzonym zasobem runtime jest `public/game-assets/world/toilet.glb` (wcTron). Należy sprawdzić materiały
   i dopisać do manifestu assetów.
 - Ma być obiektem stałym z kolizją.
 - Podejście do wejścia musi pozostać dostępne.

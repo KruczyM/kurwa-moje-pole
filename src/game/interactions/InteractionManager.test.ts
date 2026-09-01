@@ -35,4 +35,26 @@ describe('InteractionManager', () => {
     expect(interactions.update()).toBeNull();
     interactions.dispose();
   });
+
+  it('allows a directional interaction only from its front side', () => {
+    const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
+    const entrance = target('item', -2);
+    entrance.userData.interactionFacing = [0, 0, 1];
+    entrance.updateMatrixWorld(true);
+    const interactions = new InteractionManager(camera, () => [entrance]);
+
+    expect(interactions.update()).toEqual({ kind: 'item', itemId: 'joint' });
+    interactions.clear();
+    camera.position.z = -4;
+    camera.rotation.y = Math.PI;
+    camera.updateMatrixWorld(true);
+    expect(interactions.update()).toBeNull();
+
+    interactions.clear();
+    camera.position.set(2, 0, -2);
+    camera.rotation.y = Math.PI / 2;
+    camera.updateMatrixWorld(true);
+    expect(interactions.update()).toBeNull();
+    interactions.dispose();
+  });
 });

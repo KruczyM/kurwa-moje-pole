@@ -6,6 +6,7 @@ export type LoadedAssets = {
   smallTent: GLTF | null;
   flag: GLTF | null;
   speaker: GLTF | null;
+  toilet: GLTF | null;
   interactables: Map<string, GLTF>;
   errors: string[];
 };
@@ -57,12 +58,13 @@ export class AssetLoader {
         if (gltf) interactables.set(id, gltf);
       }),
     );
-    const [largeTent, smallTent, flag, speaker] = await Promise.all([
+    const [largeTent, smallTent, flag, speaker, toilet] = await Promise.all([
       this.load(environmentAssets.largeTent, 'duży namiot'),
       this.load(environmentAssets.smallTent, 'mały namiot'),
       this.load(environmentAssets.flag, 'maszt z flagą'),
       this.load(environmentAssets.speaker, 'głośnik'),
+      this.load(environmentAssets.toilet, 'toi-toi wcTron'),
     ]);
-    return { characters, largeTent, smallTent, flag, speaker, interactables, errors };
+    return { characters, largeTent, smallTent, flag, speaker, toilet, interactables, errors };
   }
 }

@@ -52,6 +52,7 @@ public/game-assets/          jedyne assety ładowane podczas działania gry
     npc-animations.glb       model NPC z klipami Idle, Walk i Run
   interactables/             stół i używki
   world/                     namioty, flaga, toi-toi i rekwizyty obozu
+    toilet.glb               docelowy model wcTron ładowany przez manifest
   textures/                  tekstury trawy, horyzontu i nakładek
   audio/                     muzyka i głos postaci
 source-assets/characters/    źródła potrzebne do ponownego rigowania
