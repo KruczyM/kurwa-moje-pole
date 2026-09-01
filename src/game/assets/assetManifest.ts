@@ -50,6 +50,7 @@ export const textureAssets = {
     day: catalog.textures.skyboxes.day.map(gameAsset),
     evening: catalog.textures.skyboxes.evening.map(gameAsset),
     night: catalog.textures.skyboxes.night.map(gameAsset),
+    nebula: catalog.textures.skyboxes.nebula.map(gameAsset),
   },
 };
 

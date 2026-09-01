@@ -55,6 +55,14 @@
         "textures/skybox/noc/sky_78_cubemap_2k/ny.png",
         "textures/skybox/noc/sky_78_cubemap_2k/pz.png",
         "textures/skybox/noc/sky_78_cubemap_2k/nz.png"
+      ],
+      "nebula": [
+        "textures/skybox/nebula/sky_17_cubemap_2k/px.png",
+        "textures/skybox/nebula/sky_17_cubemap_2k/nx.png",
+        "textures/skybox/nebula/sky_17_cubemap_2k/py.png",
+        "textures/skybox/nebula/sky_17_cubemap_2k/ny.png",
+        "textures/skybox/nebula/sky_17_cubemap_2k/pz.png",
+        "textures/skybox/nebula/sky_17_cubemap_2k/nz.png"
       ]
     }
   },

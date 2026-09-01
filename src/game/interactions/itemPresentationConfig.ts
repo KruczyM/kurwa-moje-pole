@@ -22,7 +22,7 @@ const lying = (tableSize: number, tablePosition: readonly [number, number]): Ite
   tablePosition,
   inspectSize: 1.4,
   inspectRotation: [0, 0, 0],
-  inspectOffsetY: 0.16,
+  inspectOffsetY: 0.08,
 });
 
 /**
