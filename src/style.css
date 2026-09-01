@@ -119,6 +119,15 @@ h1 i {
   background: #161421aa;
   padding: 7px 11px;
 }
+#controls-hud {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  max-width: min(620px, calc(100vw - 150px));
+  color: #d3c8dc;
+  font-size: 10px;
+  line-height: 1.5;
+}
 #prompt {
   position: absolute;
   bottom: 78px;
@@ -170,6 +179,8 @@ h1 i {
   background: #171421f2;
   border: 1px solid #ffffff4a;
   box-shadow: 0 16px 50px #0009;
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
 }
 #inventory h2,
 #pause h2,
@@ -226,6 +237,38 @@ h1 i {
   margin: 0;
   color: #bbb0c2;
   font-size: 9px;
+}
+@media (max-width: 680px), (max-height: 720px) {
+  #hud {
+    padding: 10px;
+  }
+  #effect-hud {
+    top: 10px;
+    max-width: calc(100vw - 150px);
+    text-align: center;
+  }
+  #controls-hud {
+    left: 10px;
+    bottom: 10px;
+    max-width: calc(100vw - 120px);
+  }
+  #prompt {
+    bottom: 54px;
+    width: max-content;
+    max-width: calc(100vw - 24px);
+    text-align: center;
+  }
+  #inventory,
+  #pause,
+  #dialog {
+    width: calc(100vw - 24px);
+    padding: 18px;
+  }
+}
+@media (max-width: 480px) {
+  .items {
+    grid-template-columns: 1fr;
+  }
 }
 #smoke {
   position: absolute;
