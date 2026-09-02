@@ -27,4 +27,25 @@ describe('centerInspectModel', () => {
     expect(narrow).toBeGreaterThan(wide);
     expect(wide).toBeGreaterThan(0);
   });
+
+  it.each([
+    ['joint', new THREE.Vector3(2.2, 0.35, 0.35)],
+    ['cocaine', new THREE.Vector3(0.55, 1.8, 0.2)],
+    ['mdma', new THREE.Vector3(1.1, 0.45, 0.8)],
+    ['mushrooms', new THREE.Vector3(1.6, 1.2, 1.4)],
+    ['lsd', new THREE.Vector3(0.08, 1.5, 1.1)],
+  ])('keeps the whole %s model inside both portrait and landscape previews', (_, size) => {
+    const bounds = new THREE.Box3(size.clone().multiplyScalar(-0.5), size.clone().multiplyScalar(0.5));
+
+    for (const aspect of [360 / 640, 1, 640 / 360]) {
+      const distance = inspectCameraDistance(bounds, aspect, 35);
+      const radius = bounds.getBoundingSphere(new THREE.Sphere()).radius;
+      const verticalHalfFov = THREE.MathUtils.degToRad(35) / 2;
+      const horizontalHalfFov = Math.atan(Math.tan(verticalHalfFov) * aspect);
+      const requiredDistance = radius / Math.sin(Math.min(verticalHalfFov, horizontalHalfFov));
+
+      expect(distance).toBeGreaterThan(requiredDistance);
+      expect(Number.isFinite(distance)).toBe(true);
+    }
+  });
 });

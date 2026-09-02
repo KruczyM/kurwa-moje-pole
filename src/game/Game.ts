@@ -20,6 +20,7 @@ import { VoiceReactionManager } from './audio/VoiceReactionManager';
 import { POINTER_LOCK_ESCAPE_SUPPRESSION_MS, PointerLockPauseGate } from './lifecycle/PointerLockPauseGate';
 import { controlHintForState, interactionControlHint, resolveGameInput } from './lifecycle/InputBindings';
 import { ConsumableInventory } from './inventory/ConsumableInventory';
+import { InspectControls } from './interactions/InspectControls';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -55,6 +56,8 @@ export class Game {
   private inspectCamera?: THREE.PerspectiveCamera;
   private inspectModel?: THREE.Object3D;
   private inspectPivot?: THREE.Group;
+  private inspectControls?: InspectControls;
+  private inspectCameraBaseDistance = 1;
   private inspectId?: string;
   private events = new EventScope();
   private unsubscribeState: () => void;
@@ -190,7 +193,7 @@ export class Game {
   private closeCurrentState(target: AppState) {
     if (this.state.current === 'inspecting') {
       this.voiceReactions.playInspectCancel();
-      this.inspectId = undefined;
+      this.finishInspect();
     }
     this.state.transition(target);
   }
@@ -271,7 +274,9 @@ export class Game {
       const light = new THREE.DirectionalLight(0xffffff, 2.5);
       light.position.set(2, 3, 3);
       this.inspectScene.add(light);
+      this.inspectControls = new InspectControls(canvas);
     }
+    this.inspectControls?.reset();
     const source = this.propModels.get(id);
     this.inspectModel = source
       ? cloneDisposableModel(source)
@@ -304,11 +309,12 @@ export class Game {
     this.inspectCamera.updateProjectionMatrix();
     this.inspectPivot.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(this.inspectPivot);
-    this.inspectCamera.position.set(
-      0,
-      0,
-      inspectCameraDistance(bounds, this.inspectCamera.aspect, this.inspectCamera.fov),
+    this.inspectCameraBaseDistance = inspectCameraDistance(
+      bounds,
+      this.inspectCamera.aspect,
+      this.inspectCamera.fov,
     );
+    this.inspectCamera.position.set(0, 0, this.inspectCameraBaseDistance);
     this.inspectCamera.lookAt(0, 0, 0);
   }
 
@@ -324,7 +330,7 @@ export class Game {
     if (!this.useEffect(item.effect)) return;
     this.world?.removeItem(item.id);
     this.interactions?.clear();
-    this.inspectId = undefined;
+    this.finishInspect();
   }
 
   /** Zabiera oglądany egzemplarz ze świata i dodaje go do pustego początkowo plecaka. */
@@ -334,7 +340,7 @@ export class Game {
     if (!item || !this.world?.removeItem(item.id)) return;
     this.inventory.add(item.effect);
     this.interactions?.clear();
-    this.inspectId = undefined;
+    this.finishInspect();
     this.syncInventoryUi();
     this.state.transition('playing');
     this.toast(`${item.label}: dodano do ekwipunku`);
@@ -492,7 +498,11 @@ export class Game {
         this.effects?.settings.reduceMotion === true,
       );
       if (state === 'inspecting' && this.inspectRenderer && this.inspectScene && this.inspectCamera) {
-        if (this.inspectPivot) this.inspectPivot.rotation.y += dt * 0.75;
+        this.inspectControls?.update(dt);
+        if (this.inspectPivot && this.inspectControls) {
+          this.inspectPivot.rotation.set(this.inspectControls.pitch, this.inspectControls.yaw, 0);
+          this.inspectCamera.position.z = this.inspectCameraBaseDistance * this.inspectControls.distanceScale;
+        }
         this.inspectRenderer.render(this.inspectScene, this.inspectCamera);
       }
     }
@@ -558,14 +568,23 @@ export class Game {
     this.inspectPivot = undefined;
   }
 
+  /** Czyści identyfikator i zasoby klonu po każdej ścieżce zakończenia inspekcji. */
+  private finishInspect() {
+    this.inspectId = undefined;
+    this.clearInspectModel();
+  }
+
   /** Zwalnia renderer, model, geometrie i materiały dopiero przy zamykaniu całej gry. */
   private disposeInspectScene() {
     this.clearInspectModel();
+    this.inspectControls?.dispose();
     if (this.inspectScene) disposeObjectTree(this.inspectScene);
     this.inspectRenderer?.dispose();
     this.inspectRenderer = undefined;
     this.inspectScene = undefined;
     this.inspectCamera = undefined;
+    this.inspectControls = undefined;
+    this.inspectCameraBaseDistance = 1;
     this.inspectId = undefined;
   }
 

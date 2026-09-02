@@ -61,6 +61,12 @@
   min-height: 0;
   background: #09070f;
   margin: 0;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+#inspect canvas:active {
+  cursor: grabbing;
 }
 #inspect p {
   margin: 0;

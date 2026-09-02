@@ -38,8 +38,9 @@ renderery. `dispose()` jest idempotentne. Ponowna próba po błędzie zawsze usu
 poprzednią instancję przed utworzeniem nowej.
 
 Renderer inspekcji jest tworzony tylko raz i ponownie używany. Zamknięcie
-preview ukrywa modal natychmiast, bez synchronicznego niszczenia kontekstu WebGL.
-Pełne zwolnienie kontekstu następuje dopiero w `Game.dispose()`.
+preview usuwa klon modelu wraz z jego geometriami, materiałami i teksturami.
+Kontekst WebGL oraz jeden zestaw listenerów obrotu pozostają do ponownego użycia,
+a ich pełne zwolnienie następuje dopiero w `Game.dispose()`.
 
 ## Obsługa błędów
 
