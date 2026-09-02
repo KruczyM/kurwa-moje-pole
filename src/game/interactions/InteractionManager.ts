@@ -3,6 +3,12 @@ import * as THREE from 'three';
 const INTERACTION_DISTANCE = 3.4;
 const NPC_INTERACTION_DISTANCE = 4.5;
 const MINIMUM_FACING_DOT = 0.35;
+export const INTERACTION_LAYER = 2;
+
+/** Dodaje warstwę raycastu interakcji do wskazanego drzewa bez wyłączania renderowania. */
+export function enableInteractionLayer(root: THREE.Object3D) {
+  root.traverse((object) => object.layers.enable(INTERACTION_LAYER));
+}
 
 export class InteractionManager {
   private raycaster = new THREE.Raycaster();
@@ -10,7 +16,9 @@ export class InteractionManager {
   constructor(
     private readonly camera: THREE.Camera,
     private readonly roots: () => THREE.Object3D[],
-  ) {}
+  ) {
+    this.raycaster.layers.set(INTERACTION_LAYER);
+  }
   /** Wykonuje raycast ze środka ekranu i aktualizuje najbliższy cel interakcji. */
   update() {
     this.raycaster.setFromCamera(new THREE.Vector2(), this.camera);
@@ -18,6 +26,7 @@ export class InteractionManager {
     for (const hit of this.raycaster.intersectObjects(this.roots(), true)) {
       const root = this.findRoot(hit.object);
       if (!root) continue;
+      if (!root.visible) continue;
       if (!this.facesCamera(root)) continue;
       const distance =
         root.userData.interaction.kind === 'npc' ? NPC_INTERACTION_DISTANCE : INTERACTION_DISTANCE;

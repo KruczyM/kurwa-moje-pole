@@ -19,6 +19,7 @@ import { MushroomWireframeEffect } from './effects/MushroomWireframeEffect';
 import { VoiceReactionManager } from './audio/VoiceReactionManager';
 import { POINTER_LOCK_ESCAPE_SUPPRESSION_MS, PointerLockPauseGate } from './lifecycle/PointerLockPauseGate';
 import { controlHintForState, interactionControlHint, resolveGameInput } from './lifecycle/InputBindings';
+import { ConsumableInventory } from './inventory/ConsumableInventory';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -66,6 +67,7 @@ export class Game {
   private pointerLockPause = new PointerLockPauseGate();
   private readonly mobileInput = isMobileInputDevice();
   private mobileControls?: MobileControls;
+  private readonly inventory = new ConsumableInventory();
 
   constructor(readonly state: AppStateMachine) {
     try {
@@ -86,6 +88,7 @@ export class Game {
     this.events.listen(document, 'pointerlockchange', () => this.pointerLockChanged());
     this.unsubscribeState = this.state.subscribe(({ to }) => this.syncState(to));
     this.syncSettingsUi();
+    this.syncInventoryUi();
     const lsdOverlay = qs('#lsd-overlay');
     lsdOverlay.style.setProperty('--lsd-image-a', `url("${effectAssets.lsdOverlays[0]}")`);
     lsdOverlay.style.setProperty('--lsd-image-b', `url("${effectAssets.lsdOverlays[1]}")`);
@@ -318,9 +321,32 @@ export class Game {
     if (this.state.current !== 'inspecting' || !this.inspectId) return;
     const item = itemById.get(this.inspectId as InspectableItemId);
     if (!item) return;
-    this.state.transition('playing');
+    if (!this.useEffect(item.effect)) return;
+    this.world?.removeItem(item.id);
+    this.interactions?.clear();
     this.inspectId = undefined;
-    this.useEffect(item.effect);
+  }
+
+  /** Zabiera oglądany egzemplarz ze świata i dodaje go do pustego początkowo plecaka. */
+  takeInspectedItem() {
+    if (this.state.current !== 'inspecting' || !this.inspectId) return;
+    const item = itemById.get(this.inspectId as InspectableItemId);
+    if (!item || !this.world?.removeItem(item.id)) return;
+    this.inventory.add(item.effect);
+    this.interactions?.clear();
+    this.inspectId = undefined;
+    this.syncInventoryUi();
+    this.state.transition('playing');
+    this.toast(`${item.label}: dodano do ekwipunku`);
+  }
+
+  /** Uruchamia efekt wyłącznie wtedy, gdy plecak zawiera jego egzemplarz. */
+  useInventoryEffect(id: EffectId) {
+    if (this.state.current !== 'inventory' || this.inventory.quantity(id) < 1) return false;
+    if (!this.useEffect(id)) return false;
+    this.inventory.consume(id);
+    this.syncInventoryUi();
+    return true;
   }
   /** Przełącza pomiędzy rozgrywką i ekranem ekwipunku. */
   toggleInventory() {
@@ -329,18 +355,33 @@ export class Game {
   }
   /** Weryfikuje ostrzeżenie dostępności i uruchamia wskazany efekt percepcji. */
   useEffect(id: EffectId) {
-    if (!this.effects || !interactiveStates.includes(this.state.current)) return;
+    if (!this.effects || !interactiveStates.includes(this.state.current)) return false;
     if ((id === 'Grzyb' || id === 'MDMA' || id === 'LSD') && !localStorage.getItem('camp-effect-warning')) {
       const proceed = window.confirm(
         'Ten fikcyjny efekt zawiera intensywne ruchy obrazu i światło. Kontynuować?',
       );
       localStorage.setItem('camp-effect-warning', '1');
-      if (!proceed) return;
+      if (!proceed) return false;
     }
     if (this.state.current !== 'playing') this.state.transition('playing');
     this.effects.use(id);
     this.voiceReactions.effectStarted(id);
     this.toast(`${id}: efekt uruchomiony`);
+    return true;
+  }
+
+  /** Odświeża liczniki oraz dostępność przycisków całego ekwipunku. */
+  private syncInventoryUi() {
+    document.querySelectorAll<HTMLButtonElement>('[data-effect]').forEach((button) => {
+      const effect = button.dataset.effect as EffectId;
+      const quantity = this.inventory.quantity(effect);
+      button.disabled = quantity < 1;
+      button.querySelector<HTMLElement>('.item-count')!.textContent = `× ${quantity}`;
+      button.setAttribute('aria-label', `${effect}, liczba sztuk: ${quantity}`);
+    });
+    qs('#inventory-status').textContent = this.inventory.total
+      ? `Przedmioty w plecaku: ${this.inventory.total}. Wybierz jeden, aby go użyć.`
+      : 'Plecak jest pusty. Przedmioty możesz znaleźć w obozie.';
   }
   /** Rozpoczyna kontrolowane wygaszanie aktywnego efektu. */
   cancelEffect() {
@@ -396,6 +437,7 @@ export class Game {
     qs('#dialog-help').textContent = controlHintForState('dialog', inputMode);
     if (this.mobileInput) {
       qs('#inspect-use').textContent = 'UŻYJ';
+      qs('#inspect-take').textContent = 'WEŹ';
       qs('#inspect-close').textContent = 'WRÓĆ';
     }
     this.mobileControls?.setState(state);
