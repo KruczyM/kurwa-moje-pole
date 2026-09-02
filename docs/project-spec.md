@@ -889,6 +889,16 @@ Inspekcja zawsze pokazuje model w neutralnej „próżni”, wolny obrót, nazw�
 opis oraz podpowiedzi `E — użyj` i `Esc — zamknij`. `Escape` kończy inspekcję,
 przywraca wejście i Pointer Lock; podczas inspekcji ruch świata jest wstrzymany.
 
+Gracz rozpoczyna nową sesję z pustym plecakiem. Podczas inspekcji może zużyć
+przedmiot od razu albo zabrać go do ekwipunku. Zabrany lub zużyty egzemplarz
+znika ze stołu. Ekwipunek przechowuje ilości, pozwala później dodać wiele kopii
+i zmniejsza licznik dopiero po skutecznym użyciu. Początkowa liczba egzemplarzy
+na stole jest częścią konfiguracji każdego przedmiotu; w MVP wynosi `1`.
+
+Raycast korzysta z osobnej warstwy interakcji oraz ciasnych hitboxów opartych
+na wymiarach modeli. Tryb `?debugInteractions=1` pokazuje hitboxy podczas prac
+developerskich, ale pozostają one niewidoczne w zwykłej rozgrywce.
+
 | Przedmiot | Tekst inspekcji                                                                                   | Kierunek efektu (stylizowany, nie medyczny)                 |
 | --------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | Blant     | „blant, ktoś oślinił, ale zioło dobre”                                                            | ciepła miękkość, powolne kołysanie i łagodny bloom          |

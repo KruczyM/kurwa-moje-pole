@@ -238,6 +238,18 @@ h1 i {
   color: #bbb0c2;
   font-size: 9px;
 }
+.items button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+.items button:disabled:hover {
+  color: #fff;
+  background: #2c2442;
+}
+.item-count {
+  color: #ffe34d;
+  font-size: 10px;
+}
 @media (max-width: 680px), (max-height: 720px) {
   #hud {
     padding: 10px;

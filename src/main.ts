@@ -117,9 +117,10 @@ qs<HTMLButtonElement>('#close-dialog').onclick = () => game?.closeDialog();
 qs<HTMLButtonElement>('#inspect-close').onclick = () => game?.closeInspect();
 qs<HTMLButtonElement>('#inspect-dismiss').onclick = () => game?.closeInspect();
 qs<HTMLButtonElement>('#inspect-use').onclick = () => game?.acceptInspect();
+qs<HTMLButtonElement>('#inspect-take').onclick = () => game?.takeInspectedItem();
 qs<HTMLButtonElement>('#cancel-effect').onclick = () => game?.cancelEffect();
 document.querySelectorAll<HTMLButtonElement>('[data-effect]').forEach((button) => {
-  button.onclick = () => game?.useEffect(button.dataset.effect as EffectId);
+  button.onclick = () => game?.useInventoryEffect(button.dataset.effect as EffectId);
 });
 
 qs<HTMLInputElement>('#setting-intensity').oninput = (event) => {

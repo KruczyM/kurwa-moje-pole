@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { NpcManager } from './NpcManager';
+import { INTERACTION_LAYER } from '../interactions/InteractionManager';
 
 /** Buduje minimalny asset, którego rozmiar zmienia się dopiero po uruchomieniu Idle. */
 function animatedScaleAsset(): GLTF {
@@ -37,6 +38,7 @@ describe('NpcManager', () => {
     expect(hitbox).toBeInstanceOf(THREE.Mesh);
     expect(hitbox.userData.interactionRoot).toBe(npc.root);
     expect((hitbox.material as THREE.MeshBasicMaterial).opacity).toBe(0);
+    expect(hitbox.layers.isEnabled(INTERACTION_LAYER)).toBe(true);
     manager.dispose();
   });
 });

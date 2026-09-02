@@ -4,6 +4,7 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { inspectableItems } from '../interactions/itemConfig';
 import { itemPresentation } from '../interactions/itemPresentationConfig';
+import { enableInteractionLayer } from '../interactions/InteractionManager';
 import { TimeOfDaySkybox } from './HorizonSkybox';
 import { Grass } from './vendor/three-stylized/index';
 
@@ -12,7 +13,9 @@ const WORLD_LIMIT = WORLD_SIZE / 2;
 /** Wysokość wcTronu: co najmniej dwukrotność nominalnej postaci mierzącej 1,8 m. */
 export const TOILET_HEIGHT_METERS = 3.6;
 
-export type WorldObject = { object: THREE.Object3D; label: string; action: 'toilet' | 'item' };
+export type WorldObject =
+  | { object: THREE.Object3D; label: string; action: 'toilet' }
+  | { object: THREE.Object3D; label: string; action: 'item'; itemId: string };
 type WorldModels = {
   largeTent: GLTF | null;
   smallTent: GLTF | null;
@@ -23,6 +26,11 @@ type WorldModels = {
 
 /** Tworzy prosty matowy materiał używany przez modele zastępcze. */
 const simpleMaterial = (color: number) => new THREE.MeshStandardMaterial({ color, roughness: 0.78 });
+
+/** Włącza podgląd hitboxów przez parametr adresu `?debugInteractions=1`. */
+export function interactionDebugEnabled(search: string) {
+  return new URLSearchParams(search).get('debugInteractions') === '1';
+}
 
 /** Generuje delikatnie pofalowaną geometrię ziemi. */
 export function terrainHeight(x: number, z: number) {
@@ -54,8 +62,14 @@ export class CampWorld {
   interactables: WorldObject[] = [];
   private grass: Grass;
   private skybox: TimeOfDaySkybox;
+  private readonly debugInteractions: boolean;
 
-  constructor(scene: THREE.Scene, models: WorldModels) {
+  constructor(
+    scene: THREE.Scene,
+    models: WorldModels,
+    debugInteractions = interactionDebugEnabled(typeof location === 'undefined' ? '' : location.search),
+  ) {
+    this.debugInteractions = debugInteractions;
     const sky = new Sky();
     sky.scale.setScalar(450000);
     sky.visible = false;
@@ -203,6 +217,7 @@ export class CampWorld {
     entrance.userData.interaction = { kind: 'toilet' };
     entrance.userData.interactionFacing = [0, 0, 1];
     entrance.userData.interactionRoot = entrance;
+    enableInteractionLayer(entrance);
     toilet.add(entrance);
 
     toilet.position.set(x, terrainHeight(x, z), z);
@@ -241,34 +256,72 @@ export class CampWorld {
     this.colliders.push({ x: 3, z: 4, r: 1.35 });
 
     inspectableItems.forEach((item) => {
-      const source = models.get(item.id);
-      const model = source
-        ? clone(source.scene)
-        : new THREE.Mesh(new THREE.IcosahedronGeometry(0.11), simpleMaterial(0xa8e04a));
-      const presentation = itemPresentation[item.id];
-      model.rotation.set(...presentation.tableRotation);
-      model.scale.setScalar(presentation.tableSize / largestDimension(model));
-      box.setFromObject(model);
-      model.position.y = -box.min.y;
+      for (let copy = 0; copy < item.tableQuantity; copy++) {
+        const source = models.get(item.id);
+        const model = source
+          ? clone(source.scene)
+          : new THREE.Mesh(new THREE.IcosahedronGeometry(0.11), simpleMaterial(0xa8e04a));
+        const presentation = itemPresentation[item.id];
+        model.rotation.set(...presentation.tableRotation);
+        model.scale.setScalar(presentation.tableSize / largestDimension(model));
+        box.setFromObject(model);
+        model.position.y = -box.min.y;
+        box.setFromObject(model);
 
-      // Osobny, nieskalowany korzeń zapobiega kurczeniu strefy interakcji razem z modelem.
-      const interactionRoot = new THREE.Group();
-      interactionRoot.name = `InspectableItem_${item.id}`;
-      interactionRoot.position.set(presentation.tablePosition[0], tableTop, presentation.tablePosition[1]);
-      interactionRoot.userData.interaction = { kind: 'item', itemId: item.id };
-      interactionRoot.add(model);
+        // Osobny, nieskalowany korzeń zapobiega kurczeniu strefy interakcji razem z modelem.
+        const interactionRoot = new THREE.Group();
+        interactionRoot.name = `InspectableItem_${item.id}_${copy + 1}`;
+        const copyOffset = (copy - (item.tableQuantity - 1) / 2) * 0.1;
+        interactionRoot.position.set(
+          presentation.tablePosition[0] + copyOffset,
+          tableTop,
+          presentation.tablePosition[1],
+        );
+        interactionRoot.userData.interaction = { kind: 'item', itemId: item.id };
+        interactionRoot.userData.interactionFacing = [0, 0, 1];
+        interactionRoot.add(model);
 
-      const hitbox = new THREE.Mesh(
-        new THREE.SphereGeometry(0.36, 10, 8),
-        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
-      );
-      hitbox.name = `InteractionHitbox_${item.id}`;
-      hitbox.position.y = 0.18;
-      interactionRoot.add(hitbox);
-      interactionRoot.traverse((child) => (child.userData.interactionRoot = interactionRoot));
-      tableRoot.add(interactionRoot);
-      this.interactables.push({ object: interactionRoot, label: `Obejrzyj: ${item.label}`, action: 'item' });
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const hitbox = new THREE.Mesh(
+          new THREE.BoxGeometry(
+            Math.max(0.18, size.x + 0.1),
+            Math.max(0.14, size.y + 0.1),
+            Math.max(0.18, size.z + 0.1),
+          ),
+          new THREE.MeshBasicMaterial({
+            color: 0xff2f72,
+            transparent: true,
+            opacity: this.debugInteractions ? 0.35 : 0,
+            depthWrite: false,
+            colorWrite: this.debugInteractions,
+            wireframe: this.debugInteractions,
+          }),
+        );
+        hitbox.name = `InteractionHitbox_${item.id}_${copy + 1}`;
+        hitbox.position.copy(center);
+        hitbox.userData.debugInteractionHitbox = true;
+        interactionRoot.add(hitbox);
+        interactionRoot.traverse((child) => (child.userData.interactionRoot = interactionRoot));
+        enableInteractionLayer(interactionRoot);
+        tableRoot.add(interactionRoot);
+        this.interactables.push({
+          object: interactionRoot,
+          label: `Obejrzyj: ${item.label}`,
+          action: 'item',
+          itemId: item.id,
+        });
+      }
     });
+  }
+
+  /** Zdejmuje pojedynczy egzemplarz używki ze stołu po zabraniu lub zużyciu. */
+  removeItem(itemId: string) {
+    const index = this.interactables.findIndex((entry) => entry.action === 'item' && entry.itemId === itemId);
+    if (index < 0) return false;
+    const [entry] = this.interactables.splice(index, 1);
+    entry.object.removeFromParent();
+    return true;
   }
 
   /** Sprawdza granice świata oraz kolizje dla gracza i NPC. */

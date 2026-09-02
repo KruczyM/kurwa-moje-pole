@@ -4,6 +4,7 @@ import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { characterAssets } from '../assets/assetManifest';
 import { npcLines } from './npcConfig';
 import { NpcAnimator } from './NpcAnimator';
+import { enableInteractionLayer } from '../interactions/InteractionManager';
 export type Npc = {
   root: THREE.Group;
   name: string;
@@ -86,6 +87,7 @@ export class NpcManager {
       root.userData.interaction = { kind: 'npc', name: asset.name };
       addNpcInteractionHitbox(root);
       root.traverse((o) => (o.userData.interactionRoot = root));
+      enableInteractionLayer(root);
       scene.add(root);
       const npc = {
         root,
