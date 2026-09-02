@@ -34,7 +34,7 @@ export function controlHintForState(state: AppState, mode: InputMode = 'desktop'
       case 'playing':
         return 'Joystick — ruch · przeciągnij ekran — rozglądanie · UŻYJ — interakcja';
       case 'inspecting':
-        return 'UŻYJ — uruchom efekt · WRÓĆ — wróć do obozu';
+        return 'Przeciągnij — obróć · UŻYJ — uruchom efekt · WRÓĆ — wróć do obozu';
       case 'dialog':
         return 'WRÓĆ — wróć do obozu';
       case 'inventory':
@@ -49,7 +49,7 @@ export function controlHintForState(state: AppState, mode: InputMode = 'desktop'
     case 'playing':
       return `${inputBindings.escape} — pauza · ${inputBindings.interact} — interakcja · ${inputBindings.inventory} — ekwipunek`;
     case 'inspecting':
-      return `${inputBindings.interact} — uruchom efekt · ${inputBindings.escape} — wróć do obozu`;
+      return `Przeciągnij — obróć · kółko — zbliż · ${inputBindings.interact} — uruchom efekt · ${inputBindings.escape} — wróć do obozu`;
     case 'dialog':
       return `${inputBindings.escape} — wróć do obozu`;
     case 'inventory':
