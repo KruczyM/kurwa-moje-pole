@@ -48,10 +48,11 @@ export const tentLayout: readonly TentConfig[] = [
     model: 'big2',
     position: campPosition(24, 17),
     rotationY: Math.PI * 1.5,
-    physicalSize: LARGE,
+    physicalSize: [7.56, 5.04, 11.592],
     fit: 'exact-source-correction',
-    groundOffset: -0.87,
-    collider: { type: 'box', size: LARGE_COLLIDER },
+    groundOffset: -2.2,
+    // Collider obejmuje płótno namiotu, ale pomija linki i odciągi modelu.
+    collider: { type: 'box', size: [5.2, 7.6] },
   },
   {
     id: 'T02',

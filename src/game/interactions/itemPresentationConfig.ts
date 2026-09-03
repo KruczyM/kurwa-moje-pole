@@ -34,5 +34,5 @@ export const itemPresentation: Record<InspectableItemId, ItemPresentation> = {
   cocaine: lying(0.22, [-0.41, 0.18]),
   mdma: lying(0.22, [0, -0.18]),
   mushrooms: lying(0.18, [0.41, 0.18]),
-  lsd: lying(0.16, [0.82, -0.18]),
+  lsd: lying(0.16, [0.68, 0.12]),
 };

@@ -19,4 +19,8 @@ describe('itemPresentation', () => {
   it('keeps LSD and mushrooms easy to resize independently', () => {
     expect(itemPresentation.lsd.tableSize).not.toBe(itemPresentation.mushrooms.tableSize);
   });
+
+  it('keeps LSD away from the table edge and farther into the tabletop', () => {
+    expect(itemPresentation.lsd.tablePosition).toEqual([0.68, 0.12]);
+  });
 });
