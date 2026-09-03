@@ -6,6 +6,7 @@ import { inspectableItems } from '../interactions/itemConfig';
 import { itemPresentation } from '../interactions/itemPresentationConfig';
 import { enableInteractionLayer } from '../interactions/InteractionManager';
 import { TimeOfDaySkybox } from './HorizonSkybox';
+import { tentColliderBounds, tentLayout, type TentConfig, type TentModelId } from './campLayout';
 import { Grass } from './vendor/three-stylized/index';
 
 const WORLD_SIZE = 117.6;
@@ -17,8 +18,7 @@ export type WorldObject =
   | { object: THREE.Object3D; label: string; action: 'toilet' }
   | { object: THREE.Object3D; label: string; action: 'item'; itemId: string };
 type WorldModels = {
-  largeTent: GLTF | null;
-  smallTent: GLTF | null;
+  tents: Map<TentModelId, GLTF>;
   flag: GLTF | null;
   toilet: GLTF | null;
   interactables: Map<string, GLTF>;
@@ -110,19 +110,7 @@ export class CampWorld {
     scene.add(this.grass);
 
     this.tarp(scene);
-    this.placeTent(scene, models.largeTent, new THREE.Vector3(-8, 0, -5), 3.2);
-    (
-      [
-        [-8, 3, 0.4],
-        [-2, 7, 0.1],
-        [5, 6, -0.5],
-        [8, 2, 0.4],
-        [7, -5, 0],
-        [-3, -7, 0.7],
-      ] as const
-    ).forEach(([x, z, rotation]) =>
-      this.placeTent(scene, models.smallTent, new THREE.Vector3(x, 0, z), 1.8, rotation),
-    );
+    tentLayout.forEach((tent) => this.placeTent(scene, models.tents.get(tent.model) ?? null, tent));
     this.toilet(scene, models.toilet);
     this.mast(scene, models.flag);
     this.table(scene, models.interactables);
@@ -146,22 +134,25 @@ export class CampWorld {
     return root;
   }
 
-  /** Umieszcza namiot i dodaje jego rzeczywisty bounding box do kolizji. */
-  private placeTent(
-    scene: THREE.Scene,
-    source: GLTF | null,
-    position: THREE.Vector3,
-    height: number,
-    rotation = 0,
-  ) {
-    const object = this.prepare(source, height, 0x5c8dbe);
-    object.position.add(position);
-    object.rotation.y = rotation;
+  /** Umieszcza namiot i buduje jego uproszczony collider wyłącznie z konfiguracji obozu. */
+  private placeTent(scene: THREE.Scene, source: GLTF | null, config: TentConfig) {
+    const object = this.prepare(source, config.scale, 0x5c8dbe);
+    const [x, y, z] = config.position;
+    object.name = config.id;
+    object.userData.campObject = {
+      id: config.id,
+      label: config.label,
+      model: config.model,
+    };
+    object.position.add(new THREE.Vector3(x, y + terrainHeight(x, z), z));
+    object.rotation.y = config.rotationY;
     scene.add(object);
     scene.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(object);
-    box.min.y = -2;
-    box.max.y = 4;
+    const bounds = tentColliderBounds(config);
+    const box = new THREE.Box3(
+      new THREE.Vector3(bounds.minX, -2, bounds.minZ),
+      new THREE.Vector3(bounds.maxX, 4, bounds.maxZ),
+    );
     this.colliders.push({ box });
   }
 
