@@ -64,23 +64,23 @@ Główna pętla rozgrywki:
 
 Do projektu dołączona jest robocza mapa `camp-layout-provisional.png`. Jest to uporządkowana interpretacja szkicu, a nie ostateczny pomiar geodezyjny. Wszystkie namioty otrzymują stabilne identyfikatory `T01`–`T15`, aby można było później przypisać im właścicieli, opisy i właściwe modele bez zmieniania kodu.
 
-| ID  | Pozycja x%, y% | Charakter miejsca                      | Model runtime    |
-| --- | -------------: | -------------------------------------- | ---------------- |
-| T01 |         24, 17 | duży, 4,20 × 6,44 × 2,80 m, obrót 270° | `big2.glb`       |
-| T02 |         44, 16 | mały                                   | `small.glb`      |
-| T03 |         57, 16 | średni                                 | `niebieski.glb`  |
-| T04 |         71, 17 | mały                                   | `biały.glb`      |
-| T05 |         88, 21 | mały, nieregularny                     | `small2.glb`     |
-| T06 |         10, 40 | mały, pionowo ustawiony                | `small.glb`      |
-| T07 |         83, 39 | średni, pionowo ustawiony              | `kolorwy.glb`    |
-| T08 |         11, 62 | szeroki, niski                         | `niebppom.glb`   |
-| T09 |         29, 64 | duży rodzinny                          | `dużynamiot.glb` |
-| T10 |         45, 65 | mały                                   | `small.glb`      |
-| T11 |         63, 65 | średni                                 | `niebieski.glb`  |
-| T12 |         76, 62 | mały, podłużny                         | `kolorwy.glb`    |
-| T13 |         22, 82 | mały                                   | `biały.glb`      |
-| T14 |         37, 83 | duży rodzinny                          | `dużynamiot.glb` |
-| T15 |         62, 83 | mały                                   | `small2.glb`     |
+| ID  | Pozycja x%, y% | Charakter miejsca                        | Model runtime    |
+| --- | -------------: | ---------------------------------------- | ---------------- |
+| T01 |         24, 17 | duży, 7,56 × 11,592 × 5,04 m, obrót 270° | `big2.glb`       |
+| T02 |         44, 16 | mały                                     | `small.glb`      |
+| T03 |         57, 16 | średni                                   | `niebieski.glb`  |
+| T04 |         71, 17 | mały                                     | `biały.glb`      |
+| T05 |         88, 21 | mały, nieregularny                       | `small2.glb`     |
+| T06 |         10, 40 | mały, pionowo ustawiony                  | `small.glb`      |
+| T07 |         83, 39 | średni, pionowo ustawiony                | `kolorwy.glb`    |
+| T08 |         11, 62 | szeroki, niski                           | `niebppom.glb`   |
+| T09 |         29, 64 | duży rodzinny                            | `dużynamiot.glb` |
+| T10 |         45, 65 | mały                                     | `small.glb`      |
+| T11 |         63, 65 | średni                                   | `niebieski.glb`  |
+| T12 |         76, 62 | mały, podłużny                           | `kolorwy.glb`    |
+| T13 |         22, 82 | mały                                     | `biały.glb`      |
+| T14 |         37, 83 | duży rodzinny                            | `dużynamiot.glb` |
+| T15 |         62, 83 | mały                                     | `small2.glb`     |
 
 Pozycje, rotacje, skale i użyte modele nie mogą być zapisane bezpośrednio w kodzie sceny. Powinny znajdować się w jednym pliku konfiguracyjnym, np. `campLayout.ts`, z polami:
 
@@ -97,7 +97,7 @@ type CampObjectConfig = {
 };
 ```
 
-Aktualny runtime korzysta z `src/game/world/campLayout.ts`. Obszar układu ma 30 × 30 m, a pozycje są deterministycznie przeliczane z tabeli procentowej. Wszystkie małe namioty mają 4,20 × 3,60 m i 2,80 m wysokości. Duże namioty T01, T09 i T14 mają szerokość oraz długość zwiększone o 15% i wysokość równą małym namiotom: 4,20 × 6,44 × 2,80 m. Model `big2` występuje tylko jako T01 obok toi-toia i jest obrócony o 270°. Białe namioty mają korektę pionową osadzającą właściwą bryłę na terenie. Model `namiot.glb` nie jest używany w układzie. Zadaszenie Mad Dog pozostaje osobnym obiektem świata i nie jest jednym z numerowanych namiotów.
+Aktualny runtime korzysta z `src/game/world/campLayout.ts`. Obszar układu ma 30 × 30 m, a pozycje są deterministycznie przeliczane z tabeli procentowej. Wszystkie małe namioty mają 4,20 × 3,60 m i 2,80 m wysokości. Duże rodzinne T09 i T14 mają 4,20 × 6,44 × 2,80 m. Model `big2` występuje tylko jako T01 obok toi-toia, ma 7,56 × 11,592 × 5,04 m i jest obrócony o 270°. Jego collider 5,20 × 7,60 m pomija linki oraz odciągi, dlatego nie blokują ruchu. Białe namioty mają korektę pionową osadzającą właściwą bryłę na terenie. Model `namiot.glb` nie jest używany w układzie. Zadaszenie Mad Dog pozostaje osobnym obiektem świata i nie jest jednym z numerowanych namiotów.
 
 ## 3. Styl wizualny, materiały i oświetlenie
 

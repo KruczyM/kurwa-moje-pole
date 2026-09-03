@@ -14,13 +14,16 @@ describe('camp tent layout', () => {
     expect(tentLayout.find(({ id }) => id === 'T14')?.model).toBe('large');
   });
 
-  it('uses big2 once beside the toilet at large-tent size and rotated another 90 degrees right', () => {
+  it('uses big2 once beside the toilet with a collider that excludes guy lines', () => {
     const big2 = tentLayout.filter(({ model }) => model === 'big2');
     expect(big2).toHaveLength(1);
     expect(big2[0].id).toBe('T01');
-    expect(big2[0].physicalSize).toEqual([4.1975, 2.8, 6.44]);
+    expect(big2[0].physicalSize).toEqual([7.56, 5.04, 11.592]);
     expect(big2[0].rotationY).toBeCloseTo(Math.PI * 1.5);
     expect(big2[0].groundOffset).toBeLessThan(0);
+    expect(big2[0].collider.size).toEqual([5.2, 7.6]);
+    expect(big2[0].collider.size[0]).toBeLessThan(big2[0].physicalSize[0]);
+    expect(big2[0].collider.size[1]).toBeLessThan(big2[0].physicalSize[2]);
   });
 
   it('uses one physical size for every small tent and no classic namiot.glb instance', () => {
@@ -35,8 +38,8 @@ describe('camp tent layout', () => {
     whiteTents.forEach(({ groundOffset }) => expect(groundOffset).toBe(-0.45));
   });
 
-  it('uses the same enlarged physical size for all large tents', () => {
-    const largeTents = tentLayout.filter(({ id }) => ['T01', 'T09', 'T14'].includes(id));
+  it('uses the same enlarged physical size for both large family tents', () => {
+    const largeTents = tentLayout.filter(({ id }) => ['T09', 'T14'].includes(id));
     largeTents.forEach(({ physicalSize, collider }) => {
       expect(physicalSize).toEqual([4.1975, 2.8, 6.44]);
       expect(collider.size).toEqual([4.1975, 6.44]);
