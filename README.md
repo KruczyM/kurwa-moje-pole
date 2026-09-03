@@ -112,13 +112,13 @@ Katalog `src/game/world/vendor/three-stylized/` jest wydzielonym kodem bibliotec
 
 ## Układ namiotów
 
-Wszystkie namioty T01–T15 są konfigurowane w `src/game/world/campLayout.ts`. Pozycje pochodzą z procentowej mapy obozu i są przeliczane na obszar 30 × 30 m; jedna jednostka Three.js oznacza jeden metr. Każdy wpis ma jawny model, obrót, docelowe wymiary fizyczne i collider. `big2` występuje tylko jako T01 obok toi-toia, ma taki sam rozmiar jak `dużynamiot.glb` — 3,65 × 5,60 × 2,10 m — i obrót 180°. Wszystkie pozostałe małe namioty zostały powiększone dwukrotnie do 4,20 × 3,60 × 2,80 m; `namiot.glb` nie jest używany w układzie.
+Wszystkie namioty T01–T15 są konfigurowane w `src/game/world/campLayout.ts`. Pozycje pochodzą z procentowej mapy obozu i są przeliczane na obszar 30 × 30 m; jedna jednostka Three.js oznacza jeden metr. Każdy wpis ma jawny model, obrót, docelowe wymiary fizyczne i collider. `big2` występuje tylko jako T01 obok toi-toia, ma taki sam rozmiar jak `dużynamiot.glb` — 4,20 × 6,44 × 2,80 m — i obrót 270°. Wszystkie pozostałe małe namioty mają rozmiar 4,20 × 3,60 × 2,80 m; `namiot.glb` nie jest używany w układzie. Białe namioty mają osobną korektę osadzenia na gruncie.
 
 Parametr adresu `?debugTentScale=1` wypisuje w konsoli przeglądarki zmierzone wymiary świata każdego ustawionego namiotu. Skrypt `scripts/blender/inspect-world-model-dimensions.py` pozwala dodatkowo sprawdzić surowe wymiary GLB przed normalizacją.
 
 ## Mad Dog i siedzenie
 
-Centralne zadaszenie wykorzystuje właściwy model `world/tents/main.glb`, powiększony dodatkowo 4× względem poprzedniej skali runtime. Nie są już dodawane proceduralna plandeka ani cztery sztuczne słupy. Stół z używkami znajduje się pod Mad Dog. Flaga korzysta z kompletnego modelu `world/flaga2.glb`, powiększonego 4× i bez dokładania drugiego masztu.
+Centralne zadaszenie wykorzystuje właściwy model `world/tents/main.glb`. Jego bieżący rozmiar ustawia `MAD_DOG_CONFIG.physicalSize` w `src/game/world/campLandmarks.ts`; został zmniejszony o 30% względem poprzedniej skali runtime. Nie są już dodawane proceduralna plandeka ani cztery sztuczne słupy. Stół z używkami znajduje się pod Mad Dog. Flaga korzysta z kompletnego modelu `world/flaga2.glb`, powiększonego 4× i bez dokładania drugiego masztu.
 
 Pod Mad Dog znajduje się osiem miejsc `S01`–`S08`. Klawisz `E` uruchamia siedzenie wybraną postacią i animację `SittingLaughing`; `E` lub `Escape` pozwala wstać i przywraca kamerę pierwszoosobową. Na urządzeniu mobilnym tę samą funkcję pełni przycisk `WSTAŃ`.
 

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { FLAG_CONFIG, MAD_DOG_CONFIG, seatLayout } from './campLandmarks';
 
 describe('camp landmarks', () => {
-  it('keeps the requested fourfold Mad Dog scale and independent flag scale', () => {
-    expect(MAD_DOG_CONFIG.physicalSize).toEqual([31.88, 13.68, 31.76]);
+  it('keeps the requested reduced Mad Dog scale and independent flag scale', () => {
+    expect(MAD_DOG_CONFIG.physicalSize).toEqual([22.316, 9.576, 22.232]);
     expect(FLAG_CONFIG.height).toBe(16.4);
   });
 

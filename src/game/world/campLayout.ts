@@ -36,7 +36,9 @@ export function campPosition(xPercent: number, yPercent: number): [number, numbe
 
 const SMALL: PhysicalSize = [4.2, 2.8, 3.6];
 const SMALL_COLLIDER: [number, number] = [4.2, 3.6];
-const FAMILY_AIR_SECONDS_52: PhysicalSize = [3.65, 2.1, 5.6];
+/** Duże namioty: szerokość i długość bazowego 5.2 zwiększone o 15%, wysokość jak w małych namiotach. */
+const LARGE: PhysicalSize = [4.1975, 2.8, 6.44];
+const LARGE_COLLIDER: [number, number] = [4.1975, 6.44];
 
 /** Deterministyczny układ mapy T01–T15; jedna jednostka świata odpowiada jednemu metrowi. */
 export const tentLayout: readonly TentConfig[] = [
@@ -45,11 +47,11 @@ export const tentLayout: readonly TentConfig[] = [
     label: 'Rodzinny namiot T01',
     model: 'big2',
     position: campPosition(24, 17),
-    rotationY: Math.PI,
-    physicalSize: FAMILY_AIR_SECONDS_52,
+    rotationY: Math.PI * 1.5,
+    physicalSize: LARGE,
     fit: 'exact-source-correction',
     groundOffset: -0.87,
-    collider: { type: 'box', size: [3.65, 5.6] },
+    collider: { type: 'box', size: LARGE_COLLIDER },
   },
   {
     id: 'T02',
@@ -79,6 +81,7 @@ export const tentLayout: readonly TentConfig[] = [
     rotationY: 0.052,
     physicalSize: SMALL,
     fit: 'exact-source-correction',
+    groundOffset: -0.45,
     collider: { type: 'box', size: SMALL_COLLIDER },
   },
   {
@@ -127,9 +130,9 @@ export const tentLayout: readonly TentConfig[] = [
     model: 'large',
     position: campPosition(29, 64),
     rotationY: -0.105,
-    physicalSize: FAMILY_AIR_SECONDS_52,
+    physicalSize: LARGE,
     fit: 'exact-source-correction',
-    collider: { type: 'box', size: [3.65, 5.6] },
+    collider: { type: 'box', size: LARGE_COLLIDER },
   },
   {
     id: 'T10',
@@ -169,6 +172,7 @@ export const tentLayout: readonly TentConfig[] = [
     rotationY: -0.122,
     physicalSize: SMALL,
     fit: 'exact-source-correction',
+    groundOffset: -0.45,
     collider: { type: 'box', size: SMALL_COLLIDER },
   },
   {
@@ -177,9 +181,9 @@ export const tentLayout: readonly TentConfig[] = [
     model: 'large',
     position: campPosition(37, 83),
     rotationY: -0.087,
-    physicalSize: FAMILY_AIR_SECONDS_52,
+    physicalSize: LARGE,
     fit: 'exact-source-correction',
-    collider: { type: 'box', size: [3.65, 5.6] },
+    collider: { type: 'box', size: LARGE_COLLIDER },
   },
   {
     id: 'T15',

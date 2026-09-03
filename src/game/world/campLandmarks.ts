@@ -3,8 +3,8 @@ import { campPosition } from './campLayout';
 export const MAD_DOG_CONFIG = {
   id: 'MadDog',
   position: campPosition(48, 37),
-  /** Czterokrotne powiększenie względem poprzedniego rozmiaru runtime. */
-  physicalSize: [31.88, 13.68, 31.76] as const,
+  /** Rozmiar po zmniejszeniu poprzedniej skali runtime o 30%. */
+  physicalSize: [22.316, 9.576, 22.232] as const,
   fillLightIntensity: 1.45,
 };
 

@@ -33,7 +33,7 @@ Główna pętla rozgrywki:
 ### 2.2. Centralne zadaszenie Mad Dog
 
 - Mad Dog jest największym i najważniejszym obiektem obozu.
-- Runtime używa właściwego modelu `public/game-assets/world/tents/main.glb`, powiększonego dodatkowo cztery razy względem poprzedniej skali runtime.
+- Runtime używa właściwego modelu `public/game-assets/world/tents/main.glb`, zmniejszonego o 30% względem poprzedniej skali runtime.
 - Zadaszenie ma być czarne, otwarte ze wszystkich stron, z lekko zwisającym materiałem.
 - Pod zadaszeniem wszyscy głównie siedzą, chronią się przed słońcem i rozmawiają.
 - Cała przestrzeń pod nim musi być dostępna dla gracza i NPC.
@@ -66,7 +66,7 @@ Do projektu dołączona jest robocza mapa `camp-layout-provisional.png`. Jest to
 
 | ID  | Pozycja x%, y% | Charakter miejsca                      | Model runtime    |
 | --- | -------------: | -------------------------------------- | ---------------- |
-| T01 |         24, 17 | duży, 3,65 × 5,60 × 2,10 m, obrót 180° | `big2.glb`       |
+| T01 |         24, 17 | duży, 4,20 × 6,44 × 2,80 m, obrót 270° | `big2.glb`       |
 | T02 |         44, 16 | mały                                   | `small.glb`      |
 | T03 |         57, 16 | średni                                 | `niebieski.glb`  |
 | T04 |         71, 17 | mały                                   | `biały.glb`      |
@@ -97,7 +97,7 @@ type CampObjectConfig = {
 };
 ```
 
-Aktualny runtime korzysta z `src/game/world/campLayout.ts`. Obszar układu ma 30 × 30 m, a pozycje są deterministycznie przeliczane z tabeli procentowej. Wszystkie małe namioty zostały powiększone dwukrotnie do 4,20 × 3,60 m i 2,80 m wysokości. Model `big2` występuje tylko jako T01 obok toi-toia, ma taki sam rozmiar jak rodzinne T09 i T14 — 3,65 × 5,60 × 2,10 m — i jest obrócony o 180°. Model `namiot.glb` nie jest używany w układzie. Zadaszenie Mad Dog pozostaje osobnym obiektem świata i nie jest jednym z numerowanych namiotów.
+Aktualny runtime korzysta z `src/game/world/campLayout.ts`. Obszar układu ma 30 × 30 m, a pozycje są deterministycznie przeliczane z tabeli procentowej. Wszystkie małe namioty mają 4,20 × 3,60 m i 2,80 m wysokości. Duże namioty T01, T09 i T14 mają szerokość oraz długość zwiększone o 15% i wysokość równą małym namiotom: 4,20 × 6,44 × 2,80 m. Model `big2` występuje tylko jako T01 obok toi-toia i jest obrócony o 270°. Białe namioty mają korektę pionową osadzającą właściwą bryłę na terenie. Model `namiot.glb` nie jest używany w układzie. Zadaszenie Mad Dog pozostaje osobnym obiektem świata i nie jest jednym z numerowanych namiotów.
 
 ## 3. Styl wizualny, materiały i oświetlenie
 
