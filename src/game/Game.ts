@@ -3,6 +3,7 @@ import { AssetLoader } from './assets/AssetLoader';
 import { characterAssets, effectAssets, musicAsset } from './assets/assetManifest';
 import { CampWorld } from './world/CampWorld';
 import { PlayerController } from './player/PlayerController';
+import { PLAYER_SPAWN_CONFIG } from './world/campLandmarks';
 import { isMobileInputDevice, MobileControls } from './player/MobileControls';
 import { NpcManager } from './npc/NpcManager';
 import { EffectManager, EffectId, VisualSettings, defaultVisualSettings } from './effects/EffectManager';
@@ -144,6 +145,7 @@ export class Game {
         this.canvas,
         (x, z) => this.world!.canMove(x, z),
         !this.mobileInput,
+        PLAYER_SPAWN_CONFIG,
       );
       if (this.mobileInput) {
         this.mobileControls = new MobileControls(qs('#mobile-controls'), {

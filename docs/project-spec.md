@@ -58,6 +58,7 @@ Główna pętla rozgrywki:
   i dopisać do manifestu assetów.
 - Ma być obiektem stałym z kolizją.
 - Podejście do wejścia musi pozostać dostępne.
+- Początkowy spawn gracza znajduje się 2,8 m przed wejściem do toi-toia, poza colliderem kabiny i T01; kamera jest skierowana w stronę środka obozu.
 - Toi-toi może mieć interakcję oraz osobną sekwencję animacji wejścia/wyjścia, jeśli zostanie przewidziana w zestawie animacji.
 
 ### 2.5. Plan obozu i identyfikatory

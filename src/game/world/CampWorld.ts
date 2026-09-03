@@ -7,7 +7,6 @@ import { itemPresentation } from '../interactions/itemPresentationConfig';
 import { enableInteractionLayer } from '../interactions/InteractionManager';
 import { TimeOfDaySkybox } from './HorizonSkybox';
 import {
-  campPosition,
   tentColliderBounds,
   tentLayout,
   type PhysicalSize,
@@ -15,7 +14,7 @@ import {
   type TentFit,
   type TentModelId,
 } from './campLayout';
-import { FLAG_CONFIG, MAD_DOG_CONFIG, seatLayout } from './campLandmarks';
+import { FLAG_CONFIG, MAD_DOG_CONFIG, seatLayout, TOILET_CONFIG } from './campLandmarks';
 import { Grass } from './vendor/three-stylized/index';
 
 const WORLD_SIZE = 117.6;
@@ -266,15 +265,36 @@ export class CampWorld {
 
   /** Ustawia osiem interaktywnych krzeseł w kręgu pod Mad Dogiem. */
   private chairs(parent: THREE.Group, source: GLTF | null) {
+    // Określ, o ile metrów chcesz odsunąć krzesła od centrum (np. 0.5 metra)
+    const offsetDistance = 1;
+
     seatLayout.forEach((seat) => {
+      // 1. Klonujemy pozycję z layoutu, aby nie modyfikować oryginalnych danych
+      const seatPosition = [...seat.position];
+
+      // 2. Obliczamy wektor kierunku od centrum (0, 0) na płaszczyźnie XZ
+      const x = seatPosition[0];
+      const z = seatPosition[2];
+      const length = Math.sqrt(x * x + z * z);
+
+      if (length > 0) {
+        // Normalizujemy wektor i mnożymy przez odległość odsunięcia
+        seatPosition[0] += (x / length) * offsetDistance;
+        seatPosition[2] += (z / length) * offsetDistance;
+      }
+
+      // 3. Obliczamy pozycję globalną (worldPosition) na podstawie nowej, odsuniętej pozycji
       const worldPosition: [number, number, number] = [
-        parent.position.x + seat.position[0],
-        parent.position.y + seat.position[1],
-        parent.position.z + seat.position[2],
+        parent.position.x + seatPosition[0],
+        parent.position.y + seatPosition[1],
+        parent.position.z + seatPosition[2],
       ];
+
       const root = new THREE.Group();
       root.name = `Seat_${seat.id}`;
-      root.position.set(...seat.position);
+
+      // Używamy nowej, zmodyfikowanej pozycji
+      root.position.set(seatPosition[0], seatPosition[1], seatPosition[2]);
       root.rotation.y = seat.rotationY;
       root.userData.interaction = {
         kind: 'seat',
@@ -282,6 +302,7 @@ export class CampWorld {
         position: worldPosition,
         rotationY: seat.rotationY,
       };
+
       const chair = this.prepare(source, 1.05, 0x385c82);
       chair.name = `SeatVisual_${seat.id}`;
       chair.traverse((object) => {
@@ -292,6 +313,7 @@ export class CampWorld {
           : mesh.material.clone();
       });
       root.add(chair);
+
       const hitbox = new THREE.Mesh(
         new THREE.BoxGeometry(1.05, 1.25, 0.9),
         new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false }),
@@ -299,9 +321,12 @@ export class CampWorld {
       hitbox.name = `InteractionHitbox_Seat_${seat.id}`;
       hitbox.position.y = 0.62;
       root.add(hitbox);
+
       root.traverse((child) => (child.userData.interactionRoot = root));
       enableInteractionLayer(root);
       parent.add(root);
+
+      // Zmodyfikowana pozycja automatycznie aktualizuje colidery i interakcje
       this.colliders.push({ x: worldPosition[0], z: worldPosition[2], r: 0.48 });
       this.interactables.push({
         object: root,
@@ -314,7 +339,7 @@ export class CampWorld {
 
   /** Umieszcza docelowy wcTron, collider kabiny i kierunkową interakcję przed drzwiami. */
   private toilet(scene: THREE.Object3D, source: GLTF | null) {
-    const [x, , z] = campPosition(8, 18);
+    const [x, , z] = TOILET_CONFIG.position;
     const toilet = new THREE.Group();
     toilet.name = 'CampToilet_wcTron';
     const cabin = source

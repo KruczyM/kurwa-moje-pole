@@ -81,4 +81,27 @@ describe('PlayerController mouse look', () => {
     expect(canvas.requestPointerLock).not.toHaveBeenCalled();
     controller.dispose();
   });
+
+  it('ustawia przekazany punkt i kierunek początkowego spawnu', () => {
+    const windowTarget = new EventTarget();
+    const documentTarget = Object.assign(new EventTarget(), { pointerLockElement: null });
+    const canvas = Object.assign(new EventTarget(), {
+      tabIndex: 0,
+      focus: vi.fn(),
+      requestPointerLock: vi.fn(() => Promise.resolve()),
+    }) as unknown as HTMLCanvasElement;
+    vi.stubGlobal('window', windowTarget);
+    vi.stubGlobal('document', documentTarget);
+
+    const camera = new THREE.PerspectiveCamera();
+    const controller = new PlayerController(camera, canvas, () => true, false, {
+      position: [-12.6, -6.8],
+      yaw: -2.06,
+    });
+
+    expect(camera.position.toArray()).toEqual([-12.6, 1.9, -6.8]);
+    expect(controller.yaw).toBeCloseTo(-2.06);
+    expect(camera.rotation.y).toBeCloseTo(-2.06);
+    controller.dispose();
+  });
 });

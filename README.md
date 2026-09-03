@@ -114,6 +114,8 @@ Katalog `src/game/world/vendor/three-stylized/` jest wydzielonym kodem bibliotec
 
 Wszystkie namioty T01–T15 są konfigurowane w `src/game/world/campLayout.ts`. Pozycje pochodzą z procentowej mapy obozu i są przeliczane na obszar 30 × 30 m; jedna jednostka Three.js oznacza jeden metr. Każdy wpis ma jawny model, obrót, docelowe wymiary fizyczne i collider. `big2` występuje tylko jako T01 obok toi-toia, ma rozmiar 7,56 × 11,592 × 5,04 m i obrót 270°. Jego mniejszy collider 5,20 × 7,60 m obejmuje centralną bryłę, pozwalając przechodzić przez linki i odciągi. Pozostałe duże namioty mają 4,20 × 6,44 × 2,80 m, a małe 4,20 × 3,60 × 2,80 m. Model `namiot.glb` nie jest używany w układzie. Białe namioty mają osobną korektę osadzenia na gruncie.
 
+Gracz pojawia się 2,8 m przed wejściem do toi-toia i jest początkowo skierowany w stronę środka obozu. Wspólne pozycje toi-toia i spawnu znajdują się w `src/game/world/campLandmarks.ts`.
+
 Parametr adresu `?debugTentScale=1` wypisuje w konsoli przeglądarki zmierzone wymiary świata każdego ustawionego namiotu. Skrypt `scripts/blender/inspect-world-model-dimensions.py` pozwala dodatkowo sprawdzić surowe wymiary GLB przed normalizacją.
 
 ## Mad Dog i siedzenie
