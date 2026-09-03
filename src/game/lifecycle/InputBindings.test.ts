@@ -19,6 +19,8 @@ describe('InputBindings', () => {
     expect(resolveGameInput('inventory', 'Tab')).toBe('toggle-inventory');
     expect(resolveGameInput('playing', 'e')).toBe('primary-action');
     expect(resolveGameInput('inspecting', 'E')).toBe('primary-action');
+    expect(resolveGameInput('seated', 'E')).toBe('primary-action');
+    expect(resolveGameInput('seated', 'Escape')).toBe('escape');
   });
 
   it('blocks repeated and contradictory modal actions', () => {
@@ -38,6 +40,7 @@ describe('InputBindings', () => {
   it('builds touch hints without desktop keys', () => {
     expect(startControlHint('mobile')).toContain('Joystick');
     expect(controlHintForState('playing', 'mobile')).toContain('UŻYJ');
+    expect(controlHintForState('seated', 'mobile')).toContain('WSTAŃ');
     expect(interactionControlHint('Porozmawiaj', 'mobile')).toBe('UŻYJ — Porozmawiaj');
   });
 });

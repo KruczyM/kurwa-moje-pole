@@ -29,12 +29,21 @@ describe('AppStateMachine', () => {
 
   it('uses one Escape priority for every state', () => {
     expect(escapeTarget('inspecting')).toBe('playing');
+    expect(escapeTarget('seated')).toBe('playing');
     expect(escapeTarget('using-item')).toBe('playing');
     expect(escapeTarget('dialog')).toBe('playing');
     expect(escapeTarget('inventory')).toBe('playing');
     expect(escapeTarget('playing')).toBe('paused');
     expect(escapeTarget('paused')).toBe('playing');
     expect(escapeTarget('loading')).toBeNull();
+  });
+
+  it('enters and leaves an interactive seat without opening pause', () => {
+    const machine = new AppStateMachine('playing');
+    machine.transition('seated');
+    expect(machine.current).toBe('seated');
+    machine.transition(escapeTarget(machine.current)!);
+    expect(machine.current).toBe('playing');
   });
 
   it('can unsubscribe transition observers', () => {

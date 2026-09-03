@@ -17,14 +17,14 @@ export function resolveGameInput(state: AppState, key: string, repeat = false): 
   if (repeat) return null;
   if (
     key === 'Escape' &&
-    ['playing', 'inspecting', 'using-item', 'dialog', 'inventory', 'paused'].includes(state)
+    ['playing', 'seated', 'inspecting', 'using-item', 'dialog', 'inventory', 'paused'].includes(state)
   ) {
     return 'escape';
   }
   if (key === 'Tab' && (state === 'playing' || state === 'inventory')) {
     return 'toggle-inventory';
   }
-  if (key.toLowerCase() === 'e' && (state === 'playing' || state === 'inspecting')) {
+  if (key.toLowerCase() === 'e' && (state === 'playing' || state === 'seated' || state === 'inspecting')) {
     return 'primary-action';
   }
   return null;
@@ -36,6 +36,8 @@ export function controlHintForState(state: AppState, mode: InputMode = 'desktop'
     switch (state) {
       case 'playing':
         return 'Joystick — ruch · przeciągnij ekran — rozglądanie · UŻYJ — interakcja';
+      case 'seated':
+        return 'WSTAŃ — wróć do poruszania się';
       case 'inspecting':
         return 'Przeciągnij — obróć · UŻYJ — uruchom efekt · WRÓĆ — wróć do obozu';
       case 'using-item':
@@ -53,6 +55,8 @@ export function controlHintForState(state: AppState, mode: InputMode = 'desktop'
   switch (state) {
     case 'playing':
       return `${inputBindings.escape} — pauza · ${inputBindings.interact} — interakcja · ${inputBindings.inventory} — ekwipunek`;
+    case 'seated':
+      return `${inputBindings.interact} / ${inputBindings.escape} — wstań`;
     case 'inspecting':
       return `Przeciągnij — obróć · kółko — zbliż · ${inputBindings.interact} — uruchom efekt · ${inputBindings.escape} — wróć do obozu`;
     case 'using-item':

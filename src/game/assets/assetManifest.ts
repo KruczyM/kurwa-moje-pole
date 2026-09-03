@@ -24,6 +24,7 @@ export const characterAssets: CharacterAsset[] = catalog.characters.map(({ id, n
 
 export const environmentAssets = {
   flag: gameAsset(catalog.environment.flag),
+  chair: gameAsset(catalog.environment.chair),
   speaker: gameAsset(catalog.environment.speaker),
   toilet: gameAsset(catalog.environment.toilet),
 };

@@ -23,6 +23,7 @@ import { ConsumableInventory } from './inventory/ConsumableInventory';
 import { InspectControls } from './interactions/InspectControls';
 import { ItemUseSequence } from './interactions/ItemUseSequence';
 import { itemUseSequenceConfig } from './interactions/itemUseSequenceConfig';
+import { SeatController, type SeatPose } from './interactions/SeatController';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -79,6 +80,7 @@ export class Game {
   private mobileControls?: MobileControls;
   private readonly inventory = new ConsumableInventory();
   private useSequence?: ItemUseSequence;
+  private seatController?: SeatController;
   private pendingItemUse?: PendingItemUse;
 
   constructor(readonly state: AppStateMachine) {
@@ -171,6 +173,7 @@ export class Game {
         this.propModels,
         (x, z) => this.world!.canMove(x, z),
       );
+      this.seatController = new SeatController(this.scene, this.camera, selectedCharacter);
       this.startLoop();
       this.state.transition('playing');
     } catch (cause) {
@@ -206,12 +209,14 @@ export class Game {
       this.toggleInventory();
       return;
     }
-    if (this.state.current === 'inspecting') this.acceptInspect();
+    if (this.state.current === 'seated') this.leaveSeat();
+    else if (this.state.current === 'inspecting') this.acceptInspect();
     else if (this.state.current === 'playing') this.interact();
   }
 
   /** Sprząta bieżący modal i przechodzi do wskazanego stanu. */
   private closeCurrentState(target: AppState) {
+    if (this.state.current === 'seated') this.seatController?.stop();
     if (this.state.current === 'inspecting') {
       this.voiceReactions.playInspectCancel();
       this.finishInspect();
@@ -232,6 +237,10 @@ export class Game {
 
   /** Uruchamia kontekstową interakcję wskazaną przez InteractionManager. */
   interact() {
+    if (this.state.current === 'seated') {
+      this.leaveSeat();
+      return;
+    }
     if (this.state.current !== 'playing' || !this.interactions) return;
     if (this.toiletTimer) {
       this.finishToilet();
@@ -261,6 +270,21 @@ export class Game {
       this.inspect(interaction.itemId);
       return;
     }
+    if (interaction.kind === 'seat' && this.seatController) {
+      const pose: SeatPose = {
+        seatId: interaction.seatId,
+        position: interaction.position,
+        rotationY: interaction.rotationY,
+      };
+      if (this.seatController.start(pose)) {
+        this.interactions.clear();
+        this.state.transition('seated');
+        this.toast('Siedzisz. E lub Esc — wstań.');
+      } else {
+        this.toast('Ta postać nie ma poprawnej animacji siedzenia.');
+      }
+      return;
+    }
     if (interaction.kind === 'npc' && this.npcs) {
       const npc = this.npcs.npcs.find((candidate) => candidate.name === interaction.name);
       if (!npc) return;
@@ -268,6 +292,13 @@ export class Game {
       qs('#dialog-text').textContent = npc.line[Math.floor(Math.random() * npc.line.length)];
       this.state.transition('dialog');
     }
+  }
+
+  /** Kończy animację siedzenia i wraca do sterowania pierwszoosobowego. */
+  private leaveSeat() {
+    if (this.state.current !== 'seated') return;
+    this.seatController?.stop();
+    this.state.transition('playing');
   }
 
   /** Wypełnia opis przedmiotu i otwiera scenę jego inspekcji. */
@@ -541,9 +572,10 @@ export class Game {
       }
       if (state === 'playing') {
         this.player?.update(dt, this.effects?.modifiers || { speed: 1, sway: 0, shake: 0, bob: 1 });
-        this.npcs?.update(dt, this.clock.elapsedTime);
         this.updateInteractionPrompt();
       }
+      if (state === 'playing' || state === 'seated') this.npcs?.update(dt, this.clock.elapsedTime);
+      if (state === 'seated') this.seatController?.update(dt);
       this.world?.update(this.clock.elapsedTime);
       this.effects?.update(dt);
       if (state === 'using-item') {
@@ -590,7 +622,9 @@ export class Game {
           ? 'Włącz / wyłącz muzykę'
           : interaction.kind === 'item'
             ? itemById.get(interaction.itemId)?.label || 'Obejrzyj przedmiot'
-            : 'Wejdź do toi-toia';
+            : interaction.kind === 'seat'
+              ? 'Usiądź na krześle'
+              : 'Wejdź do toi-toia';
     prompt.textContent = interactionControlHint(action, this.mobileInput ? 'mobile' : 'desktop');
     prompt.hidden = false;
   }
@@ -688,6 +722,8 @@ export class Game {
     this.disposeInspectScene();
     this.useSequence?.dispose();
     this.useSequence = undefined;
+    this.seatController?.dispose();
+    this.seatController = undefined;
     this.pendingItemUse = undefined;
     this.interactions?.dispose();
     this.mobileControls?.dispose();
