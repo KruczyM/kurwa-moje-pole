@@ -101,7 +101,7 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `src/game/ui/previewLayout.ts`                    | Dopasowuje podgląd tak, aby cały model mieścił się w ekranie.           |
 | `src/game/world/CampWorld.ts`                     | Buduje teren, trawę, namioty, stół, używki, kolizje i granice obozu.    |
 | `src/game/world/campLayout.ts`                    | Definiuje modele, ID, pozycje, skale i collidery namiotów T01–T15.      |
-| `src/game/world/campLandmarks.ts`                 | Konfiguruje Mad Dog, maszt, wiatr materiału i osiem miejsc siedzących.  |
+| `src/game/world/campLandmarks.ts`                 | Konfiguruje model Mad Dog, kompletną flagę i osiem miejsc siedzących.   |
 | `src/game/world/HorizonSkybox.ts`                 | Dodaje panoramę horyzontu.                                              |
 | `scripts/check-text-encoding.mjs`                 | Wykrywa uszkodzone UTF-8 i typowe ślady mojibake.                       |
 | `scripts/validate-assets.mjs`                     | Sprawdza kompletność i strukturę assetów runtime.                       |
@@ -112,11 +112,13 @@ Katalog `src/game/world/vendor/three-stylized/` jest wydzielonym kodem bibliotec
 
 ## Układ namiotów
 
-Wszystkie namioty T01–T15 są konfigurowane w `src/game/world/campLayout.ts`. Zmiana modelu, pozycji, obrotu, wysokości lub rozmiaru prostego collidera nie wymaga edycji `CampWorld.ts`. T10 i T15 korzystają z `public/game-assets/world/tents/dużynamiot.glb`; pozostałe ID mają jawnie przypisane różne warianty z katalogu `world/tents`, dzięki czemu układ pozostaje powtarzalny między uruchomieniami.
+Wszystkie namioty T01–T15 są konfigurowane w `src/game/world/campLayout.ts`. Pozycje pochodzą z procentowej mapy obozu i są przeliczane na obszar 30 × 30 m; jedna jednostka Three.js oznacza jeden metr. Każdy wpis ma jawny model, obrót, docelowe wymiary fizyczne i collider. `big2` występuje tylko jako T01 obok toi-toia, ma 2,20 × 5,50 m, wysokość 1,50 m i obrót 90° w prawo. T09 i T14 korzystają z rodzinnego `dużynamiot.glb` o wymiarach 3,65 × 5,60 × 2,10 m. Wszystkie pozostałe małe namioty mają 2,10 × 1,80 m i 1,40 m wysokości; `namiot.glb` nie jest używany w układzie.
+
+Parametr adresu `?debugTentScale=1` wypisuje w konsoli przeglądarki zmierzone wymiary świata każdego ustawionego namiotu. Skrypt `scripts/blender/inspect-world-model-dimensions.py` pozwala dodatkowo sprawdzić surowe wymiary GLB przed normalizacją.
 
 ## Mad Dog i siedzenie
 
-Centralne zadaszenie ma rozmiar 8,8 × 6,6 m i pozostaje otwarte dla gracza oraz NPC. Kolizję mają wyłącznie cztery masywne słupy; materiał zadaszenia i linki są wizualne i nie blokują przejścia. Maszt, flaga oraz zadaszenie są osobnymi elementami hierarchii obozu, a materiał i flaga korzystają ze wspólnego, subtelnego ruchu wiatru.
+Centralne zadaszenie wykorzystuje właściwy model `world/tents/main.glb`, powiększony jednolicie 4×, i pozostaje otwarte dla gracza oraz NPC. Nie są już dodawane proceduralna plandeka ani cztery sztuczne słupy. Stół z używkami znajduje się pod Mad Dog. Flaga korzysta z kompletnego modelu `world/flaga2.glb`, powiększonego 4× i bez dokładania drugiego masztu.
 
 Pod Mad Dog znajduje się osiem miejsc `S01`–`S08`. Klawisz `E` uruchamia siedzenie wybraną postacią i animację `SittingLaughing`; `E` lub `Escape` pozwala wstać i przywraca kamerę pierwszoosobową. Na urządzeniu mobilnym tę samą funkcję pełni przycisk `WSTAŃ`.
 

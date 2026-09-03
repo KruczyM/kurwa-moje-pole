@@ -10,7 +10,7 @@
     { "id": "zawor", "name": "Zawór" }
   ],
   "environment": {
-    "flag": "world/flag.glb",
+    "flag": "world/flaga2.glb",
     "chair": "world/camping_chair.glb",
     "speaker": "props/speaker.glb",
     "toilet": "world/toilet.glb"
@@ -23,7 +23,6 @@
     "big2": "world/tents/big2.glb",
     "white": "world/tents/biały.glb",
     "colorful": "world/tents/kolorwy.glb",
-    "classic": "world/tents/namiot.glb",
     "blue": "world/tents/niebieski.glb",
     "blueOrange": "world/tents/niebppom.glb"
   },

@@ -10,11 +10,11 @@ describe('SeatController helpers', () => {
     expect(findSittingClip([idle, sitting])).toBe(sitting);
   });
 
-  it('places the third-person camera behind and above the seat', () => {
+  it('places the third-person camera in front of and above the seat', () => {
     const seat = new THREE.Vector3(2, 0, 3);
     const camera = seatCameraPosition(seat, 0);
     expect(camera.y).toBeGreaterThan(seat.y);
-    expect(camera.z).toBeLessThan(seat.z);
+    expect(camera.z).toBeGreaterThan(seat.z);
     expect(camera.distanceTo(seat)).toBeGreaterThan(3);
   });
 
