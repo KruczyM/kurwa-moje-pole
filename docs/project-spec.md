@@ -40,6 +40,9 @@ Główna pętla rozgrywki:
 - Kolizję mają tylko słupy i inne rzeczywiście masywne elementy. Materiał nad głową nie blokuje przejścia.
 - Linki, odciągi i śledzie mogą być widoczne, ale same linki nie mogą mieć kolizji.
 - Pod zadaszeniem potrzebne jest dodatkowe miękkie światło wypełniające, aby postacie nie były niemal czarne.
+- Pod zadaszeniem znajduje się osiem ponumerowanych miejsc siedzących `S01`–`S08`, ustawionych w luźnym kręgu i zwróconych do środka.
+- Krzesła mają rozmiar dopasowany do postaci. Interakcja ustawia wybraną postać na krześle, uruchamia zapętloną animację siedzenia i przełącza kamerę na czytelny widok zewnętrzny.
+- `E`, `Escape` lub mobilny przycisk `WSTAŃ` kończy siedzenie i przywraca poprzednią pozycję, obrót oraz pole widzenia kamery.
 
 ### 2.3. Flaga
 
@@ -48,6 +51,7 @@ Główna pętla rozgrywki:
 - Flaga ma znajdować się wysoko i być widoczna z większości obozu.
 - Maszt ma kolizję, materiał flagi nie ma kolizji.
 - Flaga powinna delikatnie poruszać się na wietrze.
+- Maszt i flaga są osobnymi węzłami hierarchii `CampLandmarks`; flaga korzysta z tego samego spokojnego rytmu wiatru co materiał Mad Dog.
 
 ### 2.4. Toi-toi
 

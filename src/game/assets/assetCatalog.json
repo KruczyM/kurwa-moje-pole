@@ -11,6 +11,7 @@
   ],
   "environment": {
     "flag": "world/flag.glb",
+    "chair": "world/camping_chair.glb",
     "speaker": "props/speaker.glb",
     "toilet": "world/toilet.glb"
   },

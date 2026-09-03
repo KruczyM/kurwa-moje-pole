@@ -7,6 +7,7 @@ import { itemPresentation } from '../interactions/itemPresentationConfig';
 import { enableInteractionLayer } from '../interactions/InteractionManager';
 import { TimeOfDaySkybox } from './HorizonSkybox';
 import { tentColliderBounds, tentLayout, type TentConfig, type TentModelId } from './campLayout';
+import { fabricWind, FLAG_CONFIG, MAD_DOG_CONFIG, seatLayout } from './campLandmarks';
 import { Grass } from './vendor/three-stylized/index';
 
 const WORLD_SIZE = 117.6;
@@ -16,10 +17,12 @@ export const TOILET_HEIGHT_METERS = 3.6;
 
 export type WorldObject =
   | { object: THREE.Object3D; label: string; action: 'toilet' }
+  | { object: THREE.Object3D; label: string; action: 'seat'; seatId: string }
   | { object: THREE.Object3D; label: string; action: 'item'; itemId: string };
 type WorldModels = {
   tents: Map<TentModelId, GLTF>;
   flag: GLTF | null;
+  chair: GLTF | null;
   toilet: GLTF | null;
   interactables: Map<string, GLTF>;
 };
@@ -62,6 +65,8 @@ export class CampWorld {
   interactables: WorldObject[] = [];
   private grass: Grass;
   private skybox: TimeOfDaySkybox;
+  private canopy?: THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
+  private flagSway?: THREE.Group;
   private readonly debugInteractions: boolean;
 
   constructor(
@@ -109,11 +114,25 @@ export class CampWorld {
     this.grass.syncDirectionalLight(sun);
     scene.add(this.grass);
 
-    this.tarp(scene);
-    tentLayout.forEach((tent) => this.placeTent(scene, models.tents.get(tent.model) ?? null, tent));
-    this.toilet(scene, models.toilet);
-    this.mast(scene, models.flag);
-    this.table(scene, models.interactables);
+    const campRoot = new THREE.Group();
+    campRoot.name = 'CampRoot';
+    const madDogRoot = new THREE.Group();
+    madDogRoot.name = 'MadDog';
+    const tentsRoot = new THREE.Group();
+    tentsRoot.name = 'Tents_T01-T15';
+    const landmarksRoot = new THREE.Group();
+    landmarksRoot.name = 'CampLandmarks';
+    const propsRoot = new THREE.Group();
+    propsRoot.name = 'CampProps';
+    campRoot.add(madDogRoot, tentsRoot, landmarksRoot, propsRoot);
+    scene.add(campRoot);
+
+    this.tarp(madDogRoot);
+    this.chairs(madDogRoot, models.chair);
+    tentLayout.forEach((tent) => this.placeTent(tentsRoot, models.tents.get(tent.model) ?? null, tent));
+    this.toilet(propsRoot, models.toilet);
+    this.mast(landmarksRoot, models.flag);
+    this.table(propsRoot, models.interactables);
   }
 
   /** Klonuje model, dopasowuje jego wysokość oraz konfiguruje cienie. */
@@ -135,7 +154,7 @@ export class CampWorld {
   }
 
   /** Umieszcza namiot i buduje jego uproszczony collider wyłącznie z konfiguracji obozu. */
-  private placeTent(scene: THREE.Scene, source: GLTF | null, config: TentConfig) {
+  private placeTent(scene: THREE.Object3D, source: GLTF | null, config: TentConfig) {
     const object = this.prepare(source, config.scale, 0x5c8dbe);
     const [x, y, z] = config.position;
     object.name = config.id;
@@ -156,30 +175,108 @@ export class CampWorld {
     this.colliders.push({ box });
   }
 
-  /** Tworzy centralną plandekę wraz ze słupami i kolizjami. */
-  private tarp(scene: THREE.Scene) {
-    const tarp = new THREE.Mesh(new THREE.PlaneGeometry(8, 6, 8, 6), simpleMaterial(0x111119));
-    tarp.rotation.x = -Math.PI / 2;
-    tarp.position.y = 3.15;
-    tarp.castShadow = true;
-    scene.add(tarp);
-    (
-      [
-        [-4, -3],
-        [4, -3],
-        [-4, 3],
-        [4, 3],
-      ] as const
-    ).forEach(([x, z]) => {
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 3.2, 8), simpleMaterial(0x3d3d41));
-      pole.position.set(x, 1.6, z);
-      scene.add(pole);
-      this.colliders.push({ x, z, r: 0.25 });
+  /** Tworzy otwarte zadaszenie, miękkie światło, masywne słupy i bezkolizyjne linki. */
+  private tarp(parent: THREE.Group) {
+    const [width, depth] = MAD_DOG_CONFIG.size;
+    const geometry = new THREE.PlaneGeometry(width, depth, 12, 9).rotateX(-Math.PI / 2);
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x16151b,
+      roughness: 0.92,
+      metalness: 0,
+      side: THREE.DoubleSide,
+    });
+    this.canopy = new THREE.Mesh(geometry, material);
+    this.canopy.name = 'MadDog_Canopy_NoCollision';
+    this.canopy.position.y = MAD_DOG_CONFIG.height;
+    this.canopy.castShadow = true;
+    this.canopy.receiveShadow = true;
+    parent.add(this.canopy);
+
+    const fill = new THREE.HemisphereLight(0xffe7cf, 0x55475f, MAD_DOG_CONFIG.fillLightIntensity);
+    fill.name = 'MadDog_FillLight';
+    parent.add(fill);
+
+    const corners = [
+      [-width / 2, -depth / 2],
+      [width / 2, -depth / 2],
+      [-width / 2, depth / 2],
+      [width / 2, depth / 2],
+    ] as const;
+    corners.forEach(([x, z], index) => {
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(
+          MAD_DOG_CONFIG.poleRadius,
+          MAD_DOG_CONFIG.poleRadius * 1.2,
+          MAD_DOG_CONFIG.height,
+          10,
+        ),
+        simpleMaterial(0x3d3d41),
+      );
+      pole.name = `MadDog_Pole_${index + 1}`;
+      pole.position.set(x, MAD_DOG_CONFIG.height / 2, z);
+      pole.castShadow = true;
+      parent.add(pole);
+      this.colliders.push({ x, z, r: MAD_DOG_CONFIG.poleRadius + 0.16 });
+
+      const anchorX = x + Math.sign(x) * 0.7;
+      const anchorZ = z + Math.sign(z) * 0.7;
+      const rope = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(x, MAD_DOG_CONFIG.height - 0.08, z),
+          new THREE.Vector3(anchorX, 0.08, anchorZ),
+        ]),
+        new THREE.LineBasicMaterial({ color: 0xaaa397, transparent: true, opacity: 0.72 }),
+      );
+      rope.name = `MadDog_Guyline_NoCollision_${index + 1}`;
+      parent.add(rope);
+    });
+  }
+
+  /** Ustawia osiem interaktywnych krzeseł w kręgu pod Mad Dogiem. */
+  private chairs(parent: THREE.Group, source: GLTF | null) {
+    seatLayout.forEach((seat) => {
+      const root = new THREE.Group();
+      root.name = `Seat_${seat.id}`;
+      root.position.set(...seat.position);
+      root.rotation.y = seat.rotationY;
+      root.userData.interaction = {
+        kind: 'seat',
+        seatId: seat.id,
+        position: [...seat.position],
+        rotationY: seat.rotationY,
+      };
+      const chair = this.prepare(source, 1.05, 0x385c82);
+      chair.name = `SeatVisual_${seat.id}`;
+      chair.traverse((object) => {
+        const mesh = object as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        mesh.material = Array.isArray(mesh.material)
+          ? mesh.material.map((material) => material.clone())
+          : mesh.material.clone();
+      });
+      root.add(chair);
+      const hitbox = new THREE.Mesh(
+        new THREE.BoxGeometry(1.05, 1.25, 0.9),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false }),
+      );
+      hitbox.name = `InteractionHitbox_Seat_${seat.id}`;
+      hitbox.position.y = 0.62;
+      root.add(hitbox);
+      root.traverse((child) => (child.userData.interactionRoot = root));
+      enableInteractionLayer(root);
+      parent.add(root);
+      this.colliders.push({ x: seat.position[0], z: seat.position[2], r: 0.48 });
+      this.interactables.push({
+        object: root,
+        label: `Usiądź (${seat.id})`,
+        action: 'seat',
+        seatId: seat.id,
+      });
     });
   }
 
   /** Umieszcza docelowy wcTron, collider kabiny i kierunkową interakcję przed drzwiami. */
-  private toilet(scene: THREE.Scene, source: GLTF | null) {
+  private toilet(scene: THREE.Object3D, source: GLTF | null) {
     const x = -12;
     const z = 10;
     const toilet = new THREE.Group();
@@ -218,16 +315,42 @@ export class CampWorld {
     this.interactables.push({ object: entrance, label: 'Wejdź do toi-toia', action: 'toilet' });
   }
 
-  /** Umieszcza maszt z flagą i dodaje jego kolizję. */
-  private mast(scene: THREE.Scene, source: GLTF | null) {
-    const mast = this.prepare(source, 5.8, 0x303035);
-    mast.position.set(0, 0, 13);
-    scene.add(mast);
-    this.colliders.push({ x: 0, z: 13, r: 0.4 });
+  /** Buduje wysoki maszt i osobną, bezkolizyjną flagę w centralnej części obozu. */
+  private mast(parent: THREE.Group, source: GLTF | null) {
+    const root = new THREE.Group();
+    root.name = FLAG_CONFIG.id;
+    root.position.set(...FLAG_CONFIG.position);
+    const mast = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        FLAG_CONFIG.mastRadius,
+        FLAG_CONFIG.mastRadius * 1.25,
+        FLAG_CONFIG.mastHeight,
+        12,
+      ),
+      simpleMaterial(0x34363b),
+    );
+    mast.name = 'FlagMast_Collider';
+    mast.position.y = FLAG_CONFIG.mastHeight / 2;
+    mast.castShadow = true;
+    root.add(mast);
+
+    this.flagSway = new THREE.Group();
+    this.flagSway.name = 'FlagFabric_NoCollision';
+    this.flagSway.position.y = FLAG_CONFIG.mastHeight - FLAG_CONFIG.flagHeight - 0.18;
+    const flag = this.prepare(source, FLAG_CONFIG.flagHeight, 0xf2eadb);
+    flag.position.x += FLAG_CONFIG.flagHeight * 0.42;
+    this.flagSway.add(flag);
+    root.add(this.flagSway);
+    parent.add(root);
+    this.colliders.push({
+      x: FLAG_CONFIG.position[0],
+      z: FLAG_CONFIG.position[2],
+      r: FLAG_CONFIG.mastRadius + 0.2,
+    });
   }
 
   /** Buduje stół i układa na nim wszystkie używki w pozycji leżącej. */
-  private table(scene: THREE.Scene, models: Map<string, GLTF>) {
+  private table(scene: THREE.Object3D, models: Map<string, GLTF>) {
     const tableRoot = new THREE.Group();
     tableRoot.name = 'CampTable';
     tableRoot.position.set(3, 0, 4);
@@ -336,6 +459,19 @@ export class CampWorld {
 
   /** Aktualizuje proceduralną animację trawy. */
   update(time: number) {
+    if (this.canopy) {
+      const positions = this.canopy.geometry.attributes.position;
+      for (let index = 0; index < positions.count; index++) {
+        positions.setY(index, fabricWind(time, positions.getX(index), positions.getZ(index)));
+      }
+      positions.needsUpdate = true;
+      this.canopy.geometry.computeVertexNormals();
+    }
+    if (this.flagSway) {
+      const wind = fabricWind(time, 2.4, 0.6);
+      this.flagSway.rotation.z = wind * 0.8;
+      this.flagSway.rotation.y = wind * 1.35;
+    }
     this.grass.update(time);
     this.skybox.update();
   }

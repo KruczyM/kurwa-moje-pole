@@ -98,12 +98,15 @@ export class MobileControls {
   /** Pokazuje tylko te przyciski, które mają sens w aktualnym stanie aplikacji. */
   setState(state: AppState) {
     this.playing = state === 'playing';
+    const seated = state === 'seated';
     const inventoryOpen = state === 'inventory';
-    this.root.hidden = !this.playing && !inventoryOpen;
+    this.root.hidden = !this.playing && !seated && !inventoryOpen;
     this.movement.hidden = !this.playing;
     this.menuButton.hidden = !this.playing;
-    this.interactButton.hidden = !this.playing;
+    this.interactButton.hidden = !this.playing && !seated;
+    this.interactButton.textContent = seated ? 'WSTAŃ' : 'UŻYJ';
     this.lookZone.hidden = !this.playing;
+    this.inventoryButton.hidden = seated;
     this.inventoryButton.textContent = inventoryOpen ? 'ZAMKNIJ' : 'EKWIPUNEK';
     this.inventoryButton.setAttribute('aria-pressed', String(inventoryOpen));
     if (!this.playing) {

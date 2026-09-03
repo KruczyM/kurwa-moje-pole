@@ -85,6 +85,7 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `src/game/interactions/inspectPresentation.ts`    | Centruje modele na osobnej osi obrotu podglądu.                         |
 | `src/game/interactions/InspectControls.ts`        | Obsługuje obrót i bezpieczne zbliżenie przedmiotu w inspekcji.          |
 | `src/game/interactions/ItemUseSequence.ts`        | Steruje kamerą, postacią, animacją, rekwizytem i markerem użycia.       |
+| `src/game/interactions/SeatController.ts`         | Sadza wybraną postać na krześle, odtwarza animację i steruje kamerą.    |
 | `src/game/interactions/itemUseSequenceConfig.ts`  | Konfiguruje czasy, rekwizyty i ruch pięciu sekwencji użycia.            |
 | `src/game/lifecycle/AppStateMachine.ts`           | Pilnuje przejść między menu, grą, inspekcją i pauzą.                    |
 | `src/game/lifecycle/InputBindings.ts`             | Jest jednym źródłem skrótów klawiaturowych i podpowiedzi kontekstowych. |
@@ -100,6 +101,7 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `src/game/ui/previewLayout.ts`                    | Dopasowuje podgląd tak, aby cały model mieścił się w ekranie.           |
 | `src/game/world/CampWorld.ts`                     | Buduje teren, trawę, namioty, stół, używki, kolizje i granice obozu.    |
 | `src/game/world/campLayout.ts`                    | Definiuje modele, ID, pozycje, skale i collidery namiotów T01–T15.      |
+| `src/game/world/campLandmarks.ts`                 | Konfiguruje Mad Dog, maszt, wiatr materiału i osiem miejsc siedzących.  |
 | `src/game/world/HorizonSkybox.ts`                 | Dodaje panoramę horyzontu.                                              |
 | `scripts/check-text-encoding.mjs`                 | Wykrywa uszkodzone UTF-8 i typowe ślady mojibake.                       |
 | `scripts/validate-assets.mjs`                     | Sprawdza kompletność i strukturę assetów runtime.                       |
@@ -111,6 +113,12 @@ Katalog `src/game/world/vendor/three-stylized/` jest wydzielonym kodem bibliotec
 ## Układ namiotów
 
 Wszystkie namioty T01–T15 są konfigurowane w `src/game/world/campLayout.ts`. Zmiana modelu, pozycji, obrotu, wysokości lub rozmiaru prostego collidera nie wymaga edycji `CampWorld.ts`. T10 i T15 korzystają z `public/game-assets/world/tents/dużynamiot.glb`; pozostałe ID mają jawnie przypisane różne warianty z katalogu `world/tents`, dzięki czemu układ pozostaje powtarzalny między uruchomieniami.
+
+## Mad Dog i siedzenie
+
+Centralne zadaszenie ma rozmiar 8,8 × 6,6 m i pozostaje otwarte dla gracza oraz NPC. Kolizję mają wyłącznie cztery masywne słupy; materiał zadaszenia i linki są wizualne i nie blokują przejścia. Maszt, flaga oraz zadaszenie są osobnymi elementami hierarchii obozu, a materiał i flaga korzystają ze wspólnego, subtelnego ruchu wiatru.
+
+Pod Mad Dog znajduje się osiem miejsc `S01`–`S08`. Klawisz `E` uruchamia siedzenie wybraną postacią i animację `SittingLaughing`; `E` lub `Escape` pozwala wstać i przywraca kamerę pierwszoosobową. Na urządzeniu mobilnym tę samą funkcję pełni przycisk `WSTAŃ`.
 
 ## Skala i pozycja używek
 
