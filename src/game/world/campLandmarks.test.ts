@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { FLAG_CONFIG, MAD_DOG_CONFIG, seatLayout } from './campLandmarks';
+import { isOutsideTentColliders } from './campLayout';
+import { FLAG_CONFIG, MAD_DOG_CONFIG, PLAYER_SPAWN_CONFIG, seatLayout, TOILET_CONFIG } from './campLandmarks';
 
 describe('camp landmarks', () => {
   it('keeps the requested reduced Mad Dog scale and independent flag scale', () => {
@@ -20,5 +21,11 @@ describe('camp landmarks', () => {
     seatLayout.forEach(({ position: [x, , z], rotationY }) => {
       expect(rotationY).toBeCloseTo(Math.atan2(-x, -z) + Math.PI);
     });
+  });
+
+  it('places the player spawn safely in front of the toilet entrance', () => {
+    expect(PLAYER_SPAWN_CONFIG.position[0]).toBe(TOILET_CONFIG.position[0]);
+    expect(PLAYER_SPAWN_CONFIG.position[1]).toBeCloseTo(TOILET_CONFIG.position[2] + 2.8);
+    expect(isOutsideTentColliders(...PLAYER_SPAWN_CONFIG.position)).toBe(true);
   });
 });

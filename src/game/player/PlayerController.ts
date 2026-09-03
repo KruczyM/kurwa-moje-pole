@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import { calculateLocalMove } from './movement';
 import { EventScope } from '../lifecycle/EventScope';
 export type PlayerModifiers = { speed: number; sway: number; shake: number; bob: number };
+export type PlayerSpawn = { position: readonly [x: number, z: number]; yaw: number };
+
+const DEFAULT_PLAYER_SPAWN: PlayerSpawn = { position: [0, 15], yaw: 0 };
+
 export class PlayerController {
   keys = new Set<string>();
   yaw = 0;
@@ -22,8 +26,11 @@ export class PlayerController {
     readonly canvas: HTMLCanvasElement,
     readonly canMove: (x: number, z: number) => boolean,
     private readonly pointerLockEnabled = true,
+    spawn: PlayerSpawn = DEFAULT_PLAYER_SPAWN,
   ) {
-    camera.position.set(0, this.baseY, 15);
+    this.yaw = spawn.yaw;
+    camera.position.set(spawn.position[0], this.baseY, spawn.position[1]);
+    camera.rotation.set(0, this.yaw, 0, 'YXZ');
     canvas.tabIndex = -1;
     this.events.listen(window, 'keydown', (event) =>
       this.keys.add((event as KeyboardEvent).key.toLowerCase()),

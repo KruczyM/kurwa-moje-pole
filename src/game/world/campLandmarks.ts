@@ -1,5 +1,21 @@
 import { campPosition } from './campLayout';
 
+export const TOILET_CONFIG = {
+  position: campPosition(8, 18),
+} as const;
+
+const toiletEntranceSpawn: readonly [number, number] = [
+  TOILET_CONFIG.position[0],
+  TOILET_CONFIG.position[2] + 2.8,
+];
+
+export const PLAYER_SPAWN_CONFIG = {
+  /** Pozycja X/Z przed wejściem do toi-toia, poza colliderem kabiny i namiotu T01. */
+  position: toiletEntranceSpawn,
+  /** Kamera jest początkowo skierowana od toi-toia w stronę środka obozu. */
+  yaw: Math.atan2(toiletEntranceSpawn[0], toiletEntranceSpawn[1]),
+} as const;
+
 export const MAD_DOG_CONFIG = {
   id: 'MadDog',
   position: campPosition(48, 37),
