@@ -23,12 +23,14 @@ export const characterAssets: CharacterAsset[] = catalog.characters.map(({ id, n
 }));
 
 export const environmentAssets = {
-  largeTent: gameAsset(catalog.environment.largeTent),
-  smallTent: gameAsset(catalog.environment.smallTent),
   flag: gameAsset(catalog.environment.flag),
   speaker: gameAsset(catalog.environment.speaker),
   toilet: gameAsset(catalog.environment.toilet),
 };
+
+export const tentAssets = Object.fromEntries(
+  Object.entries(catalog.tents).map(([id, path]) => [id, gameAsset(path)]),
+) as Record<keyof typeof catalog.tents, string>;
 
 export const interactiveAssets = {
   table: gameAsset(catalog.interactives.table),

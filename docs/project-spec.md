@@ -60,25 +60,25 @@ Główna pętla rozgrywki:
 
 ### 2.5. Plan obozu i identyfikatory
 
-Do projektu dołączona jest robocza mapa `camp-layout-provisional.svg`. Jest to uporządkowana interpretacja szkicu, a nie ostateczny pomiar geodezyjny. Wszystkie namioty otrzymują stabilne identyfikatory `T01`–`T15`, aby można było później przypisać im właścicieli, opisy i właściwe modele bez zmieniania kodu.
+Do projektu dołączona jest robocza mapa `camp-layout-provisional.png`. Jest to uporządkowana interpretacja szkicu, a nie ostateczny pomiar geodezyjny. Wszystkie namioty otrzymują stabilne identyfikatory `T01`–`T15`, aby można było później przypisać im właścicieli, opisy i właściwe modele bez zmieniania kodu.
 
-| ID  | Położenie robocze            | Charakter miejsca                          | Model / właściciel do uzupełnienia     |
-| --- | ---------------------------- | ------------------------------------------ | -------------------------------------- |
-| T01 | północny zachód              | duży, podłużny namiot ze szkicu „Namiot 1” | —                                      |
-| T02 | północ, lewa część           | mały namiot                                | —                                      |
-| T03 | północ, środek               | mały namiot                                | —                                      |
-| T04 | północny wschód              | mały namiot                                | —                                      |
-| T05 | skrajny północny wschód      | nieregularny namiot                        | —                                      |
-| T06 | na wschód od Mad Dog         | średni namiot                              | —                                      |
-| T07 | zachodnia część obozu        | pionowo ustawiony namiot                   | —                                      |
-| T08 | zachód, poniżej T07          | mały namiot                                | —                                      |
-| T09 | południowy zachód od Mad Dog | smukły namiot                              | —                                      |
-| T10 | południe, lewa część         | duży namiot                                | `art/dużynamiot.glb` → wariant runtime |
-| T11 | południe, środek             | duży namiot                                | —                                      |
-| T12 | południowy wschód            | podłużny namiot                            | —                                      |
-| T13 | dolny prawy sektor           | mały namiot                                | —                                      |
-| T14 | dolny lewy sektor            | średni namiot                              | —                                      |
-| T15 | dolny środkowy sektor        | duży namiot                                | `art/dużynamiot.glb` → wariant runtime |
+| ID  | Położenie robocze            | Charakter miejsca                          | Model / właściciel do uzupełnienia              |
+| --- | ---------------------------- | ------------------------------------------ | ----------------------------------------------- |
+| T01 | północny zachód              | duży, podłużny namiot ze szkicu „Namiot 1” | —                                               |
+| T02 | północ, lewa część           | mały namiot                                | —                                               |
+| T03 | północ, środek               | mały namiot                                | —                                               |
+| T04 | północny wschód              | mały namiot                                | —                                               |
+| T05 | skrajny północny wschód      | nieregularny namiot                        | —                                               |
+| T06 | na wschód od Mad Dog         | średni namiot                              | —                                               |
+| T07 | zachodnia część obozu        | pionowo ustawiony namiot                   | —                                               |
+| T08 | zachód, poniżej T07          | mały namiot                                | —                                               |
+| T09 | południowy zachód od Mad Dog | smukły namiot                              | —                                               |
+| T10 | południe, lewa część         | duży namiot                                | `public/game-assets/world/tents/dużynamiot.glb` |
+| T11 | południe, środek             | duży namiot                                | —                                               |
+| T12 | południowy wschód            | podłużny namiot                            | —                                               |
+| T13 | dolny prawy sektor           | mały namiot                                | —                                               |
+| T14 | dolny lewy sektor            | średni namiot                              | —                                               |
+| T15 | dolny środkowy sektor        | duży namiot                                | `public/game-assets/world/tents/dużynamiot.glb` |
 
 Pozycje, rotacje, skale i użyte modele nie mogą być zapisane bezpośrednio w kodzie sceny. Powinny znajdować się w jednym pliku konfiguracyjnym, np. `campLayout.ts`, z polami:
 
@@ -94,6 +94,8 @@ type CampObjectConfig = {
   description?: string;
 };
 ```
+
+Aktualny runtime korzysta z `src/game/world/campLayout.ts`. Plik zawiera pełny układ T01–T15, jawne warianty modeli oraz uproszczone boxy kolizji współdzielone przez gracza i NPC. Zadaszenie Mad Dog pozostaje osobnym obiektem świata i nie jest jednym z numerowanych namiotów.
 
 ## 3. Styl wizualny, materiały i oświetlenie
 

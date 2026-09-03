@@ -10,11 +10,21 @@
     { "id": "zawor", "name": "Zawór" }
   ],
   "environment": {
-    "largeTent": "world/tents/main.glb",
-    "smallTent": "world/tents/small.glb",
     "flag": "world/flag.glb",
     "speaker": "props/speaker.glb",
     "toilet": "world/toilet.glb"
+  },
+  "tents": {
+    "main": "world/tents/main.glb",
+    "small": "world/tents/small.glb",
+    "small2": "world/tents/small2.glb",
+    "large": "world/tents/dużynamiot.glb",
+    "big2": "world/tents/big2.glb",
+    "white": "world/tents/biały.glb",
+    "colorful": "world/tents/kolorwy.glb",
+    "classic": "world/tents/namiot.glb",
+    "blue": "world/tents/niebieski.glb",
+    "blueOrange": "world/tents/niebppom.glb"
   },
   "interactives": {
     "table": "interactables/table.glb",

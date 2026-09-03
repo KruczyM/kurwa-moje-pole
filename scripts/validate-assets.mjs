@@ -18,12 +18,7 @@ const collectVoiceNames = (value) => {
 };
 collectVoiceNames(voiceCatalog);
 const requiredLocomotion = ['Idle', 'Walk', 'Run'];
-const knownBlockers = {
-  'environment:smallTent': {
-    'missing-texture-source':
-      'Model na main ma puste sloty tekstur; wymiana i audyt materiałów są śledzone w Issue #12.',
-  },
-};
+const knownBlockers = {};
 const GLB_MAGIC = 0x46546c67;
 const JSON_CHUNK = 0x4e4f534a;
 const BIN_CHUNK = 0x004e4942;
@@ -46,6 +41,12 @@ const assets = [
   ...Object.entries(catalog.environment).map(([id, path]) => ({
     id: `environment:${id}`,
     label: id,
+    path,
+    kind: 'model',
+  })),
+  ...Object.entries(catalog.tents).map(([id, path]) => ({
+    id: `tent:${id}`,
+    label: `tent ${id}`,
     path,
     kind: 'model',
   })),

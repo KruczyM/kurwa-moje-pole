@@ -1,9 +1,9 @@
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { characterAssets, environmentAssets, interactiveAssets } from './assetManifest';
+import { characterAssets, environmentAssets, interactiveAssets, tentAssets } from './assetManifest';
+import type { TentModelId } from '../world/campLayout';
 export type LoadedAssets = {
   characters: Map<string, GLTF>;
-  largeTent: GLTF | null;
-  smallTent: GLTF | null;
+  tents: Map<TentModelId, GLTF>;
   flag: GLTF | null;
   speaker: GLTF | null;
   toilet: GLTF | null;
@@ -45,7 +45,8 @@ export class AssetLoader {
       original(m);
     };
     const characters = new Map<string, GLTF>(),
-      interactables = new Map<string, GLTF>();
+      interactables = new Map<string, GLTF>(),
+      tents = new Map<TentModelId, GLTF>();
     await Promise.all(
       characterAssets.map(async (asset) => {
         const gltf = await this.load(asset.url, asset.name);
@@ -58,13 +59,17 @@ export class AssetLoader {
         if (gltf) interactables.set(id, gltf);
       }),
     );
-    const [largeTent, smallTent, flag, speaker, toilet] = await Promise.all([
-      this.load(environmentAssets.largeTent, 'duży namiot'),
-      this.load(environmentAssets.smallTent, 'mały namiot'),
+    await Promise.all(
+      Object.entries(tentAssets).map(async ([id, url]) => {
+        const gltf = await this.load(url, `namiot ${id}`);
+        if (gltf) tents.set(id as TentModelId, gltf);
+      }),
+    );
+    const [flag, speaker, toilet] = await Promise.all([
       this.load(environmentAssets.flag, 'maszt z flagą'),
       this.load(environmentAssets.speaker, 'głośnik'),
       this.load(environmentAssets.toilet, 'toi-toi wcTron'),
     ]);
-    return { characters, largeTent, smallTent, flag, speaker, toilet, interactables, errors };
+    return { characters, tents, flag, speaker, toilet, interactables, errors };
   }
 }
