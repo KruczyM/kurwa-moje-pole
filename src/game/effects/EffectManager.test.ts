@@ -21,3 +21,18 @@ describe('MDMA visual profile', () => {
     expect(mdma.mixing).toBeGreaterThan(0);
   });
 });
+
+describe('distinct effect profiles', () => {
+  it('assigns a separate visual language to every strong effect', () => {
+    const ids = ['Joint', 'Kreska', 'Grzyb', 'MDMA', 'LSD'] as const;
+    const languages = ids.map((id) => effectConfigs[id].visualLanguage);
+    expect(new Set(languages).size).toBe(ids.length);
+  });
+
+  it('gives each profile an audible modulation which can return to its snapshot', () => {
+    expect(effectConfigs.Joint.audioRate).toBeLessThan(1);
+    expect(effectConfigs.Kreska.audioRate).toBeGreaterThan(1);
+    expect(effectConfigs.Grzyb.audioRate).not.toBe(effectConfigs.MDMA.audioRate);
+    expect(effectConfigs.LSD.audioVolume).toBeLessThan(1);
+  });
+});

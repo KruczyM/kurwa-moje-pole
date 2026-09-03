@@ -74,9 +74,10 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `src/game/animation/animationContract.ts`         | Ujednolica nazwy klipów `Idle`, `Walk` i `Run`.                         |
 | `src/game/assets/AssetLoader.ts`                  | Ładuje modele GLB i raportuje brakujące pliki.                          |
 | `src/game/assets/assetManifest.ts`                | Jest jedynym miejscem definiującym adresy assetów runtime.              |
-| `src/game/audio/SpeakerAudio.ts`                  | Steruje muzyką głośnika w obozie.                                       |
+| `src/game/audio/SpeakerAudio.ts`                  | Steruje muzyką głośnika i bezpieczną modulacją audio używek.            |
 | `src/game/audio/VoiceReactionManager.ts`          | Losuje i odtwarza reakcje głosowe zależnie od zdarzeń.                  |
 | `src/game/effects/EffectManager.ts`               | Obsługuje fazy używek oraz shader i post-processing obrazu.             |
+| `src/game/effects/EffectTimeline.ts`              | Prowadzi niezależny od renderera cykl wejście–aktywność–wygaszanie.     |
 | `src/game/effects/MushroomWireframeEffect.ts`     | Czasowo przełącza obiekty na efekt siatki po grzybach.                  |
 | `src/game/interactions/InteractionManager.ts`     | Wykrywa obiekt wskazywany przez gracza i zwraca jego akcję.             |
 | `src/game/interactions/itemConfig.ts`             | Zawiera nazwy i teksty inspekcji używek.                                |
@@ -127,6 +128,12 @@ lsd: {
 ```
 
 Obecnie wszystkie używki są obrócone o 90 stopni i leżą na stole. Ich pozycje są liczone lokalnie względem stołu, dlatego pozostają na blacie również po jego obróceniu. Podczas inspekcji używany jest czysty klon modelu z naturalnym obrotem, automatycznym dopasowaniem kamery i regulowanym przesunięciem pionowym. Niewidoczna strefa interakcji ma niezależną skalę i nie kurczy się razem z modelem.
+
+## Efekty używek
+
+`EffectManager` zapisuje stan kamery, bloom, afterimage, uniformów shadera i muzyki przed pierwszym efektem. Joint ma senny afterimage, kokaina szybki puls i szersze FOV, grzyby organiczne falowanie z krótkimi impulsami wireframe, MDMA jasne mieszanie obrazu, a LSD pryzmatyczne przesunięcia z półprzezroczystą nakładką. Zmiana używki zachowuje pierwotny snapshot, natomiast koniec, anulowanie i `dispose()` przywracają go dokładnie.
+
+HUD pokazuje aktualną fazę oraz czas pozostały w tej fazie. Opcja ograniczenia ruchu wyłącza deformacje ruchome, animację nakładki LSD i impulsy wireframe po grzybach.
 
 ## Zasady pracy z assetami
 

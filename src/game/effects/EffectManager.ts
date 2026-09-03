@@ -4,6 +4,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { EffectTimeline } from './EffectTimeline';
 export type EffectId = 'Piwo' | 'Papieros' | 'Joint' | 'Kreska' | 'Grzyb' | 'MDMA' | 'LSD';
 export type EffectPhase = 'inactive' | 'fadeIn' | 'active' | 'fadeOut';
 export type VisualSettings = {
@@ -20,7 +21,7 @@ export const defaultVisualSettings: VisualSettings = {
   disableShake: false,
   disableBloom: false,
 };
-type Config = {
+export type EffectConfig = {
   fadeIn: number;
   active: number;
   fadeOut: number;
@@ -43,8 +44,11 @@ type Config = {
   melt?: number;
   mixing?: number;
   lift?: number;
+  audioRate: number;
+  audioVolume: number;
+  visualLanguage: 'dreamy' | 'stimulant' | 'organic' | 'empathic' | 'prismatic' | 'subtle';
 };
-export const effectConfigs: Record<EffectId, Config> = {
+export const effectConfigs: Record<EffectId, EffectConfig> = {
   Piwo: {
     fadeIn: 1,
     active: 18,
@@ -65,6 +69,9 @@ export const effectConfigs: Record<EffectId, Config> = {
     vignette: 0.46,
     blur: 0.2,
     pulse: 0.55,
+    audioRate: 0.96,
+    audioVolume: 0.92,
+    visualLanguage: 'subtle',
   },
   Papieros: {
     fadeIn: 0.5,
@@ -86,6 +93,9 @@ export const effectConfigs: Record<EffectId, Config> = {
     vignette: 0.12,
     blur: 0.04,
     pulse: 0.35,
+    audioRate: 1,
+    audioVolume: 0.96,
+    visualLanguage: 'subtle',
   },
   Joint: {
     fadeIn: 1,
@@ -107,6 +117,9 @@ export const effectConfigs: Record<EffectId, Config> = {
     vignette: 0.28,
     blur: 0.08,
     pulse: 0.22,
+    audioRate: 0.92,
+    audioVolume: 0.82,
+    visualLanguage: 'dreamy',
   },
   Kreska: {
     fadeIn: 0.7,
@@ -128,6 +141,9 @@ export const effectConfigs: Record<EffectId, Config> = {
     vignette: 0.48,
     blur: 0,
     pulse: 2.6,
+    audioRate: 1.12,
+    audioVolume: 1.08,
+    visualLanguage: 'stimulant',
   },
   Grzyb: {
     fadeIn: 2,
@@ -149,6 +165,9 @@ export const effectConfigs: Record<EffectId, Config> = {
     vignette: 0.3,
     blur: 0.07,
     pulse: 0.42,
+    audioRate: 0.88,
+    audioVolume: 0.86,
+    visualLanguage: 'organic',
   },
   MDMA: {
     fadeIn: 1.5,
@@ -173,6 +192,9 @@ export const effectConfigs: Record<EffectId, Config> = {
     melt: 1,
     mixing: 1,
     lift: 0.42,
+    audioRate: 1.04,
+    audioVolume: 1.05,
+    visualLanguage: 'empathic',
   },
   LSD: {
     fadeIn: 1.5,
@@ -194,7 +216,40 @@ export const effectConfigs: Record<EffectId, Config> = {
     vignette: 0.32,
     blur: 0.025,
     pulse: 0.78,
+    audioRate: 0.9,
+    audioVolume: 0.9,
+    visualLanguage: 'prismatic',
   },
+};
+
+export type AudioEffectState = { volume: number; playbackRate: number };
+export interface EffectAudioTarget {
+  captureEffectState(): AudioEffectState;
+  applyEffectState(state: AudioEffectState): void;
+  restoreEffectState(state: AudioEffectState): void;
+}
+
+const effectUniformNames = [
+  'distortion',
+  'saturation',
+  'hue',
+  'chroma',
+  'contrast',
+  'brightness',
+  'vignette',
+  'blur',
+  'pulse',
+  'melt',
+  'mixing',
+  'lift',
+] as const;
+type EffectUniformName = (typeof effectUniformNames)[number];
+type EffectSnapshot = {
+  cameraFov: number;
+  bloom: { enabled: boolean; strength: number; radius: number; threshold: number };
+  afterimage: { enabled: boolean; damp: number };
+  uniforms: Record<EffectUniformName, number>;
+  audio?: AudioEffectState;
 };
 const shader = {
   uniforms: {
@@ -255,16 +310,15 @@ export class EffectManager {
   bloom: UnrealBloomPass;
   afterimage: AfterimagePass;
   shader: ShaderPass;
-  active: EffectId | null = null;
-  phase: EffectPhase = 'inactive';
-  remaining = 0;
-  private elapsed = 0;
-  private intensity = 0;
+  private timeline = new EffectTimeline();
+  private snapshot?: EffectSnapshot;
+  private disposed = false;
   settings: VisualSettings = { ...defaultVisualSettings };
   constructor(
     renderer: THREE.WebGLRenderer,
     scene: THREE.Scene,
     private camera: THREE.PerspectiveCamera,
+    private audio?: EffectAudioTarget,
   ) {
     this.composer = new EffectComposer(renderer);
     this.composer.addPass(new RenderPass(scene, camera));
@@ -279,20 +333,15 @@ export class EffectManager {
 
   /** Uruchamia wybrany efekt i zaczyna jego łagodne pojawianie się. */
   use(id: EffectId) {
-    if (this.active && this.active !== id) this.afterimage.uniforms.damp.value = 0;
-    this.active = id;
-    this.phase = 'fadeIn';
-    this.elapsed = 0;
-    this.remaining = effectConfigs[id].active;
-    this.intensity = 0;
+    if (this.disposed) return;
+    if (!this.timeline.active) this.snapshot = this.captureSnapshot();
+    if (this.timeline.active && this.timeline.active !== id) this.afterimage.uniforms.damp.value = 0;
+    this.timeline.use(id, effectConfigs[id]);
   }
 
   /** Przenosi aktywny efekt do fazy wygaszania. */
   cancel() {
-    if (this.active && this.phase !== 'fadeOut') {
-      this.phase = 'fadeOut';
-      this.elapsed = 0;
-    }
+    if (this.timeline.active) this.timeline.cancel(effectConfigs[this.timeline.active]);
   }
 
   /** Aktualizuje ustawienia dostępności i siłę efektów wizualnych. */
@@ -302,65 +351,111 @@ export class EffectManager {
 
   /** Przelicza fazę efektu, shader, post-processing oraz pole widzenia kamery. */
   update(dt: number) {
-    if (this.active) {
-      const c = effectConfigs[this.active];
-      this.elapsed += dt;
-      if (this.phase === 'fadeIn') {
-        this.intensity = Math.min(1, this.elapsed / c.fadeIn);
-        if (this.intensity >= 1) {
-          this.phase = 'active';
-          this.elapsed = 0;
-        }
-      } else if (this.phase === 'active') {
-        this.remaining = Math.max(0, c.active - this.elapsed);
-        this.intensity = 1;
-        if (this.elapsed >= c.active) {
-          this.phase = 'fadeOut';
-          this.elapsed = 0;
-        }
-      } else {
-        this.intensity = Math.max(0, 1 - this.elapsed / c.fadeOut);
-        if (this.intensity <= 0) {
-          this.active = null;
-          this.phase = 'inactive';
-          this.remaining = 0;
-          this.afterimage.uniforms.damp.value = 0;
-        }
-      }
+    if (this.disposed) return;
+    const beforeUpdate = this.timeline.active;
+    const completed = this.timeline.update(dt, beforeUpdate ? effectConfigs[beforeUpdate] : null);
+    if (completed) {
+      this.restoreSnapshot();
+      return;
     }
     const c = this.active ? effectConfigs[this.active] : null,
       level = this.visualIntensity,
       pulse = c ? 1 + Math.sin(this.shader.uniforms.time.value * c.pulse) * 0.08 * level : 1;
-    this.bloom.enabled = !this.settings.disableBloom && !!c && c.bloom > 0;
-    this.bloom.strength = (c?.bloom || 0) * level * pulse;
-    this.afterimage.enabled = !!c && c.afterimage > 0 && level > 0.02;
-    this.afterimage.uniforms.damp.value = c?.afterimage || 0;
+    if (!c || !this.snapshot) return;
+    this.bloom.enabled = !this.settings.disableBloom && (this.snapshot.bloom.enabled || c.bloom > 0);
+    this.bloom.strength = THREE.MathUtils.lerp(this.snapshot.bloom.strength, c.bloom, level) * pulse;
+    this.afterimage.enabled = this.snapshot.afterimage.enabled || (c.afterimage > 0 && level > 0.02);
+    this.afterimage.uniforms.damp.value = THREE.MathUtils.lerp(
+      this.snapshot.afterimage.damp,
+      c.afterimage,
+      level,
+    );
     const u = this.shader.uniforms;
     const allowMotion = !this.settings.reduceMotion;
-    u.distortion.value = (allowMotion ? c?.warp || 0 : 0) * level;
-    u.saturation.value = THREE.MathUtils.lerp(1, c?.saturation || 1, level);
-    u.hue.value = (c?.hue || 0) * level;
-    u.chroma.value = (c?.chroma || 0) * level;
-    u.contrast.value = THREE.MathUtils.lerp(1, c?.contrast || 1, level);
-    u.brightness.value = (c?.brightness || 0) * level;
-    u.vignette.value = (c?.vignette || 0) * level;
-    u.blur.value = (c?.blur || 0) * level;
-    u.melt.value = (allowMotion ? c?.melt || 0 : 0) * level;
-    u.mixing.value = (allowMotion ? c?.mixing || 0 : 0) * level;
-    u.lift.value = (c?.lift || 0) * level;
-    u.pulse.value = c?.pulse || 0;
+    const base = this.snapshot.uniforms;
+    u.distortion.value = THREE.MathUtils.lerp(base.distortion, allowMotion ? c.warp : 0, level);
+    u.saturation.value = THREE.MathUtils.lerp(base.saturation, c.saturation, level);
+    u.hue.value = THREE.MathUtils.lerp(base.hue, c.hue, level);
+    u.chroma.value = THREE.MathUtils.lerp(base.chroma, c.chroma, level);
+    u.contrast.value = THREE.MathUtils.lerp(base.contrast, c.contrast, level);
+    u.brightness.value = THREE.MathUtils.lerp(base.brightness, c.brightness, level);
+    u.vignette.value = THREE.MathUtils.lerp(base.vignette, c.vignette, level);
+    u.blur.value = THREE.MathUtils.lerp(base.blur, c.blur, level);
+    u.melt.value = THREE.MathUtils.lerp(base.melt, allowMotion ? c.melt || 0 : 0, level);
+    u.mixing.value = THREE.MathUtils.lerp(base.mixing, allowMotion ? c.mixing || 0 : 0, level);
+    u.lift.value = THREE.MathUtils.lerp(base.lift, c.lift || 0, level);
+    u.pulse.value = THREE.MathUtils.lerp(base.pulse, c.pulse, level);
     u.time.value += dt;
-    const target = c
-      ? THREE.MathUtils.lerp(65, c.fov, level) *
-        (1 + Math.sin(u.time.value * (c.pulse || 0.2)) * 0.004 * level)
-      : 65;
+    const target =
+      THREE.MathUtils.lerp(this.snapshot.cameraFov, c.fov, level) *
+      (1 + Math.sin(u.time.value * c.pulse) * 0.004 * level);
     this.camera.fov = THREE.MathUtils.damp(this.camera.fov, target, 6, dt);
     this.camera.updateProjectionMatrix();
+    if (this.snapshot.audio) {
+      this.audio?.applyEffectState({
+        volume: THREE.MathUtils.lerp(
+          this.snapshot.audio.volume,
+          Math.min(1, this.snapshot.audio.volume * c.audioVolume),
+          level,
+        ),
+        playbackRate: THREE.MathUtils.lerp(
+          this.snapshot.audio.playbackRate,
+          this.snapshot.audio.playbackRate * c.audioRate,
+          level,
+        ),
+      });
+    }
+  }
+
+  /** Zapamiętuje dokładny stan sceny przed pierwszym efektem w serii. */
+  private captureSnapshot(): EffectSnapshot {
+    const uniforms = {} as Record<EffectUniformName, number>;
+    effectUniformNames.forEach((name) => (uniforms[name] = this.shader.uniforms[name].value));
+    return {
+      cameraFov: this.camera.fov,
+      bloom: {
+        enabled: this.bloom.enabled,
+        strength: this.bloom.strength,
+        radius: this.bloom.radius,
+        threshold: this.bloom.threshold,
+      },
+      afterimage: {
+        enabled: this.afterimage.enabled,
+        damp: this.afterimage.uniforms.damp.value,
+      },
+      uniforms,
+      audio: this.audio?.captureEffectState(),
+    };
+  }
+
+  /** Przywraca kamerę, post-processing i audio po każdej ścieżce zakończenia. */
+  private restoreSnapshot() {
+    if (!this.snapshot) return;
+    this.camera.fov = this.snapshot.cameraFov;
+    this.camera.updateProjectionMatrix();
+    Object.assign(this.bloom, this.snapshot.bloom);
+    this.afterimage.enabled = this.snapshot.afterimage.enabled;
+    this.afterimage.uniforms.damp.value = this.snapshot.afterimage.damp;
+    effectUniformNames.forEach((name) => (this.shader.uniforms[name].value = this.snapshot!.uniforms[name]));
+    if (this.snapshot.audio) this.audio?.restoreEffectState(this.snapshot.audio);
+    this.snapshot = undefined;
+  }
+
+  get active() {
+    return this.timeline.active;
+  }
+
+  get phase() {
+    return this.timeline.phase;
+  }
+
+  get remaining() {
+    return this.timeline.remaining;
   }
 
   /** Zwraca bieżącą siłę efektu po uwzględnieniu ustawień gracza. */
   get visualIntensity() {
-    return this.intensity * this.settings.intensity;
+    return this.timeline.intensity * this.settings.intensity;
   }
 
   /** Zwraca modyfikatory ruchu gracza wynikające z aktywnej używki. */
@@ -387,9 +482,10 @@ export class EffectManager {
 
   /** Zatrzymuje efekt i zwalnia zasoby renderera post-processingu. */
   dispose() {
-    this.active = null;
-    this.phase = 'inactive';
-    this.afterimage.enabled = false;
+    if (this.disposed) return;
+    this.restoreSnapshot();
+    this.timeline.reset();
+    this.disposed = true;
     this.composer.dispose();
   }
 }
