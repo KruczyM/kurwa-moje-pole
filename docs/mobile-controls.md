@@ -7,6 +7,7 @@
 - `UŻYJ` uruchamia tę samą kontekstową interakcję co klawisz `E`;
 - przycisk `×` w prawym górnym rogu inspekcji zamyka podgląd bez użycia przedmiotu;
 - przeciągnięcie po modelu obraca go wokół środka bez przesuwania strony;
+- podczas sekwencji użycia widoczny jest przycisk `ANULUJ`, który bezpiecznie wraca do kamery FPS;
 - `MENU` otwiera pauzę;
 - `EKWIPUNEK` otwiera ekwipunek, a w jego wnętrzu zmienia się w `ZAMKNIJ`;
 - istniejące przyciski modali obsługują użycie przedmiotu, dodatkowy powrót z inspekcji,

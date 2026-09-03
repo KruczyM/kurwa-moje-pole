@@ -1,15 +1,15 @@
 # Lifecycle aplikacji
 
 Jedynym źródłem prawdy o aktywnym ekranie jest `AppStateMachine`. Aplikacja
-używa stanów `start`, `loading`, `playing`, `inspecting`, `dialog`, `inventory`,
-`paused` i `error`. Nie należy otwierać modali przez bezpośrednią zmianę
+używa stanów `start`, `loading`, `playing`, `inspecting`, `using-item`, `dialog`,
+`inventory`, `paused` i `error`. Nie należy otwierać modali przez bezpośrednią zmianę
 atrybutu `hidden`; widoczność interfejsu jest skutkiem przejścia stanu.
 
 ## Escape i Pointer Lock
 
 Priorytet klawisza `Escape` jest stały:
 
-1. inspekcja, dialog lub ekwipunek wracają do `playing`;
+1. inspekcja, sekwencja użycia, dialog lub ekwipunek wracają do `playing`;
 2. w `playing` klawisz przechodzi do `paused`;
 3. w `paused` kolejne, osobne naciśnięcie `Escape` wraca do głównego ekranu wyboru postaci;
 4. przycisk „Wróć do gry” w menu pauzy wznawia rozgrywkę.
@@ -41,6 +41,11 @@ Renderer inspekcji jest tworzony tylko raz i ponownie używany. Zamknięcie
 preview usuwa klon modelu wraz z jego geometriami, materiałami i teksturami.
 Kontekst WebGL oraz jeden zestaw listenerów obrotu pozostają do ponownego użycia,
 a ich pełne zwolnienie następuje dopiero w `Game.dispose()`.
+
+Sekwencja `using-item` blokuje locomotion i sprzeczne wejście. `Escape` albo
+przycisk „Anuluj” zatrzymuje mikser, usuwa rekwizyt oraz klon postaci i odtwarza
+dokładny transform kamery FPS. Przedmiot jest zużywany dopiero na markerze
+animacji, więc wcześniejsze przerwanie nie zmienia stołu ani ekwipunku.
 
 ## Obsługa błędów
 

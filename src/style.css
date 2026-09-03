@@ -146,12 +146,37 @@ h1 i {
   transform: translate(-50%, -50%);
   text-shadow: 1px 1px #000;
 }
+#cancel-effect,
+#cancel-use-sequence {
+  pointer-events: auto;
+}
 #cancel-effect {
   position: absolute;
   bottom: 17px;
   right: 17px;
   font-size: 10px;
   padding: 8px 10px;
+}
+#use-sequence {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #161421cc;
+  border: 1px solid #ffffff42;
+  font-size: 10px;
+  pointer-events: auto;
+}
+#use-sequence strong {
+  color: #ffe34d;
+}
+#use-sequence button {
+  padding: 7px 9px;
+  font-size: 9px;
 }
 #toast {
   position: absolute;
