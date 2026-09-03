@@ -7,6 +7,7 @@ describe('AppStateMachine', () => {
     machine.transition('loading');
     machine.transition('playing');
     machine.transition('inspecting');
+    machine.transition('using-item');
     machine.transition('playing');
     machine.transition('paused');
     expect(machine.current).toBe('paused');
@@ -18,8 +19,17 @@ describe('AppStateMachine', () => {
     expect(() => machine.transition('dialog')).toThrow('inventory -> dialog');
   });
 
+  it('allows an inventory item to enter and finish its use sequence', () => {
+    const machine = new AppStateMachine('playing');
+    machine.transition('inventory');
+    machine.transition('using-item');
+    machine.transition('playing');
+    expect(machine.current).toBe('playing');
+  });
+
   it('uses one Escape priority for every state', () => {
     expect(escapeTarget('inspecting')).toBe('playing');
+    expect(escapeTarget('using-item')).toBe('playing');
     expect(escapeTarget('dialog')).toBe('playing');
     expect(escapeTarget('inventory')).toBe('playing');
     expect(escapeTarget('playing')).toBe('paused');

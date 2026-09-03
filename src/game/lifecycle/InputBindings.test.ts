@@ -11,6 +11,7 @@ describe('InputBindings', () => {
   it('resolves only actions allowed by the active state', () => {
     expect(resolveGameInput('playing', 'Escape')).toBe('escape');
     expect(resolveGameInput('inspecting', 'Escape')).toBe('escape');
+    expect(resolveGameInput('using-item', 'Escape')).toBe('escape');
     expect(resolveGameInput('dialog', 'Escape')).toBe('escape');
     expect(resolveGameInput('inventory', 'Escape')).toBe('escape');
     expect(resolveGameInput('paused', 'Escape')).toBe('escape');
@@ -24,6 +25,7 @@ describe('InputBindings', () => {
     expect(resolveGameInput('playing', 'Tab', true)).toBeNull();
     expect(resolveGameInput('dialog', 'Tab')).toBeNull();
     expect(resolveGameInput('paused', 'e')).toBeNull();
+    expect(resolveGameInput('using-item', 'e')).toBeNull();
     expect(resolveGameInput('loading', 'Escape')).toBeNull();
   });
 

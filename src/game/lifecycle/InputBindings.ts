@@ -15,7 +15,10 @@ export type InputMode = 'desktop' | 'mobile';
 /** Zamienia pojedynczy klawisz na akcję dozwoloną w aktualnym stanie aplikacji. */
 export function resolveGameInput(state: AppState, key: string, repeat = false): GameInputAction | null {
   if (repeat) return null;
-  if (key === 'Escape' && ['playing', 'inspecting', 'dialog', 'inventory', 'paused'].includes(state)) {
+  if (
+    key === 'Escape' &&
+    ['playing', 'inspecting', 'using-item', 'dialog', 'inventory', 'paused'].includes(state)
+  ) {
     return 'escape';
   }
   if (key === 'Tab' && (state === 'playing' || state === 'inventory')) {
@@ -35,6 +38,8 @@ export function controlHintForState(state: AppState, mode: InputMode = 'desktop'
         return 'Joystick — ruch · przeciągnij ekran — rozglądanie · UŻYJ — interakcja';
       case 'inspecting':
         return 'Przeciągnij — obróć · UŻYJ — uruchom efekt · WRÓĆ — wróć do obozu';
+      case 'using-item':
+        return 'ANULUJ — przerwij sekwencję';
       case 'dialog':
         return 'WRÓĆ — wróć do obozu';
       case 'inventory':
@@ -50,6 +55,8 @@ export function controlHintForState(state: AppState, mode: InputMode = 'desktop'
       return `${inputBindings.escape} — pauza · ${inputBindings.interact} — interakcja · ${inputBindings.inventory} — ekwipunek`;
     case 'inspecting':
       return `Przeciągnij — obróć · kółko — zbliż · ${inputBindings.interact} — uruchom efekt · ${inputBindings.escape} — wróć do obozu`;
+    case 'using-item':
+      return `${inputBindings.escape} — przerwij sekwencję`;
     case 'dialog':
       return `${inputBindings.escape} — wróć do obozu`;
     case 'inventory':

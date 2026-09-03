@@ -916,9 +916,18 @@ wyłączenia błysków i natychmiastowego przerwania.
 1. Gracz wybiera przedmiot w inspekcji.
 2. Kamera przechodzi do bezpiecznego, krótkiego ujęcia trzecioosobowego.
 3. Odtwarzana jest animacja całej postaci i ewentualny rekwizyt w dłoni.
-4. Kamera wraca do perspektywy pierwszoosobowej, a efekt przejmuje obraz.
-5. Po zakończeniu wszystkie parametry postprocessingu, audio i kamery wracają
+   Obecna biblioteka nie zawiera osobnych klipów konsumpcji, dlatego runtime
+   generuje jednorazowy addytywny ruch prawej ręki na kanonicznym rigu Mixamo.
+   Jeśli model nie ma wymaganych kości, jawnym fallbackiem jest klip `Idle`.
+4. Efekt uruchamia się na markerze animacji; dopiero wtedy przedmiot znika ze
+   stołu albo ekwipunku. Przerwanie przed markerem nie zużywa przedmiotu.
+5. Kamera wraca do perspektywy pierwszoosobowej, a efekt przejmuje obraz.
+6. Po zakończeniu wszystkie parametry postprocessingu, audio i kamery wracają
    do wartości bazowych.
+
+Kamera sekwencji sprawdza kilka kierunków i odległości względem colliderów
+świata. Przejście do ujęcia trzecioosobowego i z powrotem jest wygładzane, a
+postać jest ukrywana, zanim kamera ponownie znajdzie się wewnątrz modelu.
 
 ## 21. Budżet wydajności i odporność aplikacji
 

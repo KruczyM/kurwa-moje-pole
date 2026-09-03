@@ -1,5 +1,5 @@
 export type AppState =
-  'start' | 'loading' | 'playing' | 'inspecting' | 'dialog' | 'inventory' | 'paused' | 'error';
+  'start' | 'loading' | 'playing' | 'inspecting' | 'using-item' | 'dialog' | 'inventory' | 'paused' | 'error';
 
 export type StateChange = { from: AppState; to: AppState };
 type Listener = (change: StateChange) => void;
@@ -8,9 +8,10 @@ const transitions: Record<AppState, readonly AppState[]> = {
   start: ['loading'],
   loading: ['playing', 'error', 'start'],
   playing: ['inspecting', 'dialog', 'inventory', 'paused', 'error', 'start'],
-  inspecting: ['playing', 'error', 'start'],
+  inspecting: ['playing', 'using-item', 'error', 'start'],
+  'using-item': ['playing', 'error', 'start'],
   dialog: ['playing', 'error', 'start'],
-  inventory: ['playing', 'error', 'start'],
+  inventory: ['playing', 'using-item', 'error', 'start'],
   paused: ['playing', 'error', 'start'],
   error: ['loading', 'start'],
 };
@@ -19,7 +20,8 @@ export const modalStates: readonly AppState[] = ['inspecting', 'dialog', 'invent
 
 /** Wyznacza pojedynczy, przewidywalny stan docelowy dla klawisza Escape. */
 export function escapeTarget(state: AppState): AppState | null {
-  if (state === 'inspecting' || state === 'dialog' || state === 'inventory') return 'playing';
+  if (state === 'inspecting' || state === 'using-item' || state === 'dialog' || state === 'inventory')
+    return 'playing';
   if (state === 'playing') return 'paused';
   if (state === 'paused') return 'playing';
   return null;

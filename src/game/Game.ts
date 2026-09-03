@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { AssetLoader } from './assets/AssetLoader';
-import { effectAssets, musicAsset } from './assets/assetManifest';
+import { characterAssets, effectAssets, musicAsset } from './assets/assetManifest';
 import { CampWorld } from './world/CampWorld';
 import { PlayerController } from './player/PlayerController';
 import { isMobileInputDevice, MobileControls } from './player/MobileControls';
@@ -21,10 +21,17 @@ import { POINTER_LOCK_ESCAPE_SUPPRESSION_MS, PointerLockPauseGate } from './life
 import { controlHintForState, interactionControlHint, resolveGameInput } from './lifecycle/InputBindings';
 import { ConsumableInventory } from './inventory/ConsumableInventory';
 import { InspectControls } from './interactions/InspectControls';
+import { ItemUseSequence } from './interactions/ItemUseSequence';
+import { itemUseSequenceConfig } from './interactions/itemUseSequenceConfig';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
-const interactiveStates: readonly AppState[] = ['playing', 'inspecting', 'dialog', 'inventory'];
+type PendingItemUse = {
+  effect: EffectId;
+  source: 'world' | 'inventory';
+  itemId?: InspectableItemId;
+  committed: boolean;
+};
 
 /** Odczytuje ustawienia efektów z localStorage i uzupełnia brakujące wartości domyślne. */
 function loadVisualSettings(): VisualSettings {
@@ -71,6 +78,8 @@ export class Game {
   private readonly mobileInput = isMobileInputDevice();
   private mobileControls?: MobileControls;
   private readonly inventory = new ConsumableInventory();
+  private useSequence?: ItemUseSequence;
+  private pendingItemUse?: PendingItemUse;
 
   constructor(readonly state: AppStateMachine) {
     try {
@@ -150,6 +159,18 @@ export class Game {
         ...this.npcs!.npcs.map((npc) => npc.root),
         ...this.world!.interactables.map((item) => item.object),
       ]);
+      const selectedName = localStorage.getItem('camp-player-character');
+      const selectedAsset = characterAssets.find((asset) => asset.name === selectedName);
+      const selectedCharacter =
+        (selectedAsset ? assets.characters.get(selectedAsset.id) : undefined) ??
+        assets.characters.values().next().value;
+      this.useSequence = new ItemUseSequence(
+        this.scene,
+        this.camera,
+        selectedCharacter,
+        this.propModels,
+        (x, z) => this.world!.canMove(x, z),
+      );
       this.startLoop();
       this.state.transition('playing');
     } catch (cause) {
@@ -194,6 +215,10 @@ export class Game {
     if (this.state.current === 'inspecting') {
       this.voiceReactions.playInspectCancel();
       this.finishInspect();
+    }
+    if (this.state.current === 'using-item') {
+      this.useSequence?.cancel();
+      this.pendingItemUse = undefined;
     }
     this.state.transition(target);
   }
@@ -327,8 +352,7 @@ export class Game {
     if (this.state.current !== 'inspecting' || !this.inspectId) return;
     const item = itemById.get(this.inspectId as InspectableItemId);
     if (!item) return;
-    if (!this.useEffect(item.effect)) return;
-    this.world?.removeItem(item.id);
+    if (!this.beginItemUse(item.effect, 'world', item.id)) return;
     this.interactions?.clear();
     this.finishInspect();
   }
@@ -349,19 +373,15 @@ export class Game {
   /** Uruchamia efekt wyłącznie wtedy, gdy plecak zawiera jego egzemplarz. */
   useInventoryEffect(id: EffectId) {
     if (this.state.current !== 'inventory' || this.inventory.quantity(id) < 1) return false;
-    if (!this.useEffect(id)) return false;
-    this.inventory.consume(id);
-    this.syncInventoryUi();
-    return true;
+    return this.beginItemUse(id, 'inventory');
   }
   /** Przełącza pomiędzy rozgrywką i ekranem ekwipunku. */
   toggleInventory() {
     if (this.state.current === 'playing') this.state.transition('inventory');
     else if (this.state.current === 'inventory') this.state.transition('playing');
   }
-  /** Weryfikuje ostrzeżenie dostępności i uruchamia wskazany efekt percepcji. */
-  useEffect(id: EffectId) {
-    if (!this.effects || !interactiveStates.includes(this.state.current)) return false;
+  /** Weryfikuje ostrzeżenie dostępności przed rozpoczęciem sekwencji. */
+  private confirmItemUse(id: EffectId) {
     if ((id === 'Grzyb' || id === 'MDMA' || id === 'LSD') && !localStorage.getItem('camp-effect-warning')) {
       const proceed = window.confirm(
         'Ten fikcyjny efekt zawiera intensywne ruchy obrazu i światło. Kontynuować?',
@@ -369,11 +389,46 @@ export class Game {
       localStorage.setItem('camp-effect-warning', '1');
       if (!proceed) return false;
     }
-    if (this.state.current !== 'playing') this.state.transition('playing');
-    this.effects.use(id);
-    this.voiceReactions.effectStarted(id);
-    this.toast(`${id}: efekt uruchomiony`);
     return true;
+  }
+
+  /** Rozpoczyna transakcyjne użycie przedmiotu bez usuwania go przed markerem animacji. */
+  private beginItemUse(id: EffectId, source: PendingItemUse['source'], itemId?: InspectableItemId) {
+    if (!this.effects || !this.player || !this.useSequence || !this.confirmItemUse(id)) return false;
+    if (this.state.current !== 'inspecting' && this.state.current !== 'inventory') return false;
+    if (!this.useSequence.start(id, this.player.yaw)) return false;
+    this.pendingItemUse = { effect: id, source, itemId, committed: false };
+    qs('#use-sequence-label').textContent = itemUseSequenceConfig[id].label;
+    this.state.transition('using-item');
+    return true;
+  }
+
+  /** Zużywa przedmiot i uruchamia efekt dokładnie na markerze animacji. */
+  private commitItemUse() {
+    const pending = this.pendingItemUse;
+    if (!pending || pending.committed || !this.effects) return;
+    if (pending.source === 'inventory') {
+      if (!this.inventory.consume(pending.effect)) {
+        this.cancelUseSequence();
+        return;
+      }
+      this.syncInventoryUi();
+    } else if (pending.itemId) {
+      this.world?.removeItem(pending.itemId);
+      this.interactions?.clear();
+    }
+    pending.committed = true;
+    this.effects.use(pending.effect);
+    this.voiceReactions.effectStarted(pending.effect);
+    this.toast(`${pending.effect}: efekt uruchomiony`);
+  }
+
+  /** Przerywa aktywną sekwencję bez otwierania menu pauzy. */
+  cancelUseSequence() {
+    if (this.state.current !== 'using-item') return;
+    this.useSequence?.cancel();
+    this.pendingItemUse = undefined;
+    this.state.transition('playing');
   }
 
   /** Odświeża liczniki oraz dostępność przycisków całego ekwipunku. */
@@ -436,6 +491,7 @@ export class Game {
     qs('#dialog').hidden = state !== 'dialog';
     qs('#inventory').hidden = state !== 'inventory';
     qs('#pause').hidden = state !== 'paused';
+    qs('#use-sequence').hidden = state !== 'using-item';
     const inputMode = this.mobileInput ? 'mobile' : 'desktop';
     qs('#controls-hud').textContent = controlHintForState(state, inputMode);
     qs('#inventory-help').textContent = controlHintForState('inventory', inputMode);
@@ -490,6 +546,14 @@ export class Game {
       }
       this.world?.update(this.clock.elapsedTime);
       this.effects?.update(dt);
+      if (state === 'using-item') {
+        const event = this.useSequence?.update(dt);
+        if (event?.activateEffect) this.commitItemUse();
+        if (event?.complete) {
+          this.pendingItemUse = undefined;
+          if (this.state.current === 'using-item') this.state.transition('playing');
+        }
+      }
       this.voiceReactions.update(dt, this.effects?.active || null, this.effects?.phase || 'inactive');
       this.mushroomWireframe.update(
         this.effects?.active === 'Grzyb',
@@ -616,6 +680,9 @@ export class Game {
     this.events.dispose();
     this.unsubscribeState();
     this.disposeInspectScene();
+    this.useSequence?.dispose();
+    this.useSequence = undefined;
+    this.pendingItemUse = undefined;
     this.interactions?.dispose();
     this.mobileControls?.dispose();
     this.mobileControls = undefined;

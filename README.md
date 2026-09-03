@@ -83,6 +83,8 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `src/game/interactions/itemPresentationConfig.ts` | Zawiera skale i orientacje modeli na stole oraz w inspekcji.            |
 | `src/game/interactions/inspectPresentation.ts`    | Centruje modele na osobnej osi obrotu podglądu.                         |
 | `src/game/interactions/InspectControls.ts`        | Obsługuje obrót i bezpieczne zbliżenie przedmiotu w inspekcji.          |
+| `src/game/interactions/ItemUseSequence.ts`        | Steruje kamerą, postacią, animacją, rekwizytem i markerem użycia.       |
+| `src/game/interactions/itemUseSequenceConfig.ts`  | Konfiguruje czasy, rekwizyty i ruch pięciu sekwencji użycia.            |
 | `src/game/lifecycle/AppStateMachine.ts`           | Pilnuje przejść między menu, grą, inspekcją i pauzą.                    |
 | `src/game/lifecycle/InputBindings.ts`             | Jest jednym źródłem skrótów klawiaturowych i podpowiedzi kontekstowych. |
 | `src/game/lifecycle/PointerLockPauseGate.ts`      | Odróżnia wyjście z Pointer Lock od nieudanego przejęcia myszy.          |
