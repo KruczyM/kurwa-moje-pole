@@ -34,9 +34,8 @@ export function campPosition(xPercent: number, yPercent: number): [number, numbe
   ];
 }
 
-const SMALL: PhysicalSize = [2.1, 1.4, 1.8];
-const SMALL_COLLIDER: [number, number] = [2.1, 1.8];
-const BIG2: PhysicalSize = [2.2, 1.5, 5.5];
+const SMALL: PhysicalSize = [4.2, 2.8, 3.6];
+const SMALL_COLLIDER: [number, number] = [4.2, 3.6];
 const FAMILY_AIR_SECONDS_52: PhysicalSize = [3.65, 2.1, 5.6];
 
 /** Deterministyczny układ mapy T01–T15; jedna jednostka świata odpowiada jednemu metrowi. */
@@ -46,11 +45,11 @@ export const tentLayout: readonly TentConfig[] = [
     label: 'Rodzinny namiot T01',
     model: 'big2',
     position: campPosition(24, 17),
-    rotationY: Math.PI / 2,
-    physicalSize: BIG2,
+    rotationY: Math.PI,
+    physicalSize: FAMILY_AIR_SECONDS_52,
     fit: 'exact-source-correction',
-    groundOffset: -0.62,
-    collider: { type: 'box', size: [2.2, 5.5] },
+    groundOffset: -0.87,
+    collider: { type: 'box', size: [3.65, 5.6] },
   },
   {
     id: 'T02',
