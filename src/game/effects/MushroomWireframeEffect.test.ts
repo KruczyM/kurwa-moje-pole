@@ -41,4 +41,23 @@ describe('mushroom wireframe pulse', () => {
     objectMaterial.dispose();
     groundMaterial.dispose();
   });
+
+  it('restores exact materials when paused or reduced motion is enabled', () => {
+    const scene = new THREE.Scene();
+    const material = new THREE.MeshStandardMaterial();
+    const object = new THREE.Mesh(new THREE.BoxGeometry(), material);
+    scene.add(object);
+    const effect = new MushroomWireframeEffect(scene);
+
+    effect.update(true, 0.6, 1, false);
+    expect(object.material).not.toBe(material);
+    effect.update(false, 0, 0, false);
+    expect(object.material).toBe(material);
+
+    effect.update(true, 0.6, 1, true);
+    expect(object.material).toBe(material);
+    effect.dispose();
+    object.geometry.dispose();
+    material.dispose();
+  });
 });

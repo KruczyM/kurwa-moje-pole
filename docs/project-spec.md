@@ -639,6 +639,8 @@ Projekt można uznać za skończony dopiero wtedy, gdy wszystkie poniższe warun
 - [ ] Anulowanie efektu nie pozostawia aktywnych uniformów ani timerów.
 - [ ] HUD pozostaje czytelny.
 
+Stan implementacji efektów: wspólny `EffectTimeline` prowadzi trzy fazy i ich liczniki, a `EffectManager` przechowuje jeden bazowy snapshot dla całej nieprzerwanej serii używek. Szybka zmiana profilu nie nadpisuje wartości bazowych. Przy pełnym wygaszeniu lub zwolnieniu systemu przywracane są FOV, bloom, afterimage, uniformy oraz parametry muzyki. Nakładka LSD nie przechwytuje wejścia, a efekt grzybów zwraca oryginalne materiały także przy pauzie, anulowaniu i ograniczeniu ruchu.
+
 ### J. Multiplayer
 
 - [ ] Co najmniej dwa i maksymalnie osiem klientów może wejść do jednego pokoju.

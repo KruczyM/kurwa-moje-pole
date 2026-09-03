@@ -153,7 +153,7 @@ export class Game {
         });
         this.mobileControls.setState(this.state.current);
       }
-      this.effects = new EffectManager(this.renderer, this.scene, this.camera);
+      this.effects = new EffectManager(this.renderer, this.scene, this.camera, this.speakerAudio);
       this.effects.setSettings(this.settings);
       this.interactions = new InteractionManager(this.camera, () => [
         ...this.npcs!.npcs.map((npc) => npc.root),
@@ -598,8 +598,14 @@ export class Game {
   /** Aktualizuje licznik efektu oraz nakładki LSD i papierosa. */
   private updateEffectHud() {
     const active = this.effects?.active;
+    const phaseLabels = {
+      inactive: 'nieaktywny',
+      fadeIn: 'wchodzenie',
+      active: 'aktywny',
+      fadeOut: 'wygaszanie',
+    } as const;
     qs('#effect-hud').textContent = active
-      ? `${active} · ${this.effects!.phase} · ${Math.ceil(this.effects!.remaining)} s`
+      ? `${active} · ${phaseLabels[this.effects!.phase]} · ${Math.ceil(this.effects!.remaining)} s`
       : 'Brak aktywnego efektu';
     qs('#smoke').hidden = active !== 'Papieros';
     const lsdOverlay = qs('#lsd-overlay');
