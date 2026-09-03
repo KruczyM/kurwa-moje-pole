@@ -1,161 +1,196 @@
 export type TentModelId =
-  'main' | 'small' | 'small2' | 'large' | 'big2' | 'white' | 'colorful' | 'classic' | 'blue' | 'blueOrange';
+  'main' | 'small' | 'small2' | 'large' | 'big2' | 'white' | 'colorful' | 'blue' | 'blueOrange';
+
+export type PhysicalSize = readonly [widthX: number, heightY: number, depthZ: number];
+export type TentFit = 'uniform-height' | 'exact-source-correction';
 
 export type TentConfig = {
   id: `T${number}`;
   label: string;
-  model: TentModelId;
+  model: Exclude<TentModelId, 'main'>;
   position: [number, number, number];
   rotationY: number;
-  /** Docelowa wysokość modelu w metrach po normalizacji źródłowego GLB. */
-  scale: number;
+  /** Docelowe wymiary świata w metrach: X (szerokość), Y (wysokość), Z (długość). */
+  physicalSize: PhysicalSize;
+  /** Skalowanie nierównomierne jest używane tylko dla modeli o błędnych proporcjach źródłowych. */
+  fit: TentFit;
+  /** Korekta styku z gruntem dla modeli zawierających geometrię poniżej właściwej podłogi namiotu. */
+  groundOffset?: number;
   collider: {
     type: 'box';
-    /** Szerokość i głębokość uproszczonego proxy kolizji w metrach. */
+    /** Szerokość X i długość Z uproszczonego proxy kolizji w metrach. */
     size: [number, number];
   };
 };
 
-/**
- * Stabilny układ T01–T15 odwzorowujący roboczą mapę obozu.
- * Kolejność i warianty są celowo jawne, dzięki czemu „losowy” zestaw namiotów
- * nie zmienia się między uruchomieniami i może później dostać właścicieli.
- */
+export const CAMP_LAYOUT_SIZE = { width: 30, depth: 30 } as const;
+
+/** Przelicza pozycję procentową ze szkicu (lewy górny róg) na metry świata Three.js. */
+export function campPosition(xPercent: number, yPercent: number): [number, number, number] {
+  return [
+    (xPercent / 100 - 0.5) * CAMP_LAYOUT_SIZE.width,
+    0,
+    (yPercent / 100 - 0.5) * CAMP_LAYOUT_SIZE.depth,
+  ];
+}
+
+const SMALL: PhysicalSize = [2.1, 1.4, 1.8];
+const SMALL_COLLIDER: [number, number] = [2.1, 1.8];
+const BIG2: PhysicalSize = [2.2, 1.5, 5.5];
+const FAMILY_AIR_SECONDS_52: PhysicalSize = [3.65, 2.1, 5.6];
+
+/** Deterministyczny układ mapy T01–T15; jedna jednostka świata odpowiada jednemu metrowi. */
 export const tentLayout: readonly TentConfig[] = [
   {
     id: 'T01',
-    label: 'Namiot T01',
+    label: 'Rodzinny namiot T01',
     model: 'big2',
-    position: [-11, 0, -9],
-    rotationY: 0.08,
-    scale: 1.8,
-    collider: { type: 'box', size: [4.8, 2.6] },
+    position: campPosition(24, 17),
+    rotationY: Math.PI / 2,
+    physicalSize: BIG2,
+    fit: 'exact-source-correction',
+    groundOffset: -0.62,
+    collider: { type: 'box', size: [2.2, 5.5] },
   },
   {
     id: 'T02',
     label: 'Namiot T02',
     model: 'small',
-    position: [-5.2, 0, -8.6],
-    rotationY: -0.08,
-    scale: 1.55,
-    collider: { type: 'box', size: [2.45, 2.4] },
+    position: campPosition(44, 16),
+    rotationY: -0.052,
+    physicalSize: SMALL,
+    fit: 'exact-source-correction',
+    collider: { type: 'box', size: SMALL_COLLIDER },
   },
   {
     id: 'T03',
     label: 'Namiot T03',
     model: 'blue',
-    position: [0, 0, -8.7],
-    rotationY: 0.04,
-    scale: 1.5,
-    collider: { type: 'box', size: [2.65, 2.55] },
+    position: campPosition(57, 16),
+    rotationY: 0,
+    physicalSize: SMALL,
+    fit: 'exact-source-correction',
+    collider: { type: 'box', size: SMALL_COLLIDER },
   },
   {
     id: 'T04',
     label: 'Namiot T04',
     model: 'white',
-    position: [5.2, 0, -8.6],
-    rotationY: -0.06,
-    scale: 1.5,
-    collider: { type: 'box', size: [2.3, 2.2] },
+    position: campPosition(71, 17),
+    rotationY: 0.052,
+    physicalSize: SMALL,
+    fit: 'exact-source-correction',
+    collider: { type: 'box', size: SMALL_COLLIDER },
   },
   {
     id: 'T05',
     label: 'Namiot T05',
     model: 'small2',
-    position: [10.5, 0, -7.5],
-    rotationY: -0.35,
-    scale: 1.55,
-    collider: { type: 'box', size: [2.35, 2.1] },
+    position: campPosition(88, 21),
+    rotationY: 0.262,
+    physicalSize: SMALL,
+    fit: 'exact-source-correction',
+    collider: { type: 'box', size: SMALL_COLLIDER },
   },
   {
     id: 'T06',
     label: 'Namiot T06',
-    model: 'classic',
-    position: [10.2, 0, -1.7],
-    rotationY: 0.04,
-    scale: 1.65,
-    collider: { type: 'box', size: [2.8, 3.1] },
+    model: 'small',
+    position: campPosition(10, 40),
+    rotationY: -0.052,
+    physicalSize: SMALL,
+    fit: 'exact-source-correction',
+    collider: { type: 'box', size: SMALL_COLLIDER },
   },
   {
     id: 'T07',
     label: 'Namiot T07',
     model: 'colorful',
-    position: [-11, 0, -2.4],
-    rotationY: 0.03,
-    scale: 1.55,
-    collider: { type: 'box', size: [2.5, 3.1] },
+    position: campPosition(83, 39),
+    rotationY: 0,
+    physicalSize: SMALL,
+    fit: 'exact-source-correction',
+    collider: { type: 'box', size: SMALL_COLLIDER },
   },
   {
     id: 'T08',
     label: 'Namiot T08',
     model: 'blueOrange',
-    position: [-11, 0, 3.4],
-    rotationY: -0.04,
-    scale: 1.5,
-    collider: { type: 'box', size: [2.55, 2.45] },
+    position: campPosition(11, 62),
+    rotationY: 0,
+    physicalSize: SMALL,
+    fit: 'exact-source-correction',
+    collider: { type: 'box', size: SMALL_COLLIDER },
   },
   {
     id: 'T09',
-    label: 'Namiot T09',
-    model: 'small2',
-    position: [-7, 0, 6.4],
-    rotationY: -0.08,
-    scale: 1.5,
-    collider: { type: 'box', size: [2.2, 2.5] },
+    label: 'Rodzinny namiot T09',
+    model: 'large',
+    position: campPosition(29, 64),
+    rotationY: -0.105,
+    physicalSize: FAMILY_AIR_SECONDS_52,
+    fit: 'exact-source-correction',
+    collider: { type: 'box', size: [3.65, 5.6] },
   },
   {
     id: 'T10',
-    label: 'Duży namiot T10',
-    model: 'large',
-    position: [-2.7, 0, 8.6],
-    rotationY: -0.1,
-    scale: 1.72,
-    collider: { type: 'box', size: [2.6, 3.75] },
+    label: 'Namiot T10',
+    model: 'small',
+    position: campPosition(45, 65),
+    rotationY: -0.087,
+    physicalSize: SMALL,
+    fit: 'exact-source-correction',
+    collider: { type: 'box', size: SMALL_COLLIDER },
   },
   {
     id: 'T11',
-    label: 'Duży namiot T11',
-    model: 'main',
-    position: [2.7, 0, 8.3],
-    rotationY: 0.08,
-    scale: 1.8,
-    collider: { type: 'box', size: [4.2, 4.2] },
+    label: 'Namiot T11',
+    model: 'blue',
+    position: campPosition(63, 65),
+    rotationY: -0.122,
+    physicalSize: SMALL,
+    fit: 'exact-source-correction',
+    collider: { type: 'box', size: SMALL_COLLIDER },
   },
   {
     id: 'T12',
     label: 'Namiot T12',
-    model: 'classic',
-    position: [7.5, 0, 7.3],
-    rotationY: -0.12,
-    scale: 1.65,
-    collider: { type: 'box', size: [2.8, 3.35] },
+    model: 'colorful',
+    position: campPosition(76, 62),
+    rotationY: -0.105,
+    physicalSize: SMALL,
+    fit: 'exact-source-correction',
+    collider: { type: 'box', size: SMALL_COLLIDER },
   },
   {
     id: 'T13',
     label: 'Namiot T13',
     model: 'white',
-    position: [9.3, 0, 12.2],
-    rotationY: 0.08,
-    scale: 1.48,
-    collider: { type: 'box', size: [2.3, 2.2] },
+    position: campPosition(22, 82),
+    rotationY: -0.122,
+    physicalSize: SMALL,
+    fit: 'exact-source-correction',
+    collider: { type: 'box', size: SMALL_COLLIDER },
   },
   {
     id: 'T14',
-    label: 'Namiot T14',
-    model: 'big2',
-    position: [-8.2, 0, 12.3],
-    rotationY: -0.08,
-    scale: 1.7,
-    collider: { type: 'box', size: [3, 2.8] },
+    label: 'Rodzinny namiot T14',
+    model: 'large',
+    position: campPosition(37, 83),
+    rotationY: -0.087,
+    physicalSize: FAMILY_AIR_SECONDS_52,
+    fit: 'exact-source-correction',
+    collider: { type: 'box', size: [3.65, 5.6] },
   },
   {
     id: 'T15',
-    label: 'Duży namiot T15',
-    model: 'large',
-    position: [-3.2, 0, 14],
-    rotationY: 0.08,
-    scale: 1.72,
-    collider: { type: 'box', size: [2.6, 3.75] },
+    label: 'Namiot T15',
+    model: 'small2',
+    position: campPosition(62, 83),
+    rotationY: 0.052,
+    physicalSize: SMALL,
+    fit: 'exact-source-correction',
+    collider: { type: 'box', size: SMALL_COLLIDER },
   },
 ] as const;
 

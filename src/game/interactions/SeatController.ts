@@ -21,13 +21,13 @@ export function findSittingClip(clips: THREE.AnimationClip[]) {
   return clips.find((clip) => resolveCanonicalAnimationName(clip.name) === 'SittingLaughing');
 }
 
-/** Wyznacza czytelny kadr zza siedzącej postaci. */
+/** Wyznacza czytelny kadr przed siedzącą postacią, aby patrzyła w stronę kamery. */
 export function seatCameraPosition(position: THREE.Vector3, rotationY: number) {
   const forward = new THREE.Vector3(Math.sin(rotationY), 0, Math.cos(rotationY));
   const side = new THREE.Vector3(forward.z, 0, -forward.x);
   return position
     .clone()
-    .addScaledVector(forward, -3.1)
+    .addScaledVector(forward, 3.1)
     .addScaledVector(side, 0.65)
     .add(new THREE.Vector3(0, 1.85, 0));
 }

@@ -33,25 +33,23 @@ Główna pętla rozgrywki:
 ### 2.2. Centralne zadaszenie Mad Dog
 
 - Mad Dog jest największym i najważniejszym obiektem obozu.
-- Obecnie załadowany model należy znacznie powiększyć. Docelowy rozmiar roboczy to co najmniej około 8 × 6 m.
+- Runtime używa właściwego modelu `public/game-assets/world/tents/main.glb`, powiększonego jednolicie cztery razy względem źródła.
 - Zadaszenie ma być czarne, otwarte ze wszystkich stron, z lekko zwisającym materiałem.
 - Pod zadaszeniem wszyscy głównie siedzą, chronią się przed słońcem i rozmawiają.
 - Cała przestrzeń pod nim musi być dostępna dla gracza i NPC.
-- Kolizję mają tylko słupy i inne rzeczywiście masywne elementy. Materiał nad głową nie blokuje przejścia.
-- Linki, odciągi i śledzie mogą być widoczne, ale same linki nie mogą mieć kolizji.
+- Nie wolno dokładać proceduralnej płachty ani czterech zastępczych słupów. Wnętrze kompletnego modelu Mad Dog nie ma collidera blokującego przejście.
 - Pod zadaszeniem potrzebne jest dodatkowe miękkie światło wypełniające, aby postacie nie były niemal czarne.
 - Pod zadaszeniem znajduje się osiem ponumerowanych miejsc siedzących `S01`–`S08`, ustawionych w luźnym kręgu i zwróconych do środka.
+- Stół z używkami stoi pod zadaszeniem, pomiędzy miejscami siedzącymi.
 - Krzesła mają rozmiar dopasowany do postaci. Interakcja ustawia wybraną postać na krześle, uruchamia zapętloną animację siedzenia i przełącza kamerę na czytelny widok zewnętrzny.
 - `E`, `Escape` lub mobilny przycisk `WSTAŃ` kończy siedzenie i przywraca poprzednią pozycję, obrót oraz pole widzenia kamery.
 
 ### 2.3. Flaga
 
 - Flaga `#kurwamojepole` znajduje się na środku obozu, a nie przy wejściu.
-- Maszt ma być wysoki, wyraźnie wyższy od namiotów i zadaszenia.
-- Flaga ma znajdować się wysoko i być widoczna z większości obozu.
-- Maszt ma kolizję, materiał flagi nie ma kolizji.
-- Flaga powinna delikatnie poruszać się na wietrze.
-- Maszt i flaga są osobnymi węzłami hierarchii `CampLandmarks`; flaga korzysta z tego samego spokojnego rytmu wiatru co materiał Mad Dog.
+- Runtime używa kompletnego modelu `public/game-assets/world/flaga2.glb`, powiększonego cztery razy; nie wolno osadzać go na dodatkowym proceduralnym słupie.
+- Model ma znajdować się przed dolną krawędzią Mad Dog i być widoczny z większości obozu.
+- Konstrukcja flagi ma mały uproszczony collider.
 
 ### 2.4. Toi-toi
 
@@ -66,23 +64,23 @@ Główna pętla rozgrywki:
 
 Do projektu dołączona jest robocza mapa `camp-layout-provisional.png`. Jest to uporządkowana interpretacja szkicu, a nie ostateczny pomiar geodezyjny. Wszystkie namioty otrzymują stabilne identyfikatory `T01`–`T15`, aby można było później przypisać im właścicieli, opisy i właściwe modele bez zmieniania kodu.
 
-| ID  | Położenie robocze            | Charakter miejsca                          | Model / właściciel do uzupełnienia              |
-| --- | ---------------------------- | ------------------------------------------ | ----------------------------------------------- |
-| T01 | północny zachód              | duży, podłużny namiot ze szkicu „Namiot 1” | —                                               |
-| T02 | północ, lewa część           | mały namiot                                | —                                               |
-| T03 | północ, środek               | mały namiot                                | —                                               |
-| T04 | północny wschód              | mały namiot                                | —                                               |
-| T05 | skrajny północny wschód      | nieregularny namiot                        | —                                               |
-| T06 | na wschód od Mad Dog         | średni namiot                              | —                                               |
-| T07 | zachodnia część obozu        | pionowo ustawiony namiot                   | —                                               |
-| T08 | zachód, poniżej T07          | mały namiot                                | —                                               |
-| T09 | południowy zachód od Mad Dog | smukły namiot                              | —                                               |
-| T10 | południe, lewa część         | duży namiot                                | `public/game-assets/world/tents/dużynamiot.glb` |
-| T11 | południe, środek             | duży namiot                                | —                                               |
-| T12 | południowy wschód            | podłużny namiot                            | —                                               |
-| T13 | dolny prawy sektor           | mały namiot                                | —                                               |
-| T14 | dolny lewy sektor            | średni namiot                              | —                                               |
-| T15 | dolny środkowy sektor        | duży namiot                                | `public/game-assets/world/tents/dużynamiot.glb` |
+| ID  | Pozycja x%, y% | Charakter miejsca                     | Model runtime    |
+| --- | -------------: | ------------------------------------- | ---------------- |
+| T01 |         24, 17 | duży, 5,50 × 2,20 × 1,50 m, obrót 90° | `big2.glb`       |
+| T02 |         44, 16 | mały                                  | `small.glb`      |
+| T03 |         57, 16 | średni                                | `niebieski.glb`  |
+| T04 |         71, 17 | mały                                  | `biały.glb`      |
+| T05 |         88, 21 | mały, nieregularny                    | `small2.glb`     |
+| T06 |         10, 40 | mały, pionowo ustawiony               | `small.glb`      |
+| T07 |         83, 39 | średni, pionowo ustawiony             | `kolorwy.glb`    |
+| T08 |         11, 62 | szeroki, niski                        | `niebppom.glb`   |
+| T09 |         29, 64 | duży rodzinny                         | `dużynamiot.glb` |
+| T10 |         45, 65 | mały                                  | `small.glb`      |
+| T11 |         63, 65 | średni                                | `niebieski.glb`  |
+| T12 |         76, 62 | mały, podłużny                        | `kolorwy.glb`    |
+| T13 |         22, 82 | mały                                  | `biały.glb`      |
+| T14 |         37, 83 | duży rodzinny                         | `dużynamiot.glb` |
+| T15 |         62, 83 | mały                                  | `small2.glb`     |
 
 Pozycje, rotacje, skale i użyte modele nie mogą być zapisane bezpośrednio w kodzie sceny. Powinny znajdować się w jednym pliku konfiguracyjnym, np. `campLayout.ts`, z polami:
 
@@ -93,13 +91,13 @@ type CampObjectConfig = {
   modelPath: string;
   position: [number, number, number];
   rotationY: number;
-  scale: number | [number, number, number];
+  physicalSize: [widthX: number, heightY: number, depthZ: number];
   collider: 'box' | 'capsule' | 'cylinder' | 'none';
   description?: string;
 };
 ```
 
-Aktualny runtime korzysta z `src/game/world/campLayout.ts`. Plik zawiera pełny układ T01–T15, jawne warianty modeli oraz uproszczone boxy kolizji współdzielone przez gracza i NPC. Zadaszenie Mad Dog pozostaje osobnym obiektem świata i nie jest jednym z numerowanych namiotów.
+Aktualny runtime korzysta z `src/game/world/campLayout.ts`. Obszar układu ma 30 × 30 m, a pozycje są deterministycznie przeliczane z tabeli procentowej. Wszystkie małe namioty mają 2,10 × 1,80 m i 1,40 m wysokości. Model `big2` występuje tylko jako T01 obok toi-toia; ma 5,50 × 2,20 m, 1,50 m wysokości i jest obrócony o 90° w prawo. Rodzinne T09 i T14 mają 3,65 × 5,60 m i 2,10 m wysokości. Model `namiot.glb` nie jest używany w układzie. Zadaszenie Mad Dog pozostaje osobnym obiektem świata i nie jest jednym z numerowanych namiotów.
 
 ## 3. Styl wizualny, materiały i oświetlenie
 
@@ -959,8 +957,8 @@ postać jest ukrywana, zanim kamera ponownie znajdzie się wewnątrz modelu.
 Kolejne pomysły wolno realizować dopiero po spełnieniu Definition of Done dla
 MVP. Preferowana kolejność:
 
-1. Dopracować obóz: rzeczywiste przypisania namiotów, `wcTron`, duży namiot dla
-   `T10` i `T15`, materiały oraz oświetlenie pod Mad Dog.
+1. Dopracować obóz: zweryfikować docelowe przypisania właścicieli namiotów,
+   materiały, fizyczne wymiary oraz oświetlenie pod Mad Dog.
 2. Dokończyć bibliotekę animacji na kanonicznych modelach, ze szczególnym
    testem pierścienia i jego modelu spoczynkowego.
 3. Wprowadzić profile jakości trawy, łagodny teren, horyzont i audyt wydajności.

@@ -1,17 +1,18 @@
+import { campPosition } from './campLayout';
+
 export const MAD_DOG_CONFIG = {
   id: 'MadDog',
-  size: [8.8, 6.6] as const,
-  height: 3.35,
-  poleRadius: 0.09,
+  position: campPosition(48, 37),
+  /** Wymiary źródłowego main.glb pomnożone jednolicie cztery razy. */
+  physicalSize: [7.97, 3.42, 7.94] as const,
   fillLightIntensity: 1.45,
 };
 
 export const FLAG_CONFIG = {
   id: 'CampFlag',
-  position: [0, 0, 4.8] as const,
-  mastHeight: 8.4,
-  mastRadius: 0.09,
-  flagHeight: 1.9,
+  position: campPosition(52, 52),
+  height: 16.4,
+  colliderRadius: 0.28,
 };
 
 export type SeatConfig = {
@@ -31,8 +32,3 @@ export const seatLayout: readonly SeatConfig[] = Array.from({ length: 8 }, (_, i
     rotationY: Math.atan2(-x, -z),
   };
 });
-
-/** Wspólna, spokojna fala wiatru dla płachty Mad Dog i flagi. */
-export function fabricWind(time: number, x: number, z: number) {
-  return Math.sin(time * 1.15 + x * 0.72 + z * 0.34) * 0.045 + Math.sin(time * 0.63 + z) * 0.018;
-}

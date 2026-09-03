@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import assetCatalog from '../assets/assetCatalog.json';
-import { isOutsideTentColliders, tentLayout } from './campLayout';
+import { campPosition, isOutsideTentColliders, tentLayout } from './campLayout';
 
 describe('camp tent layout', () => {
   it('contains stable, unique identifiers T01–T15', () => {
@@ -9,9 +9,39 @@ describe('camp tent layout', () => {
     expect(new Set(tentLayout.map(({ id }) => id)).size).toBe(15);
   });
 
-  it('uses the dedicated large tent for T10 and T15', () => {
-    expect(tentLayout.find(({ id }) => id === 'T10')?.model).toBe('large');
-    expect(tentLayout.find(({ id }) => id === 'T15')?.model).toBe('large');
+  it('uses the dedicated large tent for T09 and T14 from the reference map', () => {
+    expect(tentLayout.find(({ id }) => id === 'T09')?.model).toBe('large');
+    expect(tentLayout.find(({ id }) => id === 'T14')?.model).toBe('large');
+  });
+
+  it('uses big2 once beside the toilet with its measured size and clockwise quarter turn', () => {
+    const big2 = tentLayout.filter(({ model }) => model === 'big2');
+    expect(big2).toHaveLength(1);
+    expect(big2[0].id).toBe('T01');
+    expect(big2[0].physicalSize).toEqual([2.2, 1.5, 5.5]);
+    expect(big2[0].rotationY).toBeCloseTo(Math.PI / 2);
+    expect(big2[0].groundOffset).toBeLessThan(0);
+  });
+
+  it('uses one physical size for every small tent and no classic namiot.glb instance', () => {
+    const smallTents = tentLayout.filter(({ id }) => !['T01', 'T09', 'T14'].includes(id));
+    smallTents.forEach(({ physicalSize }) => expect(physicalSize).toEqual([2.1, 1.4, 1.8]));
+    expect(assetCatalog.tents).not.toHaveProperty('classic');
+  });
+
+  it('converts percentage positions to the 30 × 30 metre campsite', () => {
+    expect(campPosition(0, 0)).toEqual([-15, 0, -15]);
+    expect(campPosition(50, 50)).toEqual([0, 0, 0]);
+    expect(campPosition(100, 100)).toEqual([15, 0, 15]);
+    expect(tentLayout.find(({ id }) => id === 'T01')?.position).toEqual(campPosition(24, 17));
+  });
+
+  it('keeps small tents physically smaller than six-person family tents', () => {
+    const small = tentLayout.find(({ id }) => id === 'T02')!;
+    const family = tentLayout.find(({ id }) => id === 'T01')!;
+    expect(small.physicalSize[0]).toBeLessThan(family.physicalSize[0]);
+    expect(small.physicalSize[1]).toBeLessThan(family.physicalSize[1]);
+    expect(small.physicalSize[2]).toBeLessThan(family.physicalSize[2]);
   });
 
   it('keeps routes from Mad Dog to every side passable with 1.1 m clearance', () => {
