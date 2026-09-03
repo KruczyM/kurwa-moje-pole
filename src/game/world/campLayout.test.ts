@@ -14,18 +14,18 @@ describe('camp tent layout', () => {
     expect(tentLayout.find(({ id }) => id === 'T14')?.model).toBe('large');
   });
 
-  it('uses big2 once beside the toilet with its measured size and clockwise quarter turn', () => {
+  it('uses big2 once beside the toilet at family-tent size and rotated by 180 degrees', () => {
     const big2 = tentLayout.filter(({ model }) => model === 'big2');
     expect(big2).toHaveLength(1);
     expect(big2[0].id).toBe('T01');
-    expect(big2[0].physicalSize).toEqual([2.2, 1.5, 5.5]);
-    expect(big2[0].rotationY).toBeCloseTo(Math.PI / 2);
+    expect(big2[0].physicalSize).toEqual([3.65, 2.1, 5.6]);
+    expect(big2[0].rotationY).toBeCloseTo(Math.PI);
     expect(big2[0].groundOffset).toBeLessThan(0);
   });
 
   it('uses one physical size for every small tent and no classic namiot.glb instance', () => {
     const smallTents = tentLayout.filter(({ id }) => !['T01', 'T09', 'T14'].includes(id));
-    smallTents.forEach(({ physicalSize }) => expect(physicalSize).toEqual([2.1, 1.4, 1.8]));
+    smallTents.forEach(({ physicalSize }) => expect(physicalSize).toEqual([4.2, 2.8, 3.6]));
     expect(assetCatalog.tents).not.toHaveProperty('classic');
   });
 
@@ -36,12 +36,9 @@ describe('camp tent layout', () => {
     expect(tentLayout.find(({ id }) => id === 'T01')?.position).toEqual(campPosition(24, 17));
   });
 
-  it('keeps small tents physically smaller than six-person family tents', () => {
+  it('keeps the requested doubled dimensions for a representative small tent', () => {
     const small = tentLayout.find(({ id }) => id === 'T02')!;
-    const family = tentLayout.find(({ id }) => id === 'T01')!;
-    expect(small.physicalSize[0]).toBeLessThan(family.physicalSize[0]);
-    expect(small.physicalSize[1]).toBeLessThan(family.physicalSize[1]);
-    expect(small.physicalSize[2]).toBeLessThan(family.physicalSize[2]);
+    expect(small.physicalSize).toEqual([4.2, 2.8, 3.6]);
   });
 
   it('keeps routes from Mad Dog to every side passable with 1.1 m clearance', () => {
