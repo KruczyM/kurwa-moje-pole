@@ -25,6 +25,7 @@ import { InspectControls } from './interactions/InspectControls';
 import { ItemUseSequence } from './interactions/ItemUseSequence';
 import { itemUseSequenceConfig } from './interactions/itemUseSequenceConfig';
 import { SeatController, type SeatPose } from './interactions/SeatController';
+import { configureColorPipeline } from './rendering/colorPipeline';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -94,8 +95,7 @@ export class Game {
     this.renderer.setSize(innerWidth, innerHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    configureColorPipeline(this.renderer, 'world');
     this.scene.background = new THREE.Color(0x9bb9d0);
     this.scene.fog = new THREE.Fog(0x9bb9d0, 24, 58);
     this.events.listen(window, 'resize', () => this.resize());
@@ -325,6 +325,7 @@ export class Game {
       const canvas = qs<HTMLCanvasElement>('#inspect-canvas');
       this.inspectRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
       this.inspectRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      configureColorPipeline(this.inspectRenderer, 'itemInspect');
       this.inspectScene = new THREE.Scene();
       this.inspectScene.background = new THREE.Color(0x09070f);
       this.inspectCamera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);

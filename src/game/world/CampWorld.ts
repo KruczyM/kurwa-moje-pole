@@ -258,9 +258,19 @@ export class CampWorld {
       console.info(formatTentDimensions('MAIN', measured));
     }
 
-    const fill = new THREE.HemisphereLight(0xffe7cf, 0x55475f, MAD_DOG_CONFIG.fillLightIntensity);
-    fill.name = 'MadDog_FillLight';
-    parent.add(fill);
+    const ambientFill = new THREE.HemisphereLight(0xffe7cf, 0x55475f, MAD_DOG_CONFIG.ambientFillIntensity);
+    ambientFill.name = 'MadDog_AmbientFill';
+    parent.add(ambientFill);
+
+    const localFill = new THREE.PointLight(
+      0xffdfc2,
+      MAD_DOG_CONFIG.localFillIntensity,
+      MAD_DOG_CONFIG.localFillDistance,
+      2,
+    );
+    localFill.name = 'MadDog_LocalFill';
+    localFill.position.set(0, MAD_DOG_CONFIG.localFillHeight, 0);
+    parent.add(localFill);
   }
 
   /** Ustawia osiem interaktywnych krzeseł w kręgu pod Mad Dogiem. */

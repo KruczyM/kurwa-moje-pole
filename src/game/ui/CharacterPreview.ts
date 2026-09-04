@@ -3,6 +3,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { characterAssets } from '../assets/assetManifest';
 import { cloneDisposableSkinnedModel, disposeObjectTree } from '../lifecycle/disposeThree';
 import { calculatePreviewLayout, previewBoundsFit } from './previewLayout';
+import { applyPbrMaterialPolicy } from '../rendering/pbrMaterials';
+import { configureColorPipeline } from '../rendering/colorPipeline';
 
 type Cached = { scene: THREE.Object3D; animations: THREE.AnimationClip[] };
 type PreviewStatus = { state: 'ready' | 'error'; message?: string };
@@ -38,9 +40,7 @@ export class CharacterPreview {
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.setClearAlpha(0);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.35;
+    configureColorPipeline(this.renderer, 'characterPreview');
     this.scene.background = null;
     this.camera.position.z = 1_000;
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8b718f, 3.4));
@@ -116,6 +116,7 @@ export class CharacterPreview {
           }
           settled = true;
           window.clearTimeout(timeout);
+          applyPbrMaterialPolicy(gltf.scene, 'character');
           resolve({ scene: gltf.scene, animations: gltf.animations });
         },
         undefined,

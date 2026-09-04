@@ -21,7 +21,10 @@ export const MAD_DOG_CONFIG = {
   position: campPosition(48, 37),
   /** Rozmiar po zmniejszeniu poprzedniej skali runtime o 30%. */
   physicalSize: [22.316, 6.576, 22.232] as const,
-  fillLightIntensity: 1.45,
+  ambientFillIntensity: 0.85,
+  localFillIntensity: 20,
+  localFillDistance: 14,
+  localFillHeight: 3.2,
 };
 
 export const FLAG_CONFIG = {

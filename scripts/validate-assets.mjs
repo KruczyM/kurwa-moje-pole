@@ -22,6 +22,20 @@ const knownBlockers = {};
 const GLB_MAGIC = 0x46546c67;
 const JSON_CHUNK = 0x4e4f534a;
 const BIN_CHUNK = 0x004e4942;
+const environmentPbrProfiles = {
+  flag: 'fabric',
+  chair: 'mixed',
+  speaker: 'plastic',
+  toilet: 'plastic',
+};
+const interactivePbrProfiles = {
+  table: 'wood',
+  joint: 'paper',
+  cocaine: 'plastic',
+  mdma: 'plastic',
+  mushrooms: 'organic',
+  lsd: 'paper',
+};
 
 const assets = [
   ...catalog.characters.flatMap((character) => [
@@ -30,12 +44,14 @@ const assets = [
       label: `${character.name} — preview`,
       path: `characters/${character.id}/preview.glb`,
       kind: 'character-preview',
+      pbrProfile: 'character',
     },
     {
       id: `character:${character.id}:animations`,
       label: `${character.name} — NPC`,
       path: `characters/${character.id}/npc-animations.glb`,
       kind: 'character-animation',
+      pbrProfile: 'character',
     },
   ]),
   ...Object.entries(catalog.environment).map(([id, path]) => ({
@@ -43,18 +59,21 @@ const assets = [
     label: id,
     path,
     kind: 'model',
+    pbrProfile: environmentPbrProfiles[id],
   })),
   ...Object.entries(catalog.tents).map(([id, path]) => ({
     id: `tent:${id}`,
     label: `tent ${id}`,
     path,
     kind: 'model',
+    pbrProfile: 'fabric',
   })),
   ...Object.entries(catalog.interactives).map(([id, path]) => ({
     id: `interactive:${id}`,
     label: id,
     path,
     kind: 'model',
+    pbrProfile: interactivePbrProfiles[id],
   })),
   ...Object.entries(catalog.textures.grass).map(([id, path]) => ({
     id: `texture:grass:${id}`,
@@ -323,6 +342,59 @@ function inspectTextureReferences(gltf, filePath, problems) {
   (gltf.materials ?? []).forEach((material, index) => visitMaterial(material, `materiał ${index}`));
 }
 
+/** Zbiera semantykę PBR źródłowego glTF i odrzuca czynniki spoza zakresu specyfikacji. */
+function inspectPbrDefinitions(gltf, problems) {
+  const materials = gltf.materials ?? [];
+  const summary = {
+    baseColorMaps: 0,
+    metallicRoughnessMaps: 0,
+    normalMaps: 0,
+    emissiveMaps: 0,
+    unlitMaterials: 0,
+    runtimeMetalnessCorrections: 0,
+  };
+  const validateUnitFactor = (value, path) => {
+    if (value === undefined) return;
+    if (!Number.isFinite(value) || value < 0 || value > 1) {
+      problems.push(issue('error', 'invalid-pbr-factor', `${path} musi mieścić się w zakresie 0–1`));
+    }
+  };
+
+  materials.forEach((material, index) => {
+    const pbr = material.pbrMetallicRoughness ?? {};
+    if (pbr.baseColorTexture) summary.baseColorMaps += 1;
+    if (pbr.metallicRoughnessTexture) summary.metallicRoughnessMaps += 1;
+    if (material.normalTexture) summary.normalMaps += 1;
+    if (material.emissiveTexture) summary.emissiveMaps += 1;
+    if (material.extensions?.KHR_materials_unlit) summary.unlitMaterials += 1;
+    if (!pbr.metallicRoughnessTexture && pbr.metallicFactor === undefined) {
+      summary.runtimeMetalnessCorrections += 1;
+    }
+    validateUnitFactor(pbr.metallicFactor, `materiał ${index}.metallicFactor`);
+    validateUnitFactor(pbr.roughnessFactor, `materiał ${index}.roughnessFactor`);
+    if (pbr.baseColorFactor !== undefined) {
+      const valid =
+        Array.isArray(pbr.baseColorFactor) &&
+        pbr.baseColorFactor.length === 4 &&
+        pbr.baseColorFactor.every((value) => Number.isFinite(value) && value >= 0 && value <= 1);
+      if (!valid) {
+        problems.push(
+          issue('error', 'invalid-base-color-factor', `materiał ${index}.baseColorFactor jest niepoprawny`),
+        );
+      }
+    }
+  });
+  if (materials.length > 0 && summary.baseColorMaps === 0) {
+    problems.push(issue('error', 'missing-base-color-map', 'zatwierdzony model nie ma tekstury Base Color'));
+  }
+  if (summary.unlitMaterials > 0) {
+    problems.push(
+      issue('error', 'unlit-approved-material', 'zatwierdzony model używa materiału unlit zamiast PBR'),
+    );
+  }
+  return summary;
+}
+
 /** Przeprowadza pełną walidację pojedynczego modelu GLB z katalogu assetów. */
 function validateGlb(asset, filePath) {
   const problems = [];
@@ -343,6 +415,8 @@ function validateGlb(asset, filePath) {
   const animations = gltf.animations ?? [];
   const materials = gltf.materials ?? [];
   const buffers = loadBuffers(gltf, binaryChunks, filePath, problems);
+  if (!asset.pbrProfile)
+    problems.push(issue('error', 'missing-pbr-profile', 'model nie ma profilu PBR runtime'));
   if (meshes.length === 0) problems.push(issue('error', 'empty-model', 'model nie zawiera żadnego mesha'));
 
   nodes.forEach((node, index) => {
@@ -413,6 +487,7 @@ function validateGlb(asset, filePath) {
   });
 
   inspectTextureReferences(gltf, filePath, problems);
+  const pbr = inspectPbrDefinitions(gltf, problems);
   const bounds = { min: [Infinity, Infinity, Infinity], max: [-Infinity, -Infinity, -Infinity], vertices: 0 };
   const positionAccessors = new Set();
   meshes.forEach((mesh, meshIndex) => {
@@ -503,6 +578,7 @@ function validateGlb(asset, filePath) {
     animationMotion,
     materials: materials.length,
     textures: gltf.textures?.length ?? 0,
+    pbr,
     bounds: dimensions ? { min: bounds.min, max: bounds.max, dimensions } : undefined,
     nodeScale: nodeScales.length ? { min: Math.min(...nodeScales), max: Math.max(...nodeScales) } : undefined,
     problems,

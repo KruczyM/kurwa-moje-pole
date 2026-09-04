@@ -12,7 +12,7 @@ Liczba otwartych issue: **29**.
 - [ ] [#9 — [Świat] Dopracować zadaszenie Mad Dog, maszt, flagę i hierarchię obozu](https://github.com/KruczyM/kurwa-moje-pole/issues/9)
 - [ ] [#10 — [Trawa] Wprowadzić gęstą aksamitną trawę z LOD i presetami jakości](https://github.com/KruczyM/kurwa-moje-pole/issues/10)
 - [ ] [#11 — [Teren] Dopracować łagodne nierówności, materiał grass004 i horyzont](https://github.com/KruczyM/kurwa-moje-pole/issues/11)
-- [ ] [#12 — [Materiały] Audyt PBR i oświetlenia postaci, namiotów, flagi i rekwizytów](https://github.com/KruczyM/kurwa-moje-pole/issues/12)
+- [x] [#12 — [Materiały] Audyt PBR i oświetlenia postaci, namiotów, flagi i rekwizytów](https://github.com/KruczyM/kurwa-moje-pole/issues/12)
 - [ ] [#13 — [EPIC] Inteligentni NPC z płynną locomotion](https://github.com/KruczyM/kurwa-moje-pole/issues/13)
 - [ ] [#15 — [Animacje NPC] Zastąpić restart klipów maszyną stanów i płynnym crossfade](https://github.com/KruczyM/kurwa-moje-pole/issues/15)
 - [ ] [#16 — [Animacje NPC] Zsynchronizować fazę kroków, prędkość świata i time scale](https://github.com/KruczyM/kurwa-moje-pole/issues/16)
@@ -149,11 +149,11 @@ Liczba otwartych issue: **29**.
 
 #### [#12 — [Materiały] Audyt PBR i oświetlenia postaci, namiotów, flagi i rekwizytów](https://github.com/KruczyM/kurwa-moje-pole/issues/12)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: high`, `area: assets`, `area: world`
 - Przypisani: brak
 - Utworzono: 2026-08-30
-- Ostatnia aktualizacja: 2026-08-30
+- Ostatnia aktualizacja: 2026-09-04
 
 <details>
 <summary>Pełna treść issue</summary>
