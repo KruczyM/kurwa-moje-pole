@@ -97,6 +97,8 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `src/game/npc/NpcManager.ts`                      | Steruje celami, ruchem, bezczynnością, kolizjami i skalą NPC.           |
 | `src/game/npc/npcConfig.ts`                       | Definiuje zachowania i parametry ruchu postaci.                         |
 | `src/game/player/PlayerController.ts`             | Obsługuje ruch, kamerę pierwszoosobową i Pointer Lock.                  |
+| `src/game/rendering/pbrMaterials.ts`              | Normalizuje przestrzenie barw, roughness i metalness modeli GLB.        |
+| `src/game/rendering/colorPipeline.ts`             | Ujednolica sRGB, ACES i ekspozycję wszystkich rendererów.               |
 | `src/game/ui/CharacterPreview.ts`                 | Renderuje przezroczysty podgląd postaci w menu.                         |
 | `src/game/ui/previewLayout.ts`                    | Dopasowuje podgląd tak, aby cały model mieścił się w ekranie.           |
 | `src/game/world/CampWorld.ts`                     | Buduje teren, trawę, namioty, stół, używki, kolizje i granice obozu.    |
@@ -109,6 +111,8 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `scripts/strip-glb-animations.mjs`                | Tworzy kopię GLB bez animacji, zachowując model i rig.                  |
 
 Katalog `src/game/world/vendor/three-stylized/` jest wydzielonym kodem bibliotecznym trawy. Nie jest automatycznie formatowany razem z kodem gry.
+
+Szczegóły profili materiałowych, wynik audytu źródeł i lista kontroli wizualnych znajdują się w `docs/pbr-lighting.md`. Raport `reports/asset-validation.json` zawiera dla każdego GLB sekcję `pbr` oraz przypisany profil runtime.
 
 ## Układ namiotów
 

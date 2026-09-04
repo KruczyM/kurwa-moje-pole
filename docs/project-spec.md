@@ -128,6 +128,8 @@ Aktualny runtime korzysta z `src/game/world/campLayout.ts`. Obszar układu ma 30
 - W cieniu Mad Dog postacie nadal muszą mieć widoczne twarze, ubrania i naturalne kolory.
 - Preview modeli ma używać własnego neutralnego zestawu świateł studyjnych, aby model nie był ciemniejszy niż w grze.
 
+Stan implementacji: każdy GLB przechodzi przez profil PBR odpowiedni dla postaci, tkaniny, plastiku, papieru, materii organicznej, drewna albo materiału mieszanego. Base Color i Emission działają w sRGB, a mapy danych pozostają liniowe. Świat gry, preview postaci i inspekcja przedmiotu mają wspólny kontrakt ACES z jawną ekspozycją. Pod Mad Dog działa ograniczone zasięgiem światło wypełniające. Szczegóły i checklista audytu znajdują się w `docs/pbr-lighting.md`.
+
 ## 4. Postacie
 
 ### 4.1. Lista ośmiu postaci

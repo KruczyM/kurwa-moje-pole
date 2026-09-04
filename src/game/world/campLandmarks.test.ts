@@ -5,6 +5,10 @@ import { FLAG_CONFIG, MAD_DOG_CONFIG, PLAYER_SPAWN_CONFIG, seatLayout, TOILET_CO
 describe('camp landmarks', () => {
   it('keeps the requested reduced Mad Dog scale and independent flag scale', () => {
     expect(MAD_DOG_CONFIG.physicalSize).toEqual([22.316, 6.576, 22.232]);
+    expect(MAD_DOG_CONFIG.ambientFillIntensity).toBeGreaterThan(0);
+    expect(MAD_DOG_CONFIG.localFillIntensity).toBeGreaterThan(0);
+    expect(MAD_DOG_CONFIG.localFillDistance).toBeGreaterThan(10);
+    expect(MAD_DOG_CONFIG.localFillHeight).toBeGreaterThan(2);
     expect(FLAG_CONFIG.height).toBe(16.4);
   });
 
