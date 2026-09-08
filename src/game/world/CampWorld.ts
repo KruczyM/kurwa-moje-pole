@@ -16,6 +16,7 @@ import {
 } from './campLayout';
 import { FLAG_CONFIG, MAD_DOG_CONFIG, seatLayout, TOILET_CONFIG } from './campLandmarks';
 import { Grass } from './vendor/three-stylized/index';
+import { DEFAULT_GRASS_PRESET, type GrassQualityPreset } from './grassQuality';
 
 const WORLD_SIZE = 117.6;
 export const WORLD_LIMIT = WORLD_SIZE / 2;
@@ -97,6 +98,7 @@ export class CampWorld {
   colliders: ({ x: number; z: number; r: number } | { box: THREE.Box3 })[] = [];
   interactables: WorldObject[] = [];
   private grass: Grass;
+  private grassQuality: GrassQualityPreset = DEFAULT_GRASS_PRESET;
   private skybox: TimeOfDaySkybox;
   private readonly debugInteractions: boolean;
   private readonly debugTentScale: boolean;
@@ -126,7 +128,7 @@ export class CampWorld {
     sun.shadow.camera.bottom = -22;
     scene.add(sun);
 
-    const ground = new THREE.Mesh(terrain(), simpleMaterial(0x56732d));
+    const ground = new THREE.Mesh(terrain(), simpleMaterial(0x213c14));
     ground.receiveShadow = true;
     ground.userData.excludeMushroomWireframe = true;
     scene.add(ground);
@@ -507,6 +509,17 @@ export class CampWorld {
           : Math.hypot(x - collider.x, z - collider.z) < collider.r + radius,
       )
     );
+  }
+
+  /** Ustawia preset jakości trawy i regeneruje geometrię/gęstość runtime. */
+  setGrassQuality(quality: GrassQualityPreset) {
+    this.grassQuality = quality;
+    this.grass.setQuality(quality);
+  }
+
+  /** Zwraca aktualnie aktywny preset jakości trawy. */
+  getGrassQuality(): GrassQualityPreset {
+    return this.grassQuality;
   }
 
   /** Aktualizuje proceduralną animację trawy. */

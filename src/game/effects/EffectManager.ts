@@ -5,6 +5,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { EffectTimeline } from './EffectTimeline';
+import { DEFAULT_GRASS_PRESET, type GrassQualityPreset } from '../world/grassQuality';
 export type EffectId = 'Piwo' | 'Papieros' | 'Joint' | 'Kreska' | 'Grzyb' | 'MDMA' | 'LSD';
 export type EffectPhase = 'inactive' | 'fadeIn' | 'active' | 'fadeOut';
 export type VisualSettings = {
@@ -13,6 +14,7 @@ export type VisualSettings = {
   limitSway: boolean;
   disableShake: boolean;
   disableBloom: boolean;
+  grassQuality: GrassQualityPreset;
 };
 export const defaultVisualSettings: VisualSettings = {
   intensity: 1,
@@ -20,6 +22,7 @@ export const defaultVisualSettings: VisualSettings = {
   limitSway: false,
   disableShake: false,
   disableBloom: false,
+  grassQuality: DEFAULT_GRASS_PRESET,
 };
 export type EffectConfig = {
   fadeIn: number;
