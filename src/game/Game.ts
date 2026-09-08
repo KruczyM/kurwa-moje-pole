@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { AssetLoader } from './assets/AssetLoader';
 import { characterAssets, effectAssets, musicAsset } from './assets/assetManifest';
 import { CampWorld, WORLD_LIMIT } from './world/CampWorld';
+import { DEFAULT_GRASS_PRESET, isGrassQualityPreset } from './world/grassQuality';
 import { PlayerController } from './player/PlayerController';
 import { PLAYER_SPAWN_CONFIG } from './world/campLandmarks';
 import { isMobileInputDevice, MobileControls } from './player/MobileControls';
@@ -41,7 +42,14 @@ type PendingItemUse = {
 /** Odczytuje ustawienia efektów z localStorage i uzupełnia brakujące wartości domyślne. */
 function loadVisualSettings(): VisualSettings {
   try {
-    return { ...defaultVisualSettings, ...JSON.parse(localStorage.getItem('camp-visual-settings') || '{}') };
+    const loaded = {
+      ...defaultVisualSettings,
+      ...JSON.parse(localStorage.getItem('camp-visual-settings') || '{}'),
+    };
+    if (!isGrassQualityPreset(loaded.grassQuality)) {
+      loaded.grassQuality = DEFAULT_GRASS_PRESET;
+    }
+    return loaded;
   } catch {
     return { ...defaultVisualSettings };
   }
@@ -140,6 +148,7 @@ export class Game {
         throw new Error('Nie udało się załadować żadnej postaci. Sprawdź Git LFS i pliki game-assets.');
       assets.interactables.forEach((asset, id) => this.propModels.set(id, asset.scene));
       this.world = new CampWorld(this.scene, assets);
+      this.world.setGrassQuality(this.settings.grassQuality);
       const npcNavigation = new NpcNavigationGrid(
         {
           minX: -WORLD_LIMIT + NPC_NAVIGATION_RADIUS,
@@ -512,11 +521,14 @@ export class Game {
     else if (!on && this.state.current === 'paused') this.state.transition('playing');
   }
 
-  /** Zapisuje częściowe ustawienia wizualne i przekazuje je do EffectManagera. */
+  /** Zapisuje częściowe ustawienia wizualne i przekazuje je do EffectManagera oraz świata. */
   updateSettings(values: Partial<VisualSettings>) {
     Object.assign(this.settings, values);
     localStorage.setItem('camp-visual-settings', JSON.stringify(this.settings));
     this.effects?.setSettings(values);
+    if (values.grassQuality && this.world) {
+      this.world.setGrassQuality(values.grassQuality);
+    }
     this.syncSettingsUi();
   }
 
@@ -533,6 +545,8 @@ export class Game {
     set('#setting-limit-sway', this.settings.limitSway);
     set('#setting-disable-shake', this.settings.disableShake);
     set('#setting-disable-bloom', this.settings.disableBloom);
+    const grassSelect = document.querySelector<HTMLSelectElement>('#setting-grass-quality');
+    if (grassSelect) grassSelect.value = this.settings.grassQuality;
   }
 
   /** Synchronizuje HUD, modale, sterowanie graczem i pointer lock ze stanem aplikacji. */

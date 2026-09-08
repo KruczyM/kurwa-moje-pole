@@ -110,6 +110,7 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `src/game/world/CampWorld.ts`                     | Buduje teren, trawę, namioty, stół, używki, kolizje i granice obozu.             |
 | `src/game/world/campLayout.ts`                    | Definiuje modele, ID, pozycje, skale i collidery namiotów T01–T15.               |
 | `src/game/world/campLandmarks.ts`                 | Konfiguruje model Mad Dog, kompletną flagę i osiem miejsc siedzących.            |
+| `src/game/world/grassQuality.ts`                  | Definiuje presety jakości trawy, parametry LOD, fade i walidację.                |
 | `src/game/world/HorizonSkybox.ts`                 | Dodaje panoramę horyzontu.                                                       |
 | `scripts/check-text-encoding.mjs`                 | Wykrywa uszkodzone UTF-8 i typowe ślady mojibake.                                |
 | `scripts/validate-assets.mjs`                     | Sprawdza kompletność i strukturę assetów runtime.                                |
@@ -117,6 +118,8 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `scripts/strip-glb-animations.mjs`                | Tworzy kopię GLB bez animacji, zachowując model i rig.                           |
 
 Katalog `src/game/world/vendor/three-stylized/` jest wydzielonym kodem bibliotecznym trawy. Nie jest automatycznie formatowany razem z kodem gry.
+
+Architekturę wielopoziomowego LOD trawy, moving tile wrap, parametry źdźbeł i presety jakości opisuje `docs/grass-rendering.md`.
 
 Szczegóły profili materiałowych, wynik audytu źródeł i lista kontroli wizualnych znajdują się w `docs/pbr-lighting.md`. Raport `reports/asset-validation.json` zawiera dla każdego GLB sekcję `pbr` oraz przypisany profil runtime.
 

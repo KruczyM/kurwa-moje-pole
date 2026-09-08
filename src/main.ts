@@ -8,6 +8,7 @@ import type { EffectId } from './game/effects/EffectManager';
 import { AppState, AppStateMachine } from './game/lifecycle/AppStateMachine';
 import { controlHintForState, inputBindings, startControlHint } from './game/lifecycle/InputBindings';
 import { isMobileInputDevice } from './game/player/MobileControls';
+import { isGrassQualityPreset } from './game/world/grassQuality';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -127,6 +128,16 @@ document.querySelectorAll<HTMLButtonElement>('[data-effect]').forEach((button) =
 qs<HTMLInputElement>('#setting-intensity').oninput = (event) => {
   game?.updateSettings({ intensity: Number((event.target as HTMLInputElement).value) / 100 });
 };
+
+const grassQualitySelect = document.querySelector<HTMLSelectElement>('#setting-grass-quality');
+if (grassQualitySelect) {
+  grassQualitySelect.onchange = (event) => {
+    const val = (event.target as HTMLSelectElement).value;
+    if (isGrassQualityPreset(val)) {
+      game?.updateSettings({ grassQuality: val });
+    }
+  };
+}
 
 (['reduce-motion', 'limit-sway', 'disable-shake', 'disable-bloom'] as const).forEach((name) => {
   qs<HTMLInputElement>(`#setting-${name}`).onchange = (event) => {

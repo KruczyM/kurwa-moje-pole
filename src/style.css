@@ -252,6 +252,17 @@ h1 i {
   width: 100%;
   margin-top: 6px;
 }
+#pause select {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  background: #252033;
+  color: #f1ecf7;
+  border: 1px solid #5a4f70;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 11px;
+}
 .items button {
   display: flex;
   flex-direction: column;
