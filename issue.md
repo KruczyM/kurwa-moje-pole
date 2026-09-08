@@ -5,6 +5,7 @@
 > Stan na 2026-09-08. Źródłem prawdy pozostaje GitHub.
 
 Liczba otwartych issue: **17**.
+Liczba otwartych issue: **16**.
 
 ## Szybka lista
 
@@ -20,6 +21,7 @@ Liczba otwartych issue: **17**.
 - [x] [#18 — [Steering NPC] Dodać przewidywanie przeszkód i łagodne omijanie agentów](https://github.com/KruczyM/kurwa-moje-pole/issues/18)
 - [x] [#19 — [Zachowanie NPC] Dodać scheduler stanów wander, idle, social i run-home](https://github.com/KruczyM/kurwa-moje-pole/issues/19)
 - [ ] [#20 — [AI NPC] Dodać watchdog utknięcia i ochronę przed zapętleniem decyzji](https://github.com/KruczyM/kurwa-moje-pole/issues/20)
+- [x] [#20 — [AI NPC] Dodać watchdog utknięcia i ochronę przed zapętleniem decyzji](https://github.com/KruczyM/kurwa-moje-pole/issues/20)
 - [ ] [#21 — [Debug NPC] Dodać overlay diagnostyczny i test 30-minutowej sesji AI](https://github.com/KruczyM/kurwa-moje-pole/issues/21)
 - [ ] [#22 — [Interakcje] Naprawić wykrywanie przedmiotów leżących na stole](https://github.com/KruczyM/kurwa-moje-pole/issues/22)
 - [ ] [#23 — [Inspekcja] Dokończyć model preview, opisy i pełną obsługę E/Escape](https://github.com/KruczyM/kurwa-moje-pole/issues/23)
@@ -357,10 +359,12 @@ Liczba otwartych issue: **17**.
 #### [#20 — [AI NPC] Dodać watchdog utknięcia i ochronę przed zapętleniem decyzji](https://github.com/KruczyM/kurwa-moje-pole/issues/20)
 
 - Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: critical`, `area: npc-ai`, `area: qa`
 - Przypisani: brak
 - Utworzono: 2026-08-30
 - Ostatnia aktualizacja: 2026-08-30
+- Ostatnia aktualizacja: 2026-09-08
 
 <details>
 <summary>Pełna treść issue</summary>

@@ -9,6 +9,7 @@ import { NPC_MOTION, approachSpeed, brakingSpeed, locomotionForSpeed } from './l
 import { NpcNavigationGrid } from './NpcNavigationGrid';
 import { computeNpcSteering, NPC_STEERING, turnDirectionTowards } from './NpcSteering';
 import { NPC_BEHAVIOR_PROFILES, NpcBehaviorAction, NpcBehaviorScheduler } from './NpcBehaviorScheduler';
+import { NpcStuckWatchdog, NpcWatchdogConfig, WatchdogRecoveryAction } from './NpcStuckWatchdog';
 export type Npc = {
   root: THREE.Group;
   name: string;
@@ -24,6 +25,7 @@ export type Npc = {
   steeringDirection: THREE.Vector3;
   waypoints: THREE.Vector3[];
   behavior: NpcBehaviorScheduler;
+  watchdog: NpcStuckWatchdog;
 };
 const spawns = [
     [-2, -1],
@@ -60,6 +62,7 @@ export class NpcManager {
     models: Map<string, GLTF>,
     speaker: GLTF | null,
     readonly navigation: NpcNavigationGrid,
+    watchdogConfig?: NpcWatchdogConfig,
   ) {
     characterAssets.forEach((asset, index) => {
       const root = new THREE.Group(),
@@ -114,6 +117,7 @@ export class NpcManager {
           NPC_BEHAVIOR_PROFILES[index % NPC_BEHAVIOR_PROFILES.length],
           0x51f15e + index * 977,
         ),
+        watchdog: new NpcStuckWatchdog(asset.name, root.position, watchdogConfig),
       };
       npc.target.copy(root.position);
       this.npcs.push(npc);
@@ -217,8 +221,57 @@ export class NpcManager {
     if (path.length < 2) return false;
     npc.target.copy(path[path.length - 1]);
     npc.waypoints = path.slice(path[0].distanceToSquared(npc.root.position) < 0.04 ? 1 : 0);
+    npc.watchdog.onTargetAssigned(npc.target);
+    if (npc.waypoints.length > 0) {
+      npc.watchdog.onWaypointChanged(npc.waypoints[0]);
+    }
     return npc.waypoints.length > 0;
   }
+
+  /** Wykonuje stopniowane odzyskiwanie zalecone przez watchdog bez resetowania animacji. */
+  private applyWatchdogRecovery(npc: Npc, action: WatchdogRecoveryAction) {
+    switch (action) {
+      case 'steer_nudge': {
+        const lateral = new THREE.Vector3(-npc.steeringDirection.z, 0, npc.steeringDirection.x).normalize();
+        if (npc.watchdog.recoveryCount % 2 === 1) lateral.negate();
+        npc.steeringDirection.addScaledVector(lateral, 0.85).normalize();
+        npc.wait = 0;
+        break;
+      }
+      case 'repath': {
+        npc.watchdog.repathCount += 1;
+        if (!this.routeTo(npc, npc.target)) {
+          this.applyBehaviorAction(npc, 'wander');
+        }
+        npc.wait = 0;
+        break;
+      }
+      case 'new_target': {
+        this.applyBehaviorAction(npc, 'wander');
+        npc.wait = 0;
+        break;
+      }
+      case 'teleport': {
+        const bounds = {
+          minX: -CAMP_RADIUS * 0.7,
+          maxX: CAMP_RADIUS * 0.7,
+          minZ: -CAMP_RADIUS * 0.7,
+          maxZ: CAMP_RADIUS * 0.7,
+        };
+        const safePoint =
+          this.navigation.randomWalkablePoint(() => npc.behavior.random(), bounds) ??
+          new THREE.Vector3(0, 0, 0);
+        npc.root.position.copy(safePoint);
+        npc.velocity.set(0, 0, 0);
+        npc.speed = 0;
+        npc.wait = 0;
+        npc.watchdog.resetPosition(safePoint);
+        this.applyBehaviorAction(npc, 'wander');
+        break;
+      }
+    }
+  }
+
   /** Wiąże klip i jego timeScale z bieżącą, płynnie zmienianą prędkością NPC. */
   private updateAnimation(npc: Npc, deltaTime: number) {
     npc.animator?.setMovementSpeed(npc.speed);
@@ -261,6 +314,14 @@ export class NpcManager {
         npc.root.position.y = Math.sin(time * 1.2 + npc.phase) * 0.01;
         npc.speed = approachSpeed(npc.speed, 0, dt);
         npc.velocity.set(0, 0, 0);
+        const recoveryAction = npc.watchdog.update(
+          dt,
+          npc.root.position,
+          npc.behavior.state,
+          npc.behavior.travelling,
+          npc.target,
+        );
+        if (recoveryAction) this.applyWatchdogRecovery(npc, recoveryAction);
         this.updateAnimation(npc, dt);
         continue;
       }
@@ -268,6 +329,14 @@ export class NpcManager {
         npc.wait -= dt;
         npc.speed = approachSpeed(npc.speed, 0, dt);
         npc.velocity.set(0, 0, 0);
+        const recoveryAction = npc.watchdog.update(
+          dt,
+          npc.root.position,
+          npc.behavior.state,
+          npc.behavior.travelling,
+          npc.target,
+        );
+        if (recoveryAction) this.applyWatchdogRecovery(npc, recoveryAction);
         this.updateAnimation(npc, dt);
         continue;
       }
@@ -279,6 +348,7 @@ export class NpcManager {
       while (distance <= NPC_MOTION.arrivalRadius && npc.waypoints.length > 1) {
         npc.waypoints.shift();
         waypoint = npc.waypoints[0];
+        npc.watchdog.onWaypointChanged(waypoint);
         dir = waypoint.clone().sub(npc.root.position);
         dir.y = 0;
         distance = dir.length();
@@ -324,6 +394,14 @@ export class NpcManager {
           .multiplyScalar(dt > 0 ? 1 / dt : 0);
         npc.root.rotation.y = Math.atan2(npc.steeringDirection.x, npc.steeringDirection.z);
       }
+      const recoveryAction = npc.watchdog.update(
+        dt,
+        npc.root.position,
+        npc.behavior.state,
+        npc.behavior.travelling,
+        npc.target,
+      );
+      if (recoveryAction) this.applyWatchdogRecovery(npc, recoveryAction);
       this.updateAnimation(npc, dt);
     }
   }
