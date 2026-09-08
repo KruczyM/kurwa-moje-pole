@@ -274,6 +274,7 @@ System musi obsługiwać:
 - Przejścia `Idle`, `Walk` i `Run` używają crossfade z warpingiem czasu oraz przenoszą znormalizowaną fazę poprzedniego klipu.
 - Animacje jednorazowe trafiają do kolejki FIFO i po zdarzeniu `finished` wracają do ostatniego żądanego stanu locomotion.
 - Diagnostyka animatora udostępnia aktywny klip, fazę, stan oczekujący, kolejkę one-shotów oraz ostatnie przejście bez ingerencji w mikser.
+- Ruch używa jednostek m/s, ograniczonego przyspieszenia i drogi hamowania; `timeScale` jest obliczany z rzeczywistej długości klipu oraz dystansu pełnego cyklu opisanego w `docs/npc-locomotion.md`.
 
 Za tę logikę odpowiada jeden `NpcNavigationController`, a nie osobne przypadkowe timery przypisane do każdej postaci.
 

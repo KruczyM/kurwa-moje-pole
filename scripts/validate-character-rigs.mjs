@@ -11,6 +11,9 @@ const contract = JSON.parse(
 const approvals = JSON.parse(
   readFileSync(join(root, 'src/game/animation/characterRigApproval.json'), 'utf8'),
 );
+const locomotionCalibration = JSON.parse(
+  readFileSync(join(root, 'src/game/npc/locomotionCalibration.json'), 'utf8'),
+);
 const reportPath = join(root, 'reports', 'character-rig-validation.json');
 const JSON_CHUNK = 0x4e4f534a;
 const BIN_CHUNK = 0x004e4942;
@@ -83,6 +86,19 @@ function geometrySpan(gltf) {
   return span;
 }
 
+/** Mierzy długość każdego klipu na podstawie zakresu czasu jego accessorów wejściowych. */
+function animationDurations(gltf) {
+  return Object.fromEntries(
+    (gltf.animations ?? []).map((animation) => {
+      const duration = Math.max(
+        0,
+        ...(animation.samplers ?? []).map((sampler) => gltf.accessors?.[sampler.input]?.max?.[0] ?? 0),
+      );
+      return [animation.name, duration];
+    }),
+  );
+}
+
 /** Waliduje rig, klipy, siatkę, materiały i tekstury jednej postaci. */
 function validateCharacter(character) {
   const problems = [];
@@ -146,6 +162,28 @@ function validateCharacter(character) {
     });
   }
 
+  const clipDurations = animationDurations(runtime.json);
+  const locomotion = Object.fromEntries(
+    Object.entries(locomotionCalibration.cycleMeters).map(([name, cycleMeters]) => {
+      const duration = clipDurations[name] ?? 0;
+      if (duration <= 0) {
+        problems.push({
+          level: 'error',
+          code: 'invalid-locomotion-duration',
+          message: `${name}: klip nie ma mierzalnego czasu cyklu`,
+        });
+      }
+      return [
+        name,
+        {
+          durationSeconds: duration,
+          cycleMeters,
+          referenceMetersPerSecond: duration > 0 ? cycleMeters / duration : 0,
+        },
+      ];
+    }),
+  );
+
   const runtimeImages = embeddedImageHashes(runtime);
   const sourceImages = embeddedImageHashes(source);
   if (JSON.stringify(runtimeImages) !== JSON.stringify(sourceImages)) {
@@ -186,6 +224,7 @@ function validateCharacter(character) {
     rig: contract.rig.name,
     joints: runtimeBones.length,
     clips: actualClips,
+    locomotion,
     meshHash: structuralHash(runtime.json.meshes),
     materialHash: structuralHash(runtime.json.materials),
     textureHashes: runtimeImages,
@@ -234,6 +273,15 @@ for (const character of characters) {
   console.log(
     `[${marker}] ${character.name}: ${character.joints ?? 0} kości, ${character.clips?.length ?? 0} klipów`,
   );
+  if (character.locomotion) {
+    const measured = Object.entries(character.locomotion)
+      .map(
+        ([name, value]) =>
+          `${name} ${value.durationSeconds.toFixed(3)} s (${value.referenceMetersPerSecond.toFixed(2)} m/s @ 1x)`,
+      )
+      .join(', ');
+    console.log(`  cykle locomotion: ${measured}`);
+  }
   character.problems.forEach((problem) =>
     console.log(`  - ${problem.level}: ${problem.code} — ${problem.message}`),
   );

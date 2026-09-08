@@ -15,7 +15,7 @@ Liczba otwartych issue: **29**.
 - [x] [#12 — [Materiały] Audyt PBR i oświetlenia postaci, namiotów, flagi i rekwizytów](https://github.com/KruczyM/kurwa-moje-pole/issues/12)
 - [ ] [#13 — [EPIC] Inteligentni NPC z płynną locomotion](https://github.com/KruczyM/kurwa-moje-pole/issues/13)
 - [x] [#15 — [Animacje NPC] Zastąpić restart klipów maszyną stanów i płynnym crossfade](https://github.com/KruczyM/kurwa-moje-pole/issues/15)
-- [ ] [#16 — [Animacje NPC] Zsynchronizować fazę kroków, prędkość świata i time scale](https://github.com/KruczyM/kurwa-moje-pole/issues/16)
+- [x] [#16 — [Animacje NPC] Zsynchronizować fazę kroków, prędkość świata i time scale](https://github.com/KruczyM/kurwa-moje-pole/issues/16)
 - [ ] [#17 — [Nawigacja NPC] Zbudować przechodnią siatkę pola i wyznaczanie pełnych tras](https://github.com/KruczyM/kurwa-moje-pole/issues/17)
 - [ ] [#18 — [Steering NPC] Dodać przewidywanie przeszkód i łagodne omijanie agentów](https://github.com/KruczyM/kurwa-moje-pole/issues/18)
 - [ ] [#19 — [Zachowanie NPC] Dodać scheduler stanów wander, idle, social i run-home](https://github.com/KruczyM/kurwa-moje-pole/issues/19)
@@ -234,11 +234,11 @@ Liczba otwartych issue: **29**.
 
 #### [#16 — [Animacje NPC] Zsynchronizować fazę kroków, prędkość świata i time scale](https://github.com/KruczyM/kurwa-moje-pole/issues/16)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: high`, `area: npc-ai`, `area: animation`
 - Przypisani: brak
 - Utworzono: 2026-08-30
-- Ostatnia aktualizacja: 2026-08-30
+- Ostatnia aktualizacja: 2026-09-08
 
 <details>
 <summary>Pełna treść issue</summary>
