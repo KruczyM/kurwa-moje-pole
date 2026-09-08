@@ -1,17 +1,9 @@
 import * as THREE from 'three';
 import { NpcBehaviorState } from './NpcBehaviorScheduler';
 
-export type WatchdogStuckReason =
-  | 'no_movement'
-  | 'waypoint_oscillation'
-  | 'decision_loop'
-  | 'state_timeout';
+export type WatchdogStuckReason = 'no_movement' | 'waypoint_oscillation' | 'decision_loop' | 'state_timeout';
 
-export type WatchdogRecoveryAction =
-  | 'steer_nudge'
-  | 'repath'
-  | 'new_target'
-  | 'teleport';
+export type WatchdogRecoveryAction = 'steer_nudge' | 'repath' | 'new_target' | 'teleport';
 
 export type NpcWatchdogLogEntry = {
   npcName: string;
@@ -83,7 +75,8 @@ export class NpcStuckWatchdog {
       stateTimeoutSeconds: config?.stateTimeoutSeconds ?? NPC_WATCHDOG_DEFAULTS.stateTimeoutSeconds,
       flappingWindowSeconds: config?.flappingWindowSeconds ?? NPC_WATCHDOG_DEFAULTS.flappingWindowSeconds,
       flappingLimitCount: config?.flappingLimitCount ?? NPC_WATCHDOG_DEFAULTS.flappingLimitCount,
-      oscillationWindowSeconds: config?.oscillationWindowSeconds ?? NPC_WATCHDOG_DEFAULTS.oscillationWindowSeconds,
+      oscillationWindowSeconds:
+        config?.oscillationWindowSeconds ?? NPC_WATCHDOG_DEFAULTS.oscillationWindowSeconds,
       minProgressDistance: config?.minProgressDistance ?? NPC_WATCHDOG_DEFAULTS.minProgressDistance,
       logger: config?.logger ?? NpcStuckWatchdog.defaultLogger,
     };
@@ -280,8 +273,9 @@ export class NpcStuckWatchdog {
 
     this.lastRecoveryAction = action;
 
-    // Reset timera braku postępu, aby dać czas akcji na wykonanie
+    // Reset timera braku postępu oraz czasu w stanie, aby dać czas akcji na wykonanie
     this.timeWithoutProgress = 0;
+    this.timeInCurrentState = 0;
     this.accumulatedProgress = 0;
     this.lastProgressPosition.copy(position);
     this.lastSamplePosition.copy(position);
@@ -314,4 +308,3 @@ export class NpcStuckWatchdog {
     return action;
   }
 }
-

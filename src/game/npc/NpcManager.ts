@@ -247,6 +247,7 @@ export class NpcManager {
         break;
       }
       case 'new_target': {
+        npc.behavior.forceWander();
         this.applyBehaviorAction(npc, 'wander');
         npc.wait = 0;
         break;
@@ -266,6 +267,7 @@ export class NpcManager {
         npc.speed = 0;
         npc.wait = 0;
         npc.watchdog.resetPosition(safePoint);
+        npc.behavior.forceWander();
         this.applyBehaviorAction(npc, 'wander');
         break;
       }

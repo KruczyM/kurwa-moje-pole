@@ -7,6 +7,7 @@ import { PLAYER_SPAWN_CONFIG } from './world/campLandmarks';
 import { isMobileInputDevice, MobileControls } from './player/MobileControls';
 import { NpcManager } from './npc/NpcManager';
 import { NPC_NAVIGATION_CELL_SIZE, NPC_NAVIGATION_RADIUS, NpcNavigationGrid } from './npc/NpcNavigationGrid';
+import { NpcDebugOverlay, isNpcDebugAllowed } from './npc/NpcDebugOverlay';
 import { EffectManager, EffectId, VisualSettings, defaultVisualSettings } from './effects/EffectManager';
 import { InteractionManager } from './interactions/InteractionManager';
 import { SpeakerAudio } from './audio/SpeakerAudio';
@@ -57,6 +58,7 @@ export class Game {
   player?: PlayerController;
   world?: CampWorld;
   npcs?: NpcManager;
+  npcDebugOverlay?: NpcDebugOverlay;
   effects?: EffectManager;
   interactions?: InteractionManager;
   toiletTimer = 0;
@@ -149,6 +151,13 @@ export class Game {
         (x, z) => this.world!.canMove(x, z, NPC_NAVIGATION_RADIUS),
       );
       this.npcs = new NpcManager(this.scene, assets.characters, assets.speaker, npcNavigation);
+      if (isNpcDebugAllowed() && this.world) {
+        this.npcDebugOverlay = new NpcDebugOverlay({
+          scene: this.scene,
+          world: this.world,
+          npcManager: this.npcs,
+        });
+      }
       this.player = new PlayerController(
         this.camera,
         this.canvas,
@@ -617,6 +626,7 @@ export class Game {
       }
     }
     if (state === 'paused' || state === 'error') this.mushroomWireframe.update(false, 0, 0, false);
+    this.npcDebugOverlay?.update(this.camera);
     this.effects?.render();
     this.updateEffectHud();
   }
@@ -744,6 +754,8 @@ export class Game {
     this.mobileControls = undefined;
     this.player?.dispose();
     this.npcs?.dispose();
+    this.npcDebugOverlay?.dispose();
+    this.npcDebugOverlay = undefined;
     this.world?.dispose();
     this.effects?.dispose();
     this.mushroomWireframe.dispose();
