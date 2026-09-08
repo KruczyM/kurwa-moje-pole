@@ -93,7 +93,7 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `src/game/lifecycle/AnimationLoop.ts`             | Prowadzi pojedynczą pętlę `requestAnimationFrame`.                      |
 | `src/game/lifecycle/EventScope.ts`                | Rejestruje zdarzenia i zbiorczo je usuwa podczas sprzątania.            |
 | `src/game/lifecycle/disposeThree.ts`              | Klonuje modele i zwalnia geometrie, materiały i tekstury.               |
-| `src/game/npc/NpcAnimator.ts`                     | Odtwarza animacje NPC i zabezpiecza wadliwy ruch kości bioder.          |
+| `src/game/npc/NpcAnimator.ts`                     | Prowadzi stany ruchu, crossfade, one-shoty i diagnostykę animacji NPC.  |
 | `src/game/npc/NpcManager.ts`                      | Steruje celami, ruchem, bezczynnością, kolizjami i skalą NPC.           |
 | `src/game/npc/npcConfig.ts`                       | Definiuje zachowania i parametry ruchu postaci.                         |
 | `src/game/player/PlayerController.ts`             | Obsługuje ruch, kamerę pierwszoosobową i Pointer Lock.                  |
