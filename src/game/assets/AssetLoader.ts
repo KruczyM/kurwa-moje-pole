@@ -1,11 +1,26 @@
+import * as THREE from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { characterAssets, environmentAssets, interactiveAssets, tentAssets } from './assetManifest';
+import {
+  characterAssets,
+  environmentAssets,
+  interactiveAssets,
+  tentAssets,
+  textureAssets,
+} from './assetManifest';
 import type { TentModelId } from '../world/campLayout';
 import {
   applyPbrMaterialPolicy,
   interactivePbrProfile,
   type PbrSurfaceProfile,
 } from '../rendering/pbrMaterials';
+
+export type WorldTextures = {
+  grassColor: THREE.Texture | null;
+  grassNormal: THREE.Texture | null;
+  grassRoughness: THREE.Texture | null;
+  horizon: THREE.Texture | null;
+};
+
 export type LoadedAssets = {
   characters: Map<string, GLTF>;
   tents: Map<TentModelId, GLTF>;
@@ -14,11 +29,14 @@ export type LoadedAssets = {
   speaker: GLTF | null;
   toilet: GLTF | null;
   interactables: Map<string, GLTF>;
+  textures: WorldTextures;
   errors: string[];
 };
 export class AssetLoader {
   private loader = new GLTFLoader();
+  private textureLoader = new THREE.TextureLoader();
   private cache = new Map<string, Promise<GLTF | null>>();
+  private textureCache = new Map<string, Promise<THREE.Texture | null>>();
   constructor(
     private progress: (message: string) => void,
     private error: (message: string) => void,
@@ -44,6 +62,34 @@ export class AssetLoader {
     return this.cache.get(url)!;
   }
   /** Równolegle ładuje wszystkie modele wymagane do zbudowania sceny gry. */
+
+  /** Ładuje pojedynczą teksturę 2D, konfiguruje przestrzeń barw i buforuje Promise. */
+  private loadTexture(
+    url: string,
+    label: string,
+    colorSpace: THREE.ColorSpace = THREE.SRGBColorSpace,
+  ): Promise<THREE.Texture | null> {
+    if (!this.textureCache.has(url)) {
+      this.textureCache.set(
+        url,
+        this.textureLoader
+          .loadAsync(url)
+          .then((texture) => {
+            texture.colorSpace = colorSpace;
+            this.progress(`Załadowano: ${label}`);
+            return texture;
+          })
+          .catch(() => {
+            const message = `Nie udało się wczytać tekstury: ${url}`;
+            this.error(message);
+            return null;
+          }),
+      );
+    }
+    return this.textureCache.get(url)!;
+  }
+
+  /** Równolegle ładuje wszystkie modele i tekstury wymagane do zbudowania sceny gry. */
   async loadAll(): Promise<LoadedAssets> {
     const errors: string[] = [];
     const original = this.error;
@@ -78,6 +124,27 @@ export class AssetLoader {
       this.load(environmentAssets.speaker, 'głośnik', 'plastic'),
       this.load(environmentAssets.toilet, 'toi-toi wcTron', 'plastic'),
     ]);
-    return { characters, tents, flag, chair, speaker, toilet, interactables, errors };
+    const [grassColor, grassNormal, grassRoughness, horizon] = await Promise.all([
+      this.loadTexture(textureAssets.grass.color, 'tekstura trawy (kolor)', THREE.SRGBColorSpace),
+      this.loadTexture(textureAssets.grass.normal, 'tekstura trawy (normal)', THREE.NoColorSpace),
+      this.loadTexture(textureAssets.grass.roughness, 'tekstura trawy (roughness)', THREE.NoColorSpace),
+      this.loadTexture(textureAssets.horizon, 'panorama horyzontu', THREE.SRGBColorSpace),
+    ]);
+    return {
+      characters,
+      tents,
+      flag,
+      chair,
+      speaker,
+      toilet,
+      interactables,
+      textures: {
+        grassColor,
+        grassNormal,
+        grassRoughness,
+        horizon,
+      },
+      errors,
+    };
   }
 }

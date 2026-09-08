@@ -1,11 +1,10 @@
 import * as THREE from 'three';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { inspectableItems } from '../interactions/itemConfig';
 import { itemPresentation } from '../interactions/itemPresentationConfig';
 import { enableInteractionLayer } from '../interactions/InteractionManager';
-import { TimeOfDaySkybox } from './HorizonSkybox';
+import { HorizonPanorama, TimeOfDaySkybox } from './HorizonSkybox';
 import {
   tentColliderBounds,
   tentLayout,
@@ -27,16 +26,57 @@ export type WorldObject =
   | { object: THREE.Object3D; label: string; action: 'toilet' }
   | { object: THREE.Object3D; label: string; action: 'seat'; seatId: string }
   | { object: THREE.Object3D; label: string; action: 'item'; itemId: string };
+
+export type GroundTextures = {
+  grassColor?: THREE.Texture | null;
+  grassNormal?: THREE.Texture | null;
+  grassRoughness?: THREE.Texture | null;
+  horizon?: THREE.Texture | null;
+};
+
 type WorldModels = {
   tents: Map<TentModelId, GLTF>;
   flag: GLTF | null;
   chair: GLTF | null;
   toilet: GLTF | null;
   interactables: Map<string, GLTF>;
+  textures?: GroundTextures;
 };
 
 /** Tworzy prosty matowy materiał używany przez modele zastępcze. */
 const simpleMaterial = (color: number) => new THREE.MeshStandardMaterial({ color, roughness: 0.78 });
+
+/** Tworzy fakturowany materiał ziemi PBR na bazie map albedo, normalnych i roughness. */
+export function createGroundMaterial(textures?: GroundTextures) {
+  if (textures?.grassColor && textures?.grassNormal && textures?.grassRoughness) {
+    const repeat = 32;
+    textures.grassColor.repeat.set(repeat, repeat);
+    textures.grassColor.wrapS = THREE.RepeatWrapping;
+    textures.grassColor.wrapT = THREE.RepeatWrapping;
+    textures.grassColor.colorSpace = THREE.SRGBColorSpace;
+
+    textures.grassNormal.repeat.set(repeat, repeat);
+    textures.grassNormal.wrapS = THREE.RepeatWrapping;
+    textures.grassNormal.wrapT = THREE.RepeatWrapping;
+    textures.grassNormal.colorSpace = THREE.NoColorSpace;
+
+    textures.grassRoughness.repeat.set(repeat, repeat);
+    textures.grassRoughness.wrapS = THREE.RepeatWrapping;
+    textures.grassRoughness.wrapT = THREE.RepeatWrapping;
+    textures.grassRoughness.colorSpace = THREE.NoColorSpace;
+
+    return new THREE.MeshStandardMaterial({
+      map: textures.grassColor,
+      normalMap: textures.grassNormal,
+      normalScale: new THREE.Vector2(0.85, 0.85),
+      roughnessMap: textures.grassRoughness,
+      roughness: 0.88,
+      metalness: 0.0,
+      color: 0x3d5c22,
+    });
+  }
+  return simpleMaterial(0x213c14);
+}
 
 /** Włącza podgląd hitboxów przez parametr adresu `?debugInteractions=1`. */
 export function interactionDebugEnabled(search: string) {
@@ -100,6 +140,7 @@ export class CampWorld {
   private grass: Grass;
   private grassQuality: GrassQualityPreset = DEFAULT_GRASS_PRESET;
   private skybox: TimeOfDaySkybox;
+  private panorama: HorizonPanorama;
   private readonly debugInteractions: boolean;
   private readonly debugTentScale: boolean;
 
@@ -111,11 +152,10 @@ export class CampWorld {
     this.debugInteractions = debugInteractions;
     this.debugTentScale =
       typeof location !== 'undefined' && new URLSearchParams(location.search).get('debugTentScale') === '1';
-    const sky = new Sky();
-    sky.scale.setScalar(450000);
-    sky.visible = false;
-    scene.add(sky);
     this.skybox = new TimeOfDaySkybox(scene);
+    this.panorama = new HorizonPanorama(models.textures?.horizon);
+    this.panorama.mesh.userData.excludeMushroomWireframe = true;
+    scene.add(this.panorama.mesh);
 
     scene.add(new THREE.HemisphereLight(0xb9dcff, 0x4b3c23, 1.7));
     const sun = new THREE.DirectionalLight(0xffe0b0, 3.2);
@@ -128,7 +168,7 @@ export class CampWorld {
     sun.shadow.camera.bottom = -22;
     scene.add(sun);
 
-    const ground = new THREE.Mesh(terrain(), simpleMaterial(0x213c14));
+    const ground = new THREE.Mesh(terrain(), createGroundMaterial(models.textures));
     ground.receiveShadow = true;
     ground.userData.excludeMushroomWireframe = true;
     scene.add(ground);
@@ -522,14 +562,16 @@ export class CampWorld {
     return this.grassQuality;
   }
 
-  /** Aktualizuje proceduralną animację trawy. */
-  update(time: number) {
+  /** Aktualizuje proceduralną animację trawy, skybox oraz pozycję panoramy horyzontu. */
+  update(time: number, cameraPosition?: THREE.Vector3) {
     this.grass.update(time);
     this.skybox.update();
+    if (cameraPosition) this.panorama.update(cameraPosition);
   }
 
-  /** Zwalnia zasoby trawy oraz tablice runtime świata. */
+  /** Zwalnia zasoby panoramy, skyboxa, trawy oraz tablice runtime świata. */
   dispose() {
+    this.panorama.dispose();
     this.skybox.dispose();
     this.grass.dispose();
     this.colliders.length = 0;
