@@ -33,9 +33,21 @@ describe('AppStateMachine', () => {
     expect(escapeTarget('using-item')).toBe('playing');
     expect(escapeTarget('dialog')).toBe('playing');
     expect(escapeTarget('inventory')).toBe('playing');
+    expect(escapeTarget('effect-warning')).toBe('playing');
     expect(escapeTarget('playing')).toBe('paused');
     expect(escapeTarget('paused')).toBe('playing');
     expect(escapeTarget('loading')).toBeNull();
+  });
+
+  it('allows entering and resolving an effect-warning modal', () => {
+    const machine = new AppStateMachine('playing');
+    machine.transition('inventory');
+    machine.transition('effect-warning');
+    expect(machine.current).toBe('effect-warning');
+    machine.transition('using-item');
+    expect(machine.current).toBe('using-item');
+    machine.transition('playing');
+    expect(machine.current).toBe('playing');
   });
 
   it('enters and leaves an interactive seat without opening pause', () => {

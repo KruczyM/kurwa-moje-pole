@@ -4,7 +4,7 @@
 > [KruczyM/kurwa-moje-pole](https://github.com/KruczyM/kurwa-moje-pole).
 > Stan na 2026-09-08. Źródłem prawdy pozostaje GitHub.
 
-Liczba otwartych issue: **12**.
+Liczba otwartych issue: **11**.
 
 ## Szybka lista
 
@@ -25,7 +25,7 @@ Liczba otwartych issue: **12**.
 - [x] [#23 — [Inspekcja] Dokończyć model preview, opisy i pełną obsługę E/Escape](https://github.com/KruczyM/kurwa-moje-pole/issues/23)
 - [x] [#24 — [Sekwencje użycia] Dodać kamerę trzecioosobową, animacje i rekwizyty](https://github.com/KruczyM/kurwa-moje-pole/issues/24)
 - [x] [#25 — [Efekty] Dopracować pięć odrębnych efektów i bezpieczne wygaszanie](https://github.com/KruczyM/kurwa-moje-pole/issues/25)
-- [ ] [#26 — [Dostępność] Uzupełnić ustawienia reduced motion, błysków i intensywności](https://github.com/KruczyM/kurwa-moje-pole/issues/26)
+- [x] [#26 — [Dostępność] Uzupełnić ustawienia reduced motion, błysków i intensywności](https://github.com/KruczyM/kurwa-moje-pole/issues/26)
 - [ ] [#28 — [Audio] Dopracować głośnik i warstwę ambientu obozu](https://github.com/KruczyM/kurwa-moje-pole/issues/28)
 - [ ] [#29 — [Multiplayer] Utworzyć serwer pokojów i autorytatywną rezerwację postaci](https://github.com/KruczyM/kurwa-moje-pole/issues/29)
 - [ ] [#30 — [Multiplayer] Synchronizować ruch, obrót i animacje graczy](https://github.com/KruczyM/kurwa-moje-pole/issues/30)
@@ -543,11 +543,11 @@ Liczba otwartych issue: **12**.
 
 #### [#26 — [Dostępność] Uzupełnić ustawienia reduced motion, błysków i intensywności](https://github.com/KruczyM/kurwa-moje-pole/issues/26)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `accessibility`, `priority: high`, `area: ui`, `area: effects`
 - Przypisani: brak
 - Utworzono: 2026-08-30
-- Ostatnia aktualizacja: 2026-08-30
+- Ostatnia aktualizacja: 2026-09-08
 
 <details>
 <summary>Pełna treść issue</summary>

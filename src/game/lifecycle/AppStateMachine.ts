@@ -5,6 +5,7 @@ export type AppState =
   | 'seated'
   | 'inspecting'
   | 'using-item'
+  | 'effect-warning'
   | 'dialog'
   | 'inventory'
   | 'paused'
@@ -16,17 +17,24 @@ type Listener = (change: StateChange) => void;
 const transitions: Record<AppState, readonly AppState[]> = {
   start: ['loading'],
   loading: ['playing', 'error', 'start'],
-  playing: ['seated', 'inspecting', 'dialog', 'inventory', 'paused', 'error', 'start'],
+  playing: ['seated', 'inspecting', 'dialog', 'inventory', 'paused', 'error', 'start', 'effect-warning'],
   seated: ['playing', 'error', 'start'],
-  inspecting: ['playing', 'using-item', 'error', 'start'],
+  inspecting: ['playing', 'using-item', 'effect-warning', 'error', 'start'],
   'using-item': ['playing', 'error', 'start'],
+  'effect-warning': ['using-item', 'playing', 'inventory', 'inspecting', 'error', 'start'],
   dialog: ['playing', 'error', 'start'],
-  inventory: ['playing', 'using-item', 'error', 'start'],
+  inventory: ['playing', 'using-item', 'effect-warning', 'error', 'start'],
   paused: ['playing', 'error', 'start'],
   error: ['loading', 'start'],
 };
 
-export const modalStates: readonly AppState[] = ['inspecting', 'dialog', 'inventory', 'paused'];
+export const modalStates: readonly AppState[] = [
+  'inspecting',
+  'dialog',
+  'inventory',
+  'paused',
+  'effect-warning',
+];
 
 /** Wyznacza pojedynczy, przewidywalny stan docelowy dla klawisza Escape. */
 export function escapeTarget(state: AppState): AppState | null {
@@ -34,6 +42,7 @@ export function escapeTarget(state: AppState): AppState | null {
     state === 'seated' ||
     state === 'inspecting' ||
     state === 'using-item' ||
+    state === 'effect-warning' ||
     state === 'dialog' ||
     state === 'inventory'
   )

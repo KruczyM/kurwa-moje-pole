@@ -39,16 +39,60 @@ type PendingItemUse = {
   committed: boolean;
 };
 
+type PendingWarningItem = {
+  id: EffectId;
+  source: PendingItemUse['source'];
+  itemId?: InspectableItemId;
+};
+
+export const INTENSE_EFFECTS: readonly EffectId[] = ['Grzyb', 'MDMA', 'LSD', 'Kreska'];
+
+export function isIntenseEffect(id: EffectId): boolean {
+  return INTENSE_EFFECTS.includes(id);
+}
+
+/** Wykrywa systemową preferencję ograniczenia ruchu (prefers-reduced-motion). */
+export function detectSystemReducedMotion(): boolean {
+  const target =
+    typeof window !== 'undefined'
+      ? window
+      : typeof globalThis !== 'undefined'
+        ? (globalThis as unknown as Window)
+        : undefined;
+  return (
+    typeof target !== 'undefined' &&
+    typeof target.matchMedia === 'function' &&
+    target.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
 /** Odczytuje ustawienia efektów z localStorage i uzupełnia brakujące wartości domyślne. */
-function loadVisualSettings(): VisualSettings {
+export function loadVisualSettings(): VisualSettings {
   try {
-    return { ...defaultVisualSettings, ...JSON.parse(localStorage.getItem('camp-visual-settings') || '{}') };
-    const loaded = {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('camp-visual-settings') : null;
+    const parsed = raw ? JSON.parse(raw) : {};
+    const systemReducedMotion = detectSystemReducedMotion();
+
+    const loaded: VisualSettings = {
       ...defaultVisualSettings,
-      ...JSON.parse(localStorage.getItem('camp-visual-settings') || '{}'),
+      ...(systemReducedMotion && !raw
+        ? {
+            reduceMotion: true,
+            limitSway: true,
+            disableShake: true,
+            disableFlashes: true,
+            disableAberration: true,
+          }
+        : {}),
+      ...parsed,
     };
     if (!isGrassQualityPreset(loaded.grassQuality)) {
       loaded.grassQuality = DEFAULT_GRASS_PRESET;
+    }
+    if (typeof loaded.intensity !== 'number' || Number.isNaN(loaded.intensity)) {
+      loaded.intensity = defaultVisualSettings.intensity;
+    } else {
+      loaded.intensity = THREE.MathUtils.clamp(loaded.intensity, 0, 1);
     }
     return loaded;
   } catch {
@@ -96,6 +140,9 @@ export class Game {
   private useSequence?: ItemUseSequence;
   private seatController?: SeatController;
   private pendingItemUse?: PendingItemUse;
+  private pendingWarningItem?: PendingWarningItem;
+  private mediaQueryList?: MediaQueryList;
+  private mediaQueryHandler?: (event: MediaQueryListEvent) => void;
 
   constructor(readonly state: AppStateMachine) {
     try {
@@ -109,11 +156,25 @@ export class Game {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     configureColorPipeline(this.renderer, 'world');
     this.scene.background = new THREE.Color(0x9bb9d0);
-    this.scene.fog = new THREE.Fog(0x9bb9d0, 24, 58);
     this.scene.fog = new THREE.Fog(0x8da1b5, 45, 120);
     this.events.listen(window, 'resize', () => this.resize());
     this.events.listen(window, 'keydown', (event) => this.key(event as KeyboardEvent));
     this.events.listen(document, 'pointerlockchange', () => this.pointerLockChanged());
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      this.mediaQueryList = window.matchMedia('(prefers-reduced-motion: reduce)');
+      this.mediaQueryHandler = (event: MediaQueryListEvent) => {
+        if (!localStorage.getItem('camp-visual-settings')) {
+          this.updateSettings({
+            reduceMotion: event.matches,
+            limitSway: event.matches,
+            disableShake: event.matches,
+            disableFlashes: event.matches,
+            disableAberration: event.matches,
+          });
+        }
+      };
+      this.mediaQueryList.addEventListener?.('change', this.mediaQueryHandler);
+    }
     this.unsubscribeState = this.state.subscribe(({ to }) => this.syncState(to));
     this.syncSettingsUi();
     this.syncInventoryUi();
@@ -255,6 +316,9 @@ export class Game {
     if (this.state.current === 'using-item') {
       this.useSequence?.cancel();
       this.pendingItemUse = undefined;
+    }
+    if (this.state.current === 'effect-warning') {
+      this.pendingWarningItem = undefined;
     }
     this.state.transition(target);
   }
@@ -443,27 +507,66 @@ export class Game {
     if (this.state.current === 'playing') this.state.transition('inventory');
     else if (this.state.current === 'inventory') this.state.transition('playing');
   }
-  /** Weryfikuje ostrzeżenie dostępności przed rozpoczęciem sekwencji. */
-  private confirmItemUse(id: EffectId) {
-    if ((id === 'Grzyb' || id === 'MDMA' || id === 'LSD') && !localStorage.getItem('camp-effect-warning')) {
-      const proceed = window.confirm(
-        'Ten fikcyjny efekt zawiera intensywne ruchy obrazu i światło. Kontynuować?',
-      );
-      localStorage.setItem('camp-effect-warning', '1');
-      if (!proceed) return false;
+  /** Rozpoczyna transakcyjne użycie przedmiotu bez usuwania go przed markerem animacji. */
+  private beginItemUse(id: EffectId, source: PendingItemUse['source'], itemId?: InspectableItemId) {
+    if (!this.effects || !this.player || !this.useSequence) return false;
+    if (this.state.current !== 'inspecting' && this.state.current !== 'inventory') return false;
+    if (isIntenseEffect(id) && !localStorage.getItem('camp-effect-warning')) {
+      this.pendingWarningItem = { id, source, itemId };
+      this.state.transition('effect-warning');
+      return true;
+    }
+    return this.executeItemUse(id, source, itemId);
+  }
+
+  /** Inicjalizuje sekwencję animacji użycia przedmiotu. */
+  private executeItemUse(id: EffectId, source: PendingItemUse['source'], itemId?: InspectableItemId) {
+    if (!this.effects || !this.player || !this.useSequence) return false;
+    if (!this.useSequence.start(id, this.player.yaw)) return false;
+    this.pendingItemUse = { effect: id, source, itemId, committed: false };
+    qs('#use-sequence-label').textContent = itemUseSequenceConfig[id].label;
+    if (this.state.current !== 'using-item') {
+      this.state.transition('using-item');
     }
     return true;
   }
 
-  /** Rozpoczyna transakcyjne użycie przedmiotu bez usuwania go przed markerem animacji. */
-  private beginItemUse(id: EffectId, source: PendingItemUse['source'], itemId?: InspectableItemId) {
-    if (!this.effects || !this.player || !this.useSequence || !this.confirmItemUse(id)) return false;
-    if (this.state.current !== 'inspecting' && this.state.current !== 'inventory') return false;
-    if (!this.useSequence.start(id, this.player.yaw)) return false;
-    this.pendingItemUse = { effect: id, source, itemId, committed: false };
-    qs('#use-sequence-label').textContent = itemUseSequenceConfig[id].label;
-    this.state.transition('using-item');
-    return true;
+  /** Potwierdza ostrzeżenie o intensywnych efektach z opcjonalnym trybem bezpiecznym. */
+  confirmWarning(enableSafeMode: boolean) {
+    if (this.state.current !== 'effect-warning') return;
+    const item = this.pendingWarningItem;
+    this.pendingWarningItem = undefined;
+
+    const dontShowAgain = qs<HTMLInputElement>('#warning-dont-show-again')?.checked;
+    if (dontShowAgain) {
+      localStorage.setItem('camp-effect-warning', '1');
+    }
+
+    if (enableSafeMode) {
+      this.updateSettings({
+        reduceMotion: true,
+        limitSway: true,
+        disableShake: true,
+        disableBloom: true,
+        disableFlashes: true,
+        disableAberration: true,
+        intensity: Math.min(this.settings.intensity, 0.5),
+      });
+      this.toast('Włączono tryb łagodny');
+    }
+
+    if (item) {
+      this.executeItemUse(item.id, item.source, item.itemId);
+    } else {
+      this.state.transition('playing');
+    }
+  }
+
+  /** Anuluje ostrzeżenie i wraca do rozgrywki bez użycia przedmiotu. */
+  cancelWarning() {
+    if (this.state.current !== 'effect-warning') return;
+    this.pendingWarningItem = undefined;
+    this.state.transition('playing');
   }
 
   /** Zużywa przedmiot i uruchamia efekt dokładnie na markerze animacji. */
@@ -516,14 +619,12 @@ export class Game {
   closeDialog() {
     if (this.state.current === 'dialog') this.state.transition('playing');
   }
-  /** Włącza lub wyłącza pauzę bez omijania maszyny stanów. */
   /** Włącza albo wyłącza pauzę, o ile bieżący stan pozwala na przejście. */
   setPause(on: boolean) {
     if (on && this.state.current === 'playing') this.state.transition('paused');
     else if (!on && this.state.current === 'paused') this.state.transition('playing');
   }
 
-  /** Zapisuje częściowe ustawienia wizualne i przekazuje je do EffectManagera. */
   /** Zapisuje częściowe ustawienia wizualne i przekazuje je do EffectManagera oraz świata. */
   updateSettings(values: Partial<VisualSettings>) {
     Object.assign(this.settings, values);
@@ -548,6 +649,8 @@ export class Game {
     set('#setting-limit-sway', this.settings.limitSway);
     set('#setting-disable-shake', this.settings.disableShake);
     set('#setting-disable-bloom', this.settings.disableBloom);
+    set('#setting-disable-flashes', this.settings.disableFlashes);
+    set('#setting-disable-aberration', this.settings.disableAberration);
     const grassSelect = document.querySelector<HTMLSelectElement>('#setting-grass-quality');
     if (grassSelect) grassSelect.value = this.settings.grassQuality;
   }
@@ -560,12 +663,19 @@ export class Game {
     qs('#dialog').hidden = state !== 'dialog';
     qs('#inventory').hidden = state !== 'inventory';
     qs('#pause').hidden = state !== 'paused';
+    qs('#effect-warning').hidden = state !== 'effect-warning';
     qs('#use-sequence').hidden = state !== 'using-item';
     const inputMode = this.mobileInput ? 'mobile' : 'desktop';
     qs('#controls-hud').textContent = controlHintForState(state, inputMode);
     qs('#inventory-help').textContent = controlHintForState('inventory', inputMode);
     qs('#pause-help').textContent = controlHintForState('paused', inputMode);
     qs('#dialog-help').textContent = controlHintForState('dialog', inputMode);
+    qs('#effect-warning-help').textContent = controlHintForState('effect-warning', inputMode);
+    if (state === 'effect-warning') {
+      requestAnimationFrame(() => {
+        qs<HTMLButtonElement>('#warning-proceed')?.focus();
+      });
+    }
     if (this.mobileInput) {
       qs('#inspect-use').textContent = 'UŻYJ';
       qs('#inspect-take').textContent = 'WEŹ';
@@ -767,6 +877,12 @@ export class Game {
     this.seatController?.dispose();
     this.seatController = undefined;
     this.pendingItemUse = undefined;
+    this.pendingWarningItem = undefined;
+    if (this.mediaQueryList && this.mediaQueryHandler) {
+      this.mediaQueryList.removeEventListener?.('change', this.mediaQueryHandler);
+      this.mediaQueryList = undefined;
+      this.mediaQueryHandler = undefined;
+    }
     this.interactions?.dispose();
     this.mobileControls?.dispose();
     this.mobileControls = undefined;
