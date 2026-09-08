@@ -82,3 +82,97 @@ export class TimeOfDaySkybox {
     this.texture = undefined;
   }
 }
+
+/**
+ * Cylindryczna panorama dalekiego horyzontu (drzewa i pole).
+ * Łagodne wygaszanie krawędzi (alpha fade) góry i dołu eliminuje efekt widocznej
+ * kopuły/odciętego cylindra, płynnie łącząc krajobraz ze skyboxem i mgłą.
+ */
+export class HorizonPanorama {
+  readonly mesh: THREE.Mesh;
+  private readonly material: THREE.ShaderMaterial;
+  private disposed = false;
+
+  constructor(texture?: THREE.Texture | null) {
+    const radius = 85;
+    const height = 34;
+    const geometry = new THREE.CylinderGeometry(radius, radius, height, 64, 1, true);
+
+    if (texture) {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+    }
+
+    const uniforms = {
+      map: { value: texture ?? null },
+      ...THREE.UniformsLib.fog,
+    };
+
+    const vertexShader = `
+      varying vec2 vUv;
+      #include <fog_pars_vertex>
+
+      void main() {
+        vUv = uv;
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mvPosition;
+        #include <fog_vertex>
+      }
+    `;
+
+    const fragmentShader = `
+      uniform sampler2D map;
+      varying vec2 vUv;
+      #include <fog_pars_fragment>
+
+      void main() {
+        vec4 tex = texture2D(map, vUv);
+        // Płynne przenikanie:
+        // Dół (vUv.y 0.0 - 0.16) łagodnie wyłania się z terenu i traw
+        float bottomFade = smoothstep(0.0, 0.16, vUv.y);
+        // Góra (vUv.y 0.68 - 0.96) miękko wtapia się w niebo skyboxa
+        float topFade = 1.0 - smoothstep(0.68, 0.96, vUv.y);
+        float alpha = bottomFade * topFade;
+        gl_FragColor = vec4(tex.rgb, alpha);
+        #include <fog_fragment>
+      }
+    `;
+
+    this.material = new THREE.ShaderMaterial({
+      uniforms,
+      vertexShader,
+      fragmentShader,
+      side: THREE.BackSide,
+      transparent: true,
+      depthWrite: false,
+      fog: true,
+    });
+
+    this.mesh = new THREE.Mesh(geometry, this.material);
+    // Ustawienie wysokości środka cylindra tak, aby linia drzew wypadała na wysokości oczu/horyzontu
+    this.mesh.position.y = 7.5;
+    this.mesh.renderOrder = -1;
+  }
+
+  /** Podąża za kamerą w osiach X i Z, tworząc złudzenie nieskończonej odległości horyzontu. */
+  update(cameraPosition: THREE.Vector3) {
+    if (this.disposed) return;
+    this.mesh.position.x = cameraPosition.x;
+    this.mesh.position.z = cameraPosition.z;
+  }
+
+  setTexture(texture: THREE.Texture) {
+    if (this.disposed) return;
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    this.material.uniforms.map.value = texture;
+    this.material.needsUpdate = true;
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.mesh.geometry.dispose();
+    this.material.dispose();
+  }
+}

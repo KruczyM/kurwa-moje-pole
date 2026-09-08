@@ -94,14 +94,41 @@ describe('PlayerController mouse look', () => {
     vi.stubGlobal('document', documentTarget);
 
     const camera = new THREE.PerspectiveCamera();
-    const controller = new PlayerController(camera, canvas, () => true, false, {
-      position: [-12.6, -6.8],
-      yaw: -2.06,
-    });
+    const controller = new PlayerController(
+      camera,
+      canvas,
+      () => true,
+      false,
+      {
+        position: [-12.6, -6.8],
+        yaw: -2.06,
+      },
+      () => 0,
+    );
 
     expect(camera.position.toArray()).toEqual([-12.6, 1.9, -6.8]);
     expect(controller.yaw).toBeCloseTo(-2.06);
     expect(camera.rotation.y).toBeCloseTo(-2.06);
+    controller.dispose();
+  });
+
+  it('dopasowuje wysokość kamery do rzeźby terenu', () => {
+    const windowTarget = new EventTarget();
+    const documentTarget = Object.assign(new EventTarget(), { pointerLockElement: null });
+    const canvas = Object.assign(new EventTarget(), {
+      tabIndex: 0,
+      focus: vi.fn(),
+      requestPointerLock: vi.fn(() => Promise.resolve()),
+    }) as unknown as HTMLCanvasElement;
+    vi.stubGlobal('window', windowTarget);
+    vi.stubGlobal('document', documentTarget);
+
+    const camera = new THREE.PerspectiveCamera();
+    const controller = new PlayerController(camera, canvas, () => true, false, {
+      position: [10, 20],
+      yaw: 0,
+    });
+    expect(camera.position.y).not.toBe(1.9);
     controller.dispose();
   });
 });

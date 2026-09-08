@@ -42,6 +42,7 @@ type PendingItemUse = {
 /** Odczytuje ustawienia efektów z localStorage i uzupełnia brakujące wartości domyślne. */
 function loadVisualSettings(): VisualSettings {
   try {
+    return { ...defaultVisualSettings, ...JSON.parse(localStorage.getItem('camp-visual-settings') || '{}') };
     const loaded = {
       ...defaultVisualSettings,
       ...JSON.parse(localStorage.getItem('camp-visual-settings') || '{}'),
@@ -109,6 +110,7 @@ export class Game {
     configureColorPipeline(this.renderer, 'world');
     this.scene.background = new THREE.Color(0x9bb9d0);
     this.scene.fog = new THREE.Fog(0x9bb9d0, 24, 58);
+    this.scene.fog = new THREE.Fog(0x8da1b5, 45, 120);
     this.events.listen(window, 'resize', () => this.resize());
     this.events.listen(window, 'keydown', (event) => this.key(event as KeyboardEvent));
     this.events.listen(document, 'pointerlockchange', () => this.pointerLockChanged());
@@ -521,6 +523,7 @@ export class Game {
     else if (!on && this.state.current === 'paused') this.state.transition('playing');
   }
 
+  /** Zapisuje częściowe ustawienia wizualne i przekazuje je do EffectManagera. */
   /** Zapisuje częściowe ustawienia wizualne i przekazuje je do EffectManagera oraz świata. */
   updateSettings(values: Partial<VisualSettings>) {
     Object.assign(this.settings, values);
@@ -614,6 +617,7 @@ export class Game {
       }
       if (state === 'seated') this.seatController?.update(dt);
       this.world?.update(this.clock.elapsedTime);
+      this.world?.update(this.clock.elapsedTime, this.camera.position);
       this.effects?.update(dt);
       if (state === 'using-item') {
         const event = this.useSequence?.update(dt);

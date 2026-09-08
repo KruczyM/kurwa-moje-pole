@@ -4,14 +4,14 @@
 > [KruczyM/kurwa-moje-pole](https://github.com/KruczyM/kurwa-moje-pole).
 > Stan na 2026-09-08. Źródłem prawdy pozostaje GitHub.
 
-Liczba otwartych issue: **13**.
+Liczba otwartych issue: **12**.
 
 ## Szybka lista
 
 - [x] [#8 — [Obóz] Wdrożyć duży namiot dla T10 i T15 oraz układ T01–T15 z konfiguracji](https://github.com/KruczyM/kurwa-moje-pole/issues/8)
 - [x] [#9 — [Świat] Dopracować zadaszenie Mad Dog, maszt, flagę i hierarchię obozu](https://github.com/KruczyM/kurwa-moje-pole/issues/9)
 - [x] [#10 — [Trawa] Wprowadzić gęstą aksamitną trawę z LOD i presetami jakości](https://github.com/KruczyM/kurwa-moje-pole/issues/10)
-- [ ] [#11 — [Teren] Dopracować łagodne nierówności, materiał grass004 i horyzont](https://github.com/KruczyM/kurwa-moje-pole/issues/11)
+- [x] [#11 — [Teren] Dopracować łagodne nierówności, materiał grass004 i horyzont](https://github.com/KruczyM/kurwa-moje-pole/issues/11)
 - [x] [#12 — [Materiały] Audyt PBR i oświetlenia postaci, namiotów, flagi i rekwizytów](https://github.com/KruczyM/kurwa-moje-pole/issues/12)
 - [x] [#13 — [EPIC] Inteligentni NPC z płynną locomotion](https://github.com/KruczyM/kurwa-moje-pole/issues/13)
 - [x] [#15 — [Animacje NPC] Zastąpić restart klipów maszyną stanów i płynnym crossfade](https://github.com/KruczyM/kurwa-moje-pole/issues/15)
@@ -123,7 +123,7 @@ Liczba otwartych issue: **13**.
 
 #### [#11 — [Teren] Dopracować łagodne nierówności, materiał grass004 i horyzont](https://github.com/KruczyM/kurwa-moje-pole/issues/11)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: medium`, `area: assets`, `area: world`
 - Przypisani: brak
 - Utworzono: 2026-08-30

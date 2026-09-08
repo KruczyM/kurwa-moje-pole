@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { calculateLocalMove } from './movement';
 import { EventScope } from '../lifecycle/EventScope';
+import { terrainHeight } from '../world/CampWorld';
 export type PlayerModifiers = { speed: number; sway: number; shake: number; bob: number };
 export type PlayerSpawn = { position: readonly [x: number, z: number]; yaw: number };
 
@@ -27,9 +28,15 @@ export class PlayerController {
     readonly canMove: (x: number, z: number) => boolean,
     private readonly pointerLockEnabled = true,
     spawn: PlayerSpawn = DEFAULT_PLAYER_SPAWN,
+    private readonly getGroundHeight: (x: number, z: number) => number = terrainHeight,
   ) {
     this.yaw = spawn.yaw;
     camera.position.set(spawn.position[0], this.baseY, spawn.position[1]);
+    camera.position.set(
+      spawn.position[0],
+      this.baseY + this.getGroundHeight(spawn.position[0], spawn.position[1]),
+      spawn.position[1],
+    );
     camera.rotation.set(0, this.yaw, 0, 'YXZ');
     canvas.tabIndex = -1;
     this.events.listen(window, 'keydown', (event) =>
@@ -119,6 +126,9 @@ export class PlayerController {
     const bob = Math.sin(this.bobTime) * Math.min(0.055, moving * 0.012);
     const shake = mod.shake ? Math.sin(performance.now() * 0.025) * mod.shake * 0.012 : 0;
     this.camera.position.y = this.baseY + bob + shake;
+    const targetY =
+      this.baseY + this.getGroundHeight(this.camera.position.x, this.camera.position.z) + bob + shake;
+    this.camera.position.y = THREE.MathUtils.damp(this.camera.position.y, targetY, 20, dt);
     this.camera.rotation.set(
       this.pitch + shake + mod.sway * Math.sin(this.bobTime * 0.5),
       this.yaw,

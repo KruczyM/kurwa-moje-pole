@@ -46,4 +46,45 @@ describe('CampWorld terrain placement', () => {
     ).toBe(true);
     expect(physicalSizeIsValid(new THREE.Vector3(30, 1.25, 30), [2, 1.25, 2], 'uniform-height')).toBe(true);
   });
+
+  it('tworzy materiał PBR ziemi z powtarzaniem i prawidłowymi przestrzeniami barw', async () => {
+    const { createGroundMaterial } = await import('./CampWorld');
+    const colorTex = new THREE.Texture();
+    const normalTex = new THREE.Texture();
+    const roughnessTex = new THREE.Texture();
+
+    const mat = createGroundMaterial({
+      grassColor: colorTex,
+      grassNormal: normalTex,
+      grassRoughness: roughnessTex,
+    });
+
+    expect(mat).toBeInstanceOf(THREE.MeshStandardMaterial);
+    expect(mat.map).toBe(colorTex);
+    expect(mat.normalMap).toBe(normalTex);
+    expect(mat.roughnessMap).toBe(roughnessTex);
+    expect(colorTex.wrapS).toBe(THREE.RepeatWrapping);
+    expect(colorTex.wrapT).toBe(THREE.RepeatWrapping);
+    expect(colorTex.repeat.x).toBe(32);
+    expect(colorTex.colorSpace).toBe(THREE.SRGBColorSpace);
+    expect(normalTex.colorSpace).toBe(THREE.NoColorSpace);
+  });
+
+  it('gwarantuje łagodne nachylenie fal terenu bez ostrych uskoków i skarp', () => {
+    // Sprawdzamy próbkowanie siatki co 1m w promieniu obozu [-40, 40]
+    for (let x = -40; x <= 40; x += 4) {
+      for (let z = -40; z <= 40; z += 4) {
+        const h = terrainHeight(x, z);
+        const hDx = terrainHeight(x + 1, z);
+        const hDz = terrainHeight(x, z + 1);
+
+        const slopeX = Math.abs(hDx - h);
+        const slopeZ = Math.abs(hDz - h);
+
+        // Maksymalne nachylenie na 1 metr nie powinno przekraczać 10 cm (0.1m)
+        expect(slopeX).toBeLessThan(0.1);
+        expect(slopeZ).toBeLessThan(0.1);
+      }
+    }
+  });
 });

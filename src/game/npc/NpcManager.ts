@@ -10,6 +10,7 @@ import { NpcNavigationGrid } from './NpcNavigationGrid';
 import { computeNpcSteering, NPC_STEERING, turnDirectionTowards } from './NpcSteering';
 import { NPC_BEHAVIOR_PROFILES, NpcBehaviorAction, NpcBehaviorScheduler } from './NpcBehaviorScheduler';
 import { NpcStuckWatchdog, NpcWatchdogConfig, WatchdogRecoveryAction } from './NpcStuckWatchdog';
+import { terrainHeight } from '../world/CampWorld';
 export type Npc = {
   root: THREE.Group;
   name: string;
@@ -94,6 +95,11 @@ export class NpcManager {
         root.add(anchor);
       }
       root.position.set(spawns[index][0], 0, spawns[index][1]);
+      root.position.set(
+        spawns[index][0],
+        terrainHeight(spawns[index][0], spawns[index][1]),
+        spawns[index][1],
+      );
       root.userData.interaction = { kind: 'npc', name: asset.name };
       addNpcInteractionHitbox(root);
       root.traverse((o) => (o.userData.interactionRoot = root));
@@ -262,6 +268,7 @@ export class NpcManager {
         const safePoint =
           this.navigation.randomWalkablePoint(() => npc.behavior.random(), bounds) ??
           new THREE.Vector3(0, 0, 0);
+        safePoint.y = terrainHeight(safePoint.x, safePoint.z);
         npc.root.position.copy(safePoint);
         npc.velocity.set(0, 0, 0);
         npc.speed = 0;
@@ -314,6 +321,8 @@ export class NpcManager {
 
       if (npc.stationary) {
         npc.root.position.y = Math.sin(time * 1.2 + npc.phase) * 0.01;
+        npc.root.position.y =
+          terrainHeight(npc.root.position.x, npc.root.position.z) + Math.sin(time * 1.2 + npc.phase) * 0.01;
         npc.speed = approachSpeed(npc.speed, 0, dt);
         npc.velocity.set(0, 0, 0);
         const recoveryAction = npc.watchdog.update(
@@ -331,6 +340,8 @@ export class NpcManager {
         npc.wait -= dt;
         npc.speed = approachSpeed(npc.speed, 0, dt);
         npc.velocity.set(0, 0, 0);
+        npc.root.position.y =
+          terrainHeight(npc.root.position.x, npc.root.position.z) + Math.sin(time * 1.2 + npc.phase) * 0.01;
         const recoveryAction = npc.watchdog.update(
           dt,
           npc.root.position,
@@ -390,6 +401,7 @@ export class NpcManager {
       } else {
         const previous = npc.root.position.clone();
         npc.root.position.copy(next);
+        npc.root.position.y = terrainHeight(next.x, next.z);
         npc.velocity
           .copy(next)
           .sub(previous)

@@ -95,6 +95,52 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `src/game/lifecycle/disposeThree.ts`              | Klonuje modele i zwalnia geometrie, materiały i tekstury.                        |
 | `src/game/npc/NpcAnimator.ts`                     | Prowadzi stany ruchu, crossfade, one-shoty i diagnostykę animacji NPC.           |
 | `src/game/npc/NpcBehaviorScheduler.ts`            | Planuje niezależne stany idle, wander, social i run-home każdego NPC.            |
+| `src/game/npc/NpcManager.ts`                      | Steruje celami, ruchem, bezczynnością, kolizjami i skalą NPC.                    |
+| `src/game/npc/npcConfig.ts`                       | Zawiera kwestie dialogowe postaci NPC.                                           |
+| `src/game/npc/locomotionCalibration.json`         | Definiuje metry cyklu, prędkości, progi oraz tempo rozpędzania NPC.              |
+| `src/game/npc/NpcNavigationGrid.ts`               | Buduje grid pola, wyznacza A* i wygładza waypointy.                              |
+| `src/game/npc/NpcSteering.ts`                     | Przewiduje kolizje i płynnie omija gracza, NPC oraz przeszkody.                  |
+| `src/game/player/PlayerController.ts`             | Obsługuje ruch, kamerę pierwszoosobową i Pointer Lock.                           |
+| `src/game/rendering/pbrMaterials.ts`              | Normalizuje przestrzenie barw, roughness i metalness modeli GLB.                 |
+| `src/game/rendering/colorPipeline.ts`             | Ujednolica sRGB, ACES i ekspozycję wszystkich rendererów.                        |
+| `src/game/ui/CharacterPreview.ts`                 | Renderuje przezroczysty podgląd postaci w menu.                                  |
+| `src/game/ui/previewLayout.ts`                    | Dopasowuje podgląd tak, aby cały model mieścił się w ekranie.                    |
+| `src/game/world/CampWorld.ts`                     | Buduje teren, trawę, namioty, stół, używki, kolizje i granice obozu.             |
+| `src/game/world/campLayout.ts`                    | Definiuje modele, ID, pozycje, skale i collidery namiotów T01–T15.               |
+| `src/game/world/campLandmarks.ts`                 | Konfiguruje model Mad Dog, kompletną flagę i osiem miejsc siedzących.            |
+| `src/game/world/HorizonSkybox.ts`                 | Dodaje panoramę horyzontu.                                                       |
+| `scripts/check-text-encoding.mjs`                 | Wykrywa uszkodzone UTF-8 i typowe ślady mojibake.                                |
+| `scripts/validate-assets.mjs`                     | Sprawdza kompletność i strukturę assetów runtime.                                |
+| `scripts/validate-character-rigs.mjs`             | Porównuje rigi, siatki, materiały, tekstury i klipy postaci.                     |
+| `scripts/strip-glb-animations.mjs`                | Tworzy kopię GLB bez animacji, zachowując model i rig.                           |
+| Plik lub katalog                                  | Odpowiedzialność                                                                 |
+| ------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `src/main.ts`                                     | Uruchamia interfejs, podgląd postaci oraz właściwą grę.                          |
+| `src/game/Game.ts`                                | Spina scenę, kamerę, sterowanie, stany aplikacji, interakcje i efekty.           |
+| `src/game/animation/animationContract.ts`         | Ujednolica nazwy klipów `Idle`, `Walk` i `Run`.                                  |
+| `src/game/assets/AssetLoader.ts`                  | Ładuje modele GLB i raportuje brakujące pliki.                                   |
+| `src/game/assets/assetManifest.ts`                | Jest jedynym miejscem definiującym adresy assetów runtime.                       |
+| `src/game/audio/SpeakerAudio.ts`                  | Steruje muzyką głośnika i bezpieczną modulacją audio używek.                     |
+| `src/game/audio/VoiceReactionManager.ts`          | Losuje i odtwarza reakcje głosowe zależnie od zdarzeń.                           |
+| `src/game/effects/EffectManager.ts`               | Obsługuje fazy używek oraz shader i post-processing obrazu.                      |
+| `src/game/effects/EffectTimeline.ts`              | Prowadzi niezależny od renderera cykl wejście–aktywność–wygaszanie.              |
+| `src/game/effects/MushroomWireframeEffect.ts`     | Czasowo przełącza obiekty na efekt siatki po grzybach.                           |
+| `src/game/interactions/InteractionManager.ts`     | Wykrywa obiekt wskazywany przez gracza i zwraca jego akcję.                      |
+| `src/game/interactions/itemConfig.ts`             | Zawiera nazwy i teksty inspekcji używek.                                         |
+| `src/game/interactions/itemPresentationConfig.ts` | Zawiera skale i orientacje modeli na stole oraz w inspekcji.                     |
+| `src/game/interactions/inspectPresentation.ts`    | Centruje modele na osobnej osi obrotu podglądu.                                  |
+| `src/game/interactions/InspectControls.ts`        | Obsługuje obrót i bezpieczne zbliżenie przedmiotu w inspekcji.                   |
+| `src/game/interactions/ItemUseSequence.ts`        | Steruje kamerą, postacią, animacją, rekwizytem i markerem użycia.                |
+| `src/game/interactions/SeatController.ts`         | Sadza wybraną postać na krześle, odtwarza animację i steruje kamerą.             |
+| `src/game/interactions/itemUseSequenceConfig.ts`  | Konfiguruje czasy, rekwizyty i ruch pięciu sekwencji użycia.                     |
+| `src/game/lifecycle/AppStateMachine.ts`           | Pilnuje przejść między menu, grą, inspekcją i pauzą.                             |
+| `src/game/lifecycle/InputBindings.ts`             | Jest jednym źródłem skrótów klawiaturowych i podpowiedzi kontekstowych.          |
+| `src/game/lifecycle/PointerLockPauseGate.ts`      | Odróżnia wyjście z Pointer Lock od nieudanego przejęcia myszy.                   |
+| `src/game/lifecycle/AnimationLoop.ts`             | Prowadzi pojedynczą pętlę `requestAnimationFrame`.                               |
+| `src/game/lifecycle/EventScope.ts`                | Rejestruje zdarzenia i zbiorczo je usuwa podczas sprzątania.                     |
+| `src/game/lifecycle/disposeThree.ts`              | Klonuje modele i zwalnia geometrie, materiały i tekstury.                        |
+| `src/game/npc/NpcAnimator.ts`                     | Prowadzi stany ruchu, crossfade, one-shoty i diagnostykę animacji NPC.           |
+| `src/game/npc/NpcBehaviorScheduler.ts`            | Planuje niezależne stany idle, wander, social i run-home każdego NPC.            |
 | `src/game/npc/NpcDebugOverlay.ts`                 | Wizualizuje collidery, ścieżki, siatkę nawigacji, cele oraz HUD telemetryczny.   |
 | `src/game/npc/NpcManager.ts`                      | Steruje celami, ruchem, bezczynnością, kolizjami i skalą NPC.                    |
 | `src/game/npc/npcConfig.ts`                       | Zawiera kwestie dialogowe postaci NPC.                                           |
@@ -120,6 +166,8 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 Katalog `src/game/world/vendor/three-stylized/` jest wydzielonym kodem bibliotecznym trawy. Nie jest automatycznie formatowany razem z kodem gry.
 
 Architekturę wielopoziomowego LOD trawy, moving tile wrap, parametry źdźbeł i presety jakości opisuje `docs/grass-rendering.md`.
+
+Rzeźbę terenu, dopasowanie wysokości postaci, materiał PBR ziemi grass004 oraz cylindryczną panoramę horyzontu opisuje `docs/terrain-and-horizon.md`.
 
 Szczegóły profili materiałowych, wynik audytu źródeł i lista kontroli wizualnych znajdują się w `docs/pbr-lighting.md`. Raport `reports/asset-validation.json` zawiera dla każdego GLB sekcję `pbr` oraz przypisany profil runtime.
 
