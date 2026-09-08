@@ -58,6 +58,7 @@ function addNpcInteractionHitbox(root: THREE.Group) {
 
 export class NpcManager {
   readonly npcs: Npc[] = [];
+  speakerAnchor: THREE.Object3D | null = null;
   constructor(
     scene: THREE.Scene,
     models: Map<string, GLTF>,
@@ -93,6 +94,7 @@ export class NpcManager {
         this.fit(accessory, 0.55);
         anchor.add(accessory);
         root.add(anchor);
+        this.speakerAnchor = anchor;
       }
       root.position.set(spawns[index][0], 0, spawns[index][1]);
       root.position.set(
@@ -419,6 +421,12 @@ export class NpcManager {
       this.updateAnimation(npc, dt);
     }
   }
+  /** Zwraca aktualną pozycję głośnika w przestrzeni świata lub null jeśli brak kotwicy. */
+  getSpeakerWorldPosition(target: THREE.Vector3 = new THREE.Vector3()): THREE.Vector3 | null {
+    if (!this.speakerAnchor) return null;
+    return this.speakerAnchor.getWorldPosition(target);
+  }
+
   /** Zatrzymuje miksery animacji wszystkich NPC. */
   dispose() {
     this.npcs.forEach((n) => n.animator?.dispose());
