@@ -98,6 +98,7 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `src/game/npc/npcConfig.ts`                       | Zawiera kwestie dialogowe postaci NPC.                                  |
 | `src/game/npc/locomotionCalibration.json`         | Definiuje metry cyklu, prędkości, progi oraz tempo rozpędzania NPC.     |
 | `src/game/npc/NpcNavigationGrid.ts`               | Buduje grid pola, wyznacza A* i wygładza waypointy.                     |
+| `src/game/npc/NpcSteering.ts`                     | Przewiduje kolizje i płynnie omija gracza, NPC oraz przeszkody.         |
 | `src/game/player/PlayerController.ts`             | Obsługuje ruch, kamerę pierwszoosobową i Pointer Lock.                  |
 | `src/game/rendering/pbrMaterials.ts`              | Normalizuje przestrzenie barw, roughness i metalness modeli GLB.        |
 | `src/game/rendering/colorPipeline.ts`             | Ujednolica sRGB, ACES i ekspozycję wszystkich rendererów.               |
@@ -119,6 +120,8 @@ Szczegóły profili materiałowych, wynik audytu źródeł i lista kontroli wizu
 Sposób pomiaru cykli `Walk`/`Run`, wzór synchronizacji `timeScale` i parametry strojenia ruchu opisuje `docs/npc-locomotion.md`.
 
 Granice gridu, margines kapsuły, sposób działania A* oraz metryki kosztu tras opisuje `docs/npc-navigation.md`.
+
+Predykcyjne sondy przeszkód, separację agentów i ograniczenie prędkości skrętu opisuje `docs/npc-steering.md`.
 
 ## Układ namiotów
 

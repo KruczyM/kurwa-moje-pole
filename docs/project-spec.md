@@ -889,6 +889,10 @@ w małym promieniu wokół spawnu.
   lub `idle`.
 - Unikanie przeszkód używa uproszczonych colliderów namiotów, toi-toia, masztu,
   stołu, gracza i innych NPC. Linki namiotowe nie blokują ruchu.
+- Lokalne sterowanie sonduje trasę przed NPC, przewiduje położenie sąsiadów i
+  stosuje separację również względem gracza. Ograniczona prędkość kątowa oraz
+  łagodne zwalnianie zapobiegają odbijaniu, drżeniu twarzą w twarz i szybkiemu
+  przełączaniu animacji Walk/Idle.
 - Kontroler mierzy czas bez postępu. Po wykryciu utknięcia wybiera nowy cel lub
   wykonuje ograniczoną korektę, zamiast odbijać się wielokrotnie w tym samym
   miejscu. W development dostępny jest widok celów, colliderów i stanu AI.
