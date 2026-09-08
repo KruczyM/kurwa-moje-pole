@@ -4,7 +4,7 @@
 > [KruczyM/kurwa-moje-pole](https://github.com/KruczyM/kurwa-moje-pole).
 > Stan na 2026-09-08. Źródłem prawdy pozostaje GitHub.
 
-Liczba otwartych issue: **16**.
+Liczba otwartych issue: **14**.
 
 ## Szybka lista
 
@@ -13,7 +13,7 @@ Liczba otwartych issue: **16**.
 - [ ] [#10 — [Trawa] Wprowadzić gęstą aksamitną trawę z LOD i presetami jakości](https://github.com/KruczyM/kurwa-moje-pole/issues/10)
 - [ ] [#11 — [Teren] Dopracować łagodne nierówności, materiał grass004 i horyzont](https://github.com/KruczyM/kurwa-moje-pole/issues/11)
 - [x] [#12 — [Materiały] Audyt PBR i oświetlenia postaci, namiotów, flagi i rekwizytów](https://github.com/KruczyM/kurwa-moje-pole/issues/12)
-- [ ] [#13 — [EPIC] Inteligentni NPC z płynną locomotion](https://github.com/KruczyM/kurwa-moje-pole/issues/13)
+- [x] [#13 — [EPIC] Inteligentni NPC z płynną locomotion](https://github.com/KruczyM/kurwa-moje-pole/issues/13)
 - [x] [#15 — [Animacje NPC] Zastąpić restart klipów maszyną stanów i płynnym crossfade](https://github.com/KruczyM/kurwa-moje-pole/issues/15)
 - [x] [#16 — [Animacje NPC] Zsynchronizować fazę kroków, prędkość świata i time scale](https://github.com/KruczyM/kurwa-moje-pole/issues/16)
 - [x] [#17 — [Nawigacja NPC] Zbudować przechodnią siatkę pola i wyznaczanie pełnych tras](https://github.com/KruczyM/kurwa-moje-pole/issues/17)
@@ -177,7 +177,7 @@ Liczba otwartych issue: **16**.
 
 #### [#13 — [EPIC] Inteligentni NPC z płynną locomotion](https://github.com/KruczyM/kurwa-moje-pole/issues/13)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `epic`, `priority: critical`, `area: npc-ai`, `area: animation`
 - Przypisani: brak
 - Utworzono: 2026-08-30
