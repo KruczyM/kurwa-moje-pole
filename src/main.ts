@@ -150,6 +150,26 @@ if (grassQualitySelect) {
   };
 }
 
+const matrixModeSelect = document.querySelector<HTMLSelectElement>('#setting-matrix-mode');
+if (matrixModeSelect) {
+  matrixModeSelect.onchange = (event) => {
+    const val = (event.target as HTMLSelectElement).value;
+    if (val === 'auto' || val === 'always' || val === 'off') {
+      game?.updateSettings({ matrixMode: val });
+    }
+  };
+}
+
+const matrixQualitySelect = document.querySelector<HTMLSelectElement>('#setting-matrix-quality');
+if (matrixQualitySelect) {
+  matrixQualitySelect.onchange = (event) => {
+    const val = (event.target as HTMLSelectElement).value;
+    if (val === 'low' || val === 'medium' || val === 'high') {
+      game?.updateSettings({ matrixQuality: val });
+    }
+  };
+}
+
 (
   [
     'reduce-motion',
