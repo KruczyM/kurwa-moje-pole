@@ -270,6 +270,10 @@ System musi obsługiwać:
 - Linki namiotowe nie są przeszkodami.
 - Jeśli NPC przez określony czas nie zmienia pozycji, kontroler uznaje go za zablokowanego, wybiera nowy cel i wykonuje bezpieczną korektę pozycji.
 - Animator wybiera `Idle`, `Walk` lub `Run` na podstawie rzeczywistej prędkości.
+- `NpcAnimator` utrzymuje jawny stan locomotion i minimalny czas stanu, dlatego krótkie odbicie od przeszkody nie restartuje klipu ani nie powoduje oscylacji `Idle ↔ Walk`.
+- Przejścia `Idle`, `Walk` i `Run` używają crossfade z warpingiem czasu oraz przenoszą znormalizowaną fazę poprzedniego klipu.
+- Animacje jednorazowe trafiają do kolejki FIFO i po zdarzeniu `finished` wracają do ostatniego żądanego stanu locomotion.
+- Diagnostyka animatora udostępnia aktywny klip, fazę, stan oczekujący, kolejkę one-shotów oraz ostatnie przejście bez ingerencji w mikser.
 
 Za tę logikę odpowiada jeden `NpcNavigationController`, a nie osobne przypadkowe timery przypisane do każdej postaci.
 
