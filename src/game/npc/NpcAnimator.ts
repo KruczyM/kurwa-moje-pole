@@ -5,6 +5,11 @@ import {
   locomotionClipNames,
   resolveCanonicalAnimationName,
 } from '../animation/animationContract';
+import {
+  LOCOMOTION_CYCLE_METERS,
+  referenceSpeedForCycle,
+  timeScaleForWorldSpeed,
+} from './locomotionCalibration';
 
 export const LOCOMOTION_ROOT_LIMIT = 4;
 
@@ -29,6 +34,10 @@ export type NpcAnimationDiagnostics = {
   currentClip: CanonicalAnimationClip;
   normalizedTime: number;
   stateElapsed: number;
+  worldSpeed: number;
+  effectiveTimeScale: number;
+  referenceMetersPerSecond: number;
+  cycleMeters: number;
   oneShot: CanonicalAnimationClip | null;
   queuedOneShots: number;
   transitionCount: number;
@@ -92,7 +101,8 @@ export class NpcAnimator {
   private stateElapsed = 0;
   private transitionCount = 0;
   private lastTransition: NpcAnimationTransition | null = null;
-  private walkTimeScale = 0.78;
+  private movementSpeed = 0;
+  private crossfadeUntil = 0;
   private readonly fadeSeconds: number;
   private readonly minimumStateSeconds: Record<LocomotionClip, number>;
 
@@ -127,7 +137,9 @@ export class NpcAnimator {
 
   /** Zwraca tempo właściwe dla klipu, zachowując dopasowanie chodu do prędkości świata. */
   private timeScaleFor(name: CanonicalAnimationClip) {
-    return name === 'Walk' ? this.walkTimeScale : 1;
+    if (name !== 'Walk' && name !== 'Run') return 1;
+    const duration = this.actions.get(name)?.getClip().duration ?? 0;
+    return timeScaleForWorldSpeed(name, this.movementSpeed, duration);
   }
 
   /** Oblicza fazę aktywnego klipu w zakresie 0..1 na potrzeby diagnostyki i synchronizacji kroków. */
@@ -152,8 +164,10 @@ export class NpcAnimator {
     next.setEffectiveTimeScale(this.timeScaleFor(name)).setEffectiveWeight(1);
     if (preservePhase && next.getClip().duration > 0) next.time = phase * next.getClip().duration;
     next.play();
-    if (previous && fade > 0) next.crossFadeFrom(previous, fade, true);
-    else previous?.stop();
+    if (previous && fade > 0) {
+      next.crossFadeFrom(previous, fade, true);
+      this.crossfadeUntil = Math.max(this.crossfadeUntil, this.mixer.time + fade);
+    } else previous?.stop();
 
     this.currentClip = name;
     this.transitionCount += 1;
@@ -200,8 +214,10 @@ export class NpcAnimator {
     next.clampWhenFinished = true;
     next.setLoop(THREE.LoopOnce, 1);
     next.setEffectiveTimeScale(1).setEffectiveWeight(1).play();
-    if (previous && this.fadeSeconds > 0) next.crossFadeFrom(previous, this.fadeSeconds, true);
-    else previous?.stop();
+    if (previous && this.fadeSeconds > 0) {
+      next.crossFadeFrom(previous, this.fadeSeconds, true);
+      this.crossfadeUntil = Math.max(this.crossfadeUntil, this.mixer.time + this.fadeSeconds);
+    } else previous?.stop();
     this.activeOneShot = name;
     this.currentClip = name;
     this.transitionCount += 1;
@@ -220,11 +236,18 @@ export class NpcAnimator {
     this.startNextOneShot();
   };
 
-  /** Dopasowuje tempo animacji chodu do prędkości NPC. */
-  setWalkTimeScale(scale: number) {
-    this.walkTimeScale = Math.max(0.01, scale);
-    const walk = this.actions.get('Walk');
-    if (walk) walk.setEffectiveTimeScale(this.walkTimeScale);
+  /** Nakłada obliczone skale czasu po zakończeniu warpingowego okna crossfade. */
+  private applyMovementTimeScales() {
+    for (const name of ['Walk', 'Run'] as const) {
+      const action = this.actions.get(name);
+      if (action) action.setEffectiveTimeScale(this.timeScaleFor(name));
+    }
+  }
+
+  /** Synchronizuje Walk i Run z prędkością świata bez przerywania trwającego warpingu przejścia. */
+  setMovementSpeed(worldSpeed: number) {
+    this.movementSpeed = Math.max(0, worldSpeed);
+    if (this.mixer.time >= this.crossfadeUntil) this.applyMovementTimeScales();
   }
 
   /** Żąda stanu Idle/Walk/Run; krótkie oscylacje są odkładane zamiast restartować klip. */
@@ -253,6 +276,9 @@ export class NpcAnimator {
 
   /** Udostępnia stabilny zrzut stanu dla overlayu diagnostycznego i testów. */
   getDiagnostics(): NpcAnimationDiagnostics {
+    const action = this.actions.get(this.currentClip);
+    const locomotion = this.currentClip === 'Walk' || this.currentClip === 'Run' ? this.currentClip : null;
+    const duration = action?.getClip().duration ?? 0;
     return {
       locomotionState: this.locomotionState,
       requestedLocomotion: this.requestedLocomotion,
@@ -260,6 +286,10 @@ export class NpcAnimator {
       currentClip: this.currentClip,
       normalizedTime: this.normalizedTime(),
       stateElapsed: this.stateElapsed,
+      worldSpeed: this.movementSpeed,
+      effectiveTimeScale: action?.getEffectiveTimeScale() ?? 0,
+      referenceMetersPerSecond: locomotion ? referenceSpeedForCycle(locomotion, duration) : 0,
+      cycleMeters: locomotion ? LOCOMOTION_CYCLE_METERS[locomotion] : 0,
       oneShot: this.activeOneShot,
       queuedOneShots: this.oneShotQueue.length,
       transitionCount: this.transitionCount,
@@ -270,8 +300,10 @@ export class NpcAnimator {
   /** Przesuwa mikser i zatwierdza odłożony stan, gdy minie minimalny czas histerezy. */
   update(deltaTime: number) {
     const safeDelta = Math.max(0, deltaTime);
+    const wasCrossfading = this.mixer.time < this.crossfadeUntil;
     this.stateElapsed += safeDelta;
     this.mixer.update(safeDelta);
+    if (wasCrossfading && this.mixer.time >= this.crossfadeUntil) this.applyMovementTimeScales();
     if (
       !this.activeOneShot &&
       this.pendingLocomotion &&

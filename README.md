@@ -95,7 +95,8 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `src/game/lifecycle/disposeThree.ts`              | Klonuje modele i zwalnia geometrie, materiały i tekstury.               |
 | `src/game/npc/NpcAnimator.ts`                     | Prowadzi stany ruchu, crossfade, one-shoty i diagnostykę animacji NPC.  |
 | `src/game/npc/NpcManager.ts`                      | Steruje celami, ruchem, bezczynnością, kolizjami i skalą NPC.           |
-| `src/game/npc/npcConfig.ts`                       | Definiuje zachowania i parametry ruchu postaci.                         |
+| `src/game/npc/npcConfig.ts`                       | Zawiera kwestie dialogowe postaci NPC.                                  |
+| `src/game/npc/locomotionCalibration.json`         | Definiuje metry cyklu, prędkości, progi oraz tempo rozpędzania NPC.     |
 | `src/game/player/PlayerController.ts`             | Obsługuje ruch, kamerę pierwszoosobową i Pointer Lock.                  |
 | `src/game/rendering/pbrMaterials.ts`              | Normalizuje przestrzenie barw, roughness i metalness modeli GLB.        |
 | `src/game/rendering/colorPipeline.ts`             | Ujednolica sRGB, ACES i ekspozycję wszystkich rendererów.               |
@@ -113,6 +114,8 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 Katalog `src/game/world/vendor/three-stylized/` jest wydzielonym kodem bibliotecznym trawy. Nie jest automatycznie formatowany razem z kodem gry.
 
 Szczegóły profili materiałowych, wynik audytu źródeł i lista kontroli wizualnych znajdują się w `docs/pbr-lighting.md`. Raport `reports/asset-validation.json` zawiera dla każdego GLB sekcję `pbr` oraz przypisany profil runtime.
+
+Sposób pomiaru cykli `Walk`/`Run`, wzór synchronizacji `timeScale` i parametry strojenia ruchu opisuje `docs/npc-locomotion.md`.
 
 ## Układ namiotów
 

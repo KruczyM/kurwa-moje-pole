@@ -5,6 +5,7 @@ import { characterAssets } from '../assets/assetManifest';
 import { npcLines } from './npcConfig';
 import { NpcAnimator } from './NpcAnimator';
 import { enableInteractionLayer } from '../interactions/InteractionManager';
+import { NPC_MOTION, approachSpeed, brakingSpeed, locomotionForSpeed } from './locomotionCalibration';
 export type Npc = {
   root: THREE.Group;
   name: string;
@@ -15,6 +16,7 @@ export type Npc = {
   wait: number;
   returning: boolean;
   stationary: boolean;
+  speed: number;
 };
 const spawns = [
     [-2, -1],
@@ -99,6 +101,7 @@ export class NpcManager {
         wait: 0.6 + index * 0.18,
         returning: false,
         stationary: index === 0 || index === 3 || index === 5,
+        speed: 0,
       };
       this.pickTarget(npc, false);
       this.npcs.push(npc);
@@ -137,47 +140,62 @@ export class NpcManager {
   private overlapsOther(npc: Npc, next: THREE.Vector3) {
     return this.npcs.some((other) => other !== npc && other.root.position.distanceToSquared(next) < 1.25);
   }
+
+  /** Wiąże klip i jego timeScale z bieżącą, płynnie zmienianą prędkością NPC. */
+  private updateAnimation(npc: Npc, deltaTime: number) {
+    npc.animator?.setMovementSpeed(npc.speed);
+    npc.animator?.play(locomotionForSpeed(npc.speed, npc.returning));
+    npc.animator?.update(deltaTime);
+  }
+
   /** Aktualizuje decyzje ruchu, obrót, powroty od granicy i płynne animacje NPC. */
   update(dt: number, time: number) {
     for (const npc of this.npcs) {
       if (npc.stationary) {
         npc.root.position.y = Math.sin(time * 1.2 + npc.phase) * 0.01;
-        npc.animator?.play('Idle');
-        npc.animator?.update(dt);
+        npc.speed = approachSpeed(npc.speed, 0, dt);
+        this.updateAnimation(npc, dt);
         continue;
       }
       if (npc.wait > 0) {
         npc.wait -= dt;
-        npc.animator?.play('Idle');
-        npc.animator?.update(dt);
+        npc.speed = approachSpeed(npc.speed, 0, dt);
+        this.updateAnimation(npc, dt);
         continue;
       }
-      const dir = npc.target.clone().sub(npc.root.position);
+      let dir = npc.target.clone().sub(npc.root.position);
       dir.y = 0;
-      if (dir.length() < 0.42) {
+      let distance = dir.length();
+      if (distance <= NPC_MOTION.arrivalRadius && npc.speed < NPC_MOTION.idleSpeedThreshold) {
         npc.wait = 0.5 + Math.random() * 1.7;
         this.pickTarget(npc, false);
-        npc.animator?.play('Idle');
-        npc.animator?.update(dt);
+        npc.speed = 0;
+        this.updateAnimation(npc, dt);
         continue;
       }
-      dir.normalize();
       const nearEdge =
         Math.abs(npc.root.position.x) > FIELD_EDGE - 2 || Math.abs(npc.root.position.z) > FIELD_EDGE - 2;
-      if (nearEdge && !npc.returning) this.pickTarget(npc, true);
-      const speed = npc.returning ? 1.55 : 0.8,
-        next = npc.root.position.clone().addScaledVector(dir, dt * speed);
+      if (nearEdge && !npc.returning) {
+        this.pickTarget(npc, true);
+        dir = npc.target.clone().sub(npc.root.position);
+        dir.y = 0;
+        distance = dir.length();
+      }
+      if (distance > 0) dir.multiplyScalar(1 / distance);
+      const maximumSpeed = npc.returning ? NPC_MOTION.runSpeed : NPC_MOTION.walkSpeed;
+      const desiredSpeed = brakingSpeed(distance, maximumSpeed);
+      npc.speed = approachSpeed(npc.speed, desiredSpeed, dt);
+      const step = Math.min(distance, dt * npc.speed);
+      const next = npc.root.position.clone().addScaledVector(dir, step);
       if (!this.canMove(next.x, next.z) || this.overlapsOther(npc, next)) {
         this.pickTarget(npc, false);
         npc.wait = 0.18;
-        npc.animator?.play('Idle');
+        npc.speed = 0;
       } else {
         npc.root.position.copy(next);
         npc.root.rotation.y = THREE.MathUtils.damp(npc.root.rotation.y, Math.atan2(dir.x, dir.z), 10, dt);
-        npc.animator?.setWalkTimeScale(npc.returning ? 1.18 : 0.8);
-        npc.animator?.play(npc.returning ? 'Run' : 'Walk');
       }
-      npc.animator?.update(dt);
+      this.updateAnimation(npc, dt);
     }
   }
   /** Zatrzymuje miksery animacji wszystkich NPC. */

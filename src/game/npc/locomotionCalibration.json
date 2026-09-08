@@ -1,0 +1,15 @@
+{
+  "cycleMeters": {
+    "Walk": 1.45,
+    "Run": 3.2
+  },
+  "motion": {
+    "walkSpeed": 0.95,
+    "runSpeed": 2.35,
+    "acceleration": 1.8,
+    "deceleration": 2.8,
+    "arrivalRadius": 0.12,
+    "idleSpeedThreshold": 0.08,
+    "runSpeedThreshold": 1.3
+  }
+}

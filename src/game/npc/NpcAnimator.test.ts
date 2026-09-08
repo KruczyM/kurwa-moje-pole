@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { NpcAnimator, stabilizeLocomotionRoot } from './NpcAnimator';
+import { timeScaleForWorldSpeed } from './locomotionCalibration';
 
 /** Tworzy klipy o różnych długościach, aby dało się sprawdzić zachowanie fazy przejścia. */
 function animationSet() {
@@ -130,6 +131,51 @@ describe('NpcAnimator state machine', () => {
       transitionCount: 1,
       lastTransition: { from: 'Idle', to: 'Walk', duration: 0.3 },
     });
+    animator.dispose();
+  });
+
+  it('keeps speed-derived timeScale active after changing locomotion clips', () => {
+    const clips = animationSet();
+    const animator = new NpcAnimator(new THREE.Group(), clips, {
+      minimumStateSeconds: { Idle: 0, Walk: 0, Run: 0 },
+    });
+
+    animator.setMovementSpeed(0.95);
+    animator.play('Walk');
+    expect(animator.getDiagnostics()).toMatchObject({
+      currentClip: 'Walk',
+      effectiveTimeScale: timeScaleForWorldSpeed('Walk', 0.95, 4),
+      worldSpeed: 0.95,
+      cycleMeters: 1.45,
+    });
+
+    animator.setMovementSpeed(2.35);
+    animator.play('Run');
+    expect(animator.getDiagnostics()).toMatchObject({
+      currentClip: 'Run',
+      effectiveTimeScale: timeScaleForWorldSpeed('Run', 2.35, 1),
+      worldSpeed: 2.35,
+      cycleMeters: 3.2,
+    });
+    animator.dispose();
+  });
+
+  it('does not cancel time warping when speed changes during a crossfade', () => {
+    const clips = animationSet();
+    const animator = new NpcAnimator(new THREE.Group(), clips, {
+      fadeSeconds: 0.3,
+      minimumStateSeconds: { Idle: 0, Walk: 0, Run: 0 },
+    });
+    animator.setMovementSpeed(0.8);
+    animator.play('Walk');
+    const walk = animator.mixer.existingAction(clips[1])!;
+    const stopWarping = vi.spyOn(walk, 'stopWarping');
+
+    animator.setMovementSpeed(0.95);
+    expect(stopWarping).not.toHaveBeenCalled();
+    animator.update(0.31);
+    expect(stopWarping).toHaveBeenCalled();
+    expect(walk.getEffectiveTimeScale()).toBeCloseTo(timeScaleForWorldSpeed('Walk', 0.95, 4));
     animator.dispose();
   });
 

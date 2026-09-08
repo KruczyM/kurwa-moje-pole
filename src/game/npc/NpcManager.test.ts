@@ -41,4 +41,22 @@ describe('NpcManager', () => {
     expect(hitbox.layers.isEnabled(INTERACTION_LAYER)).toBe(true);
     manager.dispose();
   });
+
+  it('accelerates a walking NPC instead of applying its full speed in one frame', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, () => true);
+    const npc = manager.npcs.find((candidate) => !candidate.stationary)!;
+    manager.npcs.forEach((candidate, index) => candidate.root.position.set(100 + index * 3, 0, 100));
+    npc.root.position.set(0, 0, 0);
+    npc.target.set(10, 0, 0);
+    npc.wait = 0;
+
+    manager.update(0.1, 0);
+    expect(npc.speed).toBeCloseTo(0.18, 5);
+    expect(npc.root.position.x).toBeCloseTo(0.018, 5);
+
+    manager.update(0.1, 0.1);
+    expect(npc.speed).toBeCloseTo(0.36, 5);
+    expect(npc.root.position.x).toBeCloseTo(0.054, 5);
+    manager.dispose();
+  });
 });
