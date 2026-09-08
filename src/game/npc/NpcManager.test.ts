@@ -50,12 +50,18 @@ describe('NpcManager', () => {
 
   it('accelerates a walking NPC instead of applying its full speed in one frame', () => {
     const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
-    const npc = manager.npcs.find((candidate) => !candidate.stationary)!;
+    const npc = manager.npcs[1];
     manager.npcs.forEach((candidate, index) => candidate.root.position.set(100 + index * 3, 0, 100));
     npc.root.position.set(0, 0, 0);
     npc.target.set(10, 0, 0);
     npc.waypoints = [npc.target.clone()];
     npc.wait = 0;
+    npc.behavior.update(10, {
+      nearEdge: false,
+      insideSafeZone: true,
+      arrived: false,
+      socialAvailable: false,
+    });
 
     manager.update(0.1, 0);
     expect(npc.speed).toBeCloseTo(0.18, 5);
@@ -64,6 +70,23 @@ describe('NpcManager', () => {
     manager.update(0.1, 0.1);
     expect(npc.speed).toBeCloseTo(0.36, 5);
     expect(npc.root.position.x).toBeCloseTo(0.054, 5);
+    manager.dispose();
+  });
+
+  it('enters run-home only at the edge and leaves it in the safe camp zone', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    const npc = manager.npcs[2];
+    npc.root.position.set(19, 0, 0);
+
+    manager.update(0.1, 0);
+    expect(npc.behavior.state).toBe('run-home');
+    expect(npc.returning).toBe(true);
+
+    npc.root.position.set(10, 0, 0);
+    manager.update(0.1, 0.1);
+    expect(npc.behavior.state).toBe('idle');
+    expect(npc.returning).toBe(false);
+    expect(npc.stationary).toBe(true);
     manager.dispose();
   });
 });

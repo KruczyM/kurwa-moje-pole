@@ -8,6 +8,7 @@ import { enableInteractionLayer } from '../interactions/InteractionManager';
 import { NPC_MOTION, approachSpeed, brakingSpeed, locomotionForSpeed } from './locomotionCalibration';
 import { NpcNavigationGrid } from './NpcNavigationGrid';
 import { computeNpcSteering, NPC_STEERING, turnDirectionTowards } from './NpcSteering';
+import { NPC_BEHAVIOR_PROFILES, NpcBehaviorAction, NpcBehaviorScheduler } from './NpcBehaviorScheduler';
 export type Npc = {
   root: THREE.Group;
   name: string;
@@ -22,6 +23,7 @@ export type Npc = {
   velocity: THREE.Vector3;
   steeringDirection: THREE.Vector3;
   waypoints: THREE.Vector3[];
+  behavior: NpcBehaviorScheduler;
 };
 const spawns = [
     [-2, -1],
@@ -101,16 +103,19 @@ export class NpcManager {
         animator,
         phase: index,
         target: new THREE.Vector3(),
-        wait: 0.6 + index * 0.18,
+        wait: 0,
         returning: false,
-        stationary: index === 0 || index === 3 || index === 5,
+        stationary: true,
         speed: 0,
         velocity: new THREE.Vector3(),
         steeringDirection: new THREE.Vector3(),
         waypoints: [],
+        behavior: new NpcBehaviorScheduler(
+          NPC_BEHAVIOR_PROFILES[index % NPC_BEHAVIOR_PROFILES.length],
+          0x51f15e + index * 977,
+        ),
       };
-      if (npc.stationary) npc.target.copy(root.position);
-      else this.pickTarget(npc, false);
+      npc.target.copy(root.position);
       this.npcs.push(npc);
     });
   }
@@ -128,21 +133,81 @@ export class NpcManager {
     box.setFromObject(object);
     object.position.y = -box.min.y;
   }
-  /** Losuje osiągalny cel i zapisuje kompletną, wygładzoną trasę do niego. */
-  private pickTarget(npc: Npc, toCamp: boolean) {
-    npc.returning = toCamp;
-    const targetBounds = toCamp
-      ? { minX: -CAMP_RADIUS, maxX: CAMP_RADIUS, minZ: -CAMP_RADIUS, maxZ: CAMP_RADIUS }
-      : {};
-    for (let attempt = 0; attempt < 16; attempt += 1) {
-      const candidate = this.navigation.randomWalkablePoint(Math.random, targetBounds);
+  /** Zwraca granice jednego z dziewięciu sektorów pełnego pola z marginesem od krawędzi. */
+  private sectorBounds(sector: number) {
+    const column = sector % 3;
+    const row = Math.floor(sector / 3);
+    const width = (this.navigation.bounds.maxX - this.navigation.bounds.minX) / 3;
+    const depth = (this.navigation.bounds.maxZ - this.navigation.bounds.minZ) / 3;
+    const margin = this.navigation.cellSize;
+    return {
+      minX: this.navigation.bounds.minX + column * width + margin,
+      maxX: this.navigation.bounds.minX + (column + 1) * width - margin,
+      minZ: this.navigation.bounds.minZ + row * depth + margin,
+      maxZ: this.navigation.bounds.minZ + (row + 1) * depth - margin,
+    };
+  }
+
+  /** Losuje osiągalny cel w nowym sektorze i zapisuje kompletną, wygładzoną trasę. */
+  private pickWanderTarget(npc: Npc) {
+    for (let attempt = 0; attempt < 18; attempt += 1) {
+      const sector = npc.behavior.nextSector(9);
+      const candidate = this.navigation.randomWalkablePoint(
+        () => npc.behavior.random(),
+        this.sectorBounds(sector),
+      );
       if (!candidate || candidate.distanceToSquared(npc.root.position) <= 25) continue;
-      if (this.routeTo(npc, candidate)) return;
+      if (this.routeTo(npc, candidate)) return true;
     }
-    const fallback = new THREE.Vector3(0, 0, 0);
-    if (!this.routeTo(npc, fallback)) {
-      npc.target.copy(npc.root.position);
+    return false;
+  }
+
+  /** Kieruje NPC do losowego, bezpiecznego punktu centralnej części obozu. */
+  private pickRunHomeTarget(npc: Npc) {
+    const bounds = { minX: -CAMP_RADIUS, maxX: CAMP_RADIUS, minZ: -CAMP_RADIUS, maxZ: CAMP_RADIUS };
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      const candidate = this.navigation.randomWalkablePoint(() => npc.behavior.random(), bounds);
+      if (candidate && this.routeTo(npc, candidate)) return true;
+    }
+    return this.routeTo(npc, new THREE.Vector3());
+  }
+
+  /** Wybiera krótkie spotkanie w pobliżu pojedynczego NPC, bez tworzenia dużych grup. */
+  private pickSocialTarget(npc: Npc) {
+    const candidates = this.npcs.filter(
+      (other) =>
+        other !== npc &&
+        other.behavior.state !== 'run-home' &&
+        other.root.position.distanceToSquared(npc.root.position) > 9 &&
+        other.root.position.distanceToSquared(npc.root.position) < 196,
+    );
+    if (!candidates.length) return false;
+    const partner = candidates[Math.floor(npc.behavior.random() * candidates.length)];
+    const direction = partner.root.position.clone().sub(npc.root.position).setY(0).normalize();
+    const side = new THREE.Vector3(-direction.z, 0, direction.x).multiplyScalar(1.35);
+    const candidate = partner.root.position.clone().add(side);
+    return this.navigation.canStandAt(candidate.x, candidate.z) && this.routeTo(npc, candidate);
+  }
+
+  /** Stosuje decyzję schedulera i przygotowuje odpowiedni cel nawigacji. */
+  private applyBehaviorAction(npc: Npc, action: NpcBehaviorAction) {
+    npc.returning = action === 'run-home';
+    if (action === 'idle') {
       npc.waypoints.length = 0;
+      npc.target.copy(npc.root.position);
+      return;
+    }
+    const routed =
+      action === 'wander'
+        ? this.pickWanderTarget(npc)
+        : action === 'social'
+          ? this.pickSocialTarget(npc)
+          : this.pickRunHomeTarget(npc);
+    if (!routed) {
+      npc.behavior.routeFailed();
+      npc.returning = false;
+      npc.waypoints.length = 0;
+      npc.target.copy(npc.root.position);
     }
   }
 
@@ -168,7 +233,30 @@ export class NpcManager {
       position: npc.root.position.clone(),
       velocity: npc.velocity.clone(),
     }));
+    let socialCount = this.npcs.filter((npc) => npc.behavior.state === 'social').length;
     for (const npc of this.npcs) {
+      const nearEdge =
+        Math.abs(npc.root.position.x) > this.navigation.bounds.maxX - 2 ||
+        Math.abs(npc.root.position.z) > this.navigation.bounds.maxZ - 2;
+      const insideSafeZone =
+        Math.abs(npc.root.position.x) <= CAMP_RADIUS && Math.abs(npc.root.position.z) <= CAMP_RADIUS;
+      const arrived =
+        npc.behavior.travelling &&
+        npc.waypoints.length <= 1 &&
+        npc.target.distanceToSquared(npc.root.position) <= NPC_MOTION.arrivalRadius ** 2;
+      const previousState = npc.behavior.state;
+      const action = npc.behavior.update(dt, {
+        nearEdge,
+        insideSafeZone,
+        arrived,
+        socialAvailable: socialCount < 2 && this.npcs.length > 1,
+      });
+      if (action) this.applyBehaviorAction(npc, action);
+      if (previousState !== 'social' && npc.behavior.state === 'social') socialCount += 1;
+      if (previousState === 'social' && npc.behavior.state !== 'social') socialCount -= 1;
+      npc.returning = npc.behavior.state === 'run-home';
+      npc.stationary = !npc.behavior.travelling;
+
       if (npc.stationary) {
         npc.root.position.y = Math.sin(time * 1.2 + npc.phase) * 0.01;
         npc.speed = approachSpeed(npc.speed, 0, dt);
@@ -183,10 +271,6 @@ export class NpcManager {
         this.updateAnimation(npc, dt);
         continue;
       }
-      const nearEdge =
-        Math.abs(npc.root.position.x) > this.navigation.bounds.maxX - 2 ||
-        Math.abs(npc.root.position.z) > this.navigation.bounds.maxZ - 2;
-      if (nearEdge && !npc.returning) this.pickTarget(npc, true);
 
       let waypoint = npc.waypoints[0] ?? npc.target;
       let dir = waypoint.clone().sub(npc.root.position);
@@ -198,13 +282,6 @@ export class NpcManager {
         dir = waypoint.clone().sub(npc.root.position);
         dir.y = 0;
         distance = dir.length();
-      }
-      if (distance <= NPC_MOTION.arrivalRadius && npc.speed < NPC_MOTION.idleSpeedThreshold) {
-        npc.wait = 0.5 + Math.random() * 1.7;
-        this.pickTarget(npc, false);
-        npc.speed = 0;
-        this.updateAnimation(npc, dt);
-        continue;
       }
       if (distance > 0) dir.multiplyScalar(1 / distance);
       const neighbors = snapshots
@@ -231,7 +308,10 @@ export class NpcManager {
       const step = Math.min(distance, dt * npc.speed);
       const next = npc.root.position.clone().addScaledVector(npc.steeringDirection, step);
       if (!this.navigation.canStandAt(next.x, next.z)) {
-        if (!this.routeTo(npc, npc.target)) this.pickTarget(npc, false);
+        if (!this.routeTo(npc, npc.target)) {
+          npc.behavior.routeFailed();
+          npc.waypoints.length = 0;
+        }
         npc.wait = 0.08;
         npc.speed = 0;
         npc.velocity.set(0, 0, 0);

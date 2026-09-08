@@ -893,6 +893,10 @@ w małym promieniu wokół spawnu.
   stosuje separację również względem gracza. Ograniczona prędkość kątowa oraz
   łagodne zwalnianie zapobiegają odbijaniu, drżeniu twarzą w twarz i szybkiemu
   przełączaniu animacji Walk/Idle.
+- Każda postać ma niezależny profil czasów oraz scheduler stanów idle, wander,
+  social i run-home. Scheduler pamięta ostatnie sektory, ogranicza spotkania
+  społeczne do dwóch uczestników i używa cooldownów, aby zapobiegać
+  synchronicznym decyzjom oraz oscylacji przy granicy.
 - Kontroler mierzy czas bez postępu. Po wykryciu utknięcia wybiera nowy cel lub
   wykonuje ograniczoną korektę, zamiast odbijać się wielokrotnie w tym samym
   miejscu. W development dostępny jest widok celów, colliderów i stanu AI.
