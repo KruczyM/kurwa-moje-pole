@@ -94,6 +94,7 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `src/game/lifecycle/EventScope.ts`                | Rejestruje zdarzenia i zbiorczo je usuwa podczas sprzątania.            |
 | `src/game/lifecycle/disposeThree.ts`              | Klonuje modele i zwalnia geometrie, materiały i tekstury.               |
 | `src/game/npc/NpcAnimator.ts`                     | Prowadzi stany ruchu, crossfade, one-shoty i diagnostykę animacji NPC.  |
+| `src/game/npc/NpcBehaviorScheduler.ts`            | Planuje niezależne stany idle, wander, social i run-home każdego NPC.   |
 | `src/game/npc/NpcManager.ts`                      | Steruje celami, ruchem, bezczynnością, kolizjami i skalą NPC.           |
 | `src/game/npc/npcConfig.ts`                       | Zawiera kwestie dialogowe postaci NPC.                                  |
 | `src/game/npc/locomotionCalibration.json`         | Definiuje metry cyklu, prędkości, progi oraz tempo rozpędzania NPC.     |
@@ -122,6 +123,8 @@ Sposób pomiaru cykli `Walk`/`Run`, wzór synchronizacji `timeScale` i parametry
 Granice gridu, margines kapsuły, sposób działania A* oraz metryki kosztu tras opisuje `docs/npc-navigation.md`.
 
 Predykcyjne sondy przeszkód, separację agentów i ograniczenie prędkości skrętu opisuje `docs/npc-steering.md`.
+
+Profile zachowania, sektory wędrówki, spotkania i cooldown powrotu od granicy opisuje `docs/npc-behavior.md`.
 
 ## Układ namiotów
 

@@ -2,9 +2,9 @@
 
 > Automatyczna migawka otwartych zadań z repozytorium
 > [KruczyM/kurwa-moje-pole](https://github.com/KruczyM/kurwa-moje-pole).
-> Stan na 2026-09-01. Źródłem prawdy pozostaje GitHub.
+> Stan na 2026-09-08. Źródłem prawdy pozostaje GitHub.
 
-Liczba otwartych issue: **29**.
+Liczba otwartych issue: **17**.
 
 ## Szybka lista
 
@@ -18,7 +18,7 @@ Liczba otwartych issue: **29**.
 - [x] [#16 — [Animacje NPC] Zsynchronizować fazę kroków, prędkość świata i time scale](https://github.com/KruczyM/kurwa-moje-pole/issues/16)
 - [x] [#17 — [Nawigacja NPC] Zbudować przechodnią siatkę pola i wyznaczanie pełnych tras](https://github.com/KruczyM/kurwa-moje-pole/issues/17)
 - [x] [#18 — [Steering NPC] Dodać przewidywanie przeszkód i łagodne omijanie agentów](https://github.com/KruczyM/kurwa-moje-pole/issues/18)
-- [ ] [#19 — [Zachowanie NPC] Dodać scheduler stanów wander, idle, social i run-home](https://github.com/KruczyM/kurwa-moje-pole/issues/19)
+- [x] [#19 — [Zachowanie NPC] Dodać scheduler stanów wander, idle, social i run-home](https://github.com/KruczyM/kurwa-moje-pole/issues/19)
 - [ ] [#20 — [AI NPC] Dodać watchdog utknięcia i ochronę przed zapętleniem decyzji](https://github.com/KruczyM/kurwa-moje-pole/issues/20)
 - [ ] [#21 — [Debug NPC] Dodać overlay diagnostyczny i test 30-minutowej sesji AI](https://github.com/KruczyM/kurwa-moje-pole/issues/21)
 - [ ] [#22 — [Interakcje] Naprawić wykrywanie przedmiotów leżących na stole](https://github.com/KruczyM/kurwa-moje-pole/issues/22)
@@ -327,11 +327,11 @@ Liczba otwartych issue: **29**.
 
 #### [#19 — [Zachowanie NPC] Dodać scheduler stanów wander, idle, social i run-home](https://github.com/KruczyM/kurwa-moje-pole/issues/19)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: high`, `area: npc-ai`, `area: animation`
 - Przypisani: brak
 - Utworzono: 2026-08-30
-- Ostatnia aktualizacja: 2026-08-30
+- Ostatnia aktualizacja: 2026-09-08
 
 <details>
 <summary>Pełna treść issue</summary>
