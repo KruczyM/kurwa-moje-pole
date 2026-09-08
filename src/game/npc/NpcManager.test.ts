@@ -3,6 +3,12 @@ import { describe, expect, it } from 'vitest';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { NpcManager } from './NpcManager';
 import { INTERACTION_LAYER } from '../interactions/InteractionManager';
+import { NpcNavigationGrid } from './NpcNavigationGrid';
+
+/** Buduje mały, całkowicie przechodni grid używany przez testy menedżera. */
+function openNavigation() {
+  return new NpcNavigationGrid({ minX: -20, maxX: 20, minZ: -20, maxZ: 20 }, 1, () => true);
+}
 
 /** Buduje minimalny asset, którego rozmiar zmienia się dopiero po uruchomieniu Idle. */
 function animatedScaleAsset(): GLTF {
@@ -20,7 +26,7 @@ describe('NpcManager', () => {
   it('fits a character after applying its initial animated pose', () => {
     const scene = new THREE.Scene();
     const models = new Map([['amper', animatedScaleAsset()]]);
-    const manager = new NpcManager(scene, models, null, () => true);
+    const manager = new NpcManager(scene, models, null, openNavigation());
     const visual = manager.npcs[0].root.children[0];
     const height = new THREE.Box3().setFromObject(visual).getSize(new THREE.Vector3()).y;
 
@@ -31,7 +37,7 @@ describe('NpcManager', () => {
   it('adds a stable interaction hitbox independent of the animated mesh pose', () => {
     const scene = new THREE.Scene();
     const models = new Map([['amper', animatedScaleAsset()]]);
-    const manager = new NpcManager(scene, models, null, () => true);
+    const manager = new NpcManager(scene, models, null, openNavigation());
     const npc = manager.npcs[0];
     const hitbox = npc.root.getObjectByName('NpcInteractionHitbox') as THREE.Mesh;
 
@@ -43,11 +49,12 @@ describe('NpcManager', () => {
   });
 
   it('accelerates a walking NPC instead of applying its full speed in one frame', () => {
-    const manager = new NpcManager(new THREE.Scene(), new Map(), null, () => true);
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
     const npc = manager.npcs.find((candidate) => !candidate.stationary)!;
     manager.npcs.forEach((candidate, index) => candidate.root.position.set(100 + index * 3, 0, 100));
     npc.root.position.set(0, 0, 0);
     npc.target.set(10, 0, 0);
+    npc.waypoints = [npc.target.clone()];
     npc.wait = 0;
 
     manager.update(0.1, 0);

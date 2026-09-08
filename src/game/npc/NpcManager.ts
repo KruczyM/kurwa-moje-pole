@@ -6,6 +6,7 @@ import { npcLines } from './npcConfig';
 import { NpcAnimator } from './NpcAnimator';
 import { enableInteractionLayer } from '../interactions/InteractionManager';
 import { NPC_MOTION, approachSpeed, brakingSpeed, locomotionForSpeed } from './locomotionCalibration';
+import { NpcNavigationGrid } from './NpcNavigationGrid';
 export type Npc = {
   root: THREE.Group;
   name: string;
@@ -17,6 +18,7 @@ export type Npc = {
   returning: boolean;
   stationary: boolean;
   speed: number;
+  waypoints: THREE.Vector3[];
 };
 const spawns = [
     [-2, -1],
@@ -28,7 +30,6 @@ const spawns = [
     [7, -4],
     [-8, 5],
   ],
-  FIELD_EDGE = 53,
   CAMP_RADIUS = 13;
 
 /** Dodaje stabilną strefę interakcji niezależną od aktualnej pozy animowanej siatki. */
@@ -49,12 +50,11 @@ function addNpcInteractionHitbox(root: THREE.Group) {
 
 export class NpcManager {
   readonly npcs: Npc[] = [];
-  private candidate = new THREE.Vector3();
   constructor(
     scene: THREE.Scene,
     models: Map<string, GLTF>,
     speaker: GLTF | null,
-    private canMove: (x: number, z: number) => boolean,
+    readonly navigation: NpcNavigationGrid,
   ) {
     characterAssets.forEach((asset, index) => {
       const root = new THREE.Group(),
@@ -102,8 +102,10 @@ export class NpcManager {
         returning: false,
         stationary: index === 0 || index === 3 || index === 5,
         speed: 0,
+        waypoints: [],
       };
-      this.pickTarget(npc, false);
+      if (npc.stationary) npc.target.copy(root.position);
+      else this.pickTarget(npc, false);
       this.npcs.push(npc);
     });
   }
@@ -121,20 +123,31 @@ export class NpcManager {
     box.setFromObject(object);
     object.position.y = -box.min.y;
   }
-  /** Losuje osiągalny cel w całym polu albo w centralnej strefie powrotu. */
+  /** Losuje osiągalny cel i zapisuje kompletną, wygładzoną trasę do niego. */
   private pickTarget(npc: Npc, toCamp: boolean) {
     npc.returning = toCamp;
-    const range = toCamp ? CAMP_RADIUS : FIELD_EDGE - 2;
-    for (let i = 0; i < 32; i++) {
-      const x = (Math.random() * 2 - 1) * range,
-        z = (Math.random() * 2 - 1) * range;
-      this.candidate.set(x, 0, z);
-      if (this.canMove(x, z) && this.candidate.distanceToSquared(npc.root.position) > 25) {
-        npc.target.copy(this.candidate);
-        return;
-      }
+    const targetBounds = toCamp
+      ? { minX: -CAMP_RADIUS, maxX: CAMP_RADIUS, minZ: -CAMP_RADIUS, maxZ: CAMP_RADIUS }
+      : {};
+    for (let attempt = 0; attempt < 16; attempt += 1) {
+      const candidate = this.navigation.randomWalkablePoint(Math.random, targetBounds);
+      if (!candidate || candidate.distanceToSquared(npc.root.position) <= 25) continue;
+      if (this.routeTo(npc, candidate)) return;
     }
-    npc.target.set(0, 0, 0);
+    const fallback = new THREE.Vector3(0, 0, 0);
+    if (!this.routeTo(npc, fallback)) {
+      npc.target.copy(npc.root.position);
+      npc.waypoints.length = 0;
+    }
+  }
+
+  /** Przelicza A* do konkretnego celu i pomija waypoint leżący bezpośrednio pod NPC. */
+  private routeTo(npc: Npc, target: THREE.Vector3) {
+    const path = this.navigation.findPath(npc.root.position, target);
+    if (path.length < 2) return false;
+    npc.target.copy(path[path.length - 1]);
+    npc.waypoints = path.slice(path[0].distanceToSquared(npc.root.position) < 0.04 ? 1 : 0);
+    return npc.waypoints.length > 0;
   }
   /** Chroni NPC przed wejściem w przestrzeń zajętą przez inną postać. */
   private overlapsOther(npc: Npc, next: THREE.Vector3) {
@@ -163,9 +176,22 @@ export class NpcManager {
         this.updateAnimation(npc, dt);
         continue;
       }
-      let dir = npc.target.clone().sub(npc.root.position);
+      const nearEdge =
+        Math.abs(npc.root.position.x) > this.navigation.bounds.maxX - 2 ||
+        Math.abs(npc.root.position.z) > this.navigation.bounds.maxZ - 2;
+      if (nearEdge && !npc.returning) this.pickTarget(npc, true);
+
+      let waypoint = npc.waypoints[0] ?? npc.target;
+      let dir = waypoint.clone().sub(npc.root.position);
       dir.y = 0;
       let distance = dir.length();
+      while (distance <= NPC_MOTION.arrivalRadius && npc.waypoints.length > 1) {
+        npc.waypoints.shift();
+        waypoint = npc.waypoints[0];
+        dir = waypoint.clone().sub(npc.root.position);
+        dir.y = 0;
+        distance = dir.length();
+      }
       if (distance <= NPC_MOTION.arrivalRadius && npc.speed < NPC_MOTION.idleSpeedThreshold) {
         npc.wait = 0.5 + Math.random() * 1.7;
         this.pickTarget(npc, false);
@@ -173,24 +199,19 @@ export class NpcManager {
         this.updateAnimation(npc, dt);
         continue;
       }
-      const nearEdge =
-        Math.abs(npc.root.position.x) > FIELD_EDGE - 2 || Math.abs(npc.root.position.z) > FIELD_EDGE - 2;
-      if (nearEdge && !npc.returning) {
-        this.pickTarget(npc, true);
-        dir = npc.target.clone().sub(npc.root.position);
-        dir.y = 0;
-        distance = dir.length();
-      }
       if (distance > 0) dir.multiplyScalar(1 / distance);
       const maximumSpeed = npc.returning ? NPC_MOTION.runSpeed : NPC_MOTION.walkSpeed;
-      const desiredSpeed = brakingSpeed(distance, maximumSpeed);
+      const desiredSpeed = npc.waypoints.length > 1 ? maximumSpeed : brakingSpeed(distance, maximumSpeed);
       npc.speed = approachSpeed(npc.speed, desiredSpeed, dt);
       const step = Math.min(distance, dt * npc.speed);
       const next = npc.root.position.clone().addScaledVector(dir, step);
-      if (!this.canMove(next.x, next.z) || this.overlapsOther(npc, next)) {
-        this.pickTarget(npc, false);
-        npc.wait = 0.18;
+      if (!this.navigation.canStandAt(next.x, next.z)) {
+        if (!this.routeTo(npc, npc.target)) this.pickTarget(npc, false);
+        npc.wait = 0.08;
         npc.speed = 0;
+      } else if (this.overlapsOther(npc, next)) {
+        npc.wait = 0.18;
+        npc.speed = approachSpeed(npc.speed, 0, dt);
       } else {
         npc.root.position.copy(next);
         npc.root.rotation.y = THREE.MathUtils.damp(npc.root.rotation.y, Math.atan2(dir.x, dir.z), 10, dt);
