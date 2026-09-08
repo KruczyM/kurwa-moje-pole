@@ -530,6 +530,8 @@ To jest podział odpowiedzialności, a nie nakaz tworzenia klasy dla każdego dr
 - wspólne animacje;
 - ruch NPC po całym polu;
 - unikanie przeszkód i powrót biegiem od granicy.
+- unikanie przeszkód i powrót biegiem od granicy;
+- watchdog utknięcia, ochrona przed oscylacją i stopniowane odzyskiwanie.
 
 ### Etap 4 — interakcje
 

@@ -89,4 +89,118 @@ describe('NpcManager', () => {
     expect(npc.stationary).toBe(true);
     manager.dispose();
   });
+
+  it('triggers watchdog recovery when an agent is stuck against an obstacle without resetting animations', () => {
+    // Grid z przeszkodą bezpośrednio przed NPC: (0,0) jest wolne, ale (x > 0) jest zablokowane
+    const blockedNav = new NpcNavigationGrid(
+      { minX: -20, maxX: 20, minZ: -20, maxZ: 20 },
+      1,
+      (x) => x <= 0.1,
+    );
+    const logs: any[] = [];
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, blockedNav, {
+      noMovementLimitSeconds: 1.0,
+      logger: (entry) => logs.push(entry),
+    });
+
+    const npc = manager.npcs[0];
+    // Przesuń pozostałych NPC daleko
+    manager.npcs.forEach((other, index) => {
+      if (other !== npc) other.root.position.set(100 + index * 3, 0, 100);
+    });
+
+    npc.root.position.set(0, 0, 0);
+    npc.target.set(5, 0, 0);
+    npc.waypoints = [new THREE.Vector3(1, 0, 0)];
+    npc.behavior.state = 'wander';
+    npc.behavior.travelling = true;
+    npc.stationary = false;
+    npc.wait = 0;
+
+    // Aktualizacje przez 1.2s - NPC próbuje iść w prawo, ale trafia na blokadę
+    for (let i = 0; i < 12; i++) {
+      manager.update(0.1, i * 0.1);
+    }
+
+    // Watchdog musiał wykryć utknięcie i podjąć akcję
+    expect(npc.watchdog.recoveryCount).toBeGreaterThanOrEqual(1);
+    expect(logs.length).toBeGreaterThanOrEqual(1);
+    expect(logs[0].npcName).toBe(npc.name);
+    expect(logs[0].reason).toBe('no_movement');
+    expect(logs[0].action).toBe('steer_nudge');
+    expect(logs[0].message).toContain('[NpcWatchdog]');
+    manager.dispose();
+  });
+
+  it('teleports an agent as emergency fallback after prolonged stuckness across all recovery tiers', () => {
+    const blockedNav = new NpcNavigationGrid(
+      { minX: -20, maxX: 20, minZ: -20, maxZ: 20 },
+      1,
+      (x, z) => Math.abs(x) < 5 && Math.abs(z) < 5,
+    );
+    const logs: any[] = [];
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, blockedNav, {
+      noMovementLimitSeconds: 0.5,
+      logger: (entry) => logs.push(entry),
+    });
+
+    const npc = manager.npcs[1];
+    npc.root.position.set(0, 0, 0);
+    npc.target.set(15, 0, 15);
+    npc.waypoints = [new THREE.Vector3(10, 0, 10)];
+    npc.behavior.state = 'wander';
+    npc.behavior.travelling = true;
+    npc.stationary = false;
+
+    // Utrzymujemy pozycję na przeszkodzie przez 6 sekund, pozwalając schedulerowi na kolejne próby
+    for (let step = 0; step < 60; step++) {
+      npc.root.position.set(0, 0, 0);
+      manager.update(0.1, step * 0.1);
+    }
+
+    const actions = logs.map((l) => l.action);
+    expect(actions).toContain('steer_nudge');
+    expect(actions).toContain('repath');
+    expect(actions).toContain('new_target');
+    expect(actions).toContain('teleport');
+
+    // Ostateczna akcja to teleport
+    const teleportLog = logs.find((l) => l.action === 'teleport');
+    expect(teleportLog).toBeDefined();
+    expect(teleportLog.npcName).toBe(npc.name);
+    manager.dispose();
+  });
+
+  it('preserves animator state without excessive clip resets during watchdog recoveries', () => {
+    const scene = new THREE.Scene();
+    const models = new Map([['amper', animatedScaleAsset()]]);
+    const blockedNav = new NpcNavigationGrid(
+      { minX: -20, maxX: 20, minZ: -20, maxZ: 20 },
+      1,
+      (x) => x <= 0.1,
+    );
+    const manager = new NpcManager(scene, models, null, blockedNav, {
+      noMovementLimitSeconds: 0.3,
+    });
+    const npc = manager.npcs[0];
+
+    npc.root.position.set(0, 0, 0);
+    npc.target.set(5, 0, 0);
+    npc.waypoints = [new THREE.Vector3(1, 0, 0)];
+    npc.behavior.state = 'wander';
+    npc.behavior.travelling = true;
+    npc.stationary = false;
+
+    // Wykonaj 10 kroków - watchdog podejmie recovery (steer_nudge, repath)
+    for (let i = 0; i < 10; i++) {
+      manager.update(0.1, i * 0.1);
+    }
+
+    expect(npc.watchdog.recoveryCount).toBeGreaterThanOrEqual(1);
+    // Animator pozostał w poprawnym stanie locomotion i nie rzuca błędami
+    const diag = npc.animator?.getDiagnostics();
+    expect(diag).toBeDefined();
+    expect(diag?.currentClip).toBe('Idle'); // animatedScaleAsset ma tylko Idle
+    manager.dispose();
+  });
 });
