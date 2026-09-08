@@ -586,7 +586,9 @@ export class Game {
         this.player?.update(dt, this.effects?.modifiers || { speed: 1, sway: 0, shake: 0, bob: 1 });
         this.updateInteractionPrompt();
       }
-      if (state === 'playing' || state === 'seated') this.npcs?.update(dt, this.clock.elapsedTime);
+      if (state === 'playing' || state === 'seated') {
+        this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position);
+      }
       if (state === 'seated') this.seatController?.update(dt);
       this.world?.update(this.clock.elapsedTime);
       this.effects?.update(dt);

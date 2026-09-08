@@ -7,6 +7,7 @@ import { NpcAnimator } from './NpcAnimator';
 import { enableInteractionLayer } from '../interactions/InteractionManager';
 import { NPC_MOTION, approachSpeed, brakingSpeed, locomotionForSpeed } from './locomotionCalibration';
 import { NpcNavigationGrid } from './NpcNavigationGrid';
+import { computeNpcSteering, NPC_STEERING, turnDirectionTowards } from './NpcSteering';
 export type Npc = {
   root: THREE.Group;
   name: string;
@@ -18,6 +19,8 @@ export type Npc = {
   returning: boolean;
   stationary: boolean;
   speed: number;
+  velocity: THREE.Vector3;
+  steeringDirection: THREE.Vector3;
   waypoints: THREE.Vector3[];
 };
 const spawns = [
@@ -102,6 +105,8 @@ export class NpcManager {
         returning: false,
         stationary: index === 0 || index === 3 || index === 5,
         speed: 0,
+        velocity: new THREE.Vector3(),
+        steeringDirection: new THREE.Vector3(),
         waypoints: [],
       };
       if (npc.stationary) npc.target.copy(root.position);
@@ -149,11 +154,6 @@ export class NpcManager {
     npc.waypoints = path.slice(path[0].distanceToSquared(npc.root.position) < 0.04 ? 1 : 0);
     return npc.waypoints.length > 0;
   }
-  /** Chroni NPC przed wejściem w przestrzeń zajętą przez inną postać. */
-  private overlapsOther(npc: Npc, next: THREE.Vector3) {
-    return this.npcs.some((other) => other !== npc && other.root.position.distanceToSquared(next) < 1.25);
-  }
-
   /** Wiąże klip i jego timeScale z bieżącą, płynnie zmienianą prędkością NPC. */
   private updateAnimation(npc: Npc, deltaTime: number) {
     npc.animator?.setMovementSpeed(npc.speed);
@@ -162,17 +162,24 @@ export class NpcManager {
   }
 
   /** Aktualizuje decyzje ruchu, obrót, powroty od granicy i płynne animacje NPC. */
-  update(dt: number, time: number) {
+  update(dt: number, time: number, playerPosition?: THREE.Vector3) {
+    const snapshots = this.npcs.map((npc) => ({
+      npc,
+      position: npc.root.position.clone(),
+      velocity: npc.velocity.clone(),
+    }));
     for (const npc of this.npcs) {
       if (npc.stationary) {
         npc.root.position.y = Math.sin(time * 1.2 + npc.phase) * 0.01;
         npc.speed = approachSpeed(npc.speed, 0, dt);
+        npc.velocity.set(0, 0, 0);
         this.updateAnimation(npc, dt);
         continue;
       }
       if (npc.wait > 0) {
         npc.wait -= dt;
         npc.speed = approachSpeed(npc.speed, 0, dt);
+        npc.velocity.set(0, 0, 0);
         this.updateAnimation(npc, dt);
         continue;
       }
@@ -200,21 +207,42 @@ export class NpcManager {
         continue;
       }
       if (distance > 0) dir.multiplyScalar(1 / distance);
+      const neighbors = snapshots
+        .filter((snapshot) => snapshot.npc !== npc)
+        .map((snapshot) => ({ position: snapshot.position, velocity: snapshot.velocity }));
+      if (playerPosition) {
+        neighbors.push({ position: playerPosition, velocity: new THREE.Vector3() });
+      }
+      const steering = computeNpcSteering({
+        position: npc.root.position,
+        desiredDirection: dir,
+        velocity: npc.velocity,
+        speed: npc.speed,
+        neighbors,
+        canStandAt: (x, z) => this.navigation.canStandAt(x, z),
+      });
+      npc.steeringDirection.copy(
+        turnDirectionTowards(npc.steeringDirection, steering.direction, NPC_STEERING.maximumTurnRate * dt),
+      );
       const maximumSpeed = npc.returning ? NPC_MOTION.runSpeed : NPC_MOTION.walkSpeed;
-      const desiredSpeed = npc.waypoints.length > 1 ? maximumSpeed : brakingSpeed(distance, maximumSpeed);
+      const pathSpeed = npc.waypoints.length > 1 ? maximumSpeed : brakingSpeed(distance, maximumSpeed);
+      const desiredSpeed = pathSpeed * steering.speedScale;
       npc.speed = approachSpeed(npc.speed, desiredSpeed, dt);
       const step = Math.min(distance, dt * npc.speed);
-      const next = npc.root.position.clone().addScaledVector(dir, step);
+      const next = npc.root.position.clone().addScaledVector(npc.steeringDirection, step);
       if (!this.navigation.canStandAt(next.x, next.z)) {
         if (!this.routeTo(npc, npc.target)) this.pickTarget(npc, false);
         npc.wait = 0.08;
         npc.speed = 0;
-      } else if (this.overlapsOther(npc, next)) {
-        npc.wait = 0.18;
-        npc.speed = approachSpeed(npc.speed, 0, dt);
+        npc.velocity.set(0, 0, 0);
       } else {
+        const previous = npc.root.position.clone();
         npc.root.position.copy(next);
-        npc.root.rotation.y = THREE.MathUtils.damp(npc.root.rotation.y, Math.atan2(dir.x, dir.z), 10, dt);
+        npc.velocity
+          .copy(next)
+          .sub(previous)
+          .multiplyScalar(dt > 0 ? 1 / dt : 0);
+        npc.root.rotation.y = Math.atan2(npc.steeringDirection.x, npc.steeringDirection.z);
       }
       this.updateAnimation(npc, dt);
     }
