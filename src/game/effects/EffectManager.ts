@@ -6,6 +6,8 @@ import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { EffectTimeline } from './EffectTimeline';
 import { DEFAULT_GRASS_PRESET, type GrassQualityPreset } from '../world/grassQuality';
+import type { MatrixPhaseMode } from './MatrixPhaseController';
+import type { MatrixQualityPreset } from './MatrixRainOverlay';
 export type EffectId = 'Piwo' | 'Papieros' | 'Joint' | 'Kreska' | 'Grzyb' | 'MDMA' | 'LSD';
 export type EffectPhase = 'inactive' | 'fadeIn' | 'active' | 'fadeOut';
 export type VisualSettings = {
@@ -16,6 +18,8 @@ export type VisualSettings = {
   disableBloom: boolean;
   disableFlashes: boolean;
   disableAberration: boolean;
+  matrixMode: MatrixPhaseMode;
+  matrixQuality: MatrixQualityPreset;
   grassQuality: GrassQualityPreset;
 };
 export const defaultVisualSettings: VisualSettings = {
@@ -26,6 +30,8 @@ export const defaultVisualSettings: VisualSettings = {
   disableBloom: false,
   disableFlashes: false,
   disableAberration: false,
+  matrixMode: 'auto',
+  matrixQuality: 'medium',
   grassQuality: DEFAULT_GRASS_PRESET,
 };
 export type EffectConfig = {

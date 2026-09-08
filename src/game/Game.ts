@@ -21,6 +21,9 @@ import { EventScope } from './lifecycle/EventScope';
 import { cloneDisposableModel, disposeObjectTree } from './lifecycle/disposeThree';
 import { AnimationLoop } from './lifecycle/AnimationLoop';
 import { MushroomWireframeEffect } from './effects/MushroomWireframeEffect';
+import { MatrixRainOverlay } from './effects/MatrixRainOverlay';
+import { MatrixWireframeEffect } from './effects/MatrixWireframeEffect';
+import { MatrixPhaseController } from './effects/MatrixPhaseController';
 import { VoiceReactionManager } from './audio/VoiceReactionManager';
 import { POINTER_LOCK_ESCAPE_SUPPRESSION_MS, PointerLockPauseGate } from './lifecycle/PointerLockPauseGate';
 import { controlHintForState, interactionControlHint, resolveGameInput } from './lifecycle/InputBindings';
@@ -89,6 +92,16 @@ export function loadVisualSettings(): VisualSettings {
     };
     if (!isGrassQualityPreset(loaded.grassQuality)) {
       loaded.grassQuality = DEFAULT_GRASS_PRESET;
+    }
+    if (loaded.matrixMode !== 'auto' && loaded.matrixMode !== 'always' && loaded.matrixMode !== 'off') {
+      loaded.matrixMode = defaultVisualSettings.matrixMode;
+    }
+    if (
+      loaded.matrixQuality !== 'low' &&
+      loaded.matrixQuality !== 'medium' &&
+      loaded.matrixQuality !== 'high'
+    ) {
+      loaded.matrixQuality = defaultVisualSettings.matrixQuality;
     }
     if (typeof loaded.intensity !== 'number' || Number.isNaN(loaded.intensity)) {
       loaded.intensity = defaultVisualSettings.intensity;
@@ -171,6 +184,11 @@ export class Game {
   private disposed = false;
   private animationLoop = new AnimationLoop(() => this.updateFrame());
   private mushroomWireframe = new MushroomWireframeEffect(this.scene);
+  private matrixRain = new MatrixRainOverlay('#matrix-rain', {
+    quality: this.settings.matrixQuality,
+  });
+  private matrixWireframe = new MatrixWireframeEffect(this.scene);
+  private matrixController = new MatrixPhaseController(this.settings.matrixMode);
   private speakerReactionPlayed = false;
   private pointerLockPause = new PointerLockPauseGate();
   private readonly mobileInput = isMobileInputDevice();
@@ -682,6 +700,12 @@ export class Game {
     if (values.grassQuality && this.world) {
       this.world.setGrassQuality(values.grassQuality);
     }
+    if (values.matrixMode) {
+      this.matrixController.setMode(this.settings.matrixMode);
+    }
+    if (values.matrixQuality) {
+      this.matrixRain.setQuality(this.settings.matrixQuality);
+    }
     this.syncSettingsUi();
   }
 
@@ -720,6 +744,10 @@ export class Game {
     set('#setting-disable-aberration', this.settings.disableAberration);
     const grassSelect = document.querySelector<HTMLSelectElement>('#setting-grass-quality');
     if (grassSelect) grassSelect.value = this.settings.grassQuality;
+    const matrixModeSelect = document.querySelector<HTMLSelectElement>('#setting-matrix-mode');
+    if (matrixModeSelect) matrixModeSelect.value = this.settings.matrixMode;
+    const matrixQualitySelect = document.querySelector<HTMLSelectElement>('#setting-matrix-quality');
+    if (matrixQualitySelect) matrixQualitySelect.value = this.settings.matrixQuality;
   }
 
   /** Synchronizuje HUD, modale, sterowanie graczem i pointer lock ze stanem aplikacji. */
@@ -820,6 +848,19 @@ export class Game {
         this.effects?.visualIntensity || 0,
         this.effects?.settings.reduceMotion === true,
       );
+      const isDrugActive = Boolean(this.effects?.active && this.effects?.phase !== 'inactive');
+      const matrixAlpha = this.matrixController.update(
+        dt,
+        isDrugActive,
+        this.effects?.visualIntensity ?? 1,
+        this.settings.reduceMotion,
+      );
+      this.matrixRain.update(dt, matrixAlpha, this.settings.reduceMotion, this.settings.disableFlashes);
+      this.matrixWireframe.update(
+        this.matrixController.isWireframeEligible,
+        matrixAlpha,
+        this.settings.reduceMotion,
+      );
       if (state === 'inspecting' && this.inspectRenderer && this.inspectScene && this.inspectCamera) {
         this.inspectControls?.update(dt);
         if (this.inspectPivot && this.inspectControls) {
@@ -829,7 +870,10 @@ export class Game {
         this.inspectRenderer.render(this.inspectScene, this.inspectCamera);
       }
     }
-    if (state === 'paused' || state === 'error') this.mushroomWireframe.update(false, 0, 0, false);
+    if (state === 'paused' || state === 'error') {
+      this.mushroomWireframe.update(false, 0, 0, false);
+      this.matrixWireframe.update(false, 0, false);
+    }
     this.npcDebugOverlay?.update(this.camera);
     this.effects?.render();
     this.updateEffectHud();
@@ -927,6 +971,7 @@ export class Game {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(innerWidth, innerHeight);
     this.effects?.resize(innerWidth, innerHeight);
+    this.matrixRain.resize(innerWidth, innerHeight);
     if (this.state.current === 'inspecting') this.resizeInspectPreview();
   }
 
@@ -969,6 +1014,9 @@ export class Game {
     this.world?.dispose();
     this.effects?.dispose();
     this.mushroomWireframe.dispose();
+    this.matrixWireframe.dispose();
+    this.matrixRain.dispose();
+    this.matrixController.reset();
     this.speakerAudio.dispose();
     this.campAmbient.dispose();
     this.voiceReactions.dispose();

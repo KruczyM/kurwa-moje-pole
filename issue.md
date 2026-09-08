@@ -4,7 +4,7 @@
 > [KruczyM/kurwa-moje-pole](https://github.com/KruczyM/kurwa-moje-pole).
 > Stan na 2026-09-08. Źródłem prawdy pozostaje GitHub.
 
-Liczba otwartych issue: **10**.
+Liczba otwartych issue: **9**.
 
 ## Szybka lista
 
@@ -36,7 +36,7 @@ Liczba otwartych issue: **10**.
 - [ ] [#35 — [QA] Dodać automatyczne smoke/E2E i pełną macierz odbiorową](https://github.com/KruczyM/kurwa-moje-pole/issues/35)
 - [ ] [#36 — [Release] Przygotować deployment HTTPS/WSS, TURN i konfigurację środowisk](https://github.com/KruczyM/kurwa-moje-pole/issues/36)
 - [ ] [#37 — [Release] Audyt licencji, Git LFS, dokumentacji i archiwum źródeł](https://github.com/KruczyM/kurwa-moje-pole/issues/37)
-- [ ] [#43 — [Efekty] Dodać opcjonalną fazę Matrix z zielonym kodem](https://github.com/KruczyM/kurwa-moje-pole/issues/43)
+- [x] [#43 — [Efekty] Dodać opcjonalną fazę Matrix z zielonym kodem](https://github.com/KruczyM/kurwa-moje-pole/issues/43)
 
 ## Podział według etapów
 
@@ -596,11 +596,11 @@ Liczba otwartych issue: **10**.
 
 #### [#43 — [Efekty] Dodać opcjonalną fazę Matrix z zielonym kodem](https://github.com/KruczyM/kurwa-moje-pole/issues/43)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: medium`, `area: ui`, `area: effects`
 - Przypisani: brak
 - Utworzono: 2026-08-31
-- Ostatnia aktualizacja: 2026-08-31
+- Ostatnia aktualizacja: 2026-09-08
 
 <details>
 <summary>Pełna treść issue</summary>
