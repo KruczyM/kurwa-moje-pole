@@ -279,6 +279,7 @@ System musi obsługiwać:
 - Ruch używa jednostek m/s, ograniczonego przyspieszenia i drogi hamowania; `timeScale` jest obliczany z rzeczywistej długości klipu oraz dystansu pełnego cyklu opisanego w `docs/npc-locomotion.md`.
 
 Za tę logikę odpowiada jeden `NpcNavigationController`, a nie osobne przypadkowe timery przypisane do każdej postaci.
+Za stabilność wieloagentowej symulacji odpowiada watchdog (`NpcStuckWatchdog`), a diagnostykę w czasie rzeczywistym zapewnia overlay (`NpcDebugOverlay`, klawisz F2 lub `?debugNpc=1`), wizualizujący collidery, grid, ścieżki, cele i etykiety telemetryczne agentów. Odporność na wielogodzinne sesje bez permastucka i zapętleń decyzyjnych gwarantuje 30-minutowy test soak (`NpcSoakSession.test.ts`).
 
 ## 8. Interakcje i inspekcja przedmiotów
 

@@ -118,6 +118,11 @@ export class NpcBehaviorScheduler {
     return this.beginIdle(0.8, 1.8);
   }
 
+  /** Wymusza rozpoczęcie nowego wander z poziomu managera lub procedury recovery. */
+  forceWander() {
+    return this.beginTravel('wander');
+  }
+
   /** Przełącza stan na podróż do nowego celu. */
   private beginTravel(state: Exclude<NpcBehaviorState, 'idle'>): NpcBehaviorAction {
     this.state = state;

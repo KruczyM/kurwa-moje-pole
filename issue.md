@@ -4,13 +4,12 @@
 > [KruczyM/kurwa-moje-pole](https://github.com/KruczyM/kurwa-moje-pole).
 > Stan na 2026-09-08. Źródłem prawdy pozostaje GitHub.
 
-Liczba otwartych issue: **17**.
 Liczba otwartych issue: **16**.
 
 ## Szybka lista
 
-- [ ] [#8 — [Obóz] Wdrożyć duży namiot dla T10 i T15 oraz układ T01–T15 z konfiguracji](https://github.com/KruczyM/kurwa-moje-pole/issues/8)
-- [ ] [#9 — [Świat] Dopracować zadaszenie Mad Dog, maszt, flagę i hierarchię obozu](https://github.com/KruczyM/kurwa-moje-pole/issues/9)
+- [x] [#8 — [Obóz] Wdrożyć duży namiot dla T10 i T15 oraz układ T01–T15 z konfiguracji](https://github.com/KruczyM/kurwa-moje-pole/issues/8)
+- [x] [#9 — [Świat] Dopracować zadaszenie Mad Dog, maszt, flagę i hierarchię obozu](https://github.com/KruczyM/kurwa-moje-pole/issues/9)
 - [ ] [#10 — [Trawa] Wprowadzić gęstą aksamitną trawę z LOD i presetami jakości](https://github.com/KruczyM/kurwa-moje-pole/issues/10)
 - [ ] [#11 — [Teren] Dopracować łagodne nierówności, materiał grass004 i horyzont](https://github.com/KruczyM/kurwa-moje-pole/issues/11)
 - [x] [#12 — [Materiały] Audyt PBR i oświetlenia postaci, namiotów, flagi i rekwizytów](https://github.com/KruczyM/kurwa-moje-pole/issues/12)
@@ -20,13 +19,12 @@ Liczba otwartych issue: **16**.
 - [x] [#17 — [Nawigacja NPC] Zbudować przechodnią siatkę pola i wyznaczanie pełnych tras](https://github.com/KruczyM/kurwa-moje-pole/issues/17)
 - [x] [#18 — [Steering NPC] Dodać przewidywanie przeszkód i łagodne omijanie agentów](https://github.com/KruczyM/kurwa-moje-pole/issues/18)
 - [x] [#19 — [Zachowanie NPC] Dodać scheduler stanów wander, idle, social i run-home](https://github.com/KruczyM/kurwa-moje-pole/issues/19)
-- [ ] [#20 — [AI NPC] Dodać watchdog utknięcia i ochronę przed zapętleniem decyzji](https://github.com/KruczyM/kurwa-moje-pole/issues/20)
 - [x] [#20 — [AI NPC] Dodać watchdog utknięcia i ochronę przed zapętleniem decyzji](https://github.com/KruczyM/kurwa-moje-pole/issues/20)
-- [ ] [#21 — [Debug NPC] Dodać overlay diagnostyczny i test 30-minutowej sesji AI](https://github.com/KruczyM/kurwa-moje-pole/issues/21)
-- [ ] [#22 — [Interakcje] Naprawić wykrywanie przedmiotów leżących na stole](https://github.com/KruczyM/kurwa-moje-pole/issues/22)
-- [ ] [#23 — [Inspekcja] Dokończyć model preview, opisy i pełną obsługę E/Escape](https://github.com/KruczyM/kurwa-moje-pole/issues/23)
-- [ ] [#24 — [Sekwencje użycia] Dodać kamerę trzecioosobową, animacje i rekwizyty](https://github.com/KruczyM/kurwa-moje-pole/issues/24)
-- [ ] [#25 — [Efekty] Dopracować pięć odrębnych efektów i bezpieczne wygaszanie](https://github.com/KruczyM/kurwa-moje-pole/issues/25)
+- [x] [#21 — [Debug NPC] Dodać overlay diagnostyczny i test 30-minutowej sesji AI](https://github.com/KruczyM/kurwa-moje-pole/issues/21)
+- [x] [#22 — [Interakcje] Naprawić wykrywanie przedmiotów leżących na stole](https://github.com/KruczyM/kurwa-moje-pole/issues/22)
+- [x] [#23 — [Inspekcja] Dokończyć model preview, opisy i pełną obsługę E/Escape](https://github.com/KruczyM/kurwa-moje-pole/issues/23)
+- [x] [#24 — [Sekwencje użycia] Dodać kamerę trzecioosobową, animacje i rekwizyty](https://github.com/KruczyM/kurwa-moje-pole/issues/24)
+- [x] [#25 — [Efekty] Dopracować pięć odrębnych efektów i bezpieczne wygaszanie](https://github.com/KruczyM/kurwa-moje-pole/issues/25)
 - [ ] [#26 — [Dostępność] Uzupełnić ustawienia reduced motion, błysków i intensywności](https://github.com/KruczyM/kurwa-moje-pole/issues/26)
 - [ ] [#28 — [Audio] Dopracować głośnik i warstwę ambientu obozu](https://github.com/KruczyM/kurwa-moje-pole/issues/28)
 - [ ] [#29 — [Multiplayer] Utworzyć serwer pokojów i autorytatywną rezerwację postaci](https://github.com/KruczyM/kurwa-moje-pole/issues/29)
@@ -46,11 +44,11 @@ Liczba otwartych issue: **16**.
 
 #### [#8 — [Obóz] Wdrożyć duży namiot dla T10 i T15 oraz układ T01–T15 z konfiguracji](https://github.com/KruczyM/kurwa-moje-pole/issues/8)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: high`, `area: assets`, `area: world`
 - Przypisani: brak
 - Utworzono: 2026-08-30
-- Ostatnia aktualizacja: 2026-08-30
+- Ostatnia aktualizacja: 2026-09-03
 
 <details>
 <summary>Pełna treść issue</summary>
@@ -72,11 +70,11 @@ Liczba otwartych issue: **16**.
 
 #### [#9 — [Świat] Dopracować zadaszenie Mad Dog, maszt, flagę i hierarchię obozu](https://github.com/KruczyM/kurwa-moje-pole/issues/9)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: medium`, `area: world`
 - Przypisani: brak
 - Utworzono: 2026-08-30
-- Ostatnia aktualizacja: 2026-08-30
+- Ostatnia aktualizacja: 2026-09-03
 
 <details>
 <summary>Pełna treść issue</summary>
@@ -388,7 +386,7 @@ Liczba otwartych issue: **16**.
 
 #### [#21 — [Debug NPC] Dodać overlay diagnostyczny i test 30-minutowej sesji AI](https://github.com/KruczyM/kurwa-moje-pole/issues/21)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: high`, `area: npc-ai`, `area: animation`, `area: qa`
 - Przypisani: brak
 - Utworzono: 2026-08-30
@@ -418,11 +416,11 @@ Liczba otwartych issue: **16**.
 
 #### [#22 — [Interakcje] Naprawić wykrywanie przedmiotów leżących na stole](https://github.com/KruczyM/kurwa-moje-pole/issues/22)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: critical`, `area: interaction`, `area: qa`
 - Przypisani: brak
 - Utworzono: 2026-08-30
-- Ostatnia aktualizacja: 2026-08-31
+- Ostatnia aktualizacja: 2026-09-02
 
 <details>
 <summary>Pełna treść issue</summary>
@@ -445,11 +443,11 @@ Liczba otwartych issue: **16**.
 
 #### [#23 — [Inspekcja] Dokończyć model preview, opisy i pełną obsługę E/Escape](https://github.com/KruczyM/kurwa-moje-pole/issues/23)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: high`, `area: ui`, `area: interaction`
 - Przypisani: brak
 - Utworzono: 2026-08-30
-- Ostatnia aktualizacja: 2026-08-30
+- Ostatnia aktualizacja: 2026-09-02
 
 <details>
 <summary>Pełna treść issue</summary>
@@ -472,11 +470,11 @@ Liczba otwartych issue: **16**.
 
 #### [#24 — [Sekwencje użycia] Dodać kamerę trzecioosobową, animacje i rekwizyty](https://github.com/KruczyM/kurwa-moje-pole/issues/24)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: high`, `area: animation`, `area: interaction`
 - Przypisani: brak
 - Utworzono: 2026-08-30
-- Ostatnia aktualizacja: 2026-08-30
+- Ostatnia aktualizacja: 2026-09-03
 
 <details>
 <summary>Pełna treść issue</summary>
@@ -503,11 +501,11 @@ Liczba otwartych issue: **16**.
 
 #### [#25 — [Efekty] Dopracować pięć odrębnych efektów i bezpieczne wygaszanie](https://github.com/KruczyM/kurwa-moje-pole/issues/25)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: high`, `area: interaction`, `area: effects`
 - Przypisani: brak
 - Utworzono: 2026-08-30
-- Ostatnia aktualizacja: 2026-08-31
+- Ostatnia aktualizacja: 2026-09-03
 
 <details>
 <summary>Pełna treść issue</summary>

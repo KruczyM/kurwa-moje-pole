@@ -1,6 +1,6 @@
 # Watchdog utknięcia i ochrona przed zapętleniem decyzji NPC
 
-Plik `NpcStuckWatchdog.ts` zabezpiecza agentów NPC przed trwałym zablokowaniem w terenie, oscylacjami waypointów oraz zapętleniami decyzyjnymi. Każdy NPC posiada dedykowaną instancję watchdoga, która stale mierzy postęp wzdłuż trasy i w razie potrzeby uruchamia procedurę stopniowanego odzyskiwania (*graded recovery*).
+Plik `NpcStuckWatchdog.ts` zabezpiecza agentów NPC przed trwałym zablokowaniem w terenie, oscylacjami waypointów oraz zapętleniami decyzyjnymi. Każdy NPC posiada dedykowaną instancję watchdoga, która stale mierzy postęp wzdłuż trasy i w razie potrzeby uruchamia procedurę stopniowanego odzyskiwania (_graded recovery_).
 
 ## Monitorowane zjawiska
 
@@ -23,6 +23,7 @@ Plik `NpcStuckWatchdog.ts` zabezpiecza agentów NPC przed trwałym zablokowaniem
 ## Stopniowane odzyskiwanie (Graded Recovery)
 
 Procedura odzyskiwania eskaluje w czterech poziomach:
+
 - **Poziom 1: `steer_nudge`** — boczny impuls kierunkowy prostopadły do obecnego steeringu oraz wyczyszczenie blokady kolizyjnej, pozwalające ominąć lokalną przeszkodę;
 - **Poziom 2: `repath`** — ponowne wyznaczenie ścieżki A* z bieżącej pozycji do tego samego celu;
 - **Poziom 3: `new_target`** — porzucenie aktualnego celu i wylosowanie nowego osiągalnego punktu w innym sektorze mapy;
@@ -35,4 +36,3 @@ Po wykonaniu przez agenta trwałego, stabilnego ruchu o dystansie przekraczając
 - Akcje naprawcze nie wywołują `animator.reset()`. Zmiana kierunku, przeliczenie trasy ani wybór nowego celu nie resetują aktywnego miksera i nie powodują rwania klatek ani T-pose.
 - Każda interwencja emituje ustrukturyzowany wpis w logu podający: nazwę NPC, aktualną pozycję (x, y, z), stan, cel, powód oraz zastosowaną akcję.
 - Instancja watchdoga udostępnia metryki (`timeWithoutProgress`, `repathCount`, `stateTransitionCount`, `recoveryCount`) wykorzystywane przez overlay diagnostyczny (#21).
-
