@@ -12,6 +12,7 @@ import { NpcDebugOverlay, isNpcDebugAllowed } from './npc/NpcDebugOverlay';
 import { EffectManager, EffectId, VisualSettings, defaultVisualSettings } from './effects/EffectManager';
 import { InteractionManager } from './interactions/InteractionManager';
 import { SpeakerAudio } from './audio/SpeakerAudio';
+import { CampAmbientAudio } from './audio/CampAmbientAudio';
 import { InspectableItemId, itemById } from './interactions/itemConfig';
 import { itemPresentation } from './interactions/itemPresentationConfig';
 import { centerInspectModel, inspectCameraDistance } from './interactions/inspectPresentation';
@@ -100,6 +101,42 @@ export function loadVisualSettings(): VisualSettings {
   }
 }
 
+export type AudioSettings = {
+  speakerVolume: number;
+  ambientVolume: number;
+  speakerEnabled: boolean;
+};
+
+export const defaultAudioSettings: AudioSettings = {
+  speakerVolume: 0.7,
+  ambientVolume: 0.35,
+  speakerEnabled: false,
+};
+
+/** Odczytuje ustawienia dźwiękowe z localStorage lub zwraca wartości domyślne. */
+export function loadAudioSettings(): AudioSettings {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('camp-audio-settings') : null;
+    const parsed = raw ? JSON.parse(raw) : {};
+    return {
+      speakerVolume:
+        typeof parsed.speakerVolume === 'number' && !Number.isNaN(parsed.speakerVolume)
+          ? THREE.MathUtils.clamp(parsed.speakerVolume, 0, 1)
+          : defaultAudioSettings.speakerVolume,
+      ambientVolume:
+        typeof parsed.ambientVolume === 'number' && !Number.isNaN(parsed.ambientVolume)
+          ? THREE.MathUtils.clamp(parsed.ambientVolume, 0, 1)
+          : defaultAudioSettings.ambientVolume,
+      speakerEnabled:
+        typeof parsed.speakerEnabled === 'boolean'
+          ? parsed.speakerEnabled
+          : defaultAudioSettings.speakerEnabled,
+    };
+  } catch {
+    return { ...defaultAudioSettings };
+  }
+}
+
 export class Game {
   readonly canvas = qs<HTMLCanvasElement>('#game');
   readonly renderer: THREE.WebGLRenderer;
@@ -107,6 +144,7 @@ export class Game {
   readonly camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
   readonly clock = new THREE.Clock();
   readonly speakerAudio = new SpeakerAudio(musicAsset);
+  readonly campAmbient = new CampAmbientAudio();
   readonly voiceReactions = new VoiceReactionManager();
   player?: PlayerController;
   world?: CampWorld;
@@ -116,6 +154,7 @@ export class Game {
   interactions?: InteractionManager;
   toiletTimer = 0;
   private settings = loadVisualSettings();
+  private audioSettings = loadAudioSettings();
   private propModels = new Map<string, THREE.Object3D>();
   private inspectRenderer?: THREE.WebGLRenderer;
   private inspectScene?: THREE.Scene;
@@ -176,6 +215,8 @@ export class Game {
       this.mediaQueryList.addEventListener?.('change', this.mediaQueryHandler);
     }
     this.unsubscribeState = this.state.subscribe(({ to }) => this.syncState(to));
+    this.speakerAudio.setUserVolume(this.audioSettings.speakerVolume);
+    this.campAmbient.setVolume(this.audioSettings.ambientVolume);
     this.syncSettingsUi();
     this.syncInventoryUi();
     const lsdOverlay = qs('#lsd-overlay');
@@ -266,6 +307,10 @@ export class Game {
         (x, z) => this.world!.canMove(x, z),
       );
       this.seatController = new SeatController(this.scene, this.camera, selectedCharacter);
+      this.campAmbient.start();
+      if (this.audioSettings.speakerEnabled) {
+        void this.speakerAudio.play();
+      }
       this.startLoop();
       this.state.transition('playing');
     } catch (cause) {
@@ -348,9 +393,13 @@ export class Game {
         this.speakerReactionPlayed = true;
         this.voiceReactions.playFirstSpeaker();
       }
-      this.speakerAudio
-        .toggle()
-        .then((playing) => this.toast(playing ? 'Głośnik: muzyka włączona' : 'Głośnik: muzyka wyłączona'));
+      this.speakerAudio.toggle().then((playing) => {
+        this.audioSettings.speakerEnabled = playing;
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('camp-audio-settings', JSON.stringify(this.audioSettings));
+        }
+        this.toast(playing ? 'Głośnik: muzyka włączona' : 'Głośnik: muzyka wyłączona');
+      });
       return;
     }
     if (interaction.kind === 'toilet') {
@@ -636,15 +685,33 @@ export class Game {
     this.syncSettingsUi();
   }
 
-  /** Odświeża kontrolki dostępności na podstawie bieżących ustawień. */
+  /** Zapisuje częściowe ustawienia audio i natychmiast aktualizuje głośności głośnika i ambientu. */
+  updateAudioSettings(values: Partial<AudioSettings>) {
+    Object.assign(this.audioSettings, values);
+    if (typeof values.speakerVolume === 'number') {
+      this.speakerAudio.setUserVolume(this.audioSettings.speakerVolume);
+    }
+    if (typeof values.ambientVolume === 'number') {
+      this.campAmbient.setVolume(this.audioSettings.ambientVolume);
+    }
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('camp-audio-settings', JSON.stringify(this.audioSettings));
+    }
+    this.syncSettingsUi();
+  }
+
+  /** Odświeża kontrolki dostępności i audio na podstawie bieżących ustawień. */
   private syncSettingsUi() {
     /** Ustawia wartość pojedynczej kontrolki formularza ustawień. */
     const set = (id: string, value: boolean | number) => {
-      const input = qs<HTMLInputElement>(id);
-      if (input.type === 'range') input.value = String(Number(value) * 100);
+      const input = document.querySelector<HTMLInputElement>(id);
+      if (!input) return;
+      if (input.type === 'range') input.value = String(Math.round(Number(value) * 100));
       else input.checked = Boolean(value);
     };
     set('#setting-intensity', this.settings.intensity);
+    set('#setting-speaker-volume', this.audioSettings.speakerVolume);
+    set('#setting-ambient-volume', this.audioSettings.ambientVolume);
     set('#setting-reduce-motion', this.settings.reduceMotion);
     set('#setting-limit-sway', this.settings.limitSway);
     set('#setting-disable-shake', this.settings.disableShake);
@@ -665,6 +732,11 @@ export class Game {
     qs('#pause').hidden = state !== 'paused';
     qs('#effect-warning').hidden = state !== 'effect-warning';
     qs('#use-sequence').hidden = state !== 'using-item';
+    if (state === 'paused') {
+      this.campAmbient.pause();
+    } else if (state === 'playing') {
+      this.campAmbient.resume();
+    }
     const inputMode = this.mobileInput ? 'mobile' : 'desktop';
     qs('#controls-hud').textContent = controlHintForState(state, inputMode);
     qs('#inventory-help').textContent = controlHintForState('inventory', inputMode);
@@ -726,9 +798,13 @@ export class Game {
         this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position);
       }
       if (state === 'seated') this.seatController?.update(dt);
-      this.world?.update(this.clock.elapsedTime);
       this.world?.update(this.clock.elapsedTime, this.camera.position);
       this.effects?.update(dt);
+      const speakerPos = this.npcs?.getSpeakerWorldPosition();
+      if (speakerPos) {
+        this.speakerAudio.setSpeakerPosition(speakerPos);
+      }
+      this.speakerAudio.update(this.camera.position, dt);
       if (state === 'using-item') {
         const event = this.useSequence?.update(dt);
         if (event?.activateEffect) this.commitItemUse();
@@ -894,6 +970,7 @@ export class Game {
     this.effects?.dispose();
     this.mushroomWireframe.dispose();
     this.speakerAudio.dispose();
+    this.campAmbient.dispose();
     this.voiceReactions.dispose();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
     disposeObjectTree(this.scene);

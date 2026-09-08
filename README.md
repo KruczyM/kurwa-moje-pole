@@ -235,7 +235,7 @@ HUD pokazuje aktualną fazę oraz czas pozostały w tej fazie. Opcja ograniczeni
 - Po zmianie modelu wykonaj `npm run check:assets`, `npm test` i `npm run build`.
 - Nie commituj przypadkowych lokalnych eksportów ani starych wersji modeli.
 
-Pipeline Mixamo i odbudowę bibliotek opisuje [`docs/character-animation-pipeline.md`](docs/character-animation-pipeline.md). Stany aplikacji, priorytet `Escape`, Pointer Lock i sprzątanie zasobów opisuje [`docs/app-lifecycle.md`](docs/app-lifecycle.md). Ułatwienia dostępu, redukcję ruchu i ochronę przed błyskami opisuje [`docs/accessibility.md`](docs/accessibility.md).
+Pipeline Mixamo i odbudowę bibliotek opisuje [`docs/character-animation-pipeline.md`](docs/character-animation-pipeline.md). Stany aplikacji, priorytet `Escape`, Pointer Lock i sprzątanie zasobów opisuje [`docs/app-lifecycle.md`](docs/app-lifecycle.md). Ułatwienia dostępu, redukcję ruchu i ochronę przed błyskami opisuje [`docs/accessibility.md`](docs/accessibility.md). Przestrzenne audio głośnika i proceduralny ambient wiatru opisuje [`docs/audio-system.md`](docs/audio-system.md).
 
 Sterowanie dotykowe oraz plan kolejnych interakcji telefonicznych opisuje
 [`docs/mobile-controls.md`](docs/mobile-controls.md).

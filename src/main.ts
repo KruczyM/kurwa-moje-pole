@@ -132,6 +132,14 @@ qs<HTMLInputElement>('#setting-intensity').oninput = (event) => {
   game?.updateSettings({ intensity: Number((event.target as HTMLInputElement).value) / 100 });
 };
 
+qs<HTMLInputElement>('#setting-speaker-volume').oninput = (event) => {
+  game?.updateAudioSettings({ speakerVolume: Number((event.target as HTMLInputElement).value) / 100 });
+};
+
+qs<HTMLInputElement>('#setting-ambient-volume').oninput = (event) => {
+  game?.updateAudioSettings({ ambientVolume: Number((event.target as HTMLInputElement).value) / 100 });
+};
+
 const grassQualitySelect = document.querySelector<HTMLSelectElement>('#setting-grass-quality');
 if (grassQualitySelect) {
   grassQualitySelect.onchange = (event) => {

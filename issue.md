@@ -4,7 +4,7 @@
 > [KruczyM/kurwa-moje-pole](https://github.com/KruczyM/kurwa-moje-pole).
 > Stan na 2026-09-08. Źródłem prawdy pozostaje GitHub.
 
-Liczba otwartych issue: **11**.
+Liczba otwartych issue: **10**.
 
 ## Szybka lista
 
@@ -26,7 +26,7 @@ Liczba otwartych issue: **11**.
 - [x] [#24 — [Sekwencje użycia] Dodać kamerę trzecioosobową, animacje i rekwizyty](https://github.com/KruczyM/kurwa-moje-pole/issues/24)
 - [x] [#25 — [Efekty] Dopracować pięć odrębnych efektów i bezpieczne wygaszanie](https://github.com/KruczyM/kurwa-moje-pole/issues/25)
 - [x] [#26 — [Dostępność] Uzupełnić ustawienia reduced motion, błysków i intensywności](https://github.com/KruczyM/kurwa-moje-pole/issues/26)
-- [ ] [#28 — [Audio] Dopracować głośnik i warstwę ambientu obozu](https://github.com/KruczyM/kurwa-moje-pole/issues/28)
+- [x] [#28 — [Audio] Dopracować głośnik i warstwę ambientu obozu](https://github.com/KruczyM/kurwa-moje-pole/issues/28)
 - [ ] [#29 — [Multiplayer] Utworzyć serwer pokojów i autorytatywną rezerwację postaci](https://github.com/KruczyM/kurwa-moje-pole/issues/29)
 - [ ] [#30 — [Multiplayer] Synchronizować ruch, obrót i animacje graczy](https://github.com/KruczyM/kurwa-moje-pole/issues/30)
 - [ ] [#31 — [Multiplayer] Przekazywać postacie między NPC a graczami bez duplikatów](https://github.com/KruczyM/kurwa-moje-pole/issues/31)
@@ -570,11 +570,11 @@ Liczba otwartych issue: **11**.
 
 #### [#28 — [Audio] Dopracować głośnik i warstwę ambientu obozu](https://github.com/KruczyM/kurwa-moje-pole/issues/28)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: medium`, `area: interaction`, `area: audio`
 - Przypisani: brak
 - Utworzono: 2026-08-30
-- Ostatnia aktualizacja: 2026-08-30
+- Ostatnia aktualizacja: 2026-09-08
 
 <details>
 <summary>Pełna treść issue</summary>
