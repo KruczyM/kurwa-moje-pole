@@ -18,7 +18,7 @@ import { FLAG_CONFIG, MAD_DOG_CONFIG, seatLayout, TOILET_CONFIG } from './campLa
 import { Grass } from './vendor/three-stylized/index';
 
 const WORLD_SIZE = 117.6;
-const WORLD_LIMIT = WORLD_SIZE / 2;
+export const WORLD_LIMIT = WORLD_SIZE / 2;
 /** Wysokość wcTronu: co najmniej dwukrotność nominalnej postaci mierzącej 1,8 m. */
 export const TOILET_HEIGHT_METERS = 3.6;
 
@@ -492,8 +492,7 @@ export class CampWorld {
   }
 
   /** Sprawdza granice świata oraz kolizje dla gracza i NPC. */
-  canMove(x: number, z: number) {
-    const radius = 0.34;
+  canMove(x: number, z: number, radius = 0.34) {
     return (
       x > -WORLD_LIMIT + radius &&
       x < WORLD_LIMIT - radius &&

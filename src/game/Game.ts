@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import { AssetLoader } from './assets/AssetLoader';
 import { characterAssets, effectAssets, musicAsset } from './assets/assetManifest';
-import { CampWorld } from './world/CampWorld';
+import { CampWorld, WORLD_LIMIT } from './world/CampWorld';
 import { PlayerController } from './player/PlayerController';
 import { PLAYER_SPAWN_CONFIG } from './world/campLandmarks';
 import { isMobileInputDevice, MobileControls } from './player/MobileControls';
 import { NpcManager } from './npc/NpcManager';
+import { NPC_NAVIGATION_CELL_SIZE, NPC_NAVIGATION_RADIUS, NpcNavigationGrid } from './npc/NpcNavigationGrid';
 import { EffectManager, EffectId, VisualSettings, defaultVisualSettings } from './effects/EffectManager';
 import { InteractionManager } from './interactions/InteractionManager';
 import { SpeakerAudio } from './audio/SpeakerAudio';
@@ -137,9 +138,17 @@ export class Game {
         throw new Error('Nie udało się załadować żadnej postaci. Sprawdź Git LFS i pliki game-assets.');
       assets.interactables.forEach((asset, id) => this.propModels.set(id, asset.scene));
       this.world = new CampWorld(this.scene, assets);
-      this.npcs = new NpcManager(this.scene, assets.characters, assets.speaker, (x, z) =>
-        this.world!.canMove(x, z),
+      const npcNavigation = new NpcNavigationGrid(
+        {
+          minX: -WORLD_LIMIT + NPC_NAVIGATION_RADIUS,
+          maxX: WORLD_LIMIT - NPC_NAVIGATION_RADIUS,
+          minZ: -WORLD_LIMIT + NPC_NAVIGATION_RADIUS,
+          maxZ: WORLD_LIMIT - NPC_NAVIGATION_RADIUS,
+        },
+        NPC_NAVIGATION_CELL_SIZE,
+        (x, z) => this.world!.canMove(x, z, NPC_NAVIGATION_RADIUS),
       );
+      this.npcs = new NpcManager(this.scene, assets.characters, assets.speaker, npcNavigation);
       this.player = new PlayerController(
         this.camera,
         this.canvas,

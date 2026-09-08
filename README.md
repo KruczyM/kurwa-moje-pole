@@ -97,6 +97,7 @@ Projekt używa głównie plików `.ts`; skrypty Node mają rozszerzenie `.mjs`.
 | `src/game/npc/NpcManager.ts`                      | Steruje celami, ruchem, bezczynnością, kolizjami i skalą NPC.           |
 | `src/game/npc/npcConfig.ts`                       | Zawiera kwestie dialogowe postaci NPC.                                  |
 | `src/game/npc/locomotionCalibration.json`         | Definiuje metry cyklu, prędkości, progi oraz tempo rozpędzania NPC.     |
+| `src/game/npc/NpcNavigationGrid.ts`               | Buduje grid pola, wyznacza A* i wygładza waypointy.                     |
 | `src/game/player/PlayerController.ts`             | Obsługuje ruch, kamerę pierwszoosobową i Pointer Lock.                  |
 | `src/game/rendering/pbrMaterials.ts`              | Normalizuje przestrzenie barw, roughness i metalness modeli GLB.        |
 | `src/game/rendering/colorPipeline.ts`             | Ujednolica sRGB, ACES i ekspozycję wszystkich rendererów.               |
@@ -116,6 +117,8 @@ Katalog `src/game/world/vendor/three-stylized/` jest wydzielonym kodem bibliotec
 Szczegóły profili materiałowych, wynik audytu źródeł i lista kontroli wizualnych znajdują się w `docs/pbr-lighting.md`. Raport `reports/asset-validation.json` zawiera dla każdego GLB sekcję `pbr` oraz przypisany profil runtime.
 
 Sposób pomiaru cykli `Walk`/`Run`, wzór synchronizacji `timeScale` i parametry strojenia ruchu opisuje `docs/npc-locomotion.md`.
+
+Granice gridu, margines kapsuły, sposób działania A* oraz metryki kosztu tras opisuje `docs/npc-navigation.md`.
 
 ## Układ namiotów
 

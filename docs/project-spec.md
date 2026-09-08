@@ -262,6 +262,8 @@ System musi obsługiwać:
 - Postać wybrana przez gracza nie może równocześnie istnieć jako NPC.
 - Po rozłączeniu gracza jego slot zostaje zwolniony, a odpowiadający NPC może zostać ponownie utworzony w bezpiecznym punkcie.
 - NPC poruszają się po całym kwadracie trawy, a nie tylko wokół jednego małego punktu.
+- Cele NPC pochodzą wyłącznie z przechodniego gridu całego pola, a pełna trasa jest wyznaczana przez A* i wygładzana testami line-of-sight.
+- Grid uwzględnia promień kapsuły i margines od namiotów, stołu, masztu oraz toi-toia; linki namiotowe pozostają poza nawigacyjnymi przeszkodami.
 - NPC losują osiągalne cele i korzystają z `Idle`, `Walk` oraz `Run`.
 - Podczas zwykłego przemieszczania chodzą.
 - Gdy dotrą do strefy przy granicy mapy, przestają wybierać cel na zewnątrz, obracają się do wnętrza i biegną w kierunku centralnej strefy obozu.
