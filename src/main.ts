@@ -121,6 +121,9 @@ qs<HTMLButtonElement>('#inspect-use').onclick = () => game?.acceptInspect();
 qs<HTMLButtonElement>('#inspect-take').onclick = () => game?.takeInspectedItem();
 qs<HTMLButtonElement>('#cancel-effect').onclick = () => game?.cancelEffect();
 qs<HTMLButtonElement>('#cancel-use-sequence').onclick = () => game?.cancelUseSequence();
+qs<HTMLButtonElement>('#warning-proceed').onclick = () => game?.confirmWarning(false);
+qs<HTMLButtonElement>('#warning-safe-mode').onclick = () => game?.confirmWarning(true);
+qs<HTMLButtonElement>('#warning-cancel').onclick = () => game?.cancelWarning();
 document.querySelectorAll<HTMLButtonElement>('[data-effect]').forEach((button) => {
   button.onclick = () => game?.useInventoryEffect(button.dataset.effect as EffectId);
 });
@@ -139,10 +142,19 @@ if (grassQualitySelect) {
   };
 }
 
-(['reduce-motion', 'limit-sway', 'disable-shake', 'disable-bloom'] as const).forEach((name) => {
+(
+  [
+    'reduce-motion',
+    'limit-sway',
+    'disable-shake',
+    'disable-bloom',
+    'disable-flashes',
+    'disable-aberration',
+  ] as const
+).forEach((name) => {
   qs<HTMLInputElement>(`#setting-${name}`).onchange = (event) => {
     const key = name.replace(/-([a-z])/g, (_, character) => character.toUpperCase()) as
-      'reduceMotion' | 'limitSway' | 'disableShake' | 'disableBloom';
+      'reduceMotion' | 'limitSway' | 'disableShake' | 'disableBloom' | 'disableFlashes' | 'disableAberration';
     game?.updateSettings({ [key]: (event.target as HTMLInputElement).checked });
   };
 });

@@ -17,7 +17,16 @@ export function resolveGameInput(state: AppState, key: string, repeat = false): 
   if (repeat) return null;
   if (
     key === 'Escape' &&
-    ['playing', 'seated', 'inspecting', 'using-item', 'dialog', 'inventory', 'paused'].includes(state)
+    [
+      'playing',
+      'seated',
+      'inspecting',
+      'using-item',
+      'effect-warning',
+      'dialog',
+      'inventory',
+      'paused',
+    ].includes(state)
   ) {
     return 'escape';
   }
@@ -48,6 +57,8 @@ export function controlHintForState(state: AppState, mode: InputMode = 'desktop'
         return 'ZAMKNIJ — wróć do obozu';
       case 'paused':
         return 'WRÓĆ DO GRY — kontynuuj';
+      case 'effect-warning':
+        return 'WYBIERZ — kontynuuj lub włącz tryb łagodny';
       default:
         return '';
     }
@@ -67,6 +78,8 @@ export function controlHintForState(state: AppState, mode: InputMode = 'desktop'
       return `${inputBindings.inventory} / ${inputBindings.escape} — zamknij`;
     case 'paused':
       return `${inputBindings.escape} — wróć do gry`;
+    case 'effect-warning':
+      return `${inputBindings.escape} — anuluj`;
     default:
       return '';
   }

@@ -14,6 +14,7 @@ describe('InputBindings', () => {
     expect(resolveGameInput('using-item', 'Escape')).toBe('escape');
     expect(resolveGameInput('dialog', 'Escape')).toBe('escape');
     expect(resolveGameInput('inventory', 'Escape')).toBe('escape');
+    expect(resolveGameInput('effect-warning', 'Escape')).toBe('escape');
     expect(resolveGameInput('paused', 'Escape')).toBe('escape');
     expect(resolveGameInput('playing', 'Tab')).toBe('toggle-inventory');
     expect(resolveGameInput('inventory', 'Tab')).toBe('toggle-inventory');

@@ -14,6 +14,8 @@ export type VisualSettings = {
   limitSway: boolean;
   disableShake: boolean;
   disableBloom: boolean;
+  disableFlashes: boolean;
+  disableAberration: boolean;
   grassQuality: GrassQualityPreset;
 };
 export const defaultVisualSettings: VisualSettings = {
@@ -22,6 +24,8 @@ export const defaultVisualSettings: VisualSettings = {
   limitSway: false,
   disableShake: false,
   disableBloom: false,
+  disableFlashes: false,
+  disableAberration: false,
   grassQuality: DEFAULT_GRASS_PRESET,
 };
 export type EffectConfig = {
@@ -325,7 +329,9 @@ export class EffectManager {
   ) {
     this.composer = new EffectComposer(renderer);
     this.composer.addPass(new RenderPass(scene, camera));
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0, 0.3, 0.8);
+    const width = typeof innerWidth !== 'undefined' ? innerWidth : 800;
+    const height = typeof innerHeight !== 'undefined' ? innerHeight : 600;
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(width, height), 0, 0.3, 0.8);
     this.composer.addPass(this.bloom);
     this.afterimage = new AfterimagePass(0.88);
     this.afterimage.enabled = false;
@@ -363,23 +369,26 @@ export class EffectManager {
     }
     const c = this.active ? effectConfigs[this.active] : null,
       level = this.visualIntensity,
-      pulse = c ? 1 + Math.sin(this.shader.uniforms.time.value * c.pulse) * 0.08 * level : 1;
+      allowMotion = !this.settings.reduceMotion,
+      allowFlashes = !this.settings.disableFlashes && allowMotion,
+      allowAberration = !this.settings.disableAberration && allowMotion,
+      pulse = c && allowFlashes ? 1 + Math.sin(this.shader.uniforms.time.value * c.pulse) * 0.08 * level : 1;
     if (!c || !this.snapshot) return;
     this.bloom.enabled = !this.settings.disableBloom && (this.snapshot.bloom.enabled || c.bloom > 0);
     this.bloom.strength = THREE.MathUtils.lerp(this.snapshot.bloom.strength, c.bloom, level) * pulse;
-    this.afterimage.enabled = this.snapshot.afterimage.enabled || (c.afterimage > 0 && level > 0.02);
+    this.afterimage.enabled =
+      allowMotion && (this.snapshot.afterimage.enabled || (c.afterimage > 0 && level > 0.02));
     this.afterimage.uniforms.damp.value = THREE.MathUtils.lerp(
       this.snapshot.afterimage.damp,
       c.afterimage,
       level,
     );
     const u = this.shader.uniforms;
-    const allowMotion = !this.settings.reduceMotion;
     const base = this.snapshot.uniforms;
     u.distortion.value = THREE.MathUtils.lerp(base.distortion, allowMotion ? c.warp : 0, level);
     u.saturation.value = THREE.MathUtils.lerp(base.saturation, c.saturation, level);
     u.hue.value = THREE.MathUtils.lerp(base.hue, c.hue, level);
-    u.chroma.value = THREE.MathUtils.lerp(base.chroma, c.chroma, level);
+    u.chroma.value = allowAberration ? THREE.MathUtils.lerp(base.chroma, c.chroma, level) : base.chroma;
     u.contrast.value = THREE.MathUtils.lerp(base.contrast, c.contrast, level);
     u.brightness.value = THREE.MathUtils.lerp(base.brightness, c.brightness, level);
     u.vignette.value = THREE.MathUtils.lerp(base.vignette, c.vignette, level);
@@ -387,11 +396,10 @@ export class EffectManager {
     u.melt.value = THREE.MathUtils.lerp(base.melt, allowMotion ? c.melt || 0 : 0, level);
     u.mixing.value = THREE.MathUtils.lerp(base.mixing, allowMotion ? c.mixing || 0 : 0, level);
     u.lift.value = THREE.MathUtils.lerp(base.lift, c.lift || 0, level);
-    u.pulse.value = THREE.MathUtils.lerp(base.pulse, c.pulse, level);
+    u.pulse.value = allowFlashes ? THREE.MathUtils.lerp(base.pulse, c.pulse, level) : 0;
     u.time.value += dt;
-    const target =
-      THREE.MathUtils.lerp(this.snapshot.cameraFov, c.fov, level) *
-      (1 + Math.sin(u.time.value * c.pulse) * 0.004 * level);
+    const fovPulse = allowFlashes ? 1 + Math.sin(u.time.value * c.pulse) * 0.004 * level : 1;
+    const target = THREE.MathUtils.lerp(this.snapshot.cameraFov, c.fov, level) * fovPulse;
     this.camera.fov = THREE.MathUtils.damp(this.camera.fov, target, 6, dt);
     this.camera.updateProjectionMatrix();
     if (this.snapshot.audio) {
@@ -469,7 +477,7 @@ export class EffectManager {
       speed: THREE.MathUtils.lerp(1, c?.speed || 1, level),
       sway: this.settings.reduceMotion || this.settings.limitSway ? 0 : (c?.sway || 0) * level,
       shake: this.settings.reduceMotion || this.settings.disableShake ? 0 : (c?.shake || 0) * level,
-      bob: THREE.MathUtils.lerp(1, c?.bob || 1, level),
+      bob: this.settings.reduceMotion ? 1 : THREE.MathUtils.lerp(1, c?.bob || 1, level),
     };
   }
 

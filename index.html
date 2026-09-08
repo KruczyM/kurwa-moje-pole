@@ -2,102 +2,134 @@
 <html lang="pl">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <title>Kurwa, moje pole!</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Kurwa, moje pole!</title>
 </head>
 
-<body><canvas id="game"></canvas>
-    <main id="ui">
-        <section id="start">
-            <p class="eyebrow">FESTIWALOWY VERTICAL SLICE · 3D</p>
-            <h1>Kurwa,<br><i>moje pole!</i></h1>
-            <p>Wybierz postać, którą obserwujesz z perspektywy pierwszej osoby.</p>
-            <div id="character-select"></div>
-            <p id="character-preview-status" role="status" hidden></p>
-            <div id="character-preview-layer" class="character-preview-layer"></div><button id="play">WEJDŹ NA
-                POLE</button><small id="start-controls"></small>
-        </section>
-        <section id="loading" hidden><strong>ŁADOWANIE OBOZU</strong><span id="load-text">Przygotowywanie
-                sceny…</span><span id="load-error" hidden></span>
-            <div id="load-actions" hidden><button id="retry-load">SPRÓBUJ PONOWNIE</button><button
-                    id="back-to-start">WRÓĆ DO WYBORU POSTACI</button></div>
-        </section>
-        <section id="hud" hidden>
-            <div id="brand">#KURWAMOJEPOLE</div>
-            <div id="mobile-controls" aria-label="Sterowanie dotykowe" hidden>
-                <div class="mobile-look-zone" aria-label="Przeciągnij, aby obrócić kamerę"></div>
-                <div class="mobile-top-actions">
-                    <button id="mobile-menu" type="button" aria-label="Otwórz menu pauzy">MENU</button>
-                    <button id="mobile-inventory" type="button" aria-label="Otwórz ekwipunek">EKWIPUNEK</button>
-                </div>
-                <div class="mobile-movement">
-                    <div class="mobile-joystick" aria-label="Joystick ruchu">
-                        <div class="mobile-joystick-knob"></div>
-                    </div>
-                </div>
-                <div class="mobile-look-hint" aria-hidden="true">PRZECIĄGNIJ PO EKRANIE<br>ABY SIĘ ROZEJRZEĆ</div>
-                <button id="mobile-interact" type="button">UŻYJ</button>
-            </div>
-            <div id="effect-hud">Brak aktywnego efektu</div>
-            <div id="controls-hud"></div>
-            <div id="prompt" role="status" aria-live="polite" hidden></div>
-            <div id="toast" role="status" aria-live="polite"></div>
-            <div id="crosshair">+</div>
-            <div id="smoke" hidden></div>
-            <div id="lsd-overlay" aria-hidden="true" hidden></div><button id="cancel-effect">Anuluj efekt</button>
-            <div id="use-sequence" role="status" hidden><strong id="use-sequence-label"></strong><button
-                    id="cancel-use-sequence" type="button">ANULUJ</button></div>
-        </section>
-        <section id="inventory" role="dialog" aria-modal="true" aria-labelledby="inventory-title" hidden>
-            <h2 id="inventory-title">Ekwipunek</h2>
-            <p id="inventory-status">Plecak jest pusty. Przedmioty możesz znaleźć w obozie.</p>
-            <div class="items"><button data-effect="Piwo">🍺 Piwo <small>kołysanie</small><strong class="item-count">×
-                        0</strong></button><button data-effect="Papieros">🚬 Papieros
-                    <small>dym</small><strong class="item-count">× 0</strong></button><button data-effect="Joint">🌿
-                    Joint <small>ciepłe barwy</small><strong class="item-count">× 0</strong></button><button
-                    data-effect="Kreska">⚡ Kreska <small>tempo</small><strong class="item-count">×
-                        0</strong></button><button data-effect="Grzyb">🍄 Grzyb
-                    <small>falowanie</small><strong class="item-count">× 0</strong></button><button
-                    data-effect="MDMA">💗
-                    MDMA <small>bloom</small><strong class="item-count">× 0</strong></button><button
-                    data-effect="LSD">🌈
-                    LSD <small>nasycenie i wizuale</small><strong class="item-count">× 0</strong></button></div><small
-                id="inventory-help"></small>
-        </section>
-        <section id="pause" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>
-            <h2 id="pause-title">Pauza</h2>
-            <p>Kursor jest zwolniony.</p><label>Jakość trawy
-                <select id="setting-grass-quality">
-                    <option value="low">Niska (low)</option>
-                    <option value="medium">Średnia (medium)</option>
-                    <option value="high">Wysoka (high)</option>
-                    <option value="ultra">Ultra</option>
-                </select></label><label>Intensywność efektów <input id="setting-intensity" type="range" min="0"
-                    max="100" step="1" /></label><label><input id="setting-reduce-motion" type="checkbox" /> Ogranicz
-                ruch obrazu</label><label><input id="setting-limit-sway" type="checkbox" /> Ogranicz
-                kołysanie</label><label><input id="setting-disable-shake" type="checkbox" /> Wyłącz
-                drżenie</label><label><input id="setting-disable-bloom" type="checkbox" /> Wyłącz bloom</label><small
-                id="pause-help"></small><button id="resume">Wróć do gry</button><button id="exit-to-start">Wyjdź do
-                wyboru postaci</button>
-        </section>
-        <section id="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-name" hidden>
-            <h2 id="dialog-name"></h2>
-            <p id="dialog-text"></p><small id="dialog-help"></small><button id="close-dialog">Wróć</button>
-        </section>
-        <section id="inspect" role="dialog" aria-modal="true" aria-labelledby="inspect-name"
-            aria-describedby="inspect-text inspect-help" hidden>
-            <div class="inspect-header">
-                <h2 id="inspect-name"></h2><button id="inspect-dismiss" type="button"
-                    aria-label="Zamknij podgląd przedmiotu">×</button>
-            </div><canvas id="inspect-canvas"></canvas>
-            <p id="inspect-text"></p><small id="inspect-help"></small>
-            <div class="inspect-actions"><button id="inspect-use"></button><button id="inspect-take">WEŹ DO
-                    EKWIPUNKU</button><button id="inspect-close"></button></div>
-        </section>
-        <div id="fade"></div>
-    </main>
-    <script type="module" src="/src/main.ts"></script>
+<body>
+  <canvas id="game"></canvas>
+  <main id="ui">
+    <section id="start">
+      <p class="eyebrow">FESTIWALOWY VERTICAL SLICE · 3D</p>
+      <h1>Kurwa,<br /><i>moje pole!</i></h1>
+      <p>Wybierz postać, którą obserwujesz z perspektywy pierwszej osoby.</p>
+      <div id="character-select"></div>
+      <p id="character-preview-status" role="status" hidden></p>
+      <div id="character-preview-layer" class="character-preview-layer"></div>
+      <button id="play">WEJDŹ NA POLE</button><small id="start-controls"></small>
+    </section>
+    <section id="loading" hidden>
+      <strong>ŁADOWANIE OBOZU</strong><span id="load-text">Przygotowywanie sceny…</span><span id="load-error"
+        hidden></span>
+      <div id="load-actions" hidden>
+        <button id="retry-load">SPRÓBUJ PONOWNIE</button><button id="back-to-start">WRÓĆ DO WYBORU POSTACI</button>
+      </div>
+    </section>
+    <section id="hud" hidden>
+      <div id="brand">#KURWAMOJEPOLE</div>
+      <div id="mobile-controls" aria-label="Sterowanie dotykowe" hidden>
+        <div class="mobile-look-zone" aria-label="Przeciągnij, aby obrócić kamerę"></div>
+        <div class="mobile-top-actions">
+          <button id="mobile-menu" type="button" aria-label="Otwórz menu pauzy">MENU</button>
+          <button id="mobile-inventory" type="button" aria-label="Otwórz ekwipunek">EKWIPUNEK</button>
+        </div>
+        <div class="mobile-movement">
+          <div class="mobile-joystick" aria-label="Joystick ruchu">
+            <div class="mobile-joystick-knob"></div>
+          </div>
+        </div>
+        <div class="mobile-look-hint" aria-hidden="true">PRZECIĄGNIJ PO EKRANIE<br />ABY SIĘ ROZEJRZEĆ</div>
+        <button id="mobile-interact" type="button">UŻYJ</button>
+      </div>
+      <div id="effect-hud">Brak aktywnego efektu</div>
+      <div id="controls-hud"></div>
+      <div id="prompt" role="status" aria-live="polite" hidden></div>
+      <div id="toast" role="status" aria-live="polite"></div>
+      <div id="crosshair">+</div>
+      <div id="smoke" hidden></div>
+      <div id="lsd-overlay" aria-hidden="true" hidden></div>
+      <button id="cancel-effect">Anuluj efekt</button>
+      <div id="use-sequence" role="status" hidden>
+        <strong id="use-sequence-label"></strong><button id="cancel-use-sequence" type="button">ANULUJ</button>
+      </div>
+    </section>
+    <section id="inventory" role="dialog" aria-modal="true" aria-labelledby="inventory-title" hidden>
+      <h2 id="inventory-title">Ekwipunek</h2>
+      <p id="inventory-status">Plecak jest pusty. Przedmioty możesz znaleźć w obozie.</p>
+      <div class="items">
+        <button data-effect="Piwo">
+          🍺 Piwo <small>kołysanie</small><strong class="item-count">× 0</strong></button><button
+          data-effect="Papieros">
+          🚬 Papieros <small>dym</small><strong class="item-count">× 0</strong></button><button data-effect="Joint">
+          🌿 Joint <small>ciepłe barwy</small><strong class="item-count">× 0</strong></button><button
+          data-effect="Kreska">
+          ⚡ Kreska <small>tempo</small><strong class="item-count">× 0</strong></button><button data-effect="Grzyb">
+          🍄 Grzyb <small>falowanie</small><strong class="item-count">× 0</strong></button><button data-effect="MDMA">
+          💗 MDMA <small>bloom</small><strong class="item-count">× 0</strong></button><button data-effect="LSD">
+          🌈 LSD <small>nasycenie i wizuale</small><strong class="item-count">× 0</strong>
+        </button>
+      </div>
+      <small id="inventory-help"></small>
+    </section>
+    <section id="pause" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>
+      <h2 id="pause-title">Pauza</h2>
+      <p>Kursor jest zwolniony.</p>
+      <label>Jakość trawy
+        <select id="setting-grass-quality">
+          <option value="low">Niska (low)</option>
+          <option value="medium">Średnia (medium)</option>
+          <option value="high">Wysoka (high)</option>
+          <option value="ultra">Ultra</option>
+        </select></label><label>Intensywność efektów
+        <input id="setting-intensity" type="range" min="0" max="100" step="1" /></label><label><input
+          id="setting-reduce-motion" type="checkbox" /> Ogranicz ruch obrazu</label><label><input
+          id="setting-limit-sway" type="checkbox" /> Ogranicz kołysanie</label><label><input id="setting-disable-shake"
+          type="checkbox" /> Wyłącz drżenie</label><label><input id="setting-disable-bloom" type="checkbox" /> Wyłącz
+        bloom</label><label><input id="setting-disable-flashes" type="checkbox" /> Wyłącz błyski</label><label><input
+          id="setting-disable-aberration" type="checkbox" /> Wyłącz aberrację chromatyczną</label><small
+        id="pause-help"></small><button id="resume">Wróć do gry</button><button id="exit-to-start">Wyjdź do wyboru
+        postaci</button>
+    </section>
+    <section id="effect-warning" role="dialog" aria-modal="true" aria-labelledby="effect-warning-title"
+      aria-describedby="effect-warning-desc" hidden>
+      <h2 id="effect-warning-title">Ostrzeżenie o intensywnych efektach</h2>
+      <p id="effect-warning-desc">
+        Ten fikcyjny efekt zawiera intensywne bodźce wizualne: zniekształcenia obrazu, światło i ruch
+        kamery. Możesz kontynuować z pełnymi efektami lub włączyć tryb łagodny (bezpieczny).
+      </p>
+      <div class="warning-options">
+        <label><input id="warning-dont-show-again" type="checkbox" checked /> Nie pokazuj tego ostrzeżenia
+          ponownie</label>
+      </div>
+      <div class="warning-actions">
+        <button id="warning-proceed" type="button">KONTYNUUJ</button><button id="warning-safe-mode" type="button">WŁĄCZ
+          TRYB ŁAGODNY</button><button id="warning-cancel" type="button">ANULUJ</button>
+      </div>
+      <small id="effect-warning-help"></small>
+    </section>
+    <section id="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-name" hidden>
+      <h2 id="dialog-name"></h2>
+      <p id="dialog-text"></p>
+      <small id="dialog-help"></small><button id="close-dialog">Wróć</button>
+    </section>
+    <section id="inspect" role="dialog" aria-modal="true" aria-labelledby="inspect-name"
+      aria-describedby="inspect-text inspect-help" hidden>
+      <div class="inspect-header">
+        <h2 id="inspect-name"></h2>
+        <button id="inspect-dismiss" type="button" aria-label="Zamknij podgląd przedmiotu">×</button>
+      </div>
+      <canvas id="inspect-canvas"></canvas>
+      <p id="inspect-text"></p>
+      <small id="inspect-help"></small>
+      <div class="inspect-actions">
+        <button id="inspect-use"></button><button id="inspect-take">WEŹ DO EKWIPUNKU</button><button
+          id="inspect-close"></button>
+      </div>
+    </section>
+    <div id="fade"></div>
+  </main>
+  <script type="module" src="/src/main.ts"></script>
 </body>
 
 </html>
