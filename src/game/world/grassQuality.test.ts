@@ -5,8 +5,6 @@ import {
   GrassQualityPreset,
   isGrassQualityPreset,
 } from './grassQuality';
-import { TutorialTriangleGrass } from './vendor/three-stylized/TutorialTriangleGrass';
-import { DistantTriangleGrass } from './vendor/three-stylized/DistantTriangleGrass';
 import { Grass } from './vendor/three-stylized/Grass';
 
 describe('grassQuality presets configuration', () => {
@@ -31,13 +29,14 @@ describe('grassQuality presets configuration', () => {
     expect(GRASS_PRESETS[DEFAULT_GRASS_PRESET]).toBeDefined();
   });
 
-  it('ensures near and distant blade counts strictly increase with quality', () => {
+  it('ensures grass layer density and blade counts strictly increase with quality', () => {
     for (let i = 0; i < presets.length - 1; i++) {
       const current = GRASS_PRESETS[presets[i]];
       const next = GRASS_PRESETS[presets[i + 1]];
 
       expect(next.nearBladeCount).toBeGreaterThan(current.nearBladeCount);
       expect(next.distantBladeCount).toBeGreaterThan(current.distantBladeCount);
+      expect(next.grassLayerDensity).toBeGreaterThan(current.grassLayerDensity);
     }
   });
 
@@ -65,39 +64,8 @@ describe('grassQuality presets configuration', () => {
   });
 });
 
-describe('TutorialTriangleGrass mesh lifecycle & preset switching', () => {
-  it('initializes with specified preset geometry', () => {
-    const grass = new TutorialTriangleGrass('low');
-    const lowCount = grass.geometry.attributes.position.count;
-    // Each blade is 1 triangle = 3 vertices
-    expect(lowCount).toBe(GRASS_PRESETS.low.nearBladeCount * 3);
-
-    grass.setPreset('high');
-    const highCount = grass.geometry.attributes.position.count;
-    expect(highCount).toBe(GRASS_PRESETS.high.nearBladeCount * 3);
-    expect(highCount).toBeGreaterThan(lowCount);
-
-    grass.dispose();
-  });
-});
-
-describe('DistantTriangleGrass mesh lifecycle & preset switching', () => {
-  it('initializes with distant preset geometry and supports switching', () => {
-    const distant = new DistantTriangleGrass('low');
-    const lowCount = distant.geometry.attributes.position.count;
-    expect(lowCount).toBe(GRASS_PRESETS.low.distantBladeCount * 3);
-
-    distant.setPreset('ultra');
-    const ultraCount = distant.geometry.attributes.position.count;
-    expect(ultraCount).toBe(GRASS_PRESETS.ultra.distantBladeCount * 3);
-    expect(ultraCount).toBeGreaterThan(lowCount);
-
-    distant.dispose();
-  });
-});
-
 describe('Grass composite container', () => {
-  it('coordinates near and distant presets and tracks quality', () => {
+  it('coordinates grass quality presets and tracks quality', () => {
     const grass = new Grass(undefined, 'low');
     expect(grass.quality).toBe('low');
 

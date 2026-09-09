@@ -6,6 +6,7 @@ import { itemPresentation } from '../interactions/itemPresentationConfig';
 import { enableInteractionLayer } from '../interactions/InteractionManager';
 import { HorizonPanorama, TimeOfDaySkybox } from './HorizonSkybox';
 import {
+  sampleCampGrassCoverage,
   tentColliderBounds,
   tentLayout,
   type PhysicalSize,
@@ -72,10 +73,10 @@ export function createGroundMaterial(textures?: GroundTextures) {
       roughnessMap: textures.grassRoughness,
       roughness: 0.88,
       metalness: 0.0,
-      color: 0x3d5c22,
+      color: 0xffffff,
     });
   }
-  return simpleMaterial(0x213c14);
+  return simpleMaterial(0x385e26);
 }
 
 /** Włącza podgląd hitboxów przez parametr adresu `?debugInteractions=1`. */
@@ -176,10 +177,13 @@ export class CampWorld {
     this.grass = new Grass({
       surface: ground,
       grass: {
-        density: 17,
-        brightness: 0.38,
+        density: 22,
+        brightness: 0.42,
+        coverage: {
+          sample: (point) => sampleCampGrassCoverage(point.position.x, point.position.z),
+        },
         blade: { minHeight: 0.18, maxHeight: 0.58, minWidth: 0.025, maxWidth: 0.085, segments: 4 },
-        colors: { bottom: '#52632b', top: '#b0a35b', backlight: '#d2c878', ground: '#56732d' },
+        colors: { bottom: '#4a6325', top: '#a8b548', backlight: '#d8e572', ground: '#4a6325' },
         wind: { strength: 0.16, speed: 0.85, frequency: 0.55, turbulence: 0.22, lean: 0.025, direction: 32 },
         lighting: { direction: sun.position.clone().normalize(), color: '#ffe0b0', intensity: 1.1 },
         shadow: false,

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import assetCatalog from '../assets/assetCatalog.json';
-import { campPosition, isOutsideTentColliders, tentLayout } from './campLayout';
+import {
+  CAMP_SECTORS,
+  FIRE_ROADS,
+  campPosition,
+  isOutsideTentColliders,
+  sampleCampGrassCoverage,
+  tentLayout,
+} from './campLayout';
 
 describe('camp tent layout', () => {
   it('contains stable, unique identifiers T01–T15', () => {
@@ -107,5 +114,66 @@ describe('camp tent layout', () => {
 
   it('references only tent models registered in the central asset catalog', () => {
     tentLayout.forEach((tent) => expect(assetCatalog.tents[tent.model]).toMatch(/\.glb$/));
+  });
+});
+
+describe('camp grass coverage and fire roads', () => {
+  it('returns high coverage in the middle of camping sectors where tents stand', () => {
+    // T01 / T02 North sector
+    const northWest = sampleCampGrassCoverage(-6.0, -10.0);
+    expect(northWest).toBeGreaterThan(0.7);
+
+    // T03 / T04 North sector
+    const northEast = sampleCampGrassCoverage(6.0, -10.0);
+    expect(northEast).toBeGreaterThan(0.7);
+
+    // South-West sector (T09, T10)
+    const southWest = sampleCampGrassCoverage(-4.0, 5.0);
+    expect(southWest).toBeGreaterThan(0.7);
+
+    // South-East sector (T11, T12)
+    const southEast = sampleCampGrassCoverage(4.0, 5.0);
+    expect(southEast).toBeGreaterThan(0.7);
+  });
+
+  it('returns near-zero coverage on fire roads and heavily trampled paths', () => {
+    // Center of North Fire Road (Z = -6.0)
+    const northRoad = sampleCampGrassCoverage(0.0, -6.0);
+    expect(northRoad).toBeLessThan(0.1);
+
+    // Center of South Fire Road (Z = 2.0)
+    const southRoad = sampleCampGrassCoverage(0.0, 2.0);
+    expect(southRoad).toBeLessThan(0.1);
+
+    // Fire road to toilet entrance
+    const toiletRoad = sampleCampGrassCoverage(-12.6, -9.0);
+    expect(toiletRoad).toBeLessThan(0.1);
+
+    // Heavily trampled circle around table
+    const tableArea = sampleCampGrassCoverage(0.0, 0.0);
+    expect(tableArea).toBeLessThan(0.1);
+  });
+
+  it('keeps all sample values strictly within [0, 1] range across the entire world', () => {
+    for (let x = -50; x <= 50; x += 5) {
+      for (let z = -50; z <= 50; z += 5) {
+        const val = sampleCampGrassCoverage(x, z);
+        expect(val).toBeGreaterThanOrEqual(0);
+        expect(val).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  it('has valid sector and road bounds', () => {
+    expect(CAMP_SECTORS.length).toBeGreaterThan(4);
+    expect(FIRE_ROADS.length).toBeGreaterThan(4);
+    for (const sector of CAMP_SECTORS) {
+      expect(sector.maxX).toBeGreaterThan(sector.minX);
+      expect(sector.maxZ).toBeGreaterThan(sector.minZ);
+    }
+    for (const road of FIRE_ROADS) {
+      expect(road.maxX).toBeGreaterThan(road.minX);
+      expect(road.maxZ).toBeGreaterThan(road.minZ);
+    }
   });
 });
