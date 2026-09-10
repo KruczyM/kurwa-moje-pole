@@ -2,7 +2,13 @@ import * as THREE from 'three';
 import { calculateLocalMove } from './movement';
 import { EventScope } from '../lifecycle/EventScope';
 import { terrainHeight } from '../world/CampWorld';
-export type PlayerModifiers = { speed: number; sway: number; shake: number; bob: number };
+export type PlayerModifiers = {
+  speed: number;
+  sway: number;
+  shake: number;
+  bob: number;
+  stutter?: number;
+};
 export type PlayerSpawn = { position: readonly [x: number, z: number]; yaw: number };
 
 const DEFAULT_PLAYER_SPAWN: PlayerSpawn = { position: [0, 15], yaw: 0 };
@@ -14,6 +20,7 @@ export class PlayerController {
   enabled = false;
   private velocity = new THREE.Vector2();
   private bobTime = 0;
+  private swayTime = 0;
   private readonly baseY = 1.9;
   private fallbackMousePosition = new THREE.Vector2();
   private hasFallbackMousePosition = false;
@@ -125,14 +132,26 @@ export class PlayerController {
     this.bobTime += dt * moving * (mod.bob || 1) * 2.6;
     const bob = Math.sin(this.bobTime) * Math.min(0.055, moving * 0.012);
     const shake = mod.shake ? Math.sin(performance.now() * 0.025) * mod.shake * 0.012 : 0;
-    this.camera.position.y = this.baseY + bob + shake;
     const targetY =
       this.baseY + this.getGroundHeight(this.camera.position.x, this.camera.position.z) + bob + shake;
     this.camera.position.y = THREE.MathUtils.damp(this.camera.position.y, targetY, 20, dt);
+    this.swayTime += dt;
+    const sway = mod.sway || 0;
+    const swayPitch = Math.sin(this.swayTime * 0.85) * sway * 0.022;
+    const swayYaw = Math.cos(this.swayTime * 0.65) * sway * 0.018;
+    const swayRoll = Math.sin(this.swayTime * 0.95) * sway * 0.028;
+
+    let stutterYaw = 0;
+    if (mod.stutter) {
+      // Step rotation in discrete frames (~11 Hz) during stutter bursts
+      const step = Math.floor(this.swayTime * 11);
+      stutterYaw = Math.sin(step * 2.7) * mod.stutter * 0.025;
+    }
+
     this.camera.rotation.set(
-      this.pitch + shake + mod.sway * Math.sin(this.bobTime * 0.5),
-      this.yaw,
-      0,
+      this.pitch + shake + swayPitch + mod.sway * Math.sin(this.bobTime * 0.5),
+      this.yaw + swayYaw + stutterYaw,
+      swayRoll,
       'YXZ',
     );
   }

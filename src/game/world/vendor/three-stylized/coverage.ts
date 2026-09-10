@@ -236,6 +236,17 @@ export function createSurfaceCoverageEvaluator(
     throw new RangeError('Grass coverage attribute channel is not available.')
   }
 
+  const evalUv = uvAttribute ? new THREE.Vector2() : null
+  const evalPointPos = new THREE.Vector3()
+  const evalPointNormal = new THREE.Vector3()
+  const evalPointUv = uvAttribute ? new THREE.Vector2() : null
+  const evalPoint: GrassCoveragePoint = {
+    position: evalPointPos,
+    normal: evalPointNormal,
+    uv: null,
+    seed: 0,
+  }
+
   const evaluate = (
     triangle: CoverageTriangle,
     weights: readonly [number, number, number],
@@ -246,30 +257,27 @@ export function createSurfaceCoverageEvaluator(
     const [first, second, third] = triangle
     const [w, u, v] = weights
     let raw: number
-    let uv: THREE.Vector2 | null = null
-    if (uvAttribute) {
-      uv = new THREE.Vector2(
+    if (uvAttribute && evalUv) {
+      evalUv.set(
         uvAttribute.getX(first) * w + uvAttribute.getX(second) * u + uvAttribute.getX(third) * v,
         uvAttribute.getY(first) * w + uvAttribute.getY(second) * u + uvAttribute.getY(third) * v,
       )
     }
 
     if (coverage.map) {
-      if (!uv) throw new RangeError('Grass coverage map requires a surface uv attribute.')
-      raw = textureValue(coverage.map, coverage.map.transformUv(uv), component)
+      if (!evalUv) throw new RangeError('Grass coverage map requires a surface uv attribute.')
+      raw = textureValue(coverage.map, coverage.map.transformUv(evalUv), component)
     } else if (sourceAttribute) {
       raw =
         attributeComponent(sourceAttribute, first, component) * w +
         attributeComponent(sourceAttribute, second, component) * u +
         attributeComponent(sourceAttribute, third, component) * v
     } else {
-      const point: GrassCoveragePoint = {
-        position: worldPosition.clone(),
-        normal: normal.clone(),
-        uv: uv?.clone() ?? null,
-        seed,
-      }
-      raw = coverage.sample!(point)
+      evalPointPos.copy(worldPosition)
+      evalPointNormal.copy(normal)
+      evalPoint.uv = evalUv && evalPointUv ? evalPointUv.copy(evalUv) : null
+      evalPoint.seed = seed
+      raw = coverage.sample!(evalPoint)
       if (!Number.isFinite(raw))
         throw new RangeError('Grass coverage callback must return a finite number.')
     }

@@ -345,18 +345,17 @@ export function sampleCampGrassCoverage(x: number, z: number): number {
       return 0.35 + 0.65 * smoothstep(0.0, 0.6, edgeDist);
     }
 
-    return 0.15;
+    return 0.0;
   }
 
-  // 3. Poza głównym obozem: regularna siatka parcel festiwalowych
+  // 3. Poza głównym obozem: regularna siatka parcel festiwalowych oddzielonych drogami
   const period = 15.5;
-  const roadWidth = 3.5;
+  const roadWidth = 3.8;
   const modX = Math.abs(((x % period) + period) % period);
   const modZ = Math.abs(((z % period) + period) % period);
 
   if (modX < roadWidth || modZ < roadWidth) {
-    const distToBorder = Math.min(modX, roadWidth - modX, modZ, roadWidth - modZ);
-    return Math.max(0, smoothstep(0.0, 0.5, distToBorder) * 0.1);
+    return 0.0;
   }
 
   const distToEdgeX = Math.min(modX - roadWidth, period - modX);

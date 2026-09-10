@@ -73,10 +73,10 @@ export function createGroundMaterial(textures?: GroundTextures) {
       roughnessMap: textures.grassRoughness,
       roughness: 0.88,
       metalness: 0.0,
-      color: 0xffffff,
+      color: 0x889e77,
     });
   }
-  return simpleMaterial(0x385e26);
+  return simpleMaterial(0x1a3816);
 }
 
 /** Włącza podgląd hitboxów przez parametr adresu `?debugInteractions=1`. */
@@ -149,8 +149,10 @@ export class CampWorld {
     scene: THREE.Scene,
     models: WorldModels,
     debugInteractions = interactionDebugEnabled(typeof location === 'undefined' ? '' : location.search),
+    grassQuality: GrassQualityPreset = DEFAULT_GRASS_PRESET,
   ) {
     this.debugInteractions = debugInteractions;
+    this.grassQuality = grassQuality;
     this.debugTentScale =
       typeof location !== 'undefined' && new URLSearchParams(location.search).get('debugTentScale') === '1';
     this.skybox = new TimeOfDaySkybox(scene);
@@ -174,22 +176,32 @@ export class CampWorld {
     ground.userData.excludeMushroomWireframe = true;
     scene.add(ground);
 
-    this.grass = new Grass({
-      surface: ground,
-      grass: {
-        density: 22,
-        brightness: 0.42,
-        coverage: {
-          sample: (point) => sampleCampGrassCoverage(point.position.x, point.position.z),
+    this.grass = new Grass(
+      {
+        surface: ground,
+        grass: {
+          density: 18,
+          brightness: 0.44,
+          coverage: {
+            sample: (point) => sampleCampGrassCoverage(point.position.x, point.position.z),
+          },
+          blade: { minHeight: 0.18, maxHeight: 0.58, minWidth: 0.025, maxWidth: 0.085, segments: 4 },
+          colors: { bottom: '#163313', top: '#2c581e', backlight: '#44782b', ground: '#142911' },
+          wind: {
+            strength: 0.16,
+            speed: 0.85,
+            frequency: 0.55,
+            turbulence: 0.22,
+            lean: 0.025,
+            direction: 32,
+          },
+          lighting: { direction: sun.position.clone().normalize(), color: '#ffe0b0', intensity: 1.1 },
+          shadow: false,
         },
-        blade: { minHeight: 0.18, maxHeight: 0.58, minWidth: 0.025, maxWidth: 0.085, segments: 4 },
-        colors: { bottom: '#4a6325', top: '#a8b548', backlight: '#d8e572', ground: '#4a6325' },
-        wind: { strength: 0.16, speed: 0.85, frequency: 0.55, turbulence: 0.22, lean: 0.025, direction: 32 },
-        lighting: { direction: sun.position.clone().normalize(), color: '#ffe0b0', intensity: 1.1 },
-        shadow: false,
+        wildflowers: { enabled: false },
       },
-      wildflowers: { enabled: false },
-    });
+      this.grassQuality,
+    );
     this.grass.userData.excludeMushroomWireframe = true;
     this.grass.syncDirectionalLight(sun);
     scene.add(this.grass);

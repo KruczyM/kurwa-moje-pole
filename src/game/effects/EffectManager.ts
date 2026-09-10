@@ -57,6 +57,10 @@ export type EffectConfig = {
   melt?: number;
   mixing?: number;
   lift?: number;
+  sharpen?: number;
+  focus?: number;
+  pastel?: number;
+  stutter?: number;
   audioRate: number;
   audioVolume: number;
   visualLanguage: 'dreamy' | 'stimulant' | 'organic' | 'empathic' | 'prismatic' | 'subtle';
@@ -135,25 +139,27 @@ export const effectConfigs: Record<EffectId, EffectConfig> = {
     visualLanguage: 'dreamy',
   },
   Kreska: {
-    fadeIn: 0.7,
-    active: 13,
+    fadeIn: 0.5,
+    active: 16,
     fadeOut: 2,
-    speed: 1.45,
-    fov: 76,
-    bloom: 0.2,
-    saturation: 1.1,
-    warp: 0.04,
+    speed: 1.25,
+    fov: 78,
+    bloom: 0.12,
+    saturation: 1.08,
+    warp: 0.02,
     afterimage: 0,
     sway: 0,
-    shake: 0.3,
+    shake: 0.25,
     bob: 1.45,
-    hue: -0.025,
-    chroma: 0.004,
-    contrast: 1.32,
-    brightness: 0.055,
-    vignette: 0.48,
+    hue: -0.02,
+    chroma: 0.003,
+    contrast: 1.38,
+    brightness: 0.05,
+    vignette: 0.65,
     blur: 0,
-    pulse: 2.6,
+    pulse: 2.8,
+    sharpen: 3.2,
+    focus: 1.0,
     audioRate: 1.12,
     audioVolume: 1.08,
     visualLanguage: 'stimulant',
@@ -187,24 +193,26 @@ export const effectConfigs: Record<EffectId, EffectConfig> = {
     active: 22,
     fadeOut: 3,
     speed: 1,
-    fov: 66,
-    bloom: 0.82,
-    saturation: 2.45,
+    fov: 67,
+    bloom: 1.1,
+    saturation: 2.05,
     warp: 0.16,
-    afterimage: 0.24,
-    sway: 0.08,
+    afterimage: 0.9,
+    sway: 0.26,
     shake: 0,
     bob: 1,
     hue: 0.09,
     chroma: 0.009,
-    contrast: 1.15,
-    brightness: 0.14,
-    vignette: 0.08,
-    blur: 0.04,
+    contrast: 1.06,
+    brightness: 0.15,
+    vignette: 0.12,
+    blur: 0.03,
     pulse: 1.1,
     melt: 1,
     mixing: 1,
-    lift: 0.42,
+    lift: 0.62,
+    pastel: 1.0,
+    stutter: 1.0,
     audioRate: 1.04,
     audioVolume: 1.05,
     visualLanguage: 'empathic',
@@ -255,6 +263,9 @@ const effectUniformNames = [
   'melt',
   'mixing',
   'lift',
+  'sharpen',
+  'focus',
+  'pastel',
 ] as const;
 type EffectUniformName = (typeof effectUniformNames)[number];
 type EffectSnapshot = {
@@ -267,6 +278,7 @@ type EffectSnapshot = {
 const shader = {
   uniforms: {
     tDiffuse: { value: null },
+    resolution: { value: new THREE.Vector2(800, 600) },
     time: { value: 0 },
     distortion: { value: 0 },
     saturation: { value: 1 },
@@ -280,11 +292,16 @@ const shader = {
     melt: { value: 0 },
     mixing: { value: 0 },
     lift: { value: 0 },
+    sharpen: { value: 0 },
+    focus: { value: 0 },
+    pastel: { value: 0 },
   },
   vertexShader:
     'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
   fragmentShader: `uniform sampler2D tDiffuse;
 uniform float time,distortion,saturation,hue,chroma,contrast,brightness,vignette,blur,pulse,melt,mixing,lift;
+uniform vec2 resolution;
+uniform float time,distortion,saturation,hue,chroma,contrast,brightness,vignette,blur,pulse,melt,mixing,lift,sharpen,focus,pastel;
 varying vec2 vUv;
 vec3 hueShift(vec3 c,float a){float s=sin(a),co=cos(a);mat3 m=mat3(.299+.701*co,.587-.587*co,.114-.114*co,.299-.299*co,.587+.413*co,.114+.886*co,.299-.3*co,.587-.588*co,.114+.886*co);return clamp(m*c,0.,1.);}
 void main(){
@@ -308,13 +325,36 @@ void main(){
   vec3 mixed=(col+texture2D(tDiffuse,uv+mixOffset).rgb+texture2D(tDiffuse,uv-mixOffset*1.35).rgb)/3.;
   col=mix(col,mixed,mixing*(1.-alternate)*.88);
  }
+ if(sharpen>0.){
+  vec2 step=1./max(resolution,vec2(800.,600.));
+  vec3 n=(texture2D(tDiffuse,uv+vec2(step.x,0.)).rgb+texture2D(tDiffuse,uv-vec2(step.x,0.)).rgb+texture2D(tDiffuse,uv+vec2(0.,step.y)).rgb+texture2D(tDiffuse,uv-vec2(0.,step.y)).rgb)*.25;
+  vec2 texelSize=vec2(1.0)/max(resolution,vec2(800.0,600.0));
+  vec3 n=(texture2D(tDiffuse,uv+vec2(texelSize.x,0.0)).rgb+texture2D(tDiffuse,uv-vec2(texelSize.x,0.0)).rgb+texture2D(tDiffuse,uv+vec2(0.0,texelSize.y)).rgb+texture2D(tDiffuse,uv-vec2(0.0,texelSize.y)).rgb)*0.25;
+  vec3 edge=col-n;
+  float centerMult=focus>0.?mix(1.4,.45,smoothstep(0.,.55,r)):1.;
+  col=clamp(col+edge*(sharpen*centerMult),0.,1.);
+  float centerMult=focus>0.?mix(1.4,0.45,smoothstep(0.0,0.55,r)):1.0;
+  col=clamp(col+edge*(sharpen*centerMult),0.0,1.0);
+ }
  if(blur>0.){col+=texture2D(tDiffuse,uv+vec2(blur*.003,0.)).rgb;col+=texture2D(tDiffuse,uv-vec2(blur*.003,0.)).rgb;col/=3.;}
  col=mix(col,sqrt(max(col,vec3(0.))),lift);
  float l=dot(col,vec3(.299,.587,.114));
  col=mix(vec3(l),col,saturation);
+ if(pastel>0.){
+  vec3 pastelTint=vec3(1.08,0.95,1.07);
+  vec3 lifted=pow(max(col,vec3(.001)),vec3(.72))*pastelTint;
+  vec3 milky=mix(lifted,vec3(l)+vec3(.11,.07,.13),.35);
+  col=mix(col,milky,pastel);
+ }
  col=hueShift(col,hue*sin(time*.22+wave*.12));
  col=(col-.5)*contrast+.5+brightness;
  col*=1.-smoothstep(.15,.72,r)*vignette;
+ if(focus>0.){
+  float edgeDist=smoothstep(.16,.62,r);
+  col=mix(col,vec3(l),edgeDist*.28*focus);
+ }
+ float vigRadius=focus>0.?smoothstep(.12,.68,r):smoothstep(.15,.72,r);
+ col*=1.-vigRadius*vignette;
  gl_FragColor=vec4(clamp(col,0.,1.),1.);
 }`,
 };
@@ -343,6 +383,7 @@ export class EffectManager {
     this.afterimage.enabled = false;
     this.composer.addPass(this.afterimage);
     this.shader = new ShaderPass(shader);
+    this.shader.uniforms.resolution.value.set(width, height);
     this.composer.addPass(this.shader);
   }
 
@@ -402,8 +443,12 @@ export class EffectManager {
     u.melt.value = THREE.MathUtils.lerp(base.melt, allowMotion ? c.melt || 0 : 0, level);
     u.mixing.value = THREE.MathUtils.lerp(base.mixing, allowMotion ? c.mixing || 0 : 0, level);
     u.lift.value = THREE.MathUtils.lerp(base.lift, c.lift || 0, level);
+    u.sharpen.value = THREE.MathUtils.lerp(base.sharpen, c.sharpen || 0, level);
+    u.focus.value = THREE.MathUtils.lerp(base.focus, c.focus || 0, level);
+    u.pastel.value = THREE.MathUtils.lerp(base.pastel, c.pastel || 0, level);
     u.pulse.value = allowFlashes ? THREE.MathUtils.lerp(base.pulse, c.pulse, level) : 0;
     u.time.value += dt;
+    this.stutterTime += dt;
     const fovPulse = allowFlashes ? 1 + Math.sin(u.time.value * c.pulse) * 0.004 * level : 1;
     const target = THREE.MathUtils.lerp(this.snapshot.cameraFov, c.fov, level) * fovPulse;
     this.camera.fov = THREE.MathUtils.damp(this.camera.fov, target, 6, dt);
@@ -475,8 +520,19 @@ export class EffectManager {
     return this.timeline.intensity * this.settings.intensity;
   }
 
+  private stutterTime = 0;
+
+  get stutterIntensity(): number {
+    const c = this.active ? effectConfigs[this.active] : null;
+    if (!c?.stutter) return 0;
+    const cycle = this.stutterTime % 2.5;
+    if (cycle < 1.6) return 0;
+    const progress = (cycle - 1.6) / 0.9;
+    return Math.sin(progress * Math.PI) * c.stutter;
+  }
+
   /** Zwraca modyfikatory ruchu gracza wynikające z aktywnej używki. */
-  get modifiers() {
+  get modifiers(): { speed: number; sway: number; shake: number; bob: number; stutter: number } {
     const c = this.active ? effectConfigs[this.active] : null,
       level = this.visualIntensity;
     return {
@@ -484,6 +540,7 @@ export class EffectManager {
       sway: this.settings.reduceMotion || this.settings.limitSway ? 0 : (c?.sway || 0) * level,
       shake: this.settings.reduceMotion || this.settings.disableShake ? 0 : (c?.shake || 0) * level,
       bob: this.settings.reduceMotion ? 1 : THREE.MathUtils.lerp(1, c?.bob || 1, level),
+      stutter: this.settings.reduceMotion ? 0 : this.stutterIntensity * level,
     };
   }
 
@@ -495,6 +552,7 @@ export class EffectManager {
   /** Dopasowuje bufory post-processingu do nowego rozmiaru widoku. */
   resize(w: number, h: number) {
     this.composer.setSize(w, h);
+    this.shader.uniforms.resolution.value.set(w, h);
   }
 
   /** Zatrzymuje efekt i zwalnia zasoby renderera post-processingu. */
