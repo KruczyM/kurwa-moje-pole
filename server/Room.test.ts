@@ -128,4 +128,62 @@ describe('Room', () => {
     expect(room.getSlot('Amper')?.status).toBe('free');
     expect(room.getSlot('Antena')?.status).toBe('reserving');
   });
+
+  describe('PlayerTransforms & WorldSnapshot', () => {
+    it('aktualizuje transformację gracza o statusie occupied i generuje snapshot świata', () => {
+      room.reserve('p1', 'Amper', 'Kolega1', 'token-1');
+      room.confirm('p1', 'Amper', 'token-1');
+
+      const updated = room.updatePlayerTransform('p1', {
+        position: [12.5, 0, -8.2],
+        yaw: 1.57,
+        pitch: 0.1,
+        locomotion: 'Walk',
+        speed: 3.2,
+        timestamp: Date.now(),
+      });
+      expect(updated).toBe(true);
+
+      const snapshot = room.getWorldSnapshot();
+      expect(snapshot.players.length).toBe(1);
+      expect(snapshot.players[0].playerId).toBe('p1');
+      expect(snapshot.players[0].character).toBe('Amper');
+      expect(snapshot.players[0].nickname).toBe('Kolega1');
+      expect(snapshot.players[0].transform.position).toEqual([12.5, 0, -8.2]);
+      expect(snapshot.players[0].transform.locomotion).toBe('Walk');
+    });
+
+    it('odrzuca nieprawidłowe lub wykraczające poza świat pozycje (NaN, Infinity, poza mapą)', () => {
+      room.reserve('p1', 'Amper', 'Kolega1', 'token-1');
+      room.confirm('p1', 'Amper', 'token-1');
+
+      const badNan = room.updatePlayerTransform('p1', {
+        position: [NaN, 0, 0],
+        yaw: 0,
+      });
+      expect(badNan).toBe(false);
+
+      const badOutOfBounds = room.updatePlayerTransform('p1', {
+        position: [9999, 0, 0],
+        yaw: 0,
+      });
+      expect(badOutOfBounds).toBe(false);
+    });
+
+    it('usuwa transformację ze snapshotu po zwolnieniu slotu', () => {
+      room.reserve('p1', 'Amper', 'Kolega1', 'token-1');
+      room.confirm('p1', 'Amper', 'token-1');
+      room.updatePlayerTransform('p1', {
+        position: [1, 0, 1],
+        yaw: 0,
+        locomotion: 'Idle',
+        speed: 0,
+        timestamp: Date.now(),
+      });
+      expect(room.getWorldSnapshot().players.length).toBe(1);
+
+      room.release('p1', 'Amper', 'token-1');
+      expect(room.getWorldSnapshot().players.length).toBe(0);
+    });
+  });
 });

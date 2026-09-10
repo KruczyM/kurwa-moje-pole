@@ -3,10 +3,14 @@ import {
   type CharacterName,
   type CharacterSlot,
   type RoomState,
+  type PlayerTransform,
+  type PlayerSnapshot,
+  type WorldSnapshotPayload,
   PROTOCOL_VERSION,
   RESERVATION_TIMEOUT_MS,
   RECONNECT_GRACE_PERIOD_MS,
   validateAndSanitizeNickname,
+  validatePlayerTransform,
   isCharacterName,
 } from '../src/game/network/networkProtocol.js';
 
@@ -24,6 +28,7 @@ export class Room {
   private readonly onSlotChanged?: (character: CharacterName, slot: CharacterSlot) => void;
 
   private slots: Record<CharacterName, CharacterSlot>;
+  private playerTransforms = new Map<CharacterName, PlayerTransform>();
   private disconnectTimers = new Map<CharacterName, NodeJS.Timeout>();
   private reservationTimers = new Map<CharacterName, NodeJS.Timeout>();
 
@@ -209,6 +214,40 @@ export class Room {
     return undefined;
   }
 
+  updatePlayerTransform(playerId: string, transformData: unknown): boolean {
+    const slot = this.findSlotByPlayerId(playerId);
+    if (!slot || slot.status !== 'occupied') return false;
+
+    const validation = validatePlayerTransform(transformData);
+    if (!validation.valid || !validation.transform) return false;
+
+    this.playerTransforms.set(slot.character, validation.transform);
+    return true;
+  }
+
+  getWorldSnapshot(): WorldSnapshotPayload {
+    const players: PlayerSnapshot[] = [];
+
+    for (const name of CANONICAL_CHARACTERS) {
+      const slot = this.slots[name];
+      const transform = this.playerTransforms.get(name);
+
+      if (slot.status === 'occupied' && slot.playerId && transform) {
+        players.push({
+          playerId: slot.playerId,
+          character: slot.character,
+          nickname: slot.nickname ?? slot.character,
+          transform,
+        });
+      }
+    }
+
+    return {
+      timestamp: Date.now(),
+      players,
+    };
+  }
+
   handleReconnect(sessionToken: string, newPlayerId: string): { restored: boolean; character?: CharacterName; nickname?: string } {
     const slot = this.findSlotBySessionToken(sessionToken);
     if (!slot || slot.status !== 'occupied') {
@@ -226,6 +265,7 @@ export class Room {
   private freeSlot(character: CharacterName): void {
     this.clearReservationTimeout(character);
     this.clearDisconnectTimer(character);
+    this.playerTransforms.delete(character);
 
     this.slots[character] = {
       character,

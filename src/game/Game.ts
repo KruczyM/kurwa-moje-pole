@@ -33,6 +33,8 @@ import { ItemUseSequence } from './interactions/ItemUseSequence';
 import { itemUseSequenceConfig } from './interactions/itemUseSequenceConfig';
 import { SeatController, type SeatPose } from './interactions/SeatController';
 import { configureColorPipeline } from './rendering/colorPipeline';
+import { RemotePlayersManager } from './network/RemotePlayersManager';
+import type { NetworkClient } from './network/NetworkClient';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -163,9 +165,11 @@ export class Game {
   world?: CampWorld;
   npcs?: NpcManager;
   npcDebugOverlay?: NpcDebugOverlay;
+  remotePlayersManager?: RemotePlayersManager;
   effects?: EffectManager;
   interactions?: InteractionManager;
   toiletTimer = 0;
+  private networkSyncTimer = 0;
   private settings = loadVisualSettings();
   private audioSettings = loadAudioSettings();
   private propModels = new Map<string, THREE.Object3D>();
@@ -201,7 +205,10 @@ export class Game {
   private mediaQueryList?: MediaQueryList;
   private mediaQueryHandler?: (event: MediaQueryListEvent) => void;
 
-  constructor(readonly state: AppStateMachine) {
+  constructor(
+    readonly state: AppStateMachine,
+    readonly networkClient?: NetworkClient,
+  ) {
     try {
       this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     } catch {
@@ -282,6 +289,7 @@ export class Game {
         (x, z) => this.world!.canMove(x, z, NPC_NAVIGATION_RADIUS),
       );
       this.npcs = new NpcManager(this.scene, assets.characters, assets.speaker, npcNavigation);
+      this.remotePlayersManager = new RemotePlayersManager(this.scene, assets.characters, this.networkClient);
       if (isNpcDebugAllowed() && this.world) {
         this.npcDebugOverlay = new NpcDebugOverlay({
           scene: this.scene,
@@ -825,6 +833,17 @@ export class Game {
       if (state === 'playing' || state === 'seated') {
         this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position);
       }
+      if ((state === 'playing' || state === 'seated') && this.networkClient?.isOnline()) {
+        this.networkSyncTimer += dt;
+        if (this.networkSyncTimer >= 0.05) {
+          this.networkSyncTimer = 0;
+          const transform = this.player?.getTransform();
+          if (transform) {
+            this.networkClient.sendPlayerUpdate(transform);
+          }
+        }
+      }
+      this.remotePlayersManager?.update(dt, this.camera);
       if (state === 'seated') this.seatController?.update(dt);
       this.world?.update(this.clock.elapsedTime, this.camera.position);
       this.effects?.update(dt);
@@ -1009,6 +1028,8 @@ export class Game {
     this.mobileControls = undefined;
     this.player?.dispose();
     this.npcs?.dispose();
+    this.remotePlayersManager?.dispose();
+    this.remotePlayersManager = undefined;
     this.npcDebugOverlay?.dispose();
     this.npcDebugOverlay = undefined;
     this.world?.dispose();
