@@ -14,8 +14,6 @@ import {
   DEFAULT_WILDFLOWER_OPTIONS,
 } from './defaults'
 import { GrassLayer } from './GrassLayer'
-import { TutorialTriangleGrass } from './TutorialTriangleGrass'
-import { DistantTriangleGrass } from './DistantTriangleGrass'
 import { DEFAULT_GRASS_PRESET, GRASS_PRESETS, type GrassQualityPreset } from '../../grassQuality'
 import type {
   GrassCoverageMap,
@@ -332,8 +330,6 @@ function readonlySnapshot(
 export class Grass extends THREE.Group {
   blades: GrassLayer
   wildflowers?: Wildflowers
-  distantGrass: DistantTriangleGrass
-  tutorialGrass: TutorialTriangleGrass
   private currentQuality: GrassQualityPreset = DEFAULT_GRASS_PRESET
   /** Resolves after every URL-backed coverage map in the current options is readable. */
   ready: Promise<void> = Promise.resolve()
@@ -389,10 +385,6 @@ export class Grass extends THREE.Group {
     // CampWorld already owns the visible ground; this facade supplies blades only.
     if (this.terrain) this.add(this.terrain.grassSurface)
     this.add(this.blades)
-    this.distantGrass = new DistantTriangleGrass(this.currentQuality)
-    this.tutorialGrass = new TutorialTriangleGrass(this.currentQuality)
-    this.add(this.distantGrass)
-    this.add(this.tutorialGrass)
     this.rebuildWildflowers()
     this.initialized = true
     this.ready = this.coverageReady(this.sourceOptions)
@@ -406,8 +398,6 @@ export class Grass extends THREE.Group {
     if (this.disposed) return
     this.currentQuality = preset
     const config = GRASS_PRESETS[preset]
-    this.tutorialGrass.setPreset(preset)
-    this.distantGrass.setPreset(preset)
     this.blades.setOptions({ density: config.grassLayerDensity })
   }
 
@@ -464,8 +454,6 @@ export class Grass extends THREE.Group {
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
-    this.tutorialGrass.dispose()
-    this.distantGrass.dispose()
     this.disposeVegetation()
     this.disposeOwnedTerrain()
     this.removeExternalSurfaceVisual()
