@@ -19,6 +19,32 @@ const NICKNAME_KEY = 'camp-player-nickname';
 const DEFAULT_SERVER_URL =
   typeof location !== 'undefined' && location.hostname === 'localhost' ? 'http://localhost:3001' : undefined;
 
+/**
+ * Automatycznie wyznacza adres serwera pokojow:
+ * 1. Parametr URL `?server=https://...`
+ * 2. Zmienna srodowiskowa Vite `VITE_SERVER_URL`
+ * 3. Fallback: `http://localhost:3001` (na localhost / 127.0.0.1)
+ */
+export function resolveServerUrl(customUrl?: string): string | undefined {
+  if (customUrl) return customUrl;
+
+  if (typeof location !== 'undefined') {
+    const param = new URLSearchParams(location.search).get('server');
+    if (param && param.trim().length > 0) return param.trim();
+
+    const envUrl = typeof import.meta !== 'undefined' && import.meta.env?.VITE_SERVER_URL;
+    if (envUrl && typeof envUrl === 'string' && envUrl.trim().length > 0) {
+      return envUrl.trim();
+    }
+
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      return 'http://localhost:3001';
+    }
+  }
+
+  return undefined;
+}
+
 export class NetworkClient {
   private socket?: Socket;
   private status: NetworkConnectionStatus = 'disconnected';
@@ -35,6 +61,7 @@ export class NetworkClient {
 
   constructor(options: NetworkClientOptions = {}) {
     this.serverUrl = options.serverUrl ?? DEFAULT_SERVER_URL;
+    this.serverUrl = resolveServerUrl(options.serverUrl);
     this.roomId = options.roomId ?? 'glowny-oboz';
     this.sessionToken = this.loadOrGenerateSessionToken();
     this.nickname = this.loadNickname();

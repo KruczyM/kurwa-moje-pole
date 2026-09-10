@@ -31,4 +31,11 @@ describe('NetworkClient', () => {
     expect(statuses).toEqual(['disconnected']);
     unsubscribe();
   });
+
+  describe('resolveServerUrl', () => {
+    it('zwraca jawnie przekazany customUrl', async () => {
+      const { resolveServerUrl } = await import('./NetworkClient');
+      expect(resolveServerUrl('https://custom-server.pl')).toBe('https://custom-server.pl');
+    });
+  });
 });

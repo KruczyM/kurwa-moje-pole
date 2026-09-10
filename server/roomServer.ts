@@ -172,12 +172,15 @@ export class RoomServer {
 const isMainModule = typeof process !== 'undefined' && process.argv[1]?.replace(/\\/g, '/').endsWith('roomServer.ts');
 if (isMainModule) {
   const port = Number(process.env.PORT) || 3001;
-  const server = new RoomServer({ port });
-  void server.start();
+  const corsOrigin = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
+    : '*';
+  const instance = new RoomServer({ port, corsOrigin });
+  void instance.start();
 
   const shutdown = async () => {
     console.log('[RoomServer] Zamykanie serwera...');
-    await server.stop();
+    await instance.stop();
     process.exit(0);
   };
   process.on('SIGINT', () => void shutdown());
