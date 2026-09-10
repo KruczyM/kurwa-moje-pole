@@ -14,7 +14,25 @@
         <p class="eyebrow">FESTIWALOWY VERTICAL SLICE · 3D</p>
         <h1>Kurwa,<br /><i>moje pole!</i></h1>
         <p>Wybierz postać, którą obserwujesz z perspektywy pierwszej osoby.</p>
+        <div class="nickname-form">
+          <label for="player-nickname">Twój pseudonim (nazwa wyświetlana):</label>
+          <div class="nickname-input-wrap">
+            <input
+              id="player-nickname"
+              type="text"
+              maxlength="18"
+              placeholder="Wpisz swój nick..."
+              autocomplete="nickname"
+            />
+            <span id="nickname-count">0/18</span>
+          </div>
+          <span id="nickname-error" class="error-hint" hidden></span>
+        </div>
         <div id="character-select"></div>
+        <div id="network-status-badge" class="network-status-badge">
+          <span class="status-dot"></span>
+          <span id="network-status-text">Tryb lokalny</span>
+        </div>
         <p id="character-preview-status" role="status" hidden></p>
         <div id="character-preview-layer" class="character-preview-layer"></div>
         <button id="play">WEJDŹ NA POLE</button><small id="start-controls"></small>

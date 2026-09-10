@@ -4,5 +4,5 @@ export default defineConfig(({ command }) => ({
   // GitHub Pages udostępnia projekt pod /kurwa-moje-pole/, a serwer developerski pod /.
   base: command === 'build' ? '/kurwa-moje-pole/' : '/',
   publicDir: 'public',
-  test: { include: ['src/**/*.test.ts'] },
+  test: { include: ['src/**/*.test.ts', 'server/**/*.test.ts'] },
 }));

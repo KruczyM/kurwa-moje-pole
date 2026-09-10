@@ -9,14 +9,126 @@ import { AppState, AppStateMachine } from './game/lifecycle/AppStateMachine';
 import { controlHintForState, inputBindings, startControlHint } from './game/lifecycle/InputBindings';
 import { isMobileInputDevice } from './game/player/MobileControls';
 import { isGrassQualityPreset } from './game/world/grassQuality';
+import { NetworkClient } from './game/network/NetworkClient';
+import {
+  CANONICAL_CHARACTERS,
+  type CharacterName,
+  validateAndSanitizeNickname,
+} from './game/network/networkProtocol';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
-const names = ['Amper', 'Antena', 'Gruczoł', 'Klątwa', 'Krwiak', 'Pień', 'Pierścień', 'Zawór'];
+const names: readonly CharacterName[] = CANONICAL_CHARACTERS;
 const state = new AppStateMachine();
 let game: Game | undefined;
 let preview: CharacterPreview | undefined;
-let selected = names[0];
+let selected: CharacterName = names[0];
+
+const networkClient = new NetworkClient({ autoConnect: true });
+
+// UI Pseudonimu gracza:
+const nicknameInput = qs<HTMLInputElement>('#player-nickname');
+const nicknameCount = qs<HTMLSpanElement>('#nickname-count');
+const nicknameError = qs<HTMLSpanElement>('#nickname-error');
+const networkBadge = qs<HTMLDivElement>('#network-status-badge');
+const networkStatusText = qs<HTMLSpanElement>('#network-status-text');
+
+if (nicknameInput) {
+  nicknameInput.value = networkClient.getNickname();
+  if (nicknameCount) nicknameCount.textContent = `${nicknameInput.value.length}/18`;
+
+  nicknameInput.oninput = () => {
+    const val = nicknameInput.value;
+    if (nicknameCount) nicknameCount.textContent = `${val.length}/18`;
+    const validation = validateAndSanitizeNickname(val);
+    if (!validation.valid && val.length > 0) {
+      if (nicknameError) {
+        nicknameError.textContent = validation.error ?? '';
+        nicknameError.hidden = false;
+      }
+    } else {
+      if (nicknameError) nicknameError.hidden = true;
+      if (validation.valid) {
+        networkClient.setNickname(validation.sanitized);
+        if (networkClient.isOnline()) {
+          networkClient.reserveCharacter(selected, validation.sanitized);
+        }
+      }
+    }
+  };
+}
+
+// UI Statusu sieci:
+networkClient.onStatusChange((status) => {
+  if (!networkBadge || !networkStatusText) return;
+  networkBadge.className = `network-status-badge ${status}`;
+  if (status === 'connected') {
+    networkStatusText.textContent = 'Online (Pokój: główny obóz)';
+  } else if (status === 'connecting') {
+    networkStatusText.textContent = 'Łączenie z serwerem...';
+  } else {
+    networkStatusText.textContent = 'Tryb lokalny (Offline)';
+  }
+});
+
+// Tworzenie przycisków wyboru postaci:
+const selection = qs('#character-select');
+const characterButtons = new Map<CharacterName, HTMLButtonElement>();
+
+names.forEach((name) => {
+  const button = document.createElement('button');
+  button.textContent = name;
+  button.className = name === selected ? 'selected' : '';
+  button.onclick = () => {
+    if (button.disabled) return;
+    selected = name;
+    void preview?.show(name);
+    selection
+      .querySelectorAll('button')
+      .forEach((item) => item.classList.toggle('selected', item.textContent === name));
+
+    if (networkClient.isOnline()) {
+      networkClient.reserveCharacter(name, nicknameInput?.value);
+    }
+  };
+  characterButtons.set(name, button);
+  selection.append(button);
+});
+
+// Synchronizacja stanu slotów z serwera:
+networkClient.onStateChange((roomState) => {
+  const myId = networkClient.getMyPlayerId();
+  for (const name of names) {
+    const btn = characterButtons.get(name);
+    if (!btn) continue;
+    const slot = roomState.slots[name];
+    if (!slot) continue;
+
+    btn.classList.remove('occupied', 'reserving');
+    const isMine =
+      slot.playerId === myId || (slot.sessionToken && slot.sessionToken === networkClient.getSessionToken());
+
+    if (slot.status === 'occupied' && !isMine) {
+      btn.classList.add('occupied');
+      btn.disabled = true;
+      btn.title = `Zajęta przez: ${slot.nickname || 'innego gracza'}`;
+    } else if (slot.status === 'reserving' && !isMine) {
+      btn.classList.add('reserving');
+      btn.disabled = false;
+      btn.title = `Rezerwowana przez: ${slot.nickname || 'innego gracza'}`;
+    } else {
+      btn.disabled = false;
+      btn.title = isMine ? 'Twoja postać' : '';
+    }
+  }
+});
+
+networkClient.onError((err) => {
+  if (nicknameError) {
+    nicknameError.textContent = err.message;
+    nicknameError.hidden = false;
+  }
+});
 
 /** Synchronizuje widoczność głównych ekranów HTML z aktualnym stanem aplikacji. */
 function syncShell(next: AppState) {
@@ -58,6 +170,24 @@ function createPreview() {
 /** Zwalnia podgląd menu, zapisuje wybór postaci i uruchamia właściwą scenę gry. */
 async function startGame() {
   if (state.current !== 'start' && state.current !== 'error') return;
+
+  // Walidacja pseudonimu:
+  const nickVal = validateAndSanitizeNickname(nicknameInput?.value ?? networkClient.getNickname());
+  if (!nickVal.valid) {
+    if (nicknameError) {
+      nicknameError.textContent = nickVal.error ?? 'Wpisz poprawny pseudonim.';
+      nicknameError.hidden = false;
+    }
+    nicknameInput?.focus();
+    return;
+  }
+
+  networkClient.setNickname(nickVal.sanitized);
+
+  if (networkClient.isOnline()) {
+    networkClient.confirmCharacter(selected);
+  }
+
   game?.dispose();
   game = undefined;
   preview?.dispose();
@@ -93,21 +223,6 @@ qs('#dialog-help').textContent = controlHintForState('dialog');
 qs('#inspect-use').textContent = `${inputBindings.interact} — uruchom efekt`;
 qs('#inspect-close').textContent = `${inputBindings.escape} — wróć`;
 createPreview();
-
-const selection = qs('#character-select');
-names.forEach((name) => {
-  const button = document.createElement('button');
-  button.textContent = name;
-  button.className = name === selected ? 'selected' : '';
-  button.onclick = () => {
-    selected = name;
-    void preview?.show(name);
-    selection
-      .querySelectorAll('button')
-      .forEach((item) => item.classList.toggle('selected', item.textContent === name));
-  };
-  selection.append(button);
-});
 
 qs<HTMLButtonElement>('#play').onclick = () => void startGame();
 qs<HTMLButtonElement>('#retry-load').onclick = () => void startGame();
