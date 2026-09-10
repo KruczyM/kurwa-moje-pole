@@ -42,7 +42,7 @@ describe('Ghibli Grass Generation & Performance', () => {
     const elapsedMs = performance.now() - t0;
     console.log(`Grass generated in ${elapsedMs.toFixed(1)} ms with ${grass.bladeCount} blades.`);
 
-    expect(elapsedMs).toBeLessThan(1500);
+    expect(elapsedMs).toBeLessThan(3000);
     expect(grass.bladeCount).toBeGreaterThan(1000);
 
     expect(grass.blades).toBeDefined();

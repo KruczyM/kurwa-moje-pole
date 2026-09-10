@@ -22,7 +22,12 @@ const names: readonly CharacterName[] = CANONICAL_CHARACTERS;
 const state = new AppStateMachine();
 let game: Game | undefined;
 let preview: CharacterPreview | undefined;
-let selected: CharacterName = names[0];
+const savedSessionChar =
+  typeof sessionStorage !== 'undefined'
+    ? (sessionStorage.getItem('camp-player-character') as CharacterName | null)
+    : null;
+let selected: CharacterName =
+  savedSessionChar && names.includes(savedSessionChar) ? savedSessionChar : names[0];
 
 const networkClient = new NetworkClient({ autoConnect: true });
 
@@ -64,6 +69,7 @@ networkClient.onStatusChange((status) => {
   networkBadge.className = `network-status-badge ${status}`;
   if (status === 'connected') {
     networkStatusText.textContent = 'Online (Pokój: główny obóz)';
+    networkClient.reserveCharacter(selected, nicknameInput?.value);
   } else if (status === 'connecting') {
     networkStatusText.textContent = 'Łączenie z serwerem...';
   } else {
@@ -82,6 +88,7 @@ names.forEach((name) => {
   button.onclick = () => {
     if (button.disabled) return;
     selected = name;
+    sessionStorage.setItem('camp-player-character', selected);
     void preview?.show(name);
     selection
       .querySelectorAll('button')
@@ -98,6 +105,7 @@ names.forEach((name) => {
 // Synchronizacja stanu slotów z serwera:
 networkClient.onStateChange((roomState) => {
   const myId = networkClient.getMyPlayerId();
+  const myToken = networkClient.getSessionToken();
   for (const name of names) {
     const btn = characterButtons.get(name);
     if (!btn) continue;
@@ -105,8 +113,7 @@ networkClient.onStateChange((roomState) => {
     if (!slot) continue;
 
     btn.classList.remove('occupied', 'reserving');
-    const isMine =
-      slot.playerId === myId || (slot.sessionToken && slot.sessionToken === networkClient.getSessionToken());
+    const isMine = slot.playerId === myId || (slot.sessionToken && slot.sessionToken === myToken);
 
     if (slot.status === 'occupied' && !isMine) {
       btn.classList.add('occupied');
@@ -114,11 +121,36 @@ networkClient.onStateChange((roomState) => {
       btn.title = `Zajęta przez: ${slot.nickname || 'innego gracza'}`;
     } else if (slot.status === 'reserving' && !isMine) {
       btn.classList.add('reserving');
-      btn.disabled = false;
+      btn.disabled = true;
       btn.title = `Rezerwowana przez: ${slot.nickname || 'innego gracza'}`;
     } else {
       btn.disabled = false;
       btn.title = isMine ? 'Twoja postać' : '';
+    }
+  }
+
+  // Jeśli aktualnie wybrana postać została zajęta lub zarezerwowana przez kogoś innego, automatycznie przełącz na pierwszą wolną:
+  const currentSlot = roomState.slots[selected];
+  const isCurrentMine =
+    currentSlot &&
+    (currentSlot.playerId === myId || (currentSlot.sessionToken && currentSlot.sessionToken === myToken));
+  if (currentSlot && currentSlot.status !== 'free' && !isCurrentMine) {
+    const freeName = names.find((name) => {
+      const s = roomState.slots[name];
+      return (
+        s && (s.status === 'free' || s.playerId === myId || (s.sessionToken && s.sessionToken === myToken))
+      );
+    });
+    if (freeName) {
+      selected = freeName;
+      sessionStorage.setItem('camp-player-character', selected);
+      void preview?.show(selected);
+      characterButtons.forEach((btn, name) => {
+        btn.classList.toggle('selected', name === selected);
+      });
+      if (networkClient.isOnline()) {
+        networkClient.reserveCharacter(selected, nicknameInput?.value);
+      }
     }
   }
 });
@@ -192,6 +224,7 @@ async function startGame() {
   game = undefined;
   preview?.dispose();
   preview = undefined;
+  sessionStorage.setItem('camp-player-character', selected);
   localStorage.setItem('camp-player-character', selected);
   state.transition('loading');
   try {

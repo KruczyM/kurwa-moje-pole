@@ -76,13 +76,13 @@ export class NetworkClient {
   }
 
   private loadOrGenerateSessionToken(): string {
-    if (typeof localStorage === 'undefined') {
+    if (typeof sessionStorage === 'undefined') {
       return `session-${Math.random().toString(36).slice(2, 10)}`;
     }
-    let token = localStorage.getItem(SESSION_TOKEN_KEY);
+    let token = sessionStorage.getItem(SESSION_TOKEN_KEY);
     if (!token) {
       token = `session-${Math.random().toString(36).slice(2, 11)}-${Date.now()}`;
-      localStorage.setItem(SESSION_TOKEN_KEY, token);
+      sessionStorage.setItem(SESSION_TOKEN_KEY, token);
     }
     return token;
   }

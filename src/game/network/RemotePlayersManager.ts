@@ -77,6 +77,7 @@ export class RemotePlayersManager {
     const initialGroundY = terrainHeight(px, pz);
     root.position.set(px, initialGroundY, pz);
     root.rotation.set(0, player.transform.yaw, 0, 'YXZ');
+    root.rotation.set(0, player.transform.yaw + Math.PI, 0, 'YXZ');
 
     const assetId = this.resolveAssetId(player.character);
     const gltf = this.characterModels.get(assetId);
@@ -220,6 +221,7 @@ export class RemotePlayersManager {
       const yawFactor = 1 - Math.exp(-18 * dt);
       entity.currentYaw += diff * yawFactor;
       entity.root.rotation.set(0, entity.currentYaw, 0, 'YXZ');
+      entity.root.rotation.set(0, entity.currentYaw + Math.PI, 0, 'YXZ');
 
       // 3. Aktualizacja animacji:
       if (entity.animator) {

@@ -204,7 +204,6 @@ export class Game {
   private pendingWarningItem?: PendingWarningItem;
   private mediaQueryList?: MediaQueryList;
   private mediaQueryHandler?: (event: MediaQueryListEvent) => void;
-
   constructor(
     readonly state: AppStateMachine,
     readonly networkClient?: NetworkClient,
@@ -320,7 +319,9 @@ export class Game {
         ...this.npcs!.npcs.map((npc) => npc.root),
         ...this.world!.interactables.map((item) => item.object),
       ]);
-      const selectedName = localStorage.getItem('camp-player-character');
+      const selectedName =
+        (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('camp-player-character') : null) ||
+        (typeof localStorage !== 'undefined' ? localStorage.getItem('camp-player-character') : null);
       const selectedAsset = characterAssets.find((asset) => asset.name === selectedName);
       const selectedCharacter =
         (selectedAsset ? assets.characters.get(selectedAsset.id) : undefined) ??
