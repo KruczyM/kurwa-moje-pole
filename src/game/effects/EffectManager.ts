@@ -299,7 +299,6 @@ const shader = {
   vertexShader:
     'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
   fragmentShader: `uniform sampler2D tDiffuse;
-uniform float time,distortion,saturation,hue,chroma,contrast,brightness,vignette,blur,pulse,melt,mixing,lift;
 uniform vec2 resolution;
 uniform float time,distortion,saturation,hue,chroma,contrast,brightness,vignette,blur,pulse,melt,mixing,lift,sharpen,focus,pastel;
 varying vec2 vUv;
@@ -326,13 +325,9 @@ void main(){
   col=mix(col,mixed,mixing*(1.-alternate)*.88);
  }
  if(sharpen>0.){
-  vec2 step=1./max(resolution,vec2(800.,600.));
-  vec3 n=(texture2D(tDiffuse,uv+vec2(step.x,0.)).rgb+texture2D(tDiffuse,uv-vec2(step.x,0.)).rgb+texture2D(tDiffuse,uv+vec2(0.,step.y)).rgb+texture2D(tDiffuse,uv-vec2(0.,step.y)).rgb)*.25;
   vec2 texelSize=vec2(1.0)/max(resolution,vec2(800.0,600.0));
   vec3 n=(texture2D(tDiffuse,uv+vec2(texelSize.x,0.0)).rgb+texture2D(tDiffuse,uv-vec2(texelSize.x,0.0)).rgb+texture2D(tDiffuse,uv+vec2(0.0,texelSize.y)).rgb+texture2D(tDiffuse,uv-vec2(0.0,texelSize.y)).rgb)*0.25;
   vec3 edge=col-n;
-  float centerMult=focus>0.?mix(1.4,.45,smoothstep(0.,.55,r)):1.;
-  col=clamp(col+edge*(sharpen*centerMult),0.,1.);
   float centerMult=focus>0.?mix(1.4,0.45,smoothstep(0.0,0.55,r)):1.0;
   col=clamp(col+edge*(sharpen*centerMult),0.0,1.0);
  }

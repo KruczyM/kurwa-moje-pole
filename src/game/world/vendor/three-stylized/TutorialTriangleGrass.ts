@@ -138,17 +138,12 @@ export class TutorialTriangleGrass extends THREE.Mesh {
           float tip = color.g;
           float side = color.r > 0.05 ? 1.0 : (color.b > 0.05 ? -1.0 : 0.0);
           float n = fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5);
-
-          float cov = campCoverage(p.xz);
           float h = (0.22 + n * 0.32) * cov;
-          float h = 0.22 + n * 0.32;
 
           p += aYaw * side * 0.009 * (0.3 + 0.7 * cov);
-          p += aYaw * side * 0.009;
           p.y += tip * h;
 
           float w = (sin(uTime * 0.72 + p.x * 0.42 + p.z * 0.29) + sin(uTime * 0.31 + p.z * 0.74)) * 0.035 * tip * tip * cov;
-          float w = (sin(uTime * 0.72 + p.x * 0.42 + p.z * 0.29) + sin(uTime * 0.31 + p.z * 0.74)) * 0.035 * tip * tip;
           p.x += w;
           p.z += w * 0.6;
 
@@ -162,11 +157,6 @@ export class TutorialTriangleGrass extends THREE.Mesh {
         varying float vShade;
 
         void main() {
-          // Bardziej trawiasty, soczysty zielony odcien:
-          vec3 dark = vec3(0.045, 0.22, 0.065);   // Ciemna, gleboka zielen przy nasadzie
-          vec3 mid = vec3(0.12, 0.48, 0.10);     // Naturalna, soczysta zielen trawy
-          vec3 light = vec3(0.34, 0.74, 0.16);   // Jasna zielen koncowek w sloncu
-          vec3 col = mix(mix(dark, mid, vShade), light, vTip * 0.72);
           // Rzeczywisty, naturalny kolor trawy - gleboka, ciemna zielen:
           vec3 dark = vec3(0.015, 0.070, 0.022);  // Gleboki ciemnozielony cien u nasady
           vec3 mid = vec3(0.038, 0.165, 0.048);   // Naturalna, ciemna zielen zdzbla

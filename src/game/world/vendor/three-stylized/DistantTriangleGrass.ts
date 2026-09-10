@@ -118,8 +118,6 @@ export class DistantTriangleGrass extends THREE.Mesh {
       fragmentShader: `
         varying float vTip;
         void main() {
-          vec3 dark = vec3(0.045, 0.22, 0.065);
-          vec3 light = vec3(0.24, 0.58, 0.14);
           vec3 dark = vec3(0.015, 0.070, 0.022);
           vec3 light = vec3(0.075, 0.260, 0.085);
           gl_FragColor = vec4(mix(dark, light, vTip), 1.0);
