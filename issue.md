@@ -27,9 +27,8 @@ Liczba otwartych issue: **9**.
 - [x] [#25 — [Efekty] Dopracować pięć odrębnych efektów i bezpieczne wygaszanie](https://github.com/KruczyM/kurwa-moje-pole/issues/25)
 - [x] [#26 — [Dostępność] Uzupełnić ustawienia reduced motion, błysków i intensywności](https://github.com/KruczyM/kurwa-moje-pole/issues/26)
 - [x] [#28 — [Audio] Dopracować głośnik i warstwę ambientu obozu](https://github.com/KruczyM/kurwa-moje-pole/issues/28)
-- [ ] [#29 — [Multiplayer] Utworzyć serwer pokojów i autorytatywną rezerwację postaci](https://github.com/KruczyM/kurwa-moje-pole/issues/29)
 - [x] [#29 — [Multiplayer] Utworzyć serwer pokojów i autorytatywną rezerwację postaci](https://github.com/KruczyM/kurwa-moje-pole/issues/29)
-- [ ] [#30 — [Multiplayer] Synchronizować ruch, obrót i animacje graczy](https://github.com/KruczyM/kurwa-moje-pole/issues/30)
+- [x] [#30 — [Multiplayer] Synchronizować ruch, obrót i animacje graczy](https://github.com/KruczyM/kurwa-moje-pole/issues/30)
 - [ ] [#31 — [Multiplayer] Przekazywać postacie między NPC a graczami bez duplikatów](https://github.com/KruczyM/kurwa-moje-pole/issues/31)
 - [ ] [#32 — [Voice chat] Dodać przestrzenny WebRTC z mute i zasięgiem 50 m](https://github.com/KruczyM/kurwa-moje-pole/issues/32)
 - [ ] [#33 — [Sieć] Dodać wersjonowany protokół, walidację i testy reconnect](https://github.com/KruczyM/kurwa-moje-pole/issues/33)
@@ -678,7 +677,7 @@ Liczba otwartych issue: **9**.
 
 #### [#30 — [Multiplayer] Synchronizować ruch, obrót i animacje graczy](https://github.com/KruczyM/kurwa-moje-pole/issues/30)
 
-- Status: **otwarte**
+- Status: **zamknięte**
 - Etykiety: `priority: high`, `area: animation`, `area: multiplayer`
 - Przypisani: brak
 - Utworzono: 2026-08-30
