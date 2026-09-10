@@ -36,9 +36,9 @@
   },
   "textures": {
     "grass": {
-      "color": "textures/grass/color.jpg",
-      "normal": "textures/grass/normal.jpg",
-      "roughness": "textures/grass/roughness.jpg"
+      "color": "textures/grass/Grass006_2K-JPG/Grass006_2K-JPG_Color.jpg",
+      "normal": "textures/grass/Grass006_2K-JPG/Grass006_2K-JPG_NormalGL.jpg",
+      "roughness": "textures/grass/Grass006_2K-JPG/Grass006_2K-JPG_Roughness.jpg"
     },
     "horizon": "textures/horizon/field.jpg",
     "skyboxes": {

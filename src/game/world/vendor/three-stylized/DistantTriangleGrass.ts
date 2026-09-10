@@ -16,17 +16,14 @@ function createDistantGeometry(count: number): THREE.BufferGeometry {
     const x = rnd() * extent * 2 - extent;
     const z = rnd() * extent * 2 - extent;
     const a = rnd() * Math.PI * 2;
-    const sinA = Math.sin(a);
-    const cosA = Math.cos(a);
-
     for (let v = 0; v < 3; v++) {
       const o = (i * 3 + v) * 3;
       p[o] = x;
       p[o + 1] = 0;
       p[o + 2] = z;
-      yaw[o] = sinA;
+      yaw[o] = Math.sin(a);
       yaw[o + 1] = 0;
-      yaw[o + 2] = -cosA;
+      yaw[o + 2] = -Math.cos(a);
       c[o] = v === 0 ? 0.1 : 0;
       c[o + 1] = v === 2 ? 1 : 0;
       c[o + 2] = v === 1 ? 0.1 : 0;
@@ -40,15 +37,15 @@ function createDistantGeometry(count: number): THREE.BufferGeometry {
   return g;
 }
 
-/** Low-detail full-map layer: fills the horizon while the near layer is dense near the player. */
 export class DistantTriangleGrass extends THREE.Mesh {
   private time: { value: number };
   private currentPreset: GrassQualityPreset;
 
   constructor(preset: GrassQualityPreset = DEFAULT_GRASS_PRESET) {
-    const config = GRASS_PRESETS[preset];
+    const config = GRASS_PRESETS[preset] ?? GRASS_PRESETS.high;
     const g = createDistantGeometry(config.distantBladeCount);
     const time = { value: 0 };
+
     const m = new THREE.ShaderMaterial({
       vertexColors: true,
       side: THREE.DoubleSide,
@@ -62,15 +59,33 @@ export class DistantTriangleGrass extends THREE.Mesh {
           return 0.18 * sin(p.x * 0.065) * cos(p.y * 0.055) + 0.09 * sin(p.x * 0.19 + p.y * 0.13);
         }
 
+        float campCoverage(vec2 p) {
+          float period = 35.0;
+          float halfParcel = 15.5;
+
+          float gx = abs(mod(p.x + 3500.0 + 17.5, period) - 17.5);
+          float gz = abs(mod(p.y + 3500.0 + 17.5, period) - 17.5);
+
+          if (gx > halfParcel || gz > halfParcel) {
+            return 0.0;
+          }
+          return 1.0;
+        }
+
         void main() {
           vec3 q = position;
+          float cov = campCoverage(q.xz);
+          if (cov <= 0.01) {
+            gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+            return;
+          }
           q.y = terrain(q.xz);
           float tip = color.g;
           float side = color.r > 0.05 ? 1.0 : (color.b > 0.05 ? -1.0 : 0.0);
-          float h = 0.12 + fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5) * 0.14;
-          q += aYaw * side * 0.012;
+          float h = (0.12 + fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5) * 0.18) * cov;
+          q += aYaw * side * 0.007;
           q.y += tip * h;
-          float wind = sin(uTime * 0.5 + q.x * 0.2 + q.z * 0.15) * 0.016 * tip * tip;
+          float wind = sin(uTime * 0.5 + q.x * 0.2 + q.z * 0.15) * 0.018 * tip * tip;
           q.x += wind;
           q.z += wind * 0.5;
           vTip = tip;
@@ -80,9 +95,9 @@ export class DistantTriangleGrass extends THREE.Mesh {
       fragmentShader: `
         varying float vTip;
         void main() {
-          vec3 dark = vec3(0.018, 0.12, 0.045);
-          vec3 light = vec3(0.150, 0.450, 0.095);
-          gl_FragColor = vec4(mix(dark, light, vTip * 0.72), 1.0);
+          vec3 dark = vec3(0.014, 0.075, 0.022);
+          vec3 light = vec3(0.065, 0.240, 0.080);
+          gl_FragColor = vec4(mix(dark, light, vTip), 1.0);
         }
       `,
     });
@@ -97,14 +112,11 @@ export class DistantTriangleGrass extends THREE.Mesh {
     };
   }
 
-  get preset(): GrassQualityPreset {
-    return this.currentPreset;
-  }
-
   setPreset(preset: GrassQualityPreset): void {
     if (this.currentPreset === preset) return;
     this.currentPreset = preset;
-    const config = GRASS_PRESETS[preset];
+    const config = GRASS_PRESETS[preset] ?? GRASS_PRESETS.high;
+
     const oldGeo = this.geometry;
     this.geometry = createDistantGeometry(config.distantBladeCount);
     oldGeo.dispose();
@@ -119,3 +131,4 @@ export class DistantTriangleGrass extends THREE.Mesh {
     }
   }
 }
+

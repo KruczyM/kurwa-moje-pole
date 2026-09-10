@@ -45,23 +45,13 @@ function createGrassGeometry(count: number): THREE.BufferGeometry {
 export class TutorialTriangleGrass extends THREE.Mesh {
   private time: { value: number };
   private player: { value: THREE.Vector3 };
-  private innerRadius: { value: number };
-  private outerRadius: { value: number };
-  private baseWidth: { value: number };
-  private minHeight: { value: number };
-  private heightRange: { value: number };
   private currentPreset: GrassQualityPreset;
 
   constructor(preset: GrassQualityPreset = DEFAULT_GRASS_PRESET) {
-    const config = GRASS_PRESETS[preset];
+    const config = GRASS_PRESETS[preset] ?? GRASS_PRESETS.high;
     const geo = createGrassGeometry(config.nearBladeCount);
     const time = { value: 0 };
     const player = { value: new THREE.Vector3() };
-    const innerRadius = { value: config.innerRadius };
-    const outerRadius = { value: config.outerRadius };
-    const baseWidth = { value: config.baseWidth };
-    const minHeight = { value: config.minHeight };
-    const heightRange = { value: config.maxHeight - config.minHeight };
 
     const mat = new THREE.ShaderMaterial({
       vertexColors: true,
@@ -69,21 +59,11 @@ export class TutorialTriangleGrass extends THREE.Mesh {
       uniforms: {
         uTime: time,
         uPlayerPosition: player,
-        uInnerRadius: innerRadius,
-        uOuterRadius: outerRadius,
-        uBaseWidth: baseWidth,
-        uMinHeight: minHeight,
-        uHeightRange: heightRange,
       },
       vertexShader: `
         attribute vec3 aYaw;
         uniform float uTime;
         uniform vec3 uPlayerPosition;
-        uniform float uInnerRadius;
-        uniform float uOuterRadius;
-        uniform float uBaseWidth;
-        uniform float uMinHeight;
-        uniform float uHeightRange;
         varying float vTip;
         varying float vShade;
 
@@ -91,24 +71,41 @@ export class TutorialTriangleGrass extends THREE.Mesh {
           return 0.18 * sin(p.x * 0.065) * cos(p.y * 0.055) + 0.09 * sin(p.x * 0.19 + p.y * 0.13);
         }
 
+        float campCoverage(vec2 p) {
+          float period = 35.0;
+          float halfParcel = 15.5;
+
+          float gx = abs(mod(p.x + 3500.0 + 17.5, period) - 17.5);
+          float gz = abs(mod(p.y + 3500.0 + 17.5, period) - 17.5);
+
+          if (gx > halfParcel || gz > halfParcel) {
+            return 0.0;
+          }
+          return 1.0;
+        }
+
         void main() {
           vec3 p = position;
           vec2 origin = mod(position.xz - uPlayerPosition.xz + 26.0, 52.0) - 26.0;
           p.xz = uPlayerPosition.xz + origin;
-          p.y = terrain(p.xz);
 
-          float dist = length(origin);
-          float fade = 1.0 - smoothstep(uInnerRadius, uOuterRadius, dist);
+          float cov = campCoverage(p.xz);
+          if (cov <= 0.01) {
+            gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+            return;
+          }
+
+          p.y = terrain(p.xz);
 
           float tip = color.g;
           float side = color.r > 0.05 ? 1.0 : (color.b > 0.05 ? -1.0 : 0.0);
           float n = fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5);
-          float h = (uMinHeight + n * uHeightRange) * fade;
+          float h = (0.24 + n * 0.32) * cov;
 
-          p += aYaw * side * (uBaseWidth * fade);
+          p += aYaw * side * 0.010 * (0.3 + 0.7 * cov);
           p.y += tip * h;
 
-          float w = (sin(uTime * 0.72 + p.x * 0.42 + p.z * 0.29) + sin(uTime * 0.31 + p.z * 0.74)) * 0.025 * tip * tip * fade;
+          float w = (sin(uTime * 0.72 + p.x * 0.42 + p.z * 0.29) + sin(uTime * 0.31 + p.z * 0.74)) * 0.035 * tip * tip * cov;
           p.x += w;
           p.z += w * 0.6;
 
@@ -122,10 +119,11 @@ export class TutorialTriangleGrass extends THREE.Mesh {
         varying float vShade;
 
         void main() {
-          vec3 dark = vec3(0.018, 0.12, 0.045);
-          vec3 mid = vec3(0.040, 0.28, 0.090);
-          vec3 light = vec3(0.150, 0.450, 0.095);
-          vec3 col = mix(mix(dark, mid, vShade), light, vTip * 0.72);
+          // Rzeczywisty, naturalny kolor trawy - gleboka, ciemna zielen:
+          vec3 dark = vec3(0.012, 0.065, 0.020);  // Ciemnozielony cien u nasady
+          vec3 mid = vec3(0.035, 0.170, 0.048);   // Naturalna ciemna zielen zdzbla
+          vec3 light = vec3(0.085, 0.300, 0.095); // Wierzcholki oswietlone sloncem
+          vec3 col = mix(mix(dark, mid, vShade), light, vTip * 0.75);
           gl_FragColor = vec4(col, 1.0);
         }
       `,
@@ -135,11 +133,6 @@ export class TutorialTriangleGrass extends THREE.Mesh {
     this.name = 'TutorialTriangleGrass';
     this.time = time;
     this.player = player;
-    this.innerRadius = innerRadius;
-    this.outerRadius = outerRadius;
-    this.baseWidth = baseWidth;
-    this.minHeight = minHeight;
-    this.heightRange = heightRange;
     this.currentPreset = preset;
     this.frustumCulled = false;
     this.onBeforeRender = (_renderer, _scene, camera) => {
@@ -155,13 +148,7 @@ export class TutorialTriangleGrass extends THREE.Mesh {
   setPreset(preset: GrassQualityPreset): void {
     if (this.currentPreset === preset) return;
     this.currentPreset = preset;
-    const config = GRASS_PRESETS[preset];
-
-    this.innerRadius.value = config.innerRadius;
-    this.outerRadius.value = config.outerRadius;
-    this.baseWidth.value = config.baseWidth;
-    this.minHeight.value = config.minHeight;
-    this.heightRange.value = config.maxHeight - config.minHeight;
+    const config = GRASS_PRESETS[preset] ?? GRASS_PRESETS.high;
 
     const oldGeo = this.geometry;
     this.geometry = createGrassGeometry(config.nearBladeCount);
@@ -177,3 +164,4 @@ export class TutorialTriangleGrass extends THREE.Mesh {
     }
   }
 }
+

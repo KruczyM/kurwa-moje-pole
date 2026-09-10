@@ -225,3 +225,91 @@ export function isOutsideTentColliders(x: number, z: number, radius = 0.34) {
     );
   });
 }
+
+export type SectorRect = {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+};
+
+export type RoadSegment = {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+};
+
+/** Sektory namiotowe obozu, w których rośnie gęsta trawa. */
+export const CAMP_SECTORS: readonly SectorRect[] = [
+  // Sektor Północny - parcela zachodnia (T01, T02)
+  { minX: -14.2, maxX: -0.6, minZ: -14.2, maxZ: -7.0 },
+  // Sektor Północny - parcela wschodnia (T03, T04, T05)
+  { minX: 0.8, maxX: 14.2, minZ: -14.2, maxZ: -7.0 },
+
+  // Sektor Południowo-Zachodni - górny (T08, T09, T10)
+  { minX: -14.2, maxX: -0.6, minZ: 2.8, maxZ: 7.0 },
+  // Sektor Południowo-Zachodni - dolny (T13, T14)
+  { minX: -14.2, maxX: -0.6, minZ: 8.2, maxZ: 14.2 },
+
+  // Sektor Południowo-Wschodni - górny (T11, T12)
+  { minX: 0.8, maxX: 14.2, minZ: 2.8, maxZ: 7.0 },
+  // Sektor Południowo-Wschodni - dolny (T15)
+  { minX: 0.8, maxX: 14.2, minZ: 8.2, maxZ: 14.2 },
+
+  // Parcele boczne przy namiotach T06 i T07
+  { minX: -14.2, maxX: -9.2, minZ: -6.0, maxZ: 1.8 },
+  { minX: 7.2, maxX: 14.2, minZ: -6.0, maxZ: 1.8 },
+];
+
+/** Główne wydeptane drogi pożarowe i arterie komunikacyjne obozu. */
+export const FIRE_ROADS: readonly RoadSegment[] = [
+  // Północna droga pożarowa Wschód-Zachód (między sektorem północnym a centrum)
+  { minX: -16.0, maxX: 16.0, minZ: -7.0, maxZ: -4.8 },
+
+  // Południowa droga pożarowa Wschód-Zachód (między centrum a sektorem południowym)
+  { minX: -16.0, maxX: 16.0, minZ: 1.2, maxZ: 2.8 },
+
+  // Droga pożarowa między rzędami południowymi
+  { minX: -16.0, maxX: 16.0, minZ: 7.0, maxZ: 8.2 },
+
+  // Główna aleja Północ-Południe przecinająca obóz
+  { minX: -0.6, maxX: 0.8, minZ: -16.0, maxZ: 16.0 },
+
+  // Wydeptana droga dojazdowa i dojście do toi-toia wcTron (-12.6, -9.6)
+  { minX: -14.8, maxX: -10.4, minZ: -11.2, maxZ: -6.0 },
+
+  // Obwodnica pożarowa wokół głównego obozu (pas ochronny)
+  { minX: -17.0, maxX: -14.2, minZ: -17.0, maxZ: 17.0 },
+  { minX: 14.2, maxX: 17.0, minZ: -17.0, maxZ: 17.0 },
+  { minX: -17.0, maxX: 17.0, minZ: -17.0, maxZ: -14.2 },
+  { minX: -17.0, maxX: 17.0, minZ: 14.2, maxZ: 17.0 },
+];
+
+function smoothstep(min: number, max: number, value: number): number {
+  const x = Math.max(0, Math.min(1, (value - min) / (max - min)));
+  return x * x * (3 - 2 * x);
+}
+
+/**
+ * Oblicza pokrycie trawą [0.0 - 1.0] dla zadanego punktu terenu (x, z).
+ * - 1.0: gęsta trawa na kwadratowych/prostokątnych połaciach kempingowych (w tym pojedyncza duża parcela obejmująca cały obóz).
+ * - 0.0: w pełni wydeptana droga pożarowa / szlak komunikacyjny z widoczną teksturą gleby.
+ */
+export function sampleCampGrassCoverage(x: number, z: number): number {
+  const period = 35.0;
+  const halfParcel = 15.5;
+
+  const modX = Math.abs(((((x + 35000.0 + 17.5) % period) + period) % period) - 17.5);
+  const modZ = Math.abs(((((z + 35000.0 + 17.5) % period) + period) % period) - 17.5);
+
+  if (modX > halfParcel || modZ > halfParcel) {
+    return 0.0;
+  }
+
+  const distToEdgeX = halfParcel - modX;
+  const distToEdgeZ = halfParcel - modZ;
+  const distToEdge = Math.min(distToEdgeX, distToEdgeZ);
+
+  return 0.4 + 0.6 * smoothstep(0.0, 0.6, distToEdge);
+}

@@ -14,9 +14,9 @@ export type GrassQualityConfig = {
 
 export const GRASS_PRESETS: Record<GrassQualityPreset, GrassQualityConfig> = {
   low: {
-    nearBladeCount: 75_000,
-    distantBladeCount: 25_000,
-    grassLayerDensity: 4,
+    nearBladeCount: 400_000,
+    distantBladeCount: 50_000,
+    grassLayerDensity: 10,
     minHeight: 0.13,
     maxHeight: 0.26,
     baseWidth: 0.044,
@@ -25,9 +25,9 @@ export const GRASS_PRESETS: Record<GrassQualityPreset, GrassQualityConfig> = {
     tileSize: 52.0,
   },
   medium: {
-    nearBladeCount: 160_000,
-    distantBladeCount: 50_000,
-    grassLayerDensity: 8,
+    nearBladeCount: 650_000,
+    distantBladeCount: 75_000,
+    grassLayerDensity: 16,
     minHeight: 0.13,
     maxHeight: 0.27,
     baseWidth: 0.04,
@@ -36,9 +36,9 @@ export const GRASS_PRESETS: Record<GrassQualityPreset, GrassQualityConfig> = {
     tileSize: 52.0,
   },
   high: {
-    nearBladeCount: 320_000,
-    distantBladeCount: 80_000,
-    grassLayerDensity: 14,
+    nearBladeCount: 946_400,
+    distantBladeCount: 90_000,
+    grassLayerDensity: 24,
     minHeight: 0.13,
     maxHeight: 0.28,
     baseWidth: 0.036,
@@ -47,9 +47,9 @@ export const GRASS_PRESETS: Record<GrassQualityPreset, GrassQualityConfig> = {
     tileSize: 52.0,
   },
   ultra: {
-    nearBladeCount: 500_000,
+    nearBladeCount: 1_200_000,
     distantBladeCount: 120_000,
-    grassLayerDensity: 20,
+    grassLayerDensity: 32,
     minHeight: 0.13,
     maxHeight: 0.29,
     baseWidth: 0.034,
