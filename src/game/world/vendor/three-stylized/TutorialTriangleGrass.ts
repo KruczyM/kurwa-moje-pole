@@ -72,49 +72,13 @@ export class TutorialTriangleGrass extends THREE.Mesh {
         }
 
         float campCoverage(vec2 p) {
-          // 1. Strefa glowna obozu [-17.5, 17.5]
-          if (abs(p.x) <= 17.5 && abs(p.y) <= 17.5) {
-            // Wydeptana strefa wokol stolu biesiadnego:
-            if (length(p) < 2.6) return 0.0;
-            // Dojscie i wejscie do toi-toia:
-            if (length(p - vec2(-12.6, -7.2)) < 2.0) return 0.0;
-            if (p.x >= -14.8 && p.x <= -10.4 && p.y >= -11.2 && p.y <= -6.0) return 0.0;
           float period = 35.0;
-          float halfParcel = 15.5; // Dzialka 31x31 m pokrywajaca caly oboz
+          float halfParcel = 15.5;
 
-            // Drogi pozarowe oddzielajace dzialki namiotowe:
-            if (abs(p.x) < 0.9) return 0.0; // glowna aleja N-S
-            if (p.y >= -7.2 && p.y <= -4.6) return 0.0; // droga polnocna W-E
-            if (p.y >= 1.0 && p.y <= 3.0) return 0.0;   // droga poludniowa W-E
-            if (p.y >= 7.0 && p.y <= 8.4) return 0.0;   // separator rzedow poludniowych
-            if (abs(p.x) >= 14.2 || abs(p.y) >= 14.2) return 0.0; // obwodnica ochronna
           float gx = abs(mod(p.x + 3500.0 + 17.5, period) - 17.5);
           float gz = abs(mod(p.y + 3500.0 + 17.5, period) - 17.5);
 
-            // Sprawdzenie przynaleznosci do prostokatnych parcel (dzialek) obozowych:
-            bool inNorth = (abs(p.x) >= 0.9 && abs(p.x) <= 14.2) && (p.y >= -14.2 && p.y <= -7.2);
-            bool inSouthUpper = (abs(p.x) >= 0.9 && abs(p.x) <= 14.2) && (p.y >= 3.0 && p.y <= 7.0);
-            bool inSouthLower = (abs(p.x) >= 0.9 && abs(p.x) <= 14.2) && (p.y >= 8.4 && p.y <= 14.2);
-            bool inSideWest = (p.x >= -14.2 && p.x <= -9.0) && (p.y >= -4.6 && p.y <= 1.0);
-            bool inSideEast = (p.x >= 7.2 && p.x <= 14.2) && (p.y >= -4.6 && p.y <= 1.0);
-
-            if (inNorth || inSouthUpper || inSouthLower || inSideWest || inSideEast) {
-              return 1.0;
-            }
-            if (length(p) < 4.2) {
-              return 0.12;
-            }
           if (gx > halfParcel || gz > halfParcel) {
-            return 0.0;
-          }
-
-          // 2. Poza glownym obozem: regularna siatka prostokatnych dzialek oddzielonych drogami pozarowymi
-          float period = 15.5;
-          float roadWidth = 3.8;
-          float mx = mod(p.x + 1550.0, period);
-          float my = mod(p.y + 1550.0, period);
-
-          if (mx < roadWidth || my < roadWidth) {
             return 0.0;
           }
           return 1.0;
