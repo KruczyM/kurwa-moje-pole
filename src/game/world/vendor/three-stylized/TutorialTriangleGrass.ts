@@ -79,6 +79,8 @@ export class TutorialTriangleGrass extends THREE.Mesh {
             // Dojscie i wejscie do toi-toia:
             if (length(p - vec2(-12.6, -7.2)) < 2.0) return 0.0;
             if (p.x >= -14.8 && p.x <= -10.4 && p.y >= -11.2 && p.y <= -6.0) return 0.0;
+          float period = 35.0;
+          float halfParcel = 15.5; // Dzialka 31x31 m pokrywajaca caly oboz
 
             // Drogi pozarowe oddzielajace dzialki namiotowe:
             if (abs(p.x) < 0.9) return 0.0; // glowna aleja N-S
@@ -86,6 +88,8 @@ export class TutorialTriangleGrass extends THREE.Mesh {
             if (p.y >= 1.0 && p.y <= 3.0) return 0.0;   // droga poludniowa W-E
             if (p.y >= 7.0 && p.y <= 8.4) return 0.0;   // separator rzedow poludniowych
             if (abs(p.x) >= 14.2 || abs(p.y) >= 14.2) return 0.0; // obwodnica ochronna
+          float gx = abs(mod(p.x + 3500.0 + 17.5, period) - 17.5);
+          float gz = abs(mod(p.y + 3500.0 + 17.5, period) - 17.5);
 
             // Sprawdzenie przynaleznosci do prostokatnych parcel (dzialek) obozowych:
             bool inNorth = (abs(p.x) >= 0.9 && abs(p.x) <= 14.2) && (p.y >= -14.2 && p.y <= -7.2);
@@ -100,6 +104,7 @@ export class TutorialTriangleGrass extends THREE.Mesh {
             if (length(p) < 4.2) {
               return 0.12;
             }
+          if (gx > halfParcel || gz > halfParcel) {
             return 0.0;
           }
 

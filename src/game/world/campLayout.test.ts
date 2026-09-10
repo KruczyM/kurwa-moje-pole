@@ -136,22 +136,22 @@ describe('camp grass coverage and fire roads', () => {
     expect(southEast).toBeGreaterThan(0.7);
   });
 
-  it('returns near-zero coverage on fire roads and heavily trampled paths', () => {
-    // Center of North Fire Road (Z = -6.0)
-    const northRoad = sampleCampGrassCoverage(0.0, -6.0);
+  it('returns near-zero coverage on fire roads surrounding the camp parcel', () => {
+    // Fire road east of camp (X = 17.5)
+    const eastRoad = sampleCampGrassCoverage(17.5, 0.0);
+    expect(eastRoad).toBeLessThan(0.1);
+
+    // Fire road west of camp (X = -17.5)
+    const westRoad = sampleCampGrassCoverage(-17.5, 0.0);
+    expect(westRoad).toBeLessThan(0.1);
+
+    // Fire road north of camp (Z = -17.5)
+    const northRoad = sampleCampGrassCoverage(0.0, -17.5);
     expect(northRoad).toBeLessThan(0.1);
 
-    // Center of South Fire Road (Z = 2.0)
-    const southRoad = sampleCampGrassCoverage(0.0, 2.0);
+    // Fire road south of camp (Z = 17.5)
+    const southRoad = sampleCampGrassCoverage(0.0, 17.5);
     expect(southRoad).toBeLessThan(0.1);
-
-    // Fire road to toilet entrance
-    const toiletRoad = sampleCampGrassCoverage(-12.6, -9.0);
-    expect(toiletRoad).toBeLessThan(0.1);
-
-    // Heavily trampled circle around table
-    const tableArea = sampleCampGrassCoverage(0.0, 0.0);
-    expect(tableArea).toBeLessThan(0.1);
   });
 
   it('keeps all sample values strictly within [0, 1] range across the entire world', () => {

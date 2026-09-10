@@ -286,16 +286,6 @@ export const FIRE_ROADS: readonly RoadSegment[] = [
   { minX: -17.0, maxX: 17.0, minZ: 14.2, maxZ: 17.0 },
 ];
 
-/** Wydeptane strefy o wzmożonym ruchu pieszym (stół biesiadny, wnętrze zadaszenia Mad Dog). */
-const TRAMPLED_CIRCLES: readonly { x: number; z: number; radius: number }[] = [
-  // Wokół stołu biesiadnego i krzeseł (intensywne biesiadowanie)
-  { x: 0.0, z: 0.0, radius: 2.4 },
-  // Bezpośrednie wejście i przedpole toi-toia
-  { x: -12.6, z: -7.2, radius: 1.8 },
-  // Podłoże pod maszt z flagą
-  { x: 0.6, z: 0.6, radius: 1.2 },
-];
-
 function smoothstep(min: number, max: number, value: number): number {
   const x = Math.max(0, Math.min(1, (value - min) / (max - min)));
   return x * x * (3 - 2 * x);
@@ -303,64 +293,23 @@ function smoothstep(min: number, max: number, value: number): number {
 
 /**
  * Oblicza pokrycie trawą [0.0 - 1.0] dla zadanego punktu terenu (x, z).
- * - 1.0: gęsta trawa na kwadratowych/prostokątnych połaciach kempingowych.
+ * - 1.0: gęsta trawa na kwadratowych/prostokątnych połaciach kempingowych (w tym pojedyncza duża parcela obejmująca cały obóz).
  * - 0.0: w pełni wydeptana droga pożarowa / szlak komunikacyjny z widoczną teksturą gleby.
  */
 export function sampleCampGrassCoverage(x: number, z: number): number {
-  // 1. Sprawdzenie wydeptanych stref kołowych
-  for (const circle of TRAMPLED_CIRCLES) {
-    const dist = Math.hypot(x - circle.x, z - circle.z);
-    if (dist < circle.radius) {
-      return (dist / circle.radius) * 0.05;
-    }
-  }
+  const period = 35.0;
+  const halfParcel = 15.5;
 
-  // 2. Sprawdzenie dróg pożarowych wewnątrz obozu [-17, 17]
-  if (Math.abs(x) <= 17.0 && Math.abs(z) <= 17.0) {
-    for (const road of FIRE_ROADS) {
-      if (x >= road.minX && x <= road.maxX && z >= road.minZ && z <= road.maxZ) {
-        const distToEdgeX = Math.min(x - road.minX, road.maxX - x);
-        const distToEdgeZ = Math.min(z - road.minZ, road.maxZ - z);
-        const distToEdge = Math.min(distToEdgeX, distToEdgeZ);
-        if (distToEdge > 0.25) {
-          return 0.0;
-        }
-        return smoothstep(0.25, 0.0, distToEdge) * 0.08;
-      }
-    }
+  const modX = Math.abs(((((x + 35000.0 + 17.5) % period) + period) % period) - 17.5);
+  const modZ = Math.abs(((((z + 35000.0 + 17.5) % period) + period) % period) - 17.5);
 
-    let insideSector = false;
-    let edgeDist = 0;
-    for (const sector of CAMP_SECTORS) {
-      if (x >= sector.minX && x <= sector.maxX && z >= sector.minZ && z <= sector.maxZ) {
-        insideSector = true;
-        const distEdgeX = Math.min(x - sector.minX, sector.maxX - x);
-        const distEdgeZ = Math.min(z - sector.minZ, sector.maxZ - z);
-        edgeDist = Math.min(distEdgeX, distEdgeZ);
-        break;
-      }
-    }
-
-    if (insideSector) {
-      return 0.35 + 0.65 * smoothstep(0.0, 0.6, edgeDist);
-    }
-
+  if (modX > halfParcel || modZ > halfParcel) {
     return 0.0;
   }
 
-  // 3. Poza głównym obozem: regularna siatka parcel festiwalowych oddzielonych drogami
-  const period = 15.5;
-  const roadWidth = 3.8;
-  const modX = Math.abs(((x % period) + period) % period);
-  const modZ = Math.abs(((z % period) + period) % period);
-
-  if (modX < roadWidth || modZ < roadWidth) {
-    return 0.0;
-  }
-
-  const distToEdgeX = Math.min(modX - roadWidth, period - modX);
-  const distToEdgeZ = Math.min(modZ - roadWidth, period - modZ);
+  const distToEdgeX = halfParcel - modX;
+  const distToEdgeZ = halfParcel - modZ;
   const distToEdge = Math.min(distToEdgeX, distToEdgeZ);
 
-  return 0.4 + 0.6 * smoothstep(0.0, 0.8, distToEdge);
+  return 0.4 + 0.6 * smoothstep(0.0, 0.6, distToEdge);
 }

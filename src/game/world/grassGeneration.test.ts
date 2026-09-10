@@ -63,7 +63,10 @@ describe('Ghibli Grass Generation & Performance', () => {
       instancedMesh.getMatrixAt(i, matrix);
       pos.setFromMatrixPosition(matrix);
 
-      if (Math.abs(pos.x) < 0.3 && Math.abs(pos.z) < 14) {
+      if (
+        (Math.abs(pos.x) >= 16.5 && Math.abs(pos.x) <= 18.5) ||
+        (Math.abs(pos.z) >= 16.5 && Math.abs(pos.z) <= 18.5)
+      ) {
         bladesOnFireRoadCenter++;
       }
 
@@ -73,7 +76,7 @@ describe('Ghibli Grass Generation & Performance', () => {
       }
     }
 
-    expect(bladesOnFireRoadCenter).toBeLessThanOrEqual(5);
+    expect(bladesOnFireRoadCenter).toBeLessThanOrEqual(10);
     expect(bladesInsideSectors).toBeGreaterThan(grass.bladeCount * 0.9);
 
     expect(grass.tutorialGrass).toBeDefined();

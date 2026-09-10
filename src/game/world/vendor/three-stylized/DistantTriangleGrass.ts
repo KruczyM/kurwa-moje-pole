@@ -68,6 +68,14 @@ export class DistantTriangleGrass extends THREE.Mesh {
             if (p.y >= 7.0 && p.y <= 8.4) return 0.0;
             if (abs(p.x) >= 14.2 || abs(p.y) >= 14.2) return 0.0;
             return 1.0;
+          float period = 35.0;
+          float halfParcel = 15.5;
+
+          float gx = abs(mod(p.x + 3500.0 + 17.5, period) - 17.5);
+          float gz = abs(mod(p.y + 3500.0 + 17.5, period) - 17.5);
+
+          if (gx > halfParcel || gz > halfParcel) {
+            return 0.0;
           }
           float period = 15.5;
           float roadWidth = 3.8;
