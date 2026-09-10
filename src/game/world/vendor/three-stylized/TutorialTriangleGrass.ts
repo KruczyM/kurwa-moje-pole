@@ -72,11 +72,6 @@ export class TutorialTriangleGrass extends THREE.Mesh {
         }
 
         float campCoverage(vec2 p) {
-          // Wydeptane drogi pozarowe pomiedzy polaciami obozowymi:
-          if (abs(p.x) <= 17.0 && abs(p.y) <= 17.0) {
-            // Glowna krzyzowka drog pozarowych:
-            if (abs(p.x) < 1.3 || abs(p.y) < 1.3) {
-              return 0.06;
           // 1. Strefa glowna obozu [-17.5, 17.5]:
           if (abs(p.x) <= 17.5 && abs(p.y) <= 17.5) {
             // Wydeptana strefa wokol stolu biesiadnego:
@@ -138,6 +133,7 @@ export class TutorialTriangleGrass extends THREE.Mesh {
           float tip = color.g;
           float side = color.r > 0.05 ? 1.0 : (color.b > 0.05 ? -1.0 : 0.0);
           float n = fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5);
+
           float h = (0.22 + n * 0.32) * cov;
 
           p += aYaw * side * 0.009 * (0.3 + 0.7 * cov);
