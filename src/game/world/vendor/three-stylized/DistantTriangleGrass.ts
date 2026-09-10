@@ -60,14 +60,6 @@ export class DistantTriangleGrass extends THREE.Mesh {
         }
 
         float campCoverage(vec2 p) {
-          if (abs(p.x) <= 17.5 && abs(p.y) <= 17.5) {
-            if (length(p) < 2.6) return 0.0;
-            if (abs(p.x) < 0.9) return 0.0;
-            if (p.y >= -7.2 && p.y <= -4.6) return 0.0;
-            if (p.y >= 1.0 && p.y <= 3.0) return 0.0;
-            if (p.y >= 7.0 && p.y <= 8.4) return 0.0;
-            if (abs(p.x) >= 14.2 || abs(p.y) >= 14.2) return 0.0;
-            return 1.0;
           float period = 35.0;
           float halfParcel = 15.5;
 
@@ -77,11 +69,6 @@ export class DistantTriangleGrass extends THREE.Mesh {
           if (gx > halfParcel || gz > halfParcel) {
             return 0.0;
           }
-          float period = 15.5;
-          float roadWidth = 3.8;
-          float mx = mod(p.x + 1550.0, period);
-          float my = mod(p.y + 1550.0, period);
-          if (mx < roadWidth || my < roadWidth) return 0.0;
           return 1.0;
         }
 
