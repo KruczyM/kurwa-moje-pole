@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev": "concurrently -n \"server,client\" -c \"cyan,magenta\" \"npm:server\" \"npm:dev:client\"",
+    "dev:client": "vite",
     "server": "tsx server/roomServer.ts",
     "build": "tsc && vite build",
     "typecheck": "tsc --noEmit",
@@ -29,6 +31,7 @@
     "@eslint/js": "^10.0.1",
     "@types/socket.io": "^3.0.1",
     "@types/three": "^0.185.4",
+    "concurrently": "^10.0.5",
     "eslint": "^10.9.1",
     "globals": "^17.11.0",
     "prettier": "^3.9.6",
