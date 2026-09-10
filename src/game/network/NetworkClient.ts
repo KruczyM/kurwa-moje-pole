@@ -3,6 +3,8 @@ import {
   type CharacterName,
   type RoomState,
   type NetworkErrorPayload,
+  type PlayerTransform,
+  type WorldSnapshotPayload,
   validateAndSanitizeNickname,
 } from './networkProtocol';
 
@@ -49,6 +51,7 @@ export class NetworkClient {
   private socket?: Socket;
   private status: NetworkConnectionStatus = 'disconnected';
   private currentState?: RoomState;
+  private latestSnapshot?: WorldSnapshotPayload;
   private myPlayerId?: string;
   private sessionToken: string;
   private nickname: string;
@@ -56,6 +59,7 @@ export class NetworkClient {
   private serverUrl?: string;
 
   private stateListeners = new Set<(state: RoomState) => void>();
+  private snapshotListeners = new Set<(snapshot: WorldSnapshotPayload) => void>();
   private errorListeners = new Set<(error: NetworkErrorPayload) => void>();
   private statusListeners = new Set<(status: NetworkConnectionStatus) => void>();
 
@@ -168,6 +172,11 @@ export class NetworkClient {
         this.notifyStateListeners(state);
       });
 
+      this.socket.on('world:snapshot', (snapshot: WorldSnapshotPayload) => {
+        this.latestSnapshot = snapshot;
+        this.notifySnapshotListeners(snapshot);
+      });
+
       this.socket.on('error', (err: NetworkErrorPayload) => {
         this.notifyErrorListeners(err);
       });
@@ -182,6 +191,21 @@ export class NetworkClient {
     } catch {
       this.setStatus('error');
     }
+  }
+
+  sendPlayerUpdate(transform: PlayerTransform): void {
+    if (!this.socket || this.status !== 'connected') return;
+    this.socket.emit('player:update', { transform });
+  }
+
+  getLatestSnapshot(): WorldSnapshotPayload | undefined {
+    return this.latestSnapshot;
+  }
+
+  onWorldSnapshot(listener: (snapshot: WorldSnapshotPayload) => void): () => void {
+    this.snapshotListeners.add(listener);
+    if (this.latestSnapshot) listener(this.latestSnapshot);
+    return () => this.snapshotListeners.delete(listener);
   }
 
   reserveCharacter(character: CharacterName, nickname?: string): boolean {
@@ -256,6 +280,10 @@ export class NetworkClient {
 
   private notifyStateListeners(state: RoomState): void {
     for (const listener of this.stateListeners) listener(state);
+  }
+
+  private notifySnapshotListeners(snapshot: WorldSnapshotPayload): void {
+    for (const listener of this.snapshotListeners) listener(snapshot);
   }
 
   private notifyErrorListeners(error: NetworkErrorPayload): void {

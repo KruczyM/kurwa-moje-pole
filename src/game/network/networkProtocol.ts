@@ -119,3 +119,86 @@ export function validateAndSanitizeNickname(input: unknown): NicknameValidationR
 
   return { valid: true, sanitized: stripped };
 }
+
+export type LocomotionState = 'Idle' | 'Walk' | 'Run';
+
+export interface PlayerTransform {
+  position: [x: number, y: number, z: number];
+  yaw: number;
+  pitch?: number;
+  locomotion: LocomotionState;
+  speed: number;
+  timestamp: number;
+}
+
+export interface PlayerSnapshot {
+  playerId: string;
+  character: CharacterName;
+  nickname: string;
+  transform: PlayerTransform;
+}
+
+export interface WorldSnapshotPayload {
+  timestamp: number;
+  players: PlayerSnapshot[];
+}
+
+export const MAP_POSITION_LIMIT = 60.0;
+export const MAX_ALLOWED_PLAYER_SPEED = 25.0; // m/s (sanity check limit)
+
+/**
+ * Waliduje dane ruchu i pozycji gracza w celu ochrony przed błędnymi danymi (NaN/Infinity) i teleportami poza mapę.
+ */
+export function validatePlayerTransform(input: unknown): {
+  valid: boolean;
+  transform?: PlayerTransform;
+  error?: string;
+} {
+  if (!input || typeof input !== 'object') {
+    return { valid: false, error: 'Nieprawidłowy obiekt transformacji.' };
+  }
+
+  const raw = input as Partial<PlayerTransform>;
+
+  if (
+    !Array.isArray(raw.position) ||
+    raw.position.length !== 3 ||
+    !raw.position.every((coord) => typeof coord === 'number' && Number.isFinite(coord))
+  ) {
+    return { valid: false, error: 'Pozycja musi zawierać 3 skończone liczby [x, y, z].' };
+  }
+
+  const [x, y, z] = raw.position;
+  if (Math.abs(x) > MAP_POSITION_LIMIT || Math.abs(z) > MAP_POSITION_LIMIT || y < -10 || y > 30) {
+    return { valid: false, error: 'Pozycja gracza wykracza poza dozwolone granice świata.' };
+  }
+
+  if (typeof raw.yaw !== 'number' || !Number.isFinite(raw.yaw)) {
+    return { valid: false, error: 'Kąt obrotu yaw musi być skończoną liczbą.' };
+  }
+
+  const validLocomotion: LocomotionState[] = ['Idle', 'Walk', 'Run'];
+  const locomotion: LocomotionState = validLocomotion.includes(raw.locomotion as LocomotionState)
+    ? (raw.locomotion as LocomotionState)
+    : 'Idle';
+
+  const speed =
+    typeof raw.speed === 'number' && Number.isFinite(raw.speed)
+      ? Math.max(0, Math.min(raw.speed, MAX_ALLOWED_PLAYER_SPEED))
+      : 0;
+
+  const timestamp =
+    typeof raw.timestamp === 'number' && Number.isFinite(raw.timestamp) ? raw.timestamp : Date.now();
+
+  return {
+    valid: true,
+    transform: {
+      position: [x, y, z],
+      yaw: raw.yaw,
+      pitch: typeof raw.pitch === 'number' && Number.isFinite(raw.pitch) ? raw.pitch : 0,
+      locomotion,
+      speed,
+      timestamp,
+    },
+  };
+}

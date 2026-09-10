@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { calculateLocalMove } from './movement';
 import { EventScope } from '../lifecycle/EventScope';
 import { terrainHeight } from '../world/CampWorld';
+import type { LocomotionState, PlayerTransform } from '../network/networkProtocol';
 export type PlayerModifiers = {
   speed: number;
   sway: number;
@@ -161,6 +162,24 @@ export class PlayerController {
     this.keys.clear();
     this.setMobileMove(0, 0, false);
     this.hasFallbackMousePosition = false;
+  }
+  /** Zwraca aktualną transformację gracza do synchronizacji sieciowej. */
+  getTransform(now = Date.now()): PlayerTransform {
+    const speed = this.velocity.length();
+    let locomotion: LocomotionState = 'Idle';
+    if (speed > 4.0) {
+      locomotion = 'Run';
+    } else if (speed > 0.1) {
+      locomotion = 'Walk';
+    }
+    return {
+      position: [this.camera.position.x, this.camera.position.y - this.baseY, this.camera.position.z],
+      yaw: this.yaw,
+      pitch: this.pitch,
+      locomotion,
+      speed,
+      timestamp: now,
+    };
   }
   /** Próbuje przejąć kursor bez zgłaszania błędu po odmowie przeglądarki. */
   requestPointerLock() {

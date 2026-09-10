@@ -125,6 +125,14 @@ export class RoomServer {
         this.io.to(currentRoomId).emit('room:state', room.getPublicState());
       });
 
+      socket.on('player:update', (payload: { transform: unknown }) => {
+        if (!currentRoomId) return;
+        const room = this.rooms.get(currentRoomId);
+        if (room && payload && payload.transform) {
+          room.updatePlayerTransform(socket.id, payload.transform);
+        }
+      });
+
       socket.on('character:release', (payload: ReleaseCharacterPayload) => {
         if (!currentRoomId) return;
 
@@ -149,7 +157,22 @@ export class RoomServer {
     });
   }
 
+  private tickTimer?: NodeJS.Timeout;
+
+  private startTickLoop(): void {
+    // 20 Hz (co 50 ms):
+    this.tickTimer = setInterval(() => {
+      for (const [roomId, room] of this.rooms) {
+        const snapshot = room.getWorldSnapshot();
+        if (snapshot.players.length > 0) {
+          this.io.to(roomId).emit('world:snapshot', snapshot);
+        }
+      }
+    }, 50);
+  }
+
   async start(): Promise<void> {
+    this.startTickLoop();
     return new Promise((resolve) => {
       this.server.listen(this.port, () => {
         console.log(`[RoomServer] Serwer pokojów uruchomiony na porcie ${this.port} (protokół ${PROTOCOL_VERSION})`);
@@ -159,6 +182,10 @@ export class RoomServer {
   }
 
   async stop(): Promise<void> {
+    if (this.tickTimer) {
+      clearInterval(this.tickTimer);
+      this.tickTimer = undefined;
+    }
     return new Promise((resolve, reject) => {
       for (const room of this.rooms.values()) room.dispose();
       this.rooms.clear();

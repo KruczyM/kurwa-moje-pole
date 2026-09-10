@@ -195,7 +195,7 @@ async function startGame() {
   localStorage.setItem('camp-player-character', selected);
   state.transition('loading');
   try {
-    const nextGame = new Game(state);
+    const nextGame = new Game(state, networkClient);
     game = nextGame;
     if (!isMobileInputDevice()) nextGame.canvas.requestPointerLock().catch?.(() => undefined);
     await nextGame.start();
