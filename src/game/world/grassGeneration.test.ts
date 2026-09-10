@@ -76,6 +76,11 @@ describe('Ghibli Grass Generation & Performance', () => {
     expect(bladesOnFireRoadCenter).toBeLessThanOrEqual(5);
     expect(bladesInsideSectors).toBeGreaterThan(grass.bladeCount * 0.9);
 
+    expect(grass.tutorialGrass).toBeDefined();
+    expect(grass.tutorialGrass.isMesh).toBe(true);
+    expect(grass.distantGrass).toBeDefined();
+    expect(grass.distantGrass.isMesh).toBe(true);
+
     grass.dispose();
   });
 });
