@@ -156,3 +156,4 @@ W repozytorium na GitHubie:
    - **Name:** `VITE_SERVER_URL`
    - **Value:** `https://game.twojadomena.pl`
 3. Przy kolejnym deployu na GitHub Pages gra domyślnie połączy się z Twoim VPS.
+
