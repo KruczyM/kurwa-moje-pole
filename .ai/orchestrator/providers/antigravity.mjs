@@ -55,10 +55,16 @@ export function parseAntigravityOutput(stdout) {
   if (terminal?.status !== 'SUCCESS') {
     throw new Error(terminal?.error ?? terminal?.response ?? `Status: ${terminal?.status ?? 'brak'}`);
   }
+  if (terminal.denied_actions?.length) {
+    const denied = terminal.denied_actions.map((entry) => entry.action ?? entry.display_name).join(', ');
+    throw new Error(`Antigravity odmówił wymaganych działań: ${denied}`);
+  }
   if (terminal.structured_output && typeof terminal.structured_output === 'object') {
     return terminal.structured_output;
   }
-  if (typeof terminal.response === 'string') return JSON.parse(terminal.response);
+  if (typeof terminal.response === 'string' && terminal.response.trim()) {
+    return JSON.parse(terminal.response);
+  }
   throw new Error('Antigravity nie zwrócił structured_output ani odpowiedzi JSON.');
 }
 
