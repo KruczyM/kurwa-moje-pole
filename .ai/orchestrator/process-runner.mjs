@@ -27,6 +27,10 @@ export function resolveSpawnCommand(command, args = [], platform = process.platf
     const script = path.join(env.APPDATA, 'npm', 'node_modules', '@openai', 'codex', 'bin', 'codex.js');
     if (existsSync(script)) return { command: process.execPath, args: [script, ...args] };
   }
+  if (command === 'agy' && env.LOCALAPPDATA) {
+    const executable = path.join(env.LOCALAPPDATA, 'agy', 'bin', 'agy.exe');
+    if (existsSync(executable)) return { command: executable, args };
+  }
   return { command, args };
 }
 
@@ -133,6 +137,8 @@ export async function stopAllChildProcesses() {
 
 /** Sprawdza obecność programu poprzez PATH, nie uruchamiając samego dostawcy AI. */
 export async function commandExists(command, cwd = process.cwd()) {
+  const resolved = resolveSpawnCommand(command);
+  if (resolved.command !== command && existsSync(resolved.command)) return true;
   const probe =
     process.platform === 'win32'
       ? { command: 'where.exe', args: [command] }
