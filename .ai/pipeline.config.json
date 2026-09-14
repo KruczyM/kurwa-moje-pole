@@ -94,7 +94,7 @@
     "allowAiCredits": false
   },
   "limits": {
-    "maxIssuesPerRun": 1,
+    "maxIssuesPerRun": null,
     "maxFixAttempts": 3,
     "maxReviewAttempts": 3,
     "maxBrowserFixAttempts": 3,

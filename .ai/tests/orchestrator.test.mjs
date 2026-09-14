@@ -15,7 +15,7 @@ import { readState, resetState, writeState } from '../orchestrator/state-store.m
 import { assessIssueQuality } from '../orchestrator/issue-quality.mjs';
 import { issueBranch, prepareIssueWorktree } from '../orchestrator/git-worktree.mjs';
 import { detectLocalBrowserTool, validateBrowserReport } from '../orchestrator/game/browser-verifier.mjs';
-import { chooseAvailableProvider } from '../orchestrator/pipeline.mjs';
+import { chooseAvailableProvider, shouldContinueIssueQueue } from '../orchestrator/pipeline.mjs';
 import { selectEligibleIssueQueue } from '../orchestrator/github.mjs';
 import { runValidation } from '../orchestrator/validation.mjs';
 import { validateCodexReviewReport } from '../orchestrator/providers/codex.mjs';
@@ -70,6 +70,14 @@ test('fallback chooses Codex when Antigravity is unavailable', () => {
   ];
   assert.equal(chooseAvailableProvider(['antigravity', 'codex'], statuses), 'codex');
   assert.equal(chooseAvailableProvider(['antigravity'], statuses), null);
+});
+
+test('start continues successful issues while one and blocked results stop', () => {
+  const ready = { phase: 'READY_FOR_HUMAN_REVIEW' };
+  assert.equal(shouldContinueIssueQueue('start', ready, 1, null), true);
+  assert.equal(shouldContinueIssueQueue('start', ready, 2, 2), false);
+  assert.equal(shouldContinueIssueQueue('one', ready, 1, null), false);
+  assert.equal(shouldContinueIssueQueue('start', { phase: 'BLOCKED' }, 1, null), false);
 });
 
 test('issue queue selects only open ai-ready issues in numeric order', () => {

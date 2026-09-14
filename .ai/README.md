@@ -37,7 +37,7 @@ agy -p /usage --output-format json
 ```powershell
 npm run ai:dry-run   # bez AI, branchy i serwera; pokazuje plan i provider status
 npm run ai:one       # przetwarza pierwsze Issue ai-ready
-npm run ai:start     # obecnie również maksymalnie jedno Issue na uruchomienie
+npm run ai:start     # kolejne Issue ai-ready aż kolejka będzie pusta lub zadanie się zablokuje
 npm run ai:continue  # wznawia Issue zapisane w state.json
 npm run ai:status    # pokazuje trwały stan
 npm run ai:reset     # usuwa tylko state.json, nie branche/worktree/zmiany

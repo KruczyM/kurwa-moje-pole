@@ -1,7 +1,14 @@
 #!/usr/bin/env node
 import { acquireLock } from './lock.mjs';
 import { loadConfig } from './config.mjs';
-import { dryRun, ensureLifecycleLabels, processIssue, readState, selectIssueForRun } from './pipeline.mjs';
+import {
+  dryRun,
+  ensureLifecycleLabels,
+  processIssue,
+  readState,
+  selectIssueForRun,
+  shouldContinueIssueQueue,
+} from './pipeline.mjs';
 import { resetState } from './state-store.mjs';
 import { stopAllGameServers } from './game/dev-server.mjs';
 import { stopAllChildProcesses } from './process-runner.mjs';
@@ -39,11 +46,21 @@ async function main() {
   releaseActiveLock = release;
   try {
     await ensureLifecycleLabels(config);
-    const selected = await selectIssueForRun(config, command === 'continue');
-    if (!selected.issue)
+    let selected = await selectIssueForRun(config, command === 'continue');
+    if (!selected.issue) {
       return print({ status: 'IDLE', reason: `Brak otwartego Issue z etykietą ${config.issue.readyLabel}.` });
-    const result = await processIssue(config, selected.issue, selected.state);
-    print(result);
+    }
+
+    let processedCount = 0;
+    while (selected.issue) {
+      const result = await processIssue(config, selected.issue, selected.state);
+      processedCount += 1;
+      print({ queueEvent: 'ISSUE_FINISHED', processedCount, ...result });
+
+      if (!shouldContinueIssueQueue(command, result, processedCount, config.limits.maxIssuesPerRun)) return;
+      selected = await selectIssueForRun(config, false);
+    }
+    print({ status: 'QUEUE_COMPLETE', processedCount, reason: 'Brak kolejnych Issue ai-ready.' });
   } finally {
     await release();
     releaseActiveLock = undefined;
