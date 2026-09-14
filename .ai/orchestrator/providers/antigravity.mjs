@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { sanitizeAiEnvironment } from '../cost-guard.mjs';
 import { commandExists, runProcess } from '../process-runner.mjs';
@@ -39,13 +39,35 @@ export async function probeAntigravity(config, capability = 'implementation') {
       };
 }
 
-/** Uruchamia skonfigurowany tryb Antigravity, oczekując końcowego raportu JSON w pliku. */
+/** Odczytuje końcowy wynik z JSON lub strumienia zdarzeń NDJSON programu agy. */
+export function parseAntigravityOutput(stdout) {
+  const lines = stdout
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length === 0) throw new Error('Antigravity nie zwrócił żadnego wyniku.');
+
+  const envelopes = lines.map((line) => JSON.parse(line));
+  const terminal =
+    [...envelopes].reverse().find((entry) => entry?.event === 'result')?.result ??
+    envelopes.at(-1)?.result ??
+    envelopes.at(-1);
+  if (terminal?.status !== 'SUCCESS') {
+    throw new Error(terminal?.error ?? terminal?.response ?? `Status: ${terminal?.status ?? 'brak'}`);
+  }
+  if (terminal.structured_output && typeof terminal.structured_output === 'object') {
+    return terminal.structured_output;
+  }
+  if (typeof terminal.response === 'string') return JSON.parse(terminal.response);
+  throw new Error('Antigravity nie zwrócił structured_output ani odpowiedzi JSON.');
+}
+
+/** Uruchamia Antigravity Headless i zapisuje jego zweryfikowany raport w pliku pipeline. */
 export async function runAntigravityTask({ config, capability, cwd, prompt, outputPath, logFile }) {
   const provider = config.providers.antigravity;
   const configuredArgs = capability === 'browser' ? provider.browserArgs : provider.implementationArgs;
   const args = configuredArgs.map((value) =>
     value
-      .replaceAll('{output}', outputPath)
       .replaceAll('{cwd}', cwd)
       .replaceAll(
         '{schema}',
@@ -60,7 +82,7 @@ export async function runAntigravityTask({ config, capability, cwd, prompt, outp
     args,
     cwd,
     env: sanitizeAiEnvironment(),
-    input: prompt,
+    input: `${JSON.stringify({ event: 'user', message: { content: prompt } })}\n`,
     timeoutMs: capability === 'browser' ? config.limits.browserTimeoutMs : config.limits.agentTimeoutMs,
     logFile,
     allowFailure: true,
@@ -68,9 +90,12 @@ export async function runAntigravityTask({ config, capability, cwd, prompt, outp
   if (result.status === 'FAIL')
     return { status: classifyProviderFailure(`${result.stdout}\n${result.stderr}`), process: result };
   try {
+    const report = parseAntigravityOutput(result.stdout);
+    await mkdir(path.dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
     return {
       status: ProviderStatus.AVAILABLE,
-      report: JSON.parse(await readFile(outputPath, 'utf8')),
+      report,
       process: result,
     };
   } catch (error) {

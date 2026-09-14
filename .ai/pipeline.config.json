@@ -24,9 +24,41 @@
     "antigravity": {
       "executable": "agy",
       "probeArgs": ["--version"],
-      "subscriptionAuthConfirmed": false,
-      "implementationArgs": null,
-      "browserArgs": null
+      "subscriptionAuthConfirmed": true,
+      "implementationArgs": [
+        "--input-format",
+        "stream-json",
+        "--output-format",
+        "stream-json",
+        "--json-schema",
+        "{schema}",
+        "--mode",
+        "accept-edits",
+        "--sandbox",
+        "--model",
+        "gemini-3.1-pro-high",
+        "--effort",
+        "high",
+        "--print-timeout",
+        "30m"
+      ],
+      "browserArgs": [
+        "--input-format",
+        "stream-json",
+        "--output-format",
+        "stream-json",
+        "--json-schema",
+        "{schema}",
+        "--mode",
+        "accept-edits",
+        "--sandbox",
+        "--model",
+        "gemini-3.8-flash-medium",
+        "--effort",
+        "medium",
+        "--print-timeout",
+        "10m"
+      ]
     },
     "codex": {
       "executable": "codex",

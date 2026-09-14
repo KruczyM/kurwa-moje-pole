@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -19,6 +19,7 @@ import { chooseAvailableProvider } from '../orchestrator/pipeline.mjs';
 import { selectEligibleIssueQueue } from '../orchestrator/github.mjs';
 import { runValidation } from '../orchestrator/validation.mjs';
 import { validateCodexReviewReport } from '../orchestrator/providers/codex.mjs';
+import { parseAntigravityOutput } from '../orchestrator/providers/antigravity.mjs';
 
 async function withTemporaryDirectory(callback) {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'camp-ai-pipeline-'));
@@ -159,6 +160,32 @@ test('branch name cannot inject shell syntax', () => {
   assert.equal(branch, 'ai/7-model-rm-rf');
   assert.equal(executableName('npm'), 'npm');
   assert.equal(resolveSpawnCommand('npm', ['run', 'test'], 'win32').command, process.execPath);
+});
+
+test('Windows runner resolves the official default agy installation', () =>
+  withTemporaryDirectory(async (directory) => {
+    const executable = path.join(directory, 'agy', 'bin', 'agy.exe');
+    await mkdir(path.dirname(executable), { recursive: true });
+    await writeFile(executable, 'fixture');
+    assert.equal(
+      resolveSpawnCommand('agy', ['--version'], 'win32', { LOCALAPPDATA: directory }).command,
+      executable,
+    );
+  }));
+
+test('Antigravity adapter reads structured output from stream-json', () => {
+  const stdout = [
+    JSON.stringify({ event: 'message', message: { content: 'working' } }),
+    JSON.stringify({
+      event: 'result',
+      result: { status: 'SUCCESS', structured_output: { status: 'PASS', summary: 'done' } },
+    }),
+  ].join('\n');
+  assert.deepEqual(parseAntigravityOutput(stdout), { status: 'PASS', summary: 'done' });
+  assert.throws(
+    () => parseAntigravityOutput(JSON.stringify({ status: 'ERROR', error: 'quota exceeded' })),
+    /quota exceeded/,
+  );
 });
 
 test('worktree isolation creates an issue branch without switching main', () =>
