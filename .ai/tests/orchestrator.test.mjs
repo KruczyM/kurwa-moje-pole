@@ -195,6 +195,13 @@ test('Antigravity adapter reads structured output from stream-json', () => {
     () => parseAntigravityOutput(JSON.stringify({ status: 'ERROR', error: 'quota exceeded' })),
     /quota exceeded/,
   );
+  assert.throws(
+    () =>
+      parseAntigravityOutput(
+        JSON.stringify({ status: 'SUCCESS', response: '', denied_actions: [{ action: 'command' }] }),
+      ),
+    /odmówił wymaganych działań: command/,
+  );
 });
 
 test('implementation prompt confines agent discovery to the issue worktree', () => {
