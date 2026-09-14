@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "issue": {
+    "readyLabel": "ai-ready",
+    "lifecycleLabels": {
+      "inProgress": "ai-in-progress",
+      "validation": "ai-validation",
+      "browserReview": "ai-browser-review",
+      "codeReview": "ai-code-review",
+      "reviewFailed": "ai-review-failed",
+      "testsFailed": "ai-tests-failed",
+      "blocked": "ai-blocked",
+      "needsHuman": "ai-needs-human",
+      "readyForHumanReview": "ai-ready-for-human-review"
+    }
+  },
+  "git": {
+    "baseBranch": "main",
+    "branchPrefix": "ai/",
+    "worktreeRoot": ".ai/worktrees"
+  },
+  "providers": {
+    "implementationPriority": ["antigravity", "codex"],
+    "antigravity": {
+      "executable": "agy",
+      "probeArgs": ["--version"],
+      "subscriptionAuthConfirmed": false,
+      "implementationArgs": null,
+      "browserArgs": null
+    },
+    "codex": {
+      "executable": "codex",
+      "profile": null
+    }
+  },
+  "validation": {
+    "commands": [
+      { "name": "format", "command": "npm", "args": ["run", "format:check"] },
+      { "name": "lint", "command": "npm", "args": ["run", "lint"] },
+      { "name": "typecheck", "command": "npm", "args": ["run", "typecheck"] },
+      { "name": "tests", "command": "npm", "args": ["test"] },
+      { "name": "build", "command": "npm", "args": ["run", "build"] }
+    ]
+  },
+  "game": {
+    "engine": "three.js",
+    "serverCommand": "npm",
+    "serverArgs": ["run", "dev"],
+    "readyUrl": "http://localhost:5173/",
+    "browserVerification": true,
+    "checkWebGLRuntime": true,
+    "captureScreenshots": true,
+    "captureVideoWhenUseful": true
+  },
+  "github": {
+    "createPullRequest": true,
+    "autoMerge": false
+  },
+  "cost": {
+    "subscriptionOnly": true,
+    "allowPaidApi": false,
+    "allowAiCredits": false
+  },
+  "limits": {
+    "maxIssuesPerRun": 1,
+    "maxFixAttempts": 3,
+    "maxReviewAttempts": 3,
+    "maxBrowserFixAttempts": 3,
+    "agentTimeoutMs": 1800000,
+    "validationTimeoutMs": 900000,
+    "browserTimeoutMs": 300000,
+    "devServerStartTimeoutMs": 120000
+  }
+}
