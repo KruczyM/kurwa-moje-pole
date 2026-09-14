@@ -20,6 +20,7 @@ import { selectEligibleIssueQueue } from '../orchestrator/github.mjs';
 import { runValidation } from '../orchestrator/validation.mjs';
 import { validateCodexReviewReport } from '../orchestrator/providers/codex.mjs';
 import { parseAntigravityOutput } from '../orchestrator/providers/antigravity.mjs';
+import { implementationPrompt } from '../orchestrator/prompts.mjs';
 
 async function withTemporaryDirectory(callback) {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'camp-ai-pipeline-'));
@@ -194,6 +195,15 @@ test('Antigravity adapter reads structured output from stream-json', () => {
     () => parseAntigravityOutput(JSON.stringify({ status: 'ERROR', error: 'quota exceeded' })),
     /quota exceeded/,
   );
+});
+
+test('implementation prompt confines agent discovery to the issue worktree', () => {
+  const prompt = implementationPrompt(
+    { number: 29, title: 'Room server', body: 'Cel i kryteria zadania.' },
+    { worktree: 'E:/repo/.ai/worktrees/issue-29', feedback: [] },
+  );
+  assert.match(prompt, /E:\/repo\/\.ai\/worktrees\/issue-29\/AGENTS\.md/);
+  assert.match(prompt, /Nie szukaj plików.*poza tym worktree/);
 });
 
 test('worktree isolation creates an issue branch without switching main', () =>
