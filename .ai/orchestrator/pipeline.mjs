@@ -68,6 +68,13 @@ export function chooseAvailableProvider(priority, statuses) {
   return null;
 }
 
+/** Określa, czy tryb start może bezpiecznie przejść do następnego Issue w kolejce. */
+export function shouldContinueIssueQueue(command, result, processedCount, configuredLimit) {
+  if (command !== 'start' || result?.phase !== 'READY_FOR_HUMAN_REVIEW') return false;
+  const limit = Number.isInteger(configuredLimit) && configuredLimit > 0 ? configuredLimit : Infinity;
+  return processedCount < limit;
+}
+
 async function runImplementation({ config, provider, issue, worktree, directories, feedback, attempt }) {
   const outputPath = path.join(directories.logs, `implementation-${attempt}.json`);
   const common = {
