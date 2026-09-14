@@ -1,0 +1,10 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "AI: Dry Run", "type": "npm", "script": "ai:dry-run", "problemMatcher": [] },
+    { "label": "AI: Process One Issue", "type": "npm", "script": "ai:one", "problemMatcher": [] },
+    { "label": "AI: Start Pipeline", "type": "npm", "script": "ai:start", "problemMatcher": [] },
+    { "label": "AI: Continue Pipeline", "type": "npm", "script": "ai:continue", "problemMatcher": [] },
+    { "label": "AI: Pipeline Status", "type": "npm", "script": "ai:status", "problemMatcher": [] }
+  ]
+}

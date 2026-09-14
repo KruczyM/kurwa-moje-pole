@@ -19,3 +19,9 @@ __pycache__/
 .pytest_cache/
 .tmp*/
 token.txt
+
+# Dane robocze lokalnego orkiestratora AI. Kod i konfiguracja w .ai/ są wersjonowane.
+.ai/runtime/
+.ai/logs/
+.ai/artifacts/
+.ai/worktrees/

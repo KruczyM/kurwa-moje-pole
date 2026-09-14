@@ -30,9 +30,17 @@ npm run check:assets # modele, tekstury, dźwięki i klipy animacji
 npm run check:rigs   # zgodność rigów i bibliotek animacji postaci
 npm run format       # automatyczne formatowanie własnego kodu
 npm run format:check # sprawdzenie formatowania bez zmiany plików
+npm run ai:dry-run   # bezkosztowy plan kolejnego Issue, bez uruchamiania AI
+npm run ai:one       # autonomiczny przebieg jednego Issue oznaczonego ai-ready
+npm run ai:continue  # wznowienie zapisanego przebiegu
+npm run ai:status    # bieżąca faza, branch, worktree i ostatni wynik
 npm run ci:code      # te same bramki kodu, które wykonuje GitHub Actions
 npm run ci:assets    # te same bramki assetów, które wykonuje GitHub Actions
 ```
+
+## Automatyczny pipeline AI bez dodatkowych opłat
+
+Kod w `.ai/` prowadzi po jednym GitHub Issue przez izolowany worktree, walidację projektu, uruchomienie gry, raport WebGL/gameplay i świeży review Codex. Nie wykonuje automatycznego merge i blokuje płatne API, kredyty oraz fallback pay-as-you-go. Szczegółowa konfiguracja, status aktualnego Antigravity i zasady wznawiania znajdują się w [`.ai/README.md`](.ai/README.md).
 
 Katalog `dist/` jest generowany i nie jest wersjonowany. Raporty walidacji trafiają do lokalnego `reports/`.
 

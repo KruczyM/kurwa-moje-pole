@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "url",
+    "gameLoaded",
+    "webgl",
+    "scenarios",
+    "runtimeErrors",
+    "assetFailures",
+    "screenshots",
+    "recordings",
+    "findings"
+  ],
+  "properties": {
+    "status": { "enum": ["PASS", "FAIL", "BLOCKED"] },
+    "url": { "type": "string" },
+    "gameLoaded": { "type": "boolean" },
+    "webgl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canvasFound", "contextCreated", "rendering"],
+      "properties": {
+        "canvasFound": { "type": "boolean" },
+        "contextCreated": { "type": "boolean" },
+        "rendering": { "type": "boolean" }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "status", "steps"],
+        "properties": {
+          "name": { "type": "string" },
+          "status": { "enum": ["PASS", "FAIL", "BLOCKED"] },
+          "steps": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "runtimeErrors": { "type": "array", "items": { "type": "string" } },
+    "assetFailures": { "type": "array", "items": { "type": "string" } },
+    "screenshots": { "type": "array", "items": { "type": "string" } },
+    "recordings": { "type": "array", "items": { "type": "string" } },
+    "findings": { "type": "array", "items": { "type": "string" } }
+  }
+}
