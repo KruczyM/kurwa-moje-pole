@@ -80,7 +80,7 @@ async function runImplementation({ config, provider, issue, worktree, directorie
   const common = {
     config,
     cwd: worktree,
-    prompt: implementationPrompt(issue, { feedback }),
+    prompt: implementationPrompt(issue, { feedback, worktree }),
     outputPath,
     logFile: path.join(directories.logs, `implementation-${attempt}.log`),
   };
