@@ -218,6 +218,15 @@ test('implementation prompt confines agent discovery to the issue worktree', () 
   assert.match(prompt, /nie uruchamiaj żadnych poleceń terminala/);
 });
 
+test('implementation correction prompt forbids command tools and orchestrator edits', () => {
+  const prompt = implementationPrompt(
+    { number: 29, title: 'Room server', body: 'Cel i kryteria zadania.' },
+    { worktree: 'E:/repo/.ai/worktrees/issue-29', feedback: ['server/Room.ts: popraw błąd'] },
+  );
+  assert.match(prompt, /Pod żadnym pozorem nie wywołuj run_command/);
+  assert.match(prompt, /Nie czytaj ani nie modyfikuj katalogu \.ai/);
+});
+
 test('worktree isolation creates an issue branch without switching main', () =>
   withTemporaryDirectory(async (directory) => {
     await runProcess({ command: 'git', args: ['init', '-b', 'main'], cwd: directory });
