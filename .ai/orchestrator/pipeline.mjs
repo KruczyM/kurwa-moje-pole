@@ -19,15 +19,17 @@ import { verifyGameInBrowser } from './game/browser-verifier.mjs';
 import { implementationPrompt, reviewPrompt } from './prompts.mjs';
 import { readState, writeState } from './state-store.mjs';
 
-const TERMINAL_PROVIDER_FAILURES = new Set([
+const FALLBACK_PROVIDER_FAILURES = new Set([
   ProviderStatus.QUOTA_EXHAUSTED,
   ProviderStatus.AUTH_ERROR,
   ProviderStatus.CONFIG_ERROR,
   ProviderStatus.PAID_API_REQUIRED,
-  ProviderStatus.FAILED,
-  ProviderStatus.UNKNOWN,
-  ProviderStatus.TEMPORARILY_RATE_LIMITED,
 ]);
+
+/** Zezwala na fallback dopiero, gdy preferowany provider faktycznie nie może kontynuować. */
+export function shouldFallbackImplementationProvider(status) {
+  return FALLBACK_PROVIDER_FAILURES.has(status);
+}
 
 function issueDirectories(config, issueNumber) {
   return {
@@ -175,7 +177,7 @@ export async function processIssue(config, issue, resumedState = null) {
     if (implementation.status !== ProviderStatus.AVAILABLE) {
       if (
         state.implementationProvider === 'antigravity' &&
-        TERMINAL_PROVIDER_FAILURES.has(implementation.status)
+        shouldFallbackImplementationProvider(implementation.status)
       ) {
         const codex = await probeCodex(config);
         state.providerStatuses.push(codex);
