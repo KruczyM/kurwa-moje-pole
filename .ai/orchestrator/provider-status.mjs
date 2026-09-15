@@ -12,10 +12,10 @@ export const ProviderStatus = Object.freeze({
 /** Klasyfikuje rzeczywisty komunikat CLI bez zgadywania liczby pozostałych tokenów. */
 export function classifyProviderFailure(text = '') {
   const message = text.toLowerCase();
-  if (/api.?key|vertex|billing|credit|pay.?as.?you.?go/.test(message))
-    return ProviderStatus.PAID_API_REQUIRED;
   if (/quota.*(exhaust|exceed)|usage limit|limit.*reached/.test(message))
     return ProviderStatus.QUOTA_EXHAUSTED;
+  if (/api.?key|vertex|billing|credit|pay.?as.?you.?go/.test(message))
+    return ProviderStatus.PAID_API_REQUIRED;
   if (/rate.?limit|too many requests|try again later/.test(message))
     return ProviderStatus.TEMPORARILY_RATE_LIMITED;
   if (/not logged|login required|unauthori[sz]ed|authentication/.test(message))
