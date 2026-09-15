@@ -15,7 +15,11 @@ import { readState, resetState, writeState } from '../orchestrator/state-store.m
 import { assessIssueQuality } from '../orchestrator/issue-quality.mjs';
 import { issueBranch, prepareIssueWorktree } from '../orchestrator/git-worktree.mjs';
 import { detectLocalBrowserTool, validateBrowserReport } from '../orchestrator/game/browser-verifier.mjs';
-import { chooseAvailableProvider, shouldContinueIssueQueue } from '../orchestrator/pipeline.mjs';
+import {
+  chooseAvailableProvider,
+  shouldContinueIssueQueue,
+  shouldFallbackImplementationProvider,
+} from '../orchestrator/pipeline.mjs';
 import { selectEligibleIssueQueue } from '../orchestrator/github.mjs';
 import { runValidation } from '../orchestrator/validation.mjs';
 import { validateCodexReviewReport } from '../orchestrator/providers/codex.mjs';
@@ -75,6 +79,12 @@ test('fallback chooses Codex when Antigravity is unavailable', () => {
   ];
   assert.equal(chooseAvailableProvider(['antigravity', 'codex'], statuses), 'codex');
   assert.equal(chooseAvailableProvider(['antigravity'], statuses), null);
+});
+
+test('implementation fallback does not replace Antigravity after a fixable tool failure', () => {
+  assert.equal(shouldFallbackImplementationProvider(ProviderStatus.FAILED), false);
+  assert.equal(shouldFallbackImplementationProvider(ProviderStatus.TEMPORARILY_RATE_LIMITED), false);
+  assert.equal(shouldFallbackImplementationProvider(ProviderStatus.QUOTA_EXHAUSTED), true);
 });
 
 test('start continues successful issues while one and blocked results stop', () => {
