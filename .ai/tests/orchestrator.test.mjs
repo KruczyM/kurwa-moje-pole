@@ -215,6 +215,7 @@ test('implementation prompt confines agent discovery to the issue worktree', () 
   );
   assert.match(prompt, /E:\/repo\/\.ai\/worktrees\/issue-29\/AGENTS\.md/);
   assert.match(prompt, /Nie szukaj plików.*poza tym worktree/);
+  assert.match(prompt, /nie uruchamiaj żadnych poleceń terminala/);
 });
 
 test('worktree isolation creates an issue branch without switching main', () =>
