@@ -59,6 +59,10 @@ test('AI environment sanitizer removes keys without mutating parent environment'
 
 test('provider errors distinguish quota, rate limit, auth and paid API', () => {
   assert.equal(classifyProviderFailure('quota exceeded'), ProviderStatus.QUOTA_EXHAUSTED);
+  assert.equal(
+    classifyProviderFailure("You've hit your usage limit. Purchase more credits or try again later."),
+    ProviderStatus.QUOTA_EXHAUSTED,
+  );
   assert.equal(classifyProviderFailure('too many requests'), ProviderStatus.TEMPORARILY_RATE_LIMITED);
   assert.equal(classifyProviderFailure('login required'), ProviderStatus.AUTH_ERROR);
   assert.equal(classifyProviderFailure('set GEMINI_API_KEY and billing'), ProviderStatus.PAID_API_REQUIRED);
