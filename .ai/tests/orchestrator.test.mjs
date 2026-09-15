@@ -20,6 +20,7 @@ import { selectEligibleIssueQueue } from '../orchestrator/github.mjs';
 import { runValidation } from '../orchestrator/validation.mjs';
 import { validateCodexReviewReport } from '../orchestrator/providers/codex.mjs';
 import { parseAntigravityOutput } from '../orchestrator/providers/antigravity.mjs';
+import { implementationPrompt } from '../orchestrator/prompts.mjs';
 
 async function withTemporaryDirectory(callback) {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'camp-ai-pipeline-'));
@@ -58,6 +59,10 @@ test('AI environment sanitizer removes keys without mutating parent environment'
 
 test('provider errors distinguish quota, rate limit, auth and paid API', () => {
   assert.equal(classifyProviderFailure('quota exceeded'), ProviderStatus.QUOTA_EXHAUSTED);
+  assert.equal(
+    classifyProviderFailure("You've hit your usage limit. Purchase more credits or try again later."),
+    ProviderStatus.QUOTA_EXHAUSTED,
+  );
   assert.equal(classifyProviderFailure('too many requests'), ProviderStatus.TEMPORARILY_RATE_LIMITED);
   assert.equal(classifyProviderFailure('login required'), ProviderStatus.AUTH_ERROR);
   assert.equal(classifyProviderFailure('set GEMINI_API_KEY and billing'), ProviderStatus.PAID_API_REQUIRED);
@@ -194,6 +199,23 @@ test('Antigravity adapter reads structured output from stream-json', () => {
     () => parseAntigravityOutput(JSON.stringify({ status: 'ERROR', error: 'quota exceeded' })),
     /quota exceeded/,
   );
+  assert.throws(
+    () =>
+      parseAntigravityOutput(
+        JSON.stringify({ status: 'SUCCESS', response: '', denied_actions: [{ action: 'command' }] }),
+      ),
+    /odmówił wymaganych działań: command/,
+  );
+});
+
+test('implementation prompt confines agent discovery to the issue worktree', () => {
+  const prompt = implementationPrompt(
+    { number: 29, title: 'Room server', body: 'Cel i kryteria zadania.' },
+    { worktree: 'E:/repo/.ai/worktrees/issue-29', feedback: [] },
+  );
+  assert.match(prompt, /E:\/repo\/\.ai\/worktrees\/issue-29\/AGENTS\.md/);
+  assert.match(prompt, /Nie szukaj plików.*poza tym worktree/);
+  assert.match(prompt, /nie uruchamiaj żadnych poleceń terminala/);
 });
 
 test('worktree isolation creates an issue branch without switching main', () =>
