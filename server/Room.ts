@@ -115,12 +115,6 @@ export class Room {
 
     const currentSlot = this.slots[character];
 
-    // Sprawdzenie, czy ten gracz posiada już inny slot w tym pokoju:
-    const existingPlayerSlot = this.findSlotByPlayerId(playerId);
-    if (existingPlayerSlot && existingPlayerSlot.character !== character) {
-      this.freeSlot(existingPlayerSlot.character);
-    }
-
     // Sprawdzenie dostępności żądanego slotu:
     if (currentSlot.status !== 'free') {
       // Jeśli to ten sam gracz, pozwalamy na ponowną rezerwację/odświeżenie
@@ -138,6 +132,12 @@ export class Room {
         code: currentSlot.status === 'occupied' ? 'CHARACTER_OCCUPIED' : 'CHARACTER_RESERVING',
         error: currentSlot.status === 'occupied' ? 'Postać jest już zajęta.' : 'Postać jest właśnie rezerwowana.',
       };
+    }
+
+    // Sprawdzenie, czy ten gracz posiada już inny slot w tym pokoju:
+    const existingPlayerSlot = this.findSlotByPlayerId(playerId);
+    if (existingPlayerSlot && existingPlayerSlot.character !== character) {
+      this.freeSlot(existingPlayerSlot.character);
     }
 
     // Atomowa rezerwacja slotu:

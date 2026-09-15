@@ -152,6 +152,17 @@ describe('Room', () => {
     expect(room.getSlot('Antena')?.status).toBe('reserving');
   });
 
+  it('nie zwalnia starego slotu jeśli docelowa postać jest zajęta', () => {
+    room.reserve('p1', 'Amper', 'Gracz1', 'token-1');
+    room.reserve('p2', 'Antena', 'Gracz2', 'token-2');
+
+    const res = room.reserve('p1', 'Antena', 'Gracz1', 'token-1');
+    expect(res.success).toBe(false);
+
+    expect(room.getSlot('Amper')?.playerId).toBe('p1');
+    expect(room.getSlot('Amper')?.status).toBe('reserving');
+  });
+
   describe('PlayerTransforms & WorldSnapshot', () => {
     it('aktualizuje transformację gracza o statusie occupied i generuje snapshot świata', () => {
       room.reserve('p1', 'Amper', 'Kolega1', 'token-1');
