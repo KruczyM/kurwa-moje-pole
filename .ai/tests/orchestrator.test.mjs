@@ -15,7 +15,11 @@ import { readState, resetState, writeState } from '../orchestrator/state-store.m
 import { assessIssueQuality } from '../orchestrator/issue-quality.mjs';
 import { issueBranch, prepareIssueWorktree } from '../orchestrator/git-worktree.mjs';
 import { detectLocalBrowserTool, validateBrowserReport } from '../orchestrator/game/browser-verifier.mjs';
-import { chooseAvailableProvider, shouldContinueIssueQueue } from '../orchestrator/pipeline.mjs';
+import {
+  chooseAvailableProvider,
+  shouldContinueIssueQueue,
+  shouldFallbackImplementationProvider,
+} from '../orchestrator/pipeline.mjs';
 import { selectEligibleIssueQueue } from '../orchestrator/github.mjs';
 import { runValidation } from '../orchestrator/validation.mjs';
 import { validateCodexReviewReport } from '../orchestrator/providers/codex.mjs';
@@ -75,6 +79,12 @@ test('fallback chooses Codex when Antigravity is unavailable', () => {
   ];
   assert.equal(chooseAvailableProvider(['antigravity', 'codex'], statuses), 'codex');
   assert.equal(chooseAvailableProvider(['antigravity'], statuses), null);
+});
+
+test('implementation fallback does not replace Antigravity after a fixable tool failure', () => {
+  assert.equal(shouldFallbackImplementationProvider(ProviderStatus.FAILED), false);
+  assert.equal(shouldFallbackImplementationProvider(ProviderStatus.TEMPORARILY_RATE_LIMITED), false);
+  assert.equal(shouldFallbackImplementationProvider(ProviderStatus.QUOTA_EXHAUSTED), true);
 });
 
 test('start continues successful issues while one and blocked results stop', () => {
@@ -216,6 +226,15 @@ test('implementation prompt confines agent discovery to the issue worktree', () 
   assert.match(prompt, /E:\/repo\/\.ai\/worktrees\/issue-29\/AGENTS\.md/);
   assert.match(prompt, /Nie szukaj plików.*poza tym worktree/);
   assert.match(prompt, /nie uruchamiaj żadnych poleceń terminala/);
+});
+
+test('implementation correction prompt forbids command tools and orchestrator edits', () => {
+  const prompt = implementationPrompt(
+    { number: 29, title: 'Room server', body: 'Cel i kryteria zadania.' },
+    { worktree: 'E:/repo/.ai/worktrees/issue-29', feedback: ['server/Room.ts: popraw błąd'] },
+  );
+  assert.match(prompt, /Pod żadnym pozorem nie wywołuj run_command/);
+  assert.match(prompt, /Nie czytaj ani nie modyfikuj katalogu \.ai/);
 });
 
 test('worktree isolation creates an issue branch without switching main', () =>
