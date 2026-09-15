@@ -237,6 +237,19 @@ test('implementation correction prompt forbids command tools and orchestrator ed
   assert.match(prompt, /Nie czytaj ani nie modyfikuj katalogu \.ai/);
 });
 
+test('implementation correction prompt permits only the scoped formatter command when requested', () => {
+  const prompt = implementationPrompt(
+    { number: 29, title: 'Format', body: 'Issue' },
+    {
+      worktree: 'C:/repo/worktree',
+      feedback: ['Napraw format: npx prettier src/main.ts --write'],
+    },
+  );
+
+  assert.match(prompt, /wyłącznie komendy `npx prettier src\/main\.ts --write`/);
+  assert.match(prompt, /Nie wywołuj żadnej innej komendy/);
+});
+
 test('worktree isolation creates an issue branch without switching main', () =>
   withTemporaryDirectory(async (directory) => {
     await runProcess({ command: 'git', args: ['init', '-b', 'main'], cwd: directory });
