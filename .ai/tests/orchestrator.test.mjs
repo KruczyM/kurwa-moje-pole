@@ -250,6 +250,18 @@ test('implementation correction prompt permits only the scoped formatter command
   assert.match(prompt, /Nie wywołuj żadnej innej komendy/);
 });
 
+test('implementation correction prompt recognizes pipeline format feedback', () => {
+  const prompt = implementationPrompt(
+    { number: 29, title: 'Format', body: 'Issue' },
+    {
+      worktree: 'C:/repo/worktree',
+      feedback: ['Walidacja format nie przeszła. [warn] src/main.ts Code style issues found.'],
+    },
+  );
+
+  assert.match(prompt, /wyłącznie komendy `npx prettier src\/main\.ts --write`/);
+});
+
 test('worktree isolation creates an issue branch without switching main', () =>
   withTemporaryDirectory(async (directory) => {
     await runProcess({ command: 'git', args: ['init', '-b', 'main'], cwd: directory });

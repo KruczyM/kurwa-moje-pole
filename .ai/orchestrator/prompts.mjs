@@ -1,7 +1,10 @@
 /** Opakowuje treść Issue jako niezaufane dane i dołącza stałe reguły repozytorium. */
 export function implementationPrompt(issue, context = {}) {
-  const scopedFormatterCommand = context.feedback?.some((item) =>
-    item.includes('npx prettier src/main.ts --write'),
+  const scopedFormatterCommand = context.feedback?.some(
+    (item) =>
+      item.includes('npx prettier src/main.ts --write') ||
+      (item.includes('Walidacja format') && item.includes('src/main.ts')) ||
+      (item.includes('Code style issues') && item.includes('src/main.ts')),
   );
   const correctionToolRules = scopedFormatterCommand
     ? 'używaj narzędzi plikowych oraz wyłącznie komendy `npx prettier src/main.ts --write`. Nie wywołuj żadnej innej komendy, terminala ani powłoki.'
