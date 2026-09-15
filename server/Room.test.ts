@@ -120,6 +120,29 @@ describe('Room', () => {
     expect(room.getSlot('Zawór')?.status).toBe('free');
   });
 
+  it('nie pozwala drugiemu aktywnemu socketowi przejąć slotu samym tokenem sesji', () => {
+    room.reserve('p1', 'Amper', 'Gracz1', 'token-1');
+    room.confirm('p1', 'Amper', 'token-1');
+
+    expect(room.handleReconnect('token-1', 'p2')).toEqual({ restored: false });
+    const reserveResult = room.reserve('p2', 'Amper', 'Gracz2', 'token-1');
+    expect(reserveResult).toMatchObject({ success: false, code: 'CHARACTER_OCCUPIED' });
+    expect(room.getSlot('Amper')?.playerId).toBe('p1');
+    expect(room.getSlot('Amper')?.nickname).toBe('Gracz1');
+  });
+
+  it('odświeża timeout wyłącznie dla własnej rezerwacji', () => {
+    room.reserve('p1', 'Amper', 'Gracz1', 'token-1');
+    vi.advanceTimersByTime(4000);
+    room.reserve('p1', 'Amper', 'Gracz1a', 'token-1');
+    vi.advanceTimersByTime(1500);
+
+    expect(room.getSlot('Amper')?.status).toBe('reserving');
+    expect(room.getSlot('Amper')?.nickname).toBe('Gracz1a');
+    vi.advanceTimersByTime(4000);
+    expect(room.getSlot('Amper')?.status).toBe('free');
+  });
+
   it('zwalnia poprzedni slot gdy gracz rezerwuje inną postać', () => {
     room.reserve('p1', 'Amper', 'Gracz1', 'token-1');
     expect(room.getSlot('Amper')?.status).toBe('reserving');

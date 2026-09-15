@@ -79,7 +79,6 @@ describe('RoomServer (Integracja Socket.IO)', () => {
     });
 
     const err = await errorPromise;
-    expect(err.code).toBe('CHARACTER_OCCUPIED');
+    expect(err.code).toBe('CHARACTER_RESERVING');
   });
 });
-

@@ -7,6 +7,7 @@ import {
   type ConfirmCharacterPayload,
   type ReleaseCharacterPayload,
   PROTOCOL_VERSION,
+  type NetworkErrorPayload,
 } from '../src/game/network/networkProtocol.js';
 
 export interface RoomServerOptions {
@@ -62,16 +63,53 @@ export class RoomServer {
     this.io.on('connection', (socket: Socket) => {
       let currentRoomId: string | undefined;
 
+      const emitError = (code: NetworkErrorPayload['code'], message: string) => {
+        socket.emit('error', { code, message } satisfies NetworkErrorPayload);
+      };
+
+      const leaveCurrentRoom = (isDisconnect: boolean = false) => {
+        if (!currentRoomId) return;
+        const previousRoomId = currentRoomId;
+        const previousRoom = this.rooms.get(previousRoomId);
+        if (previousRoom) {
+          if (isDisconnect) {
+            previousRoom.handleDisconnect(socket.id);
+          } else {
+            previousRoom.handleLeave(socket.id);
+          }
+          this.io.to(previousRoomId).emit('room:state', previousRoom.getPublicState());
+        }
+        void socket.leave(previousRoomId);
+        currentRoomId = undefined;
+      };
+
       socket.on('room:join', (payload: JoinRoomPayload = {}) => {
-        const roomId = payload.roomId?.trim() || 'glowny-oboz';
+        if (!payload || typeof payload !== 'object') {
+          emitError('UNAUTHORIZED', 'Nieprawidłowe dane dołączenia do pokoju.');
+          return;
+        }
+        const requestedRoomId = typeof payload.roomId === 'string' ? payload.roomId.trim() : '';
+        if (requestedRoomId.length > 64) {
+          emitError('UNAUTHORIZED', 'Identyfikator pokoju jest za długi.');
+          return;
+        }
+        const roomId = requestedRoomId || 'glowny-oboz';
         const room = this.getOrCreateRoom(roomId);
+        const reconnecting =
+          typeof payload.sessionToken === 'string' && room.canReconnect(payload.sessionToken);
+        if (room.isFull() && !reconnecting) {
+          emitError('ROOM_FULL', 'Pokój jest pełny.');
+          return;
+        }
+
+        if (currentRoomId && currentRoomId !== roomId) leaveCurrentRoom();
         currentRoomId = roomId;
 
         void socket.join(roomId);
 
         // Obsługa reconnect z sessionToken:
         let reconnectedChar;
-        if (payload.sessionToken) {
+        if (typeof payload.sessionToken === 'string' && payload.sessionToken.length > 0) {
           const reconnectRes = room.handleReconnect(payload.sessionToken, socket.id);
           if (reconnectRes.restored) {
             reconnectedChar = reconnectRes.character;
@@ -91,16 +129,21 @@ export class RoomServer {
 
       socket.on('character:reserve', (payload: ReserveCharacterPayload) => {
         if (!currentRoomId) {
-          socket.emit('error', { code: 'UNAUTHORIZED', message: 'Nie dołączono do pokoju.' });
+          emitError('UNAUTHORIZED', 'Nie dołączono do pokoju.');
+          return;
+        }
+
+        if (!payload || typeof payload !== 'object') {
+          emitError('CHARACTER_NOT_FOUND', 'Nieprawidłowe dane rezerwacji.');
           return;
         }
 
         const room = this.getOrCreateRoom(currentRoomId);
-        const sessionToken = payload.sessionToken || socket.id;
+        const sessionToken = typeof payload.sessionToken === 'string' ? payload.sessionToken : socket.id;
         const result = room.reserve(socket.id, payload.character, payload.nickname, sessionToken);
 
         if (!result.success) {
-          socket.emit('error', { code: 'CHARACTER_OCCUPIED', message: result.error ?? 'Rezerwacja nieudana.' });
+          emitError(result.code ?? 'UNAUTHORIZED', result.error ?? 'Rezerwacja nieudana.');
           return;
         }
 
@@ -109,16 +152,21 @@ export class RoomServer {
 
       socket.on('character:confirm', (payload: ConfirmCharacterPayload) => {
         if (!currentRoomId) {
-          socket.emit('error', { code: 'UNAUTHORIZED', message: 'Nie dołączono do pokoju.' });
+          emitError('UNAUTHORIZED', 'Nie dołączono do pokoju.');
+          return;
+        }
+
+        if (!payload || typeof payload !== 'object') {
+          emitError('CHARACTER_NOT_FOUND', 'Nieprawidłowe dane potwierdzenia.');
           return;
         }
 
         const room = this.getOrCreateRoom(currentRoomId);
-        const sessionToken = payload.sessionToken || socket.id;
+        const sessionToken = typeof payload.sessionToken === 'string' ? payload.sessionToken : socket.id;
         const result = room.confirm(socket.id, payload.character, sessionToken);
 
         if (!result.success) {
-          socket.emit('error', { code: 'UNAUTHORIZED', message: result.error ?? 'Potwierdzenie nieudane.' });
+          emitError(result.code ?? 'UNAUTHORIZED', result.error ?? 'Potwierdzenie nieudane.');
           return;
         }
 
@@ -136,23 +184,24 @@ export class RoomServer {
       socket.on('character:release', (payload: ReleaseCharacterPayload) => {
         if (!currentRoomId) return;
 
+        if (!payload || typeof payload !== 'object') {
+          emitError('CHARACTER_NOT_FOUND', 'Nieprawidłowe dane zwolnienia postaci.');
+          return;
+        }
+
         const room = this.getOrCreateRoom(currentRoomId);
-        const sessionToken = payload.sessionToken || socket.id;
+        const sessionToken = typeof payload.sessionToken === 'string' ? payload.sessionToken : socket.id;
         const result = room.release(socket.id, payload.character, sessionToken);
 
         if (result.success) {
           this.io.to(currentRoomId).emit('room:state', room.getPublicState());
+        } else {
+          emitError(result.code ?? 'UNAUTHORIZED', result.error ?? 'Nie udało się zwolnić postaci.');
         }
       });
 
       socket.on('disconnect', () => {
-        if (currentRoomId) {
-          const room = this.rooms.get(currentRoomId);
-          if (room) {
-            room.handleDisconnect(socket.id);
-            this.io.to(currentRoomId).emit('room:state', room.getPublicState());
-          }
-        }
+        leaveCurrentRoom(true);
       });
     });
   }
@@ -213,4 +262,3 @@ if (isMainModule) {
   process.on('SIGINT', () => void shutdown());
   process.on('SIGTERM', () => void shutdown());
 }
-

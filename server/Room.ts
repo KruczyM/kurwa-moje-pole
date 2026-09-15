@@ -21,6 +21,13 @@ export interface RoomOptions {
   onSlotChanged?: (character: CharacterName, slot: CharacterSlot) => void;
 }
 
+export interface RoomOperationResult {
+  success: boolean;
+  code?: 'CHARACTER_NOT_FOUND' | 'CHARACTER_OCCUPIED' | 'CHARACTER_RESERVING' | 'INVALID_NICKNAME' | 'UNAUTHORIZED';
+  error?: string;
+  slot?: CharacterSlot;
+}
+
 export class Room {
   readonly roomId: string;
   private readonly reservationTimeoutMs: number;
@@ -74,6 +81,10 @@ export class Room {
     return this.slots[character];
   }
 
+  isFull(): boolean {
+    return CANONICAL_CHARACTERS.every((character) => this.slots[character].status !== 'free');
+  }
+
   findSlotByPlayerId(playerId: string): CharacterSlot | undefined {
     return Object.values(this.slots).find((slot) => slot.playerId === playerId);
   }
@@ -82,19 +93,24 @@ export class Room {
     return Object.values(this.slots).find((slot) => slot.sessionToken === sessionToken);
   }
 
+  canReconnect(sessionToken: string): boolean {
+    const slot = this.findSlotBySessionToken(sessionToken);
+    return Boolean(slot && slot.status === 'occupied' && !slot.playerId && this.disconnectTimers.has(slot.character));
+  }
+
   reserve(
     playerId: string,
     character: unknown,
     nickname: unknown,
     sessionToken: string,
-  ): { success: boolean; error?: string; slot?: CharacterSlot } {
+  ): RoomOperationResult {
     if (!isCharacterName(character)) {
-      return { success: false, error: 'Nieprawidłowa nazwa postaci.' };
+      return { success: false, code: 'CHARACTER_NOT_FOUND', error: 'Nieprawidłowa nazwa postaci.' };
     }
 
     const validation = validateAndSanitizeNickname(nickname);
     if (!validation.valid) {
-      return { success: false, error: validation.error };
+      return { success: false, code: 'INVALID_NICKNAME', error: validation.error };
     }
 
     const currentSlot = this.slots[character];
@@ -108,16 +124,18 @@ export class Room {
     // Sprawdzenie dostępności żądanego slotu:
     if (currentSlot.status !== 'free') {
       // Jeśli to ten sam gracz, pozwalamy na ponowną rezerwację/odświeżenie
-      if (currentSlot.playerId === playerId || currentSlot.sessionToken === sessionToken) {
+      if (currentSlot.playerId === playerId) {
         currentSlot.nickname = validation.sanitized;
-        currentSlot.playerId = playerId;
-        currentSlot.sessionToken = sessionToken;
-        this.scheduleReservationTimeout(character);
+        if (currentSlot.status === 'reserving') {
+          currentSlot.expiresAt = Date.now() + this.reservationTimeoutMs;
+          this.scheduleReservationTimeout(character);
+        }
         this.onSlotChanged?.(character, currentSlot);
         return { success: true, slot: currentSlot };
       }
       return {
         success: false,
+        code: currentSlot.status === 'occupied' ? 'CHARACTER_OCCUPIED' : 'CHARACTER_RESERVING',
         error: currentSlot.status === 'occupied' ? 'Postać jest już zajęta.' : 'Postać jest właśnie rezerwowana.',
       };
     }
@@ -139,18 +157,18 @@ export class Room {
     playerId: string,
     character: unknown,
     sessionToken: string,
-  ): { success: boolean; error?: string; slot?: CharacterSlot } {
+  ): RoomOperationResult {
     if (!isCharacterName(character)) {
-      return { success: false, error: 'Nieprawidłowa nazwa postaci.' };
+      return { success: false, code: 'CHARACTER_NOT_FOUND', error: 'Nieprawidłowa nazwa postaci.' };
     }
 
     const currentSlot = this.slots[character];
     if (!currentSlot || currentSlot.status === 'free') {
-      return { success: false, error: 'Postać nie została wcześniej zarezerwowana.' };
+      return { success: false, code: 'UNAUTHORIZED', error: 'Postać nie została wcześniej zarezerwowana.' };
     }
 
-    if (currentSlot.playerId !== playerId && currentSlot.sessionToken !== sessionToken) {
-      return { success: false, error: 'Brak uprawnień do potwierdzenia tej postaci.' };
+    if (currentSlot.playerId !== playerId) {
+      return { success: false, code: 'UNAUTHORIZED', error: 'Brak uprawnień do potwierdzenia tej postaci.' };
     }
 
     this.clearReservationTimeout(character);
@@ -169,21 +187,21 @@ export class Room {
     playerId: string,
     character: unknown,
     sessionToken?: string,
-  ): { success: boolean; error?: string } {
+  ): RoomOperationResult {
     if (!isCharacterName(character)) {
-      return { success: false, error: 'Nieprawidłowa nazwa postaci.' };
+      return { success: false, code: 'CHARACTER_NOT_FOUND', error: 'Nieprawidłowa nazwa postaci.' };
     }
 
     const currentSlot = this.slots[character];
     if (
       currentSlot &&
-      (currentSlot.playerId === playerId || (sessionToken && currentSlot.sessionToken === sessionToken))
+      currentSlot.playerId === playerId
     ) {
       this.freeSlot(character);
       return { success: true };
     }
 
-    return { success: false, error: 'Nie jesteś właścicielem tej postaci.' };
+    return { success: false, code: 'UNAUTHORIZED', error: 'Nie jesteś właścicielem tej postaci.' };
   }
 
   handleDisconnect(playerId: string): CharacterName | undefined {
@@ -212,6 +230,15 @@ export class Room {
     }
 
     return undefined;
+  }
+
+  handleLeave(playerId: string): CharacterName | undefined {
+    const slot = this.findSlotByPlayerId(playerId);
+    if (!slot) return undefined;
+
+    const charName = slot.character;
+    this.freeSlot(charName);
+    return charName;
   }
 
   updatePlayerTransform(playerId: string, transformData: unknown): boolean {
@@ -255,6 +282,9 @@ export class Room {
     }
 
     const charName = slot.character;
+    if (!this.disconnectTimers.has(charName)) {
+      return { restored: false };
+    }
     this.clearDisconnectTimer(charName);
     slot.playerId = newPlayerId;
 
@@ -310,4 +340,3 @@ export class Room {
     this.disconnectTimers.clear();
   }
 }
-
