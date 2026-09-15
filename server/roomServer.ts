@@ -13,6 +13,8 @@ import {
 export interface RoomServerOptions {
   port?: number;
   corsOrigin?: string | string[] | boolean;
+  reservationTimeoutMs?: number;
+  gracePeriodMs?: number;
 }
 
 export class RoomServer {
@@ -20,8 +22,10 @@ export class RoomServer {
   readonly io: Server;
   readonly rooms = new Map<string, Room>();
   private readonly port: number;
+  private readonly options: RoomServerOptions;
 
   constructor(options: RoomServerOptions = {}) {
+    this.options = options;
     this.port = options.port ?? 3001;
     this.server = http.createServer((req, res) => {
       if (req.url === '/health') {
@@ -50,8 +54,13 @@ export class RoomServer {
     if (!room) {
       room = new Room({
         roomId,
+        reservationTimeoutMs: this.options.reservationTimeoutMs,
+        gracePeriodMs: this.options.gracePeriodMs,
         onSlotChanged: () => {
           this.io.to(roomId).emit('room:state', room!.getPublicState());
+        },
+        onReservationTimeout: (character, playerId) => {
+          this.io.to(playerId).emit('error', { code: 'TIMEOUT', message: 'Rezerwacja wygasła.' });
         },
       });
       this.rooms.set(roomId, room);
@@ -72,6 +81,7 @@ export class RoomServer {
         const previousRoomId = currentRoomId;
         const previousRoom = this.rooms.get(previousRoomId);
         if (previousRoom) {
+          previousRoom.removeMember(socket.id);
           if (isDisconnect) {
             previousRoom.handleDisconnect(socket.id);
           } else {
@@ -102,9 +112,16 @@ export class RoomServer {
           return;
         }
 
+        const existingSlot = room.findSlotByPlayerId(socket.id);
+        if (existingSlot && typeof payload.sessionToken === 'string' && payload.sessionToken !== existingSlot.sessionToken) {
+          emitError('UNAUTHORIZED', 'Posiadasz już inny slot w tym pokoju.');
+          return;
+        }
+
         if (currentRoomId && currentRoomId !== roomId) leaveCurrentRoom();
         currentRoomId = roomId;
 
+        room.addMember(socket.id);
         void socket.join(roomId);
 
         // Obsługa reconnect z sessionToken:

@@ -19,11 +19,12 @@ export interface RoomOptions {
   reservationTimeoutMs?: number;
   gracePeriodMs?: number;
   onSlotChanged?: (character: CharacterName, slot: CharacterSlot) => void;
+  onReservationTimeout?: (character: CharacterName, playerId: string) => void;
 }
 
 export interface RoomOperationResult {
   success: boolean;
-  code?: 'CHARACTER_NOT_FOUND' | 'CHARACTER_OCCUPIED' | 'CHARACTER_RESERVING' | 'INVALID_NICKNAME' | 'UNAUTHORIZED';
+  code?: 'CHARACTER_NOT_FOUND' | 'CHARACTER_OCCUPIED' | 'CHARACTER_RESERVING' | 'INVALID_NICKNAME' | 'UNAUTHORIZED' | 'TIMEOUT' | 'ROOM_FULL';
   error?: string;
   slot?: CharacterSlot;
 }
@@ -33,17 +34,20 @@ export class Room {
   private readonly reservationTimeoutMs: number;
   private readonly gracePeriodMs: number;
   private readonly onSlotChanged?: (character: CharacterName, slot: CharacterSlot) => void;
+  private readonly onReservationTimeout?: (character: CharacterName, playerId: string) => void;
 
   private slots: Record<CharacterName, CharacterSlot>;
   private playerTransforms = new Map<CharacterName, PlayerTransform>();
   private disconnectTimers = new Map<CharacterName, NodeJS.Timeout>();
   private reservationTimers = new Map<CharacterName, NodeJS.Timeout>();
+  private members = new Set<string>();
 
   constructor(options: RoomOptions) {
     this.roomId = options.roomId;
     this.reservationTimeoutMs = options.reservationTimeoutMs ?? RESERVATION_TIMEOUT_MS;
     this.gracePeriodMs = options.gracePeriodMs ?? RECONNECT_GRACE_PERIOD_MS;
     this.onSlotChanged = options.onSlotChanged;
+    this.onReservationTimeout = options.onReservationTimeout;
 
     this.slots = CANONICAL_CHARACTERS.reduce(
       (acc, name) => {
@@ -82,7 +86,19 @@ export class Room {
   }
 
   isFull(): boolean {
-    return CANONICAL_CHARACTERS.every((character) => this.slots[character].status !== 'free');
+    return this.members.size + this.disconnectTimers.size >= 8;
+  }
+
+  addMember(playerId: string): void {
+    this.members.add(playerId);
+  }
+
+  removeMember(playerId: string): void {
+    this.members.delete(playerId);
+  }
+
+  getMemberCount(): number {
+    return this.members.size;
   }
 
   findSlotByPlayerId(playerId: string): CharacterSlot | undefined {
@@ -276,6 +292,11 @@ export class Room {
   }
 
   handleReconnect(sessionToken: string, newPlayerId: string): { restored: boolean; character?: CharacterName; nickname?: string } {
+    const existingSlot = this.findSlotByPlayerId(newPlayerId);
+    if (existingSlot && existingSlot.sessionToken !== sessionToken) {
+      return { restored: false };
+    }
+
     const slot = this.findSlotBySessionToken(sessionToken);
     if (!slot || slot.status !== 'occupied') {
       return { restored: false };
@@ -310,7 +331,11 @@ export class Room {
     const timer = setTimeout(() => {
       const slot = this.slots[character];
       if (slot && slot.status === 'reserving') {
+        const playerId = slot.playerId;
         this.freeSlot(character);
+        if (playerId) {
+          this.onReservationTimeout?.(character, playerId);
+        }
       }
     }, this.reservationTimeoutMs);
 
