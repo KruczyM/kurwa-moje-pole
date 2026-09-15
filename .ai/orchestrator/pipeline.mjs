@@ -160,7 +160,12 @@ export async function processIssue(config, issue, resumedState = null) {
   state.implementationProvider = providerSelection.selected;
   state.providerStatuses = providerSelection.statuses;
 
-  let feedback = Array.isArray(resumedState?.lastFeedback) ? resumedState.lastFeedback : [];
+  let feedback =
+    resumedState?.codexReview?.verdict === 'CHANGES_REQUIRED'
+      ? reviewFeedback(resumedState.codexReview)
+      : Array.isArray(resumedState?.lastFeedback)
+        ? resumedState.lastFeedback
+        : [];
   const existingChanges = await worktreeStatus(worktreeInfo.worktree);
   const mayResumeAfterImplementation =
     resumedState && existingChanges && !['IMPLEMENTATION', 'SELECTED'].includes(resumedState.phase);
