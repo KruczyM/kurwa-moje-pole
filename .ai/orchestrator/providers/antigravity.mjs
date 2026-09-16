@@ -14,7 +14,12 @@ export async function probeAntigravity(config, capability = 'implementation') {
       reason: 'Brak headless Antigravity CLI w PATH. Sam Antigravity IDE nie udostępnia raportów JSON.',
     };
   }
-  const capabilityArgs = capability === 'browser' ? provider.browserArgs : provider.implementationArgs;
+  const capabilityArgs =
+    capability === 'browser'
+      ? provider.browserArgs
+      : capability === 'review'
+        ? provider.reviewArgs
+        : provider.implementationArgs;
   if (!Array.isArray(capabilityArgs) || !provider.subscriptionAuthConfirmed) {
     return {
       provider: 'antigravity',
@@ -71,7 +76,12 @@ export function parseAntigravityOutput(stdout) {
 /** Uruchamia Antigravity Headless i zapisuje jego zweryfikowany raport w pliku pipeline. */
 export async function runAntigravityTask({ config, capability, cwd, prompt, outputPath, logFile }) {
   const provider = config.providers.antigravity;
-  const configuredArgs = capability === 'browser' ? provider.browserArgs : provider.implementationArgs;
+  const configuredArgs =
+    capability === 'browser'
+      ? provider.browserArgs
+      : capability === 'review'
+        ? provider.reviewArgs
+        : provider.implementationArgs;
   const args = configuredArgs.map((value) =>
     value
       .replaceAll('{cwd}', cwd)
@@ -79,7 +89,11 @@ export async function runAntigravityTask({ config, capability, cwd, prompt, outp
         '{schema}',
         path.join(
           config.paths.schemas,
-          capability === 'browser' ? 'browser-report.schema.json' : 'implementation-report.schema.json',
+          capability === 'browser'
+            ? 'browser-report.schema.json'
+            : capability === 'review'
+              ? 'codex-review.schema.json'
+              : 'implementation-report.schema.json',
         ),
       ),
   );
@@ -111,4 +125,22 @@ export async function runAntigravityTask({ config, capability, cwd, prompt, outp
       process: result,
     };
   }
+}
+
+/** Uruchamia świeżą sesję Antigravity jako recenzenta tylko do odczytu logicznego. */
+export async function reviewWithAntigravity(context) {
+  const result = await runAntigravityTask({ ...context, capability: 'review' });
+  if (!result.report) return result;
+  if (
+    !['PASS', 'CHANGES_REQUIRED', 'BLOCKED'].includes(result.report.verdict) ||
+    !Array.isArray(result.report.findings)
+  ) {
+    return {
+      ...result,
+      status: ProviderStatus.FAILED,
+      reason: 'ANTIGRAVITY_REVIEW_REPORT_INVALID',
+      report: undefined,
+    };
+  }
+  return result;
 }

@@ -42,6 +42,23 @@
         "--print-timeout",
         "30m"
       ],
+      "reviewArgs": [
+        "--input-format",
+        "stream-json",
+        "--output-format",
+        "stream-json",
+        "--json-schema",
+        "{schema}",
+        "--mode",
+        "plan",
+        "--sandbox",
+        "--model",
+        "gemini-3.1-pro-high",
+        "--effort",
+        "high",
+        "--print-timeout",
+        "30m"
+      ],
       "browserArgs": [
         "--input-format",
         "stream-json",
