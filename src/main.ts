@@ -40,11 +40,15 @@ const networkStatusText = qs<HTMLSpanElement>('#network-status-text');
 
 if (nicknameInput) {
   nicknameInput.value = networkClient.getNickname();
-  if (nicknameCount) nicknameCount.textContent = `${nicknameInput.value.length}/18`;
+  if (nicknameCount) {
+    nicknameCount.textContent = `${nicknameInput.value.length}/18`;
+  }
 
   nicknameInput.oninput = () => {
     const val = nicknameInput.value;
-    if (nicknameCount) nicknameCount.textContent = `${val.length}/18`;
+    if (nicknameCount) {
+      nicknameCount.textContent = `${val.length}/18`;
+    }
     const validation = validateAndSanitizeNickname(val);
     if (!validation.valid && val.length > 0) {
       if (nicknameError) {
@@ -52,7 +56,9 @@ if (nicknameInput) {
         nicknameError.hidden = false;
       }
     } else {
-      if (nicknameError) nicknameError.hidden = true;
+      if (nicknameError) {
+        nicknameError.hidden = true;
+      }
       if (validation.valid) {
         networkClient.setNickname(validation.sanitized);
         if (networkClient.isOnline()) {
@@ -105,7 +111,7 @@ names.forEach((name) => {
 // Synchronizacja stanu slotów z serwera:
 networkClient.onStateChange((roomState) => {
   const myId = networkClient.getMyPlayerId();
-  const myToken = networkClient.getSessionToken();
+
   for (const name of names) {
     const btn = characterButtons.get(name);
     if (!btn) continue;
@@ -113,7 +119,7 @@ networkClient.onStateChange((roomState) => {
     if (!slot) continue;
 
     btn.classList.remove('occupied', 'reserving');
-    const isMine = slot.playerId === myId || (slot.sessionToken && slot.sessionToken === myToken);
+    const isMine = slot.playerId === myId;
 
     if (slot.status === 'occupied' && !isMine) {
       btn.classList.add('occupied');
@@ -131,15 +137,11 @@ networkClient.onStateChange((roomState) => {
 
   // Jeśli aktualnie wybrana postać została zajęta lub zarezerwowana przez kogoś innego, automatycznie przełącz na pierwszą wolną:
   const currentSlot = roomState.slots[selected];
-  const isCurrentMine =
-    currentSlot &&
-    (currentSlot.playerId === myId || (currentSlot.sessionToken && currentSlot.sessionToken === myToken));
+  const isCurrentMine = currentSlot && currentSlot.playerId === myId;
   if (currentSlot && currentSlot.status !== 'free' && !isCurrentMine) {
     const freeName = names.find((name) => {
       const s = roomState.slots[name];
-      return (
-        s && (s.status === 'free' || s.playerId === myId || (s.sessionToken && s.sessionToken === myToken))
-      );
+      return s && (s.status === 'free' || s.playerId === myId);
     });
     if (freeName) {
       selected = freeName;
@@ -230,7 +232,9 @@ async function startGame() {
   try {
     const nextGame = new Game(state, networkClient);
     game = nextGame;
-    if (!isMobileInputDevice()) nextGame.canvas.requestPointerLock().catch?.(() => undefined);
+    if (!isMobileInputDevice()) {
+      nextGame.canvas.requestPointerLock().catch?.(() => undefined);
+    }
     await nextGame.start();
   } catch (cause) {
     qs('#load-error').textContent = cause instanceof Error ? cause.message : String(cause);
@@ -318,6 +322,9 @@ if (matrixQualitySelect) {
   };
 }
 
+type ToggleSetting =
+  'reduceMotion' | 'limitSway' | 'disableShake' | 'disableBloom' | 'disableFlashes' | 'disableAberration';
+
 (
   [
     'reduce-motion',
@@ -329,8 +336,7 @@ if (matrixQualitySelect) {
   ] as const
 ).forEach((name) => {
   qs<HTMLInputElement>(`#setting-${name}`).onchange = (event) => {
-    const key = name.replace(/-([a-z])/g, (_, character) => character.toUpperCase()) as
-      'reduceMotion' | 'limitSway' | 'disableShake' | 'disableBloom' | 'disableFlashes' | 'disableAberration';
+    const key = name.replace(/-([a-z])/g, (_, character) => character.toUpperCase()) as ToggleSetting;
     game?.updateSettings({ [key]: (event.target as HTMLInputElement).checked });
   };
 });

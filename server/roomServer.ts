@@ -105,9 +105,21 @@ export class RoomServer {
         }
         const roomId = requestedRoomId || 'glowny-oboz';
         const room = this.getOrCreateRoom(roomId);
-        const reconnecting =
-          typeof payload.sessionToken === 'string' && room.canReconnect(payload.sessionToken);
-        if (room.isFull() && !reconnecting) {
+        
+        let isReconnecting = false;
+        if (typeof payload.sessionToken === 'string' && payload.sessionToken.length > 0) {
+          const slot = room.findSlotBySessionToken(payload.sessionToken);
+          if (slot) {
+            if (room.canReconnect(payload.sessionToken)) {
+              isReconnecting = true;
+            } else {
+              emitError('UNAUTHORIZED', 'Token sesji jest już w użyciu przez aktywnego gracza.');
+              return;
+            }
+          }
+        }
+
+        if (room.isFull() && !isReconnecting) {
           emitError('ROOM_FULL', 'Pokój jest pełny.');
           return;
         }
@@ -229,6 +241,12 @@ export class RoomServer {
     // 20 Hz (co 50 ms):
     this.tickTimer = setInterval(() => {
       for (const [roomId, room] of this.rooms) {
+        if (room.getPublicState().playerCount === 0) {
+          room.dispose();
+          this.rooms.delete(roomId);
+          continue;
+        }
+
         const snapshot = room.getWorldSnapshot();
         if (snapshot.players.length > 0) {
           this.io.to(roomId).emit('world:snapshot', snapshot);

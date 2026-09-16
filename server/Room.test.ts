@@ -53,6 +53,14 @@ describe('Room', () => {
     expect(state.slots['Amper'].status).toBe('free');
   });
 
+  it('raportuje poprawną liczbę członków po dołączeniu 8 klientów bez rezerwacji postaci', () => {
+    for (let i = 0; i < 8; i++) {
+      room.addMember(`p${i}`);
+    }
+    const state = room.getPublicState();
+    expect(state.playerCount).toBe(8);
+  });
+
   it('rezerwuje postać i blokuje ją dla innego gracza (atomowość)', () => {
     const res1 = room.reserve('p1', 'Amper', 'Gracz1', 'token-1');
     expect(res1.success).toBe(true);
@@ -219,5 +227,20 @@ describe('Room', () => {
       room.release('p1', 'Amper', 'token-1');
       expect(room.getWorldSnapshot().players.length).toBe(0);
     });
+  });
+
+  it('chroni token sesji w stanie publicznym i przechowuje go w stanie wewnętrznym', () => {
+    room.reserve('p1', 'Amper', 'Gracz1', 'sekretny-token');
+    
+    // Stan wewnętrzny przechowuje token
+    const internalSlot = room.findSlotBySessionToken('sekretny-token');
+    expect(internalSlot?.sessionToken).toBe('sekretny-token');
+    expect(internalSlot?.playerId).toBe('p1');
+
+    // Stan publiczny nie wycieka tokenu
+    const publicState = room.getPublicState();
+    const publicSlot = publicState.slots['Amper'];
+    expect((publicSlot as any).sessionToken).toBeUndefined();
+    expect(publicSlot.playerId).toBe('p1');
   });
 });

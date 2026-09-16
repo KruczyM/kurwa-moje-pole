@@ -252,7 +252,7 @@ describe('RoomServer (Integracja Socket.IO)', () => {
     const roomName = 'full-grace-room';
     const clients: ClientSocketType[] = [];
     
-    const characters = ['Amper', 'Antena', 'Gruczoł', 'Klątwa', 'Krwiak', 'Pień', 'Pierścień', 'Zawór'];
+    const characters: Array<keyof RoomState['slots']> = ['Amper', 'Antena', 'Gruczoł', 'Klątwa', 'Krwiak', 'Pień', 'Pierścień', 'Zawór'];
     for (let i = 0; i < 8; i++) {
       const client = ClientSocket(`http://localhost:${PORT}`);
       await new Promise<void>((resolve) => client.on('connect', resolve));
@@ -353,7 +353,7 @@ describe('RoomServer (Integracja Socket.IO)', () => {
     expect(err.code).toBe('UNAUTHORIZED');
     
     const room = server.rooms.get(roomName);
-    const slotForClient1 = room?.findSlotByPlayerId(client1.id);
+    const slotForClient1 = room?.findSlotByPlayerId(client1.id!);
     expect(slotForClient1?.character).toBe('Amper');
     
     const antenaSlot = room?.getSlot('Antena');
@@ -361,5 +361,45 @@ describe('RoomServer (Integracja Socket.IO)', () => {
     expect(antenaSlot?.playerId).toBeUndefined();
 
     client1.disconnect();
+  });
+
+  it('odrzuca próbę dołączenia z tokenem aktywnego gracza z nowym socketem', async () => {
+    const roomName = 'active-token-steal-room';
+    const client1 = ClientSocket(`http://localhost:${PORT}`);
+    await new Promise<void>((resolve) => client1.on('connect', resolve));
+    client1.emit('room:join', { roomId: roomName, sessionToken: 'token-active' });
+    await new Promise<void>((resolve) => client1.once('room:joined', () => resolve()));
+    
+    client1.emit('character:reserve', { character: 'Amper', nickname: 'Player1', sessionToken: 'token-active' });
+    client1.emit('character:confirm', { character: 'Amper', sessionToken: 'token-active' });
+    
+    await new Promise<void>((resolve) => {
+      const handler = (state: RoomState) => {
+        if (state.slots['Amper'].status === 'occupied') {
+           client1.off('room:state', handler);
+           resolve();
+        }
+      };
+      client1.on('room:state', handler);
+    });
+
+    const client2 = ClientSocket(`http://localhost:${PORT}`);
+    await new Promise<void>((resolve) => client2.on('connect', resolve));
+    
+    const errorPromise = new Promise<{ code: string; message: string }>((resolve) => {
+      client2.once('error', (err) => resolve(err));
+    });
+    
+    // client2 używa token-active, ale client1 jest nadal aktywny
+    client2.emit('room:join', { roomId: roomName, sessionToken: 'token-active' });
+    
+    const err = await errorPromise;
+    expect(err.code).toBe('UNAUTHORIZED');
+    
+    const room = server.rooms.get(roomName);
+    expect(room?.getMemberCount()).toBe(1); // client2 nie dołączył
+    
+    client1.disconnect();
+    client2.disconnect();
   });
 });
