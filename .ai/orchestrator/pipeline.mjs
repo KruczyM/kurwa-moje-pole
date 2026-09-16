@@ -2,8 +2,8 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { detectPaidAiEnvironment } from './cost-guard.mjs';
 import { ProviderStatus } from './provider-status.mjs';
-import { probeAntigravity, runAntigravityTask } from './providers/antigravity.mjs';
-import { implementWithCodex, probeCodex, reviewWithCodex } from './providers/codex.mjs';
+import { probeAntigravity, reviewWithAntigravity, runAntigravityTask } from './providers/antigravity.mjs';
+import { implementWithCodex, probeCodex } from './providers/codex.mjs';
 import { assessIssueQuality } from './issue-quality.mjs';
 import {
   createPullRequest,
@@ -255,17 +255,17 @@ export async function processIssue(config, issue, resumedState = null) {
       if (browserReport.status !== 'FAIL') {
         await safeLifecycle(config, issue.number, config.issue.lifecycleLabels.codeReview);
         state = await save(config, state, 'CODE_REVIEW', { validation, browserReport });
-        const codexStatus = await probeCodex(config);
-        if (codexStatus.status !== ProviderStatus.AVAILABLE) {
-          state.lastError = `Niezależny Codex review niedostępny: ${codexStatus.reason}`;
+        const reviewProviderStatus = await probeAntigravity(config, 'review');
+        if (reviewProviderStatus.status !== ProviderStatus.AVAILABLE) {
+          state.lastError = `Antigravity review niedostępny: ${reviewProviderStatus.reason}`;
           break;
         }
-        const reviewResult = await reviewWithCodex({
+        const reviewResult = await reviewWithAntigravity({
           config,
           cwd: worktreeInfo.worktree,
           prompt: reviewPrompt({ issue, baseBranch: config.git.baseBranch, validation, browserReport }),
-          outputPath: path.join(directories.logs, `codex-review-${state.attempts.review + 1}.json`),
-          logFile: path.join(directories.logs, `codex-review-${state.attempts.review + 1}.log`),
+          outputPath: path.join(directories.logs, `antigravity-review-${state.attempts.review + 1}.json`),
+          logFile: path.join(directories.logs, `antigravity-review-${state.attempts.review + 1}.log`),
         });
         if (reviewResult.status !== ProviderStatus.AVAILABLE) {
           state.lastError = reviewResult.reason ?? reviewResult.status;
