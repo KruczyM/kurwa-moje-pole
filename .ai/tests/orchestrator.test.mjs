@@ -24,7 +24,7 @@ import { selectEligibleIssueQueue } from '../orchestrator/github.mjs';
 import { runValidation } from '../orchestrator/validation.mjs';
 import { validateCodexReviewReport } from '../orchestrator/providers/codex.mjs';
 import { parseAntigravityOutput } from '../orchestrator/providers/antigravity.mjs';
-import { implementationPrompt } from '../orchestrator/prompts.mjs';
+import { implementationPrompt, reviewPrompt } from '../orchestrator/prompts.mjs';
 
 async function withTemporaryDirectory(callback) {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'camp-ai-pipeline-'));
@@ -260,6 +260,19 @@ test('implementation correction prompt recognizes pipeline format feedback', () 
   );
 
   assert.match(prompt, /wyłącznie komendy `npx prettier src\/main\.ts --write`/);
+});
+
+test('review prompt injects the orchestrator diff and forbids command tools', () => {
+  const prompt = reviewPrompt({
+    issue: { number: 29, title: 'Multiplayer', body: 'Atomic reservations' },
+    baseBranch: 'main',
+    validation: { status: 'PASS' },
+    browserReport: { status: 'BLOCKED' },
+    diff: 'diff --git a/server/Room.ts b/server/Room.ts',
+  });
+  assert.match(prompt, /diff --git a\/server\/Room\.ts b\/server\/Room\.ts/);
+  assert.match(prompt, /Nie uruchamiaj run_command/);
+  assert.match(prompt, /pełny diff został bezpiecznie odczytany przez orkiestrator/);
 });
 
 test('worktree isolation creates an issue branch without switching main', () =>

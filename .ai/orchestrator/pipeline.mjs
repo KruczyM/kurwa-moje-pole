@@ -12,7 +12,7 @@ import {
   listEligibleIssues,
   setIssueLifecycle,
 } from './github.mjs';
-import { commitIssueWorktree, prepareIssueWorktree, worktreeStatus } from './git-worktree.mjs';
+import { commitIssueWorktree, prepareIssueWorktree, worktreeDiff, worktreeStatus } from './git-worktree.mjs';
 import { runValidation } from './validation.mjs';
 import { startGameServer } from './game/dev-server.mjs';
 import { verifyGameInBrowser } from './game/browser-verifier.mjs';
@@ -260,10 +260,17 @@ export async function processIssue(config, issue, resumedState = null) {
           state.lastError = `Antigravity review niedostępny: ${reviewProviderStatus.reason}`;
           break;
         }
+        const diff = await worktreeDiff(worktreeInfo.worktree, config.git.baseBranch);
         const reviewResult = await reviewWithAntigravity({
           config,
           cwd: worktreeInfo.worktree,
-          prompt: reviewPrompt({ issue, baseBranch: config.git.baseBranch, validation, browserReport }),
+          prompt: reviewPrompt({
+            issue,
+            baseBranch: config.git.baseBranch,
+            validation,
+            browserReport,
+            diff,
+          }),
           outputPath: path.join(directories.logs, `antigravity-review-${state.attempts.review + 1}.json`),
           logFile: path.join(directories.logs, `antigravity-review-${state.attempts.review + 1}.log`),
         });

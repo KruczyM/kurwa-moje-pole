@@ -51,6 +51,17 @@ export async function worktreeStatus(worktree) {
   return result.stdout.trim();
 }
 
+/** Odczytuje pełny diff brancha Issue, łącznie z niezapisanymi zmianami, bez udziału agenta AI. */
+export async function worktreeDiff(worktree, baseBranch) {
+  const result = await runProcess({
+    command: 'git',
+    args: ['diff', baseBranch],
+    cwd: worktree,
+    timeoutMs: 120000,
+  });
+  return result.stdout;
+}
+
 /** Zapisuje zweryfikowane zmiany w branchu Issue; nie wykonuje push ani merge. */
 export async function commitIssueWorktree(worktree, issue) {
   await runProcess({ command: 'git', args: ['add', '--all'], cwd: worktree });
