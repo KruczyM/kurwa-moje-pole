@@ -367,10 +367,20 @@ export async function dryRun(config) {
 }
 
 /** Wznawia zapisane Issue albo pobiera pierwsze jawnie oznaczone ai-ready. */
-export async function selectIssueForRun(config, continueExisting = false) {
+export async function selectIssueForRun(config, continueExisting = false, requestedIssueNumber = null) {
   const state = await readState(config.paths.state);
   if (continueExisting && state.issue?.number && !['IDLE', 'READY_FOR_HUMAN_REVIEW'].includes(state.phase)) {
     return { issue: await getIssue(config, state.issue.number), state };
+  }
+  if (requestedIssueNumber !== null) {
+    const issue = await getIssue(config, requestedIssueNumber);
+    const labels = (issue.labels ?? []).map((label) => label.name ?? label);
+    if (issue.state !== 'OPEN' || !labels.includes(config.issue.readyLabel)) {
+      throw new Error(
+        `Issue #${requestedIssueNumber} musi być otwarte i oznaczone ${config.issue.readyLabel}.`,
+      );
+    }
+    return { issue, state: null };
   }
   const issues = await listEligibleIssues(config);
   return { issue: issues[0] ?? null, state: null };

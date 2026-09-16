@@ -31,6 +31,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
 
 async function main() {
   const command = process.argv[2] ?? 'status';
+  const requestedIssueNumber = process.argv[3] ? Number.parseInt(process.argv[3], 10) : null;
   const config = await loadConfig();
   if (command === 'status') return print(await readState(config.paths.state));
   if (command === 'dry-run') return print(await dryRun(config));
@@ -39,14 +40,18 @@ async function main() {
     return print({ status: 'RESET', note: 'Branche, worktree i zmiany użytkownika pozostawiono bez zmian.' });
   }
   if (!['start', 'one', 'continue'].includes(command)) {
-    throw new Error('Użycie: cli.mjs start|one|continue|status|dry-run|reset');
+    throw new Error('Użycie: cli.mjs start|one [numer-issue]|continue|status|dry-run|reset');
   }
+  if (command !== 'one' && requestedIssueNumber !== null)
+    throw new Error('Numer Issue można podać wyłącznie dla polecenia one.');
+  if (command === 'one' && process.argv[3] && !Number.isInteger(requestedIssueNumber))
+    throw new Error('Numer Issue musi być liczbą całkowitą.');
 
   const release = await acquireLock(config.paths.lock);
   releaseActiveLock = release;
   try {
     await ensureLifecycleLabels(config);
-    let selected = await selectIssueForRun(config, command === 'continue');
+    let selected = await selectIssueForRun(config, command === 'continue', requestedIssueNumber);
     if (!selected.issue) {
       return print({ status: 'IDLE', reason: `Brak otwartego Issue z etykietą ${config.issue.readyLabel}.` });
     }
