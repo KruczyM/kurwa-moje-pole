@@ -1,5 +1,5 @@
 import type { EffectId } from '../effects/EffectManager';
-export type InspectableItemId = 'joint' | 'cocaine' | 'mdma' | 'mushrooms' | 'lsd';
+export type InspectableItemId = 'cigarette' | 'joint' | 'cocaine' | 'mdma' | 'mushrooms' | 'lsd';
 export type InspectableItem = {
   id: InspectableItemId;
   label: string;
@@ -9,6 +9,13 @@ export type InspectableItem = {
   tableQuantity: number;
 };
 export const inspectableItems: InspectableItem[] = [
+  {
+    id: 'cigarette',
+    label: 'Papieros',
+    description: 'Pojedynczy papieros z filtrem, zostawiony na obozowym stole.',
+    effect: 'Papieros',
+    tableQuantity: 1,
+  },
   {
     id: 'joint',
     label: 'Blant',

@@ -1,14 +1,15 @@
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { resolveCanonicalAnimationName } from '../animation/animationContract';
+import { findRigBone } from '../animation/rigBones';
 import { stabilizeLocomotionRoot } from '../npc/NpcAnimator';
-import {
-  cloneDisposableModel,
-  cloneDisposableSkinnedModel,
-  disposeObjectTree,
-} from '../lifecycle/disposeThree';
+import { cloneDisposableSkinnedModel, disposeObjectTree } from '../lifecycle/disposeThree';
 import type { EffectId } from '../effects/EffectManager';
 import { itemUseSequenceConfig } from './itemUseSequenceConfig';
+import { createProceduralUseClip } from './itemUseMotion';
+import { attachUseProp } from './itemUseProp';
+
+export { createProceduralUseClip } from './itemUseMotion';
 
 const INTRO_DURATION = 0.42;
 const OUTRO_DURATION = 0.38;
@@ -70,58 +71,6 @@ export function chooseUseSequenceCamera(
   return new THREE.Vector3(playerPosition.x, groundY + 3.35, playerPosition.z + 1.8);
 }
 
-/** Tworzy obrót addytywny używany przez proceduralny ruch ręki. */
-function motionQuaternion(x: number, y: number, z: number) {
-  return new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z, 'XYZ'));
-}
-
-/** Buduje ścieżkę kwaternionów wracającą do pozy neutralnej po markerze efektu. */
-function useMotionTrack(
-  bone: THREE.Object3D | undefined,
-  peak: THREE.Quaternion,
-  marker: number,
-  duration: number,
-) {
-  if (!bone) return undefined;
-  const identity = new THREE.Quaternion();
-  const half = identity.clone().slerp(peak, 0.55);
-  const times = [0, INTRO_DURATION, marker - 0.16, marker + 0.2, duration - OUTRO_DURATION, duration];
-  const poses = [identity, half, peak, peak, half, identity];
-  return new THREE.QuaternionKeyframeTrack(
-    `${bone.name}.quaternion`,
-    times,
-    poses.flatMap((quaternion) => quaternion.toArray()),
-  );
-}
-
-/** Tworzy jednorazową animację ręki dla każdego modelu ze zgodnym szkieletem Mixamo. */
-export function createProceduralUseClip(root: THREE.Object3D, effect: EffectId) {
-  const config = itemUseSequenceConfig[effect];
-  const strength = config.motionStrength;
-  const tracks = [
-    useMotionTrack(
-      root.getObjectByName(RIGHT_ARM),
-      motionQuaternion(-0.72 * strength, 0.12, -0.72 * strength),
-      config.effectMarker,
-      config.duration,
-    ),
-    useMotionTrack(
-      root.getObjectByName(RIGHT_FOREARM),
-      motionQuaternion(-1.18 * strength, 0.08, -0.16),
-      config.effectMarker,
-      config.duration,
-    ),
-    useMotionTrack(
-      root.getObjectByName(RIGHT_HAND),
-      motionQuaternion(-0.25 * strength, 0, 0.12),
-      config.effectMarker,
-      config.duration,
-    ),
-  ].filter((track): track is THREE.QuaternionKeyframeTrack => Boolean(track));
-  if (tracks.length !== 3) return undefined;
-  return new THREE.AnimationClip(`Use${effect}`, config.duration, tracks, THREE.AdditiveAnimationBlendMode);
-}
-
 /** Ustawia cienie i normalizuje wysokość postaci po zastosowaniu pierwszej klatki Idle. */
 function fitCharacter(model: THREE.Object3D) {
   model.traverse((object) => {
@@ -135,34 +84,6 @@ function fitCharacter(model: THREE.Object3D) {
   model.scale.setScalar(PLAYER_HEIGHT / Math.max(0.01, bounds.max.y - bounds.min.y));
   bounds.setFromObject(model);
   model.position.y = -bounds.min.y;
-}
-
-/** Dopasowuje rekwizyt do rozmiaru świata i umieszcza jego środek na kości dłoni. */
-function attachProp(
-  root: THREE.Object3D,
-  visualScale: number,
-  source: THREE.Object3D | undefined,
-  effect: EffectId,
-) {
-  const config = itemUseSequenceConfig[effect];
-  if (!config.propId) return undefined;
-  const prop = source
-    ? cloneDisposableModel(source)
-    : new THREE.Mesh(
-        new THREE.IcosahedronGeometry(0.08),
-        new THREE.MeshStandardMaterial({ color: 0xffe34d }),
-      );
-  const bounds = new THREE.Box3().setFromObject(prop);
-  const center = bounds.getCenter(new THREE.Vector3());
-  const size = bounds.getSize(new THREE.Vector3());
-  const localScale = config.propSize / Math.max(0.01, size.x, size.y, size.z) / visualScale;
-  prop.scale.setScalar(localScale);
-  prop.position.copy(center.multiplyScalar(-localScale));
-  prop.position.add(new THREE.Vector3(...config.propPosition).divideScalar(visualScale));
-  prop.rotation.set(...config.propRotation);
-  prop.visible = false;
-  (root.getObjectByName(RIGHT_HAND) ?? root).add(prop);
-  return prop;
 }
 
 /** Tworzy prostą widoczną postać awaryjną, gdy wybrany GLB nie został załadowany. */
@@ -185,9 +106,10 @@ export function canAnimateUseSequence(character: GLTF | undefined) {
   const hasIdle = character.animations.some((clip) => resolveCanonicalAnimationName(clip.name) === 'Idle');
   return (
     hasIdle &&
-    Boolean(character.scene.getObjectByName(RIGHT_ARM)) &&
-    Boolean(character.scene.getObjectByName(RIGHT_FOREARM)) &&
-    Boolean(character.scene.getObjectByName(RIGHT_HAND))
+    Boolean(findRigBone(character.scene, RIGHT_ARM)) &&
+    Boolean(findRigBone(character.scene, RIGHT_FOREARM)) &&
+    Boolean(findRigBone(character.scene, RIGHT_HAND)) &&
+    Boolean(findRigBone(character.scene, 'mixamorig:Head'))
   );
 }
 
@@ -235,29 +157,31 @@ export class ItemUseSequence {
     this.root = new THREE.Group();
     this.root.name = 'PlayerUseSequence';
     const animatedCharacter = canAnimateUseSequence(this.character) ? this.character : undefined;
-    this.visual = animatedCharacter
-      ? cloneDisposableSkinnedModel(animatedCharacter.scene)
-      : fallbackCharacter();
+    this.visual = this.character ? cloneDisposableSkinnedModel(this.character.scene) : fallbackCharacter();
     this.root.add(this.visual);
 
-    if (animatedCharacter) {
+    if (this.character) {
       this.mixer = new THREE.AnimationMixer(this.visual);
-      const idle = animatedCharacter.animations.find(
+      const idle = this.character.animations.find(
         (clip) => resolveCanonicalAnimationName(clip.name) === 'Idle',
       );
-      if (idle) this.mixer.clipAction(stabilizeLocomotionRoot(this.visual, idle)).play();
+      if (idle) {
+        const basePose = this.mixer.clipAction(stabilizeLocomotionRoot(this.visual, idle));
+        basePose.play();
+        // Keep the reference pose steady while the authored gesture makes contact with the face.
+        basePose.paused = true;
+      }
       this.mixer.update(0);
     }
     fitCharacter(this.visual);
-    const visualScale = Math.max(0.0001, this.visual.scale.x);
-    this.prop = attachProp(
+    // Bake before attaching a prop so bounds and reach depend only on the character.
+    const clip = animatedCharacter ? createProceduralUseClip(this.visual, effect) : undefined;
+    this.prop = attachUseProp(
       this.visual,
-      visualScale,
       config.propId ? this.propModels.get(config.propId) : undefined,
       effect,
     );
 
-    const clip = createProceduralUseClip(this.visual, effect);
     if (clip && this.mixer) {
       const action = this.mixer.clipAction(clip);
       action.setLoop(THREE.LoopOnce, 1);
@@ -282,9 +206,14 @@ export class ItemUseSequence {
   update(deltaSeconds: number): UseSequenceEvent {
     if (!this.currentEffect || !this.snapshot) return { activateEffect: false, complete: false };
     const config = itemUseSequenceConfig[this.currentEffect];
-    this.elapsed = Math.min(config.duration, this.elapsed + deltaSeconds);
-    this.mixer?.update(deltaSeconds);
-    if (this.prop) this.prop.visible = this.elapsed >= 0.18 && this.elapsed <= config.duration - 0.24;
+    const step = Number.isFinite(deltaSeconds) ? Math.max(0, deltaSeconds) : 0;
+    const elapsed = Math.min(config.duration, this.elapsed + step);
+    this.mixer?.update(elapsed - this.elapsed);
+    this.elapsed = elapsed;
+    if (this.prop) {
+      const hideAt = config.consumeProp ? config.effectMarker + 0.14 : config.duration - 0.24;
+      this.prop.visible = this.elapsed >= 0.18 && this.elapsed <= hideAt;
+    }
 
     const blend =
       this.elapsed < INTRO_DURATION

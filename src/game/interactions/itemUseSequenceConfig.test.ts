@@ -3,7 +3,7 @@ import { inspectableItems } from './itemConfig';
 import { itemUseSequenceConfig, validUseSequenceTiming } from './itemUseSequenceConfig';
 
 describe('itemUseSequenceConfig', () => {
-  it('assigns a prop and a valid effect marker to all five table items', () => {
+  it('assigns a prop and a valid effect marker to every table item', () => {
     for (const item of inspectableItems) {
       const config = itemUseSequenceConfig[item.effect];
       expect(config.propId).toBe(item.id);
@@ -12,10 +12,14 @@ describe('itemUseSequenceConfig', () => {
     }
   });
 
-  it('provides an explicit no-prop fallback for inventory-only effects', () => {
+  it('uses a local can for beer and distinct gesture profiles', () => {
     expect(itemUseSequenceConfig.Piwo.propId).toBeUndefined();
-    expect(itemUseSequenceConfig.Papieros.propId).toBeUndefined();
+    expect(itemUseSequenceConfig.Papieros.propId).toBe('cigarette');
     expect(validUseSequenceTiming(itemUseSequenceConfig.Piwo)).toBe(true);
     expect(validUseSequenceTiming(itemUseSequenceConfig.Papieros)).toBe(true);
+    expect(itemUseSequenceConfig.Papieros.gesture).toBe('smoke');
+    expect(itemUseSequenceConfig.Kreska.gesture).toBe('sniff');
+    expect(itemUseSequenceConfig.Grzyb.gesture).toBe('eat');
+    expect(itemUseSequenceConfig.Grzyb.consumeProp).toBe(true);
   });
 });

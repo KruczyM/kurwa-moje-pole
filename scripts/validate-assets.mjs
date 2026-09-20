@@ -30,6 +30,7 @@ const environmentPbrProfiles = {
 };
 const interactivePbrProfiles = {
   table: 'wood',
+  cigarette: 'paper',
   joint: 'paper',
   cocaine: 'plastic',
   mdma: 'plastic',

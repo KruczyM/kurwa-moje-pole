@@ -28,6 +28,7 @@
   },
   "interactives": {
     "table": "interactables/table.glb",
+    "cigarette": "interactables/cigarette.glb",
     "joint": "interactables/joint.glb",
     "cocaine": "interactables/cocaine.glb",
     "mdma": "interactables/mdma.glb",

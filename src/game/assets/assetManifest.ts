@@ -35,6 +35,7 @@ export const tentAssets = Object.fromEntries(
 
 export const interactiveAssets = {
   table: gameAsset(catalog.interactives.table),
+  cigarette: gameAsset(catalog.interactives.cigarette),
   joint: gameAsset(catalog.interactives.joint),
   cocaine: gameAsset(catalog.interactives.cocaine),
   mdma: gameAsset(catalog.interactives.mdma),

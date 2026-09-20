@@ -21,6 +21,10 @@ function characterFixture() {
   arm.add(forearm);
   forearm.add(hand);
   scene.add(arm);
+  const head = new THREE.Object3D();
+  head.name = 'mixamorig:Head';
+  head.position.y = 1.8;
+  scene.add(head);
   return {
     scene,
     animations: [new THREE.AnimationClip('Idle', 1, [])],
@@ -42,7 +46,7 @@ describe('ItemUseSequence', () => {
 
     expect(clip?.name).toBe('UseJoint');
     expect(clip?.blendMode).toBe(THREE.AdditiveAnimationBlendMode);
-    expect(clip?.tracks).toHaveLength(3);
+    expect(clip?.tracks).toHaveLength(4);
     expect(canAnimateUseSequence(character)).toBe(true);
     expect(canAnimateUseSequence(undefined)).toBe(false);
   });
