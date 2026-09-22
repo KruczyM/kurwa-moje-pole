@@ -34,7 +34,7 @@ export function resolveServerUrl(customUrl?: string): string | undefined {
     const param = new URLSearchParams(location.search).get('server');
     if (param && param.trim().length > 0) return param.trim();
 
-    const envUrl = typeof import.meta !== 'undefined' && import.meta.env?.VITE_SERVER_URL;
+    const envUrl = typeof import.meta !== 'undefined' && import.meta.env.VITE_SERVER_URL;
     if (envUrl && typeof envUrl === 'string' && envUrl.trim().length > 0) {
       return envUrl.trim();
     }
