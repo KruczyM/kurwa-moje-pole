@@ -53,6 +53,14 @@ describe('Room', () => {
     expect(state.slots['Amper'].status).toBe('free');
   });
 
+  it('raportuje poprawną liczbę członków po dołączeniu 8 klientów bez rezerwacji postaci', () => {
+    for (let i = 0; i < 8; i++) {
+      room.addMember(`p${i}`);
+    }
+    const state = room.getPublicState();
+    expect(state.playerCount).toBe(8);
+  });
+
   it('rezerwuje postać i blokuje ją dla innego gracza (atomowość)', () => {
     const res1 = room.reserve('p1', 'Amper', 'Gracz1', 'token-1');
     expect(res1.success).toBe(true);
@@ -120,6 +128,29 @@ describe('Room', () => {
     expect(room.getSlot('Zawór')?.status).toBe('free');
   });
 
+  it('nie pozwala drugiemu aktywnemu socketowi przejąć slotu samym tokenem sesji', () => {
+    room.reserve('p1', 'Amper', 'Gracz1', 'token-1');
+    room.confirm('p1', 'Amper', 'token-1');
+
+    expect(room.handleReconnect('token-1', 'p2')).toEqual({ restored: false });
+    const reserveResult = room.reserve('p2', 'Amper', 'Gracz2', 'token-1');
+    expect(reserveResult).toMatchObject({ success: false, code: 'CHARACTER_OCCUPIED' });
+    expect(room.getSlot('Amper')?.playerId).toBe('p1');
+    expect(room.getSlot('Amper')?.nickname).toBe('Gracz1');
+  });
+
+  it('odświeża timeout wyłącznie dla własnej rezerwacji', () => {
+    room.reserve('p1', 'Amper', 'Gracz1', 'token-1');
+    vi.advanceTimersByTime(4000);
+    room.reserve('p1', 'Amper', 'Gracz1a', 'token-1');
+    vi.advanceTimersByTime(1500);
+
+    expect(room.getSlot('Amper')?.status).toBe('reserving');
+    expect(room.getSlot('Amper')?.nickname).toBe('Gracz1a');
+    vi.advanceTimersByTime(4000);
+    expect(room.getSlot('Amper')?.status).toBe('free');
+  });
+
   it('zwalnia poprzedni slot gdy gracz rezerwuje inną postać', () => {
     room.reserve('p1', 'Amper', 'Gracz1', 'token-1');
     expect(room.getSlot('Amper')?.status).toBe('reserving');
@@ -127,6 +158,17 @@ describe('Room', () => {
     room.reserve('p1', 'Antena', 'Gracz1', 'token-1');
     expect(room.getSlot('Amper')?.status).toBe('free');
     expect(room.getSlot('Antena')?.status).toBe('reserving');
+  });
+
+  it('nie zwalnia starego slotu jeśli docelowa postać jest zajęta', () => {
+    room.reserve('p1', 'Amper', 'Gracz1', 'token-1');
+    room.reserve('p2', 'Antena', 'Gracz2', 'token-2');
+
+    const res = room.reserve('p1', 'Antena', 'Gracz1', 'token-1');
+    expect(res.success).toBe(false);
+
+    expect(room.getSlot('Amper')?.playerId).toBe('p1');
+    expect(room.getSlot('Amper')?.status).toBe('reserving');
   });
 
   describe('PlayerTransforms & WorldSnapshot', () => {
@@ -185,5 +227,20 @@ describe('Room', () => {
       room.release('p1', 'Amper', 'token-1');
       expect(room.getWorldSnapshot().players.length).toBe(0);
     });
+  });
+
+  it('chroni token sesji w stanie publicznym i przechowuje go w stanie wewnętrznym', () => {
+    room.reserve('p1', 'Amper', 'Gracz1', 'sekretny-token');
+    
+    // Stan wewnętrzny przechowuje token
+    const internalSlot = room.findSlotBySessionToken('sekretny-token');
+    expect(internalSlot?.sessionToken).toBe('sekretny-token');
+    expect(internalSlot?.playerId).toBe('p1');
+
+    // Stan publiczny nie wycieka tokenu
+    const publicState = room.getPublicState();
+    const publicSlot = publicState.slots['Amper'];
+    expect((publicSlot as any).sessionToken).toBeUndefined();
+    expect(publicSlot.playerId).toBe('p1');
   });
 });
