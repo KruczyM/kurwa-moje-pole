@@ -17,8 +17,10 @@ jobs:
     name: Lint, types and unit tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source
+      - name: Checkout source and model fixtures
         uses: actions/checkout@v7
+        with:
+          lfs: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v7

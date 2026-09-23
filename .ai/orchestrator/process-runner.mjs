@@ -11,21 +11,27 @@ export function executableName(command) {
 }
 
 /** Omija windowsowe shimy .cmd, uruchamiając znane npm CLI bezpośrednio przez Node. */
-export function resolveSpawnCommand(command, args = [], platform = process.platform, env = process.env) {
+export function resolveSpawnCommand(
+  command,
+  args = [],
+  platform = process.platform,
+  env = process.env,
+  nodeExecutable = process.execPath,
+) {
   if (platform !== 'win32') return { command, args };
   if (command === 'npm' || command === 'npx') {
     const script = path.join(
-      path.dirname(process.execPath),
+      path.dirname(nodeExecutable),
       'node_modules',
       'npm',
       'bin',
       command === 'npm' ? 'npm-cli.js' : 'npx-cli.js',
     );
-    if (existsSync(script)) return { command: process.execPath, args: [script, ...args] };
+    if (existsSync(script)) return { command: nodeExecutable, args: [script, ...args] };
   }
   if (command === 'codex' && env.APPDATA) {
     const script = path.join(env.APPDATA, 'npm', 'node_modules', '@openai', 'codex', 'bin', 'codex.js');
-    if (existsSync(script)) return { command: process.execPath, args: [script, ...args] };
+    if (existsSync(script)) return { command: nodeExecutable, args: [script, ...args] };
   }
   if (command === 'agy' && env.LOCALAPPDATA) {
     const executable = path.join(env.LOCALAPPDATA, 'agy', 'bin', 'agy.exe');

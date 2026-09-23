@@ -193,8 +193,26 @@ test('branch name cannot inject shell syntax', () => {
   const branch = issueBranch({ git: { branchPrefix: 'ai/' } }, { number: 7, title: 'Model && rm -rf /' });
   assert.equal(branch, 'ai/7-model-rm-rf');
   assert.equal(executableName('npm'), 'npm');
-  assert.equal(resolveSpawnCommand('npm', ['run', 'test'], 'win32').command, process.execPath);
 });
+
+test('Windows npm shim resolution uses deterministic fixtures on every host OS', () =>
+  withTemporaryDirectory(async (directory) => {
+    const nodeExecutable = path.join(directory, 'node.exe');
+    const bin = path.join(directory, 'node_modules', 'npm', 'bin');
+    await mkdir(bin, { recursive: true });
+    for (const command of ['npm', 'npx']) {
+      const args = ['--version'];
+      const script = path.join(bin, `${command}-cli.js`);
+      assert.deepEqual(resolveSpawnCommand(command, args, 'win32', {}, nodeExecutable), { command, args });
+      await writeFile(script, '// fixture, never executed');
+      assert.deepEqual(resolveSpawnCommand(command, args, 'win32', {}, nodeExecutable), {
+        command: nodeExecutable,
+        args: [script, ...args],
+      });
+      assert.deepEqual(resolveSpawnCommand(command, args, 'linux', {}, nodeExecutable), { command, args });
+      assert.deepEqual(resolveSpawnCommand(command, args, 'darwin', {}, nodeExecutable), { command, args });
+    }
+  }));
 
 test('Windows runner resolves the official default agy installation', () =>
   withTemporaryDirectory(async (directory) => {
