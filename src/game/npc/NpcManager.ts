@@ -88,12 +88,17 @@ export class NpcManager {
       }
       if (index === 0 && speaker) {
         const anchor = new THREE.Object3D();
-        anchor.position.set(0.55, 0.25, 1.65);
+        const x = spawns[0][0] + 0.55;
+        const z = spawns[0][1] + 1.65;
+        anchor.position.set(x, terrainHeight(x, z) + 0.02, z);
         anchor.userData.interaction = { kind: 'speaker' };
         const accessory = clone(speaker.scene);
         this.fit(accessory, 0.55);
         anchor.add(accessory);
-        root.add(anchor);
+        anchor.name = 'Static_Camp_Speaker';
+        anchor.traverse((object) => (object.userData.interactionRoot = anchor));
+        enableInteractionLayer(anchor);
+        scene.add(anchor);
         this.speakerAnchor = anchor;
       }
       root.position.set(spawns[index][0], 0, spawns[index][1]);
@@ -140,8 +145,11 @@ export class NpcManager {
         m.receiveShadow = true;
       }
     });
+    // Refresh the cloned skeleton after applying Idle before measuring skin bounds.
+    object.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(object);
-    object.scale.setScalar(height / Math.max(0.01, box.max.y - box.min.y));
+    const measuredHeight = box.max.y - box.min.y;
+    object.scale.setScalar(height / (measuredHeight > 1e-6 ? measuredHeight : 1));
     box.setFromObject(object);
     object.position.y = -box.min.y;
   }
@@ -285,13 +293,15 @@ export class NpcManager {
 
   /** Wiąże klip i jego timeScale z bieżącą, płynnie zmienianą prędkością NPC. */
   private updateAnimation(npc: Npc, deltaTime: number) {
-    npc.animator?.setMovementSpeed(npc.speed);
-    npc.animator?.play(locomotionForSpeed(npc.speed, npc.returning));
+    const actualSpeed = Math.hypot(npc.velocity.x, npc.velocity.z);
+    npc.animator?.setMovementSpeed(actualSpeed);
+    npc.animator?.play(locomotionForSpeed(actualSpeed, npc.returning));
     npc.animator?.update(deltaTime);
   }
 
   /** Aktualizuje decyzje ruchu, obrót, powroty od granicy i płynne animacje NPC. */
-  update(dt: number, time: number, playerPosition?: THREE.Vector3) {
+  update(dt: number, _time: number, playerPosition?: THREE.Vector3) {
+    if (!Number.isFinite(dt) || dt <= 0) return;
     const snapshots = this.npcs.map((npc) => ({
       npc,
       position: npc.root.position.clone(),
@@ -300,14 +310,17 @@ export class NpcManager {
     let socialCount = this.npcs.filter((npc) => npc.behavior.state === 'social').length;
     for (const npc of this.npcs) {
       const nearEdge =
-        Math.abs(npc.root.position.x) > this.navigation.bounds.maxX - 2 ||
-        Math.abs(npc.root.position.z) > this.navigation.bounds.maxZ - 2;
+        npc.root.position.x < this.navigation.bounds.minX + 2 ||
+        npc.root.position.x > this.navigation.bounds.maxX - 2 ||
+        npc.root.position.z < this.navigation.bounds.minZ + 2 ||
+        npc.root.position.z > this.navigation.bounds.maxZ - 2;
       const insideSafeZone =
         Math.abs(npc.root.position.x) <= CAMP_RADIUS && Math.abs(npc.root.position.z) <= CAMP_RADIUS;
       const arrived =
         npc.behavior.travelling &&
         npc.waypoints.length <= 1 &&
-        npc.target.distanceToSquared(npc.root.position) <= NPC_MOTION.arrivalRadius ** 2;
+        (npc.target.x - npc.root.position.x) ** 2 + (npc.target.z - npc.root.position.z) ** 2 <=
+          NPC_MOTION.arrivalRadius ** 2;
       const previousState = npc.behavior.state;
       const action = npc.behavior.update(dt, {
         nearEdge,
@@ -322,9 +335,7 @@ export class NpcManager {
       npc.stationary = !npc.behavior.travelling;
 
       if (npc.stationary) {
-        npc.root.position.y = Math.sin(time * 1.2 + npc.phase) * 0.01;
-        npc.root.position.y =
-          terrainHeight(npc.root.position.x, npc.root.position.z) + Math.sin(time * 1.2 + npc.phase) * 0.01;
+        npc.root.position.y = terrainHeight(npc.root.position.x, npc.root.position.z);
         npc.speed = approachSpeed(npc.speed, 0, dt);
         npc.velocity.set(0, 0, 0);
         const recoveryAction = npc.watchdog.update(
@@ -342,8 +353,7 @@ export class NpcManager {
         npc.wait -= dt;
         npc.speed = approachSpeed(npc.speed, 0, dt);
         npc.velocity.set(0, 0, 0);
-        npc.root.position.y =
-          terrainHeight(npc.root.position.x, npc.root.position.z) + Math.sin(time * 1.2 + npc.phase) * 0.01;
+        npc.root.position.y = terrainHeight(npc.root.position.x, npc.root.position.z);
         const recoveryAction = npc.watchdog.update(
           dt,
           npc.root.position,
@@ -388,11 +398,15 @@ export class NpcManager {
       );
       const maximumSpeed = npc.returning ? NPC_MOTION.runSpeed : NPC_MOTION.walkSpeed;
       const pathSpeed = npc.waypoints.length > 1 ? maximumSpeed : brakingSpeed(distance, maximumSpeed);
-      const desiredSpeed = pathSpeed * steering.speedScale;
+      // Przy ostrym zakręcie najpierw zwalniaj, zamiast zataczać szeroki łuk
+      // z pełną prędkością i odbijać się od narożnika przeszkody.
+      const alignment = npc.steeringDirection.dot(steering.direction);
+      const turnSpeedScale = THREE.MathUtils.clamp((alignment + 1) / 2, 0.15, 1);
+      const desiredSpeed = pathSpeed * steering.speedScale * turnSpeedScale;
       npc.speed = approachSpeed(npc.speed, desiredSpeed, dt);
       const step = Math.min(distance, dt * npc.speed);
       const next = npc.root.position.clone().addScaledVector(npc.steeringDirection, step);
-      if (!this.navigation.canStandAt(next.x, next.z)) {
+      if (!this.navigation.hasLineOfSight(npc.root.position, next)) {
         if (!this.routeTo(npc, npc.target)) {
           npc.behavior.routeFailed();
           npc.waypoints.length = 0;
@@ -407,6 +421,7 @@ export class NpcManager {
         npc.velocity
           .copy(next)
           .sub(previous)
+          .setY(0)
           .multiplyScalar(dt > 0 ? 1 / dt : 0);
         npc.root.rotation.y = Math.atan2(npc.steeringDirection.x, npc.steeringDirection.z);
       }

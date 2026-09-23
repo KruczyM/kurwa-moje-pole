@@ -27,6 +27,10 @@ const environmentPbrProfiles = {
   chair: 'mixed',
   speaker: 'plastic',
   toilet: 'plastic',
+  lidlRockShop: 'mixed',
+  allegroWheel: 'mixed',
+  marketStalls: 'mixed',
+  festivalZones: 'mixed',
 };
 const interactivePbrProfiles = {
   table: 'wood',

@@ -26,6 +26,8 @@ Oficjalny program znajduje się domyślnie w `%LOCALAPPDATA%\agy\bin\agy.exe`. I
 
 Adapter używa oficjalnego trybu headless `stream-json`: prompt trafia jako NDJSON przez stdin, wynik końcowy jest wymuszany schematem i odczytywany z `structured_output`. Implementacja używa `gemini-3.1-pro-high`, a kontrola przeglądarkowa szybszego `gemini-3.8-flash-medium`. Oba procesy działają z `--sandbox`; pipeline celowo nie używa `--dangerously-skip-permissions`. Antigravity SDK ani `GEMINI_API_KEY` nie są potrzebne.
 
+Każde uruchomienie przekazuje również `--add-dir {cwd}`, aby Antigravity widział właściwy worktree zamiast domyślnego katalogu `scratch`. Na życzenie użytkownika lokalne reguły Antigravity CLI rozszerzono 23 września 2026 na `read_file(E:/kodowanie/gra)` i `write_file(E:/kodowanie/gra)`: obejmują cały projekt, w tym modele i wszystkie worktree. Reguły znajdują się w lokalnym `%USERPROFILE%/.gemini/antigravity-cli/settings.json`, nie w repozytorium. Nie są konfiguracją uprawnień aplikacji IDE. Dostęp do plików nie jest zgodą na wykonywanie dowolnych poleceń: dotychczasowe reguły terminala, sandbox i ograniczenia kosztów pozostają bez zmian. Nie przyznano dostępu do całego komputera.
+
 Przed pierwszym rzeczywistym zadaniem sprawdź ręcznie w ustawieniach Antigravity lub selektorze modeli, że **AI Credit Overages** są ustawione na **Never**. Tego ustawienia billingowego pipeline nie zmienia. Samo sprawdzenie logowania i quota:
 
 ```powershell

@@ -1,4 +1,18 @@
 import * as THREE from 'three';
+import { terrainHeight } from './terrainHeight';
+export { terrainHeight } from './terrainHeight';
+import { attachTentLod } from './tentLod';
+import { TentPaletteCache } from './tentPalettes';
+import { sampleFestivalRoadMask, tentTerrainOffset } from './festivalCamping';
+import { placeRockShop, sampleRockShopGrassMask } from './festivalLandmarks';
+import { FestivalWheel, placeFestivalWheel, sampleWheelGrassMask } from './festivalWheel';
+import { createZoneGrassMask, festivalZoneTemplates, placeFestivalZones } from './festivalZones';
+import {
+  createMarketGrassMask,
+  marketLaneMaterial,
+  marketTemplates,
+  placeFestivalMarket,
+} from './festivalMarket';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { inspectableItems } from '../interactions/itemConfig';
@@ -7,8 +21,9 @@ import { enableInteractionLayer } from '../interactions/InteractionManager';
 import { HorizonPanorama, TimeOfDaySkybox } from './HorizonSkybox';
 import {
   sampleCampGrassCoverage,
+  sampleTentGrassMask,
   tentColliderBounds,
-  tentLayout,
+  allTentLayout,
   type PhysicalSize,
   type TentConfig,
   type TentFit,
@@ -16,6 +31,7 @@ import {
 } from './campLayout';
 import { FLAG_CONFIG, MAD_DOG_CONFIG, seatLayout, TOILET_CONFIG } from './campLandmarks';
 import { Grass } from './vendor/three-stylized/index';
+import { bindGrassWorldMask, createGrassWorldMask } from './grassWorldMask';
 import { DEFAULT_GRASS_PRESET, type GrassQualityPreset } from './grassQuality';
 
 const WORLD_SIZE = 117.6;
@@ -40,6 +56,10 @@ type WorldModels = {
   flag: GLTF | null;
   chair: GLTF | null;
   toilet: GLTF | null;
+  lidlRockShop?: GLTF | null;
+  allegroWheel?: GLTF | null;
+  marketStalls?: GLTF | null;
+  festivalZones?: GLTF | null;
   interactables: Map<string, GLTF>;
   textures?: GroundTextures;
 };
@@ -82,11 +102,6 @@ export function createGroundMaterial(textures?: GroundTextures) {
 /** Włącza podgląd hitboxów przez parametr adresu `?debugInteractions=1`. */
 export function interactionDebugEnabled(search: string) {
   return new URLSearchParams(search).get('debugInteractions') === '1';
-}
-
-/** Generuje delikatnie pofalowaną geometrię ziemi. */
-export function terrainHeight(x: number, z: number) {
-  return 0.18 * Math.sin(x * 0.065) * Math.cos(z * 0.055) + 0.09 * Math.sin(x * 0.19 + z * 0.13);
 }
 
 function terrain() {
@@ -136,9 +151,12 @@ export function physicalSizeIsValid(actual: THREE.Vector3, target: PhysicalSize,
 
 /** Buduje teren, oświetlenie, obiekty obozu, kolizje i punkty interakcji. */
 export class CampWorld {
+  private wheel: FestivalWheel | null = null;
+  private tentPalettes = new TentPaletteCache();
   colliders: ({ x: number; z: number; r: number } | { box: THREE.Box3 })[] = [];
   interactables: WorldObject[] = [];
   private grass: Grass;
+  private grassWorldMask: THREE.DataTexture;
   private grassQuality: GrassQualityPreset = DEFAULT_GRASS_PRESET;
   private skybox: TimeOfDaySkybox;
   private panorama: HorizonPanorama;
@@ -176,6 +194,18 @@ export class CampWorld {
     ground.userData.excludeMushroomWireframe = true;
     scene.add(ground);
 
+    const market = marketTemplates(models.marketStalls);
+    const marketGrassMask = createMarketGrassMask(new Set(market.keys()));
+    const zones = festivalZoneTemplates(models.festivalZones);
+    const zoneGrassMask = createZoneGrassMask(new Set(zones.keys()));
+    const vegetationCoverage = (x: number, z: number) =>
+      sampleCampGrassCoverage(x, z) *
+      sampleTentGrassMask(x, z) *
+      sampleFestivalRoadMask(x, z) *
+      (models.lidlRockShop ? sampleRockShopGrassMask(x, z) : 1) *
+      (models.allegroWheel ? sampleWheelGrassMask(x, z) : 1) *
+      marketGrassMask(x, z) *
+      zoneGrassMask(x, z);
     this.grass = new Grass(
       {
         surface: ground,
@@ -183,7 +213,7 @@ export class CampWorld {
           density: 18,
           brightness: 0.44,
           coverage: {
-            sample: (point) => sampleCampGrassCoverage(point.position.x, point.position.z),
+            sample: (point) => vegetationCoverage(point.position.x, point.position.z),
           },
           blade: { minHeight: 0.18, maxHeight: 0.58, minWidth: 0.025, maxWidth: 0.085, segments: 4 },
           colors: { bottom: '#163313', top: '#2c581e', backlight: '#44782b', ground: '#142911' },
@@ -203,6 +233,9 @@ export class CampWorld {
       this.grassQuality,
     );
     this.grass.userData.excludeMushroomWireframe = true;
+    this.grassWorldMask = createGrassWorldMask(vegetationCoverage);
+    bindGrassWorldMask(this.grass.tutorialGrass, this.grassWorldMask);
+    bindGrassWorldMask(this.grass.distantGrass, this.grassWorldMask);
     this.grass.syncDirectionalLight(sun);
     scene.add(this.grass);
 
@@ -211,7 +244,7 @@ export class CampWorld {
     const madDogRoot = new THREE.Group();
     madDogRoot.name = 'MadDog';
     const tentsRoot = new THREE.Group();
-    tentsRoot.name = 'Tents_T01-T15';
+    tentsRoot.name = 'CampTents';
     const landmarksRoot = new THREE.Group();
     landmarksRoot.name = 'CampLandmarks';
     const propsRoot = new THREE.Group();
@@ -221,10 +254,22 @@ export class CampWorld {
 
     this.madDog(madDogRoot, models.tents.get('main') ?? null);
     this.chairs(madDogRoot, models.chair);
-    tentLayout.forEach((tent) => this.placeTent(tentsRoot, models.tents.get(tent.model) ?? null, tent));
+    allTentLayout.forEach((tent) => this.placeTent(tentsRoot, models.tents.get(tent.model) ?? null, tent));
     this.toilet(propsRoot, models.toilet);
     this.flag(landmarksRoot, models.flag);
+    const shopCollider = placeRockShop(landmarksRoot, models.lidlRockShop, terrainHeight);
+    if (shopCollider) this.colliders.push({ box: shopCollider });
+    this.wheel = placeFestivalWheel(landmarksRoot, models.allegroWheel, terrainHeight);
+    if (this.wheel) this.colliders.push({ box: this.wheel.collider });
+    for (const box of placeFestivalMarket(
+      landmarksRoot,
+      market,
+      terrainHeight,
+      marketLaneMaterial(models.marketStalls),
+    ))
+      this.colliders.push({ box });
     this.table(madDogRoot, models.interactables);
+    for (const box of placeFestivalZones(landmarksRoot, zones, terrainHeight)) this.colliders.push({ box });
   }
 
   /** Klonuje model, dopasowuje jego wysokość oraz konfiguruje cienie. */
@@ -274,6 +319,8 @@ export class CampWorld {
   /** Umieszcza namiot i buduje jego uproszczony collider wyłącznie z konfiguracji obozu. */
   private placeTent(scene: THREE.Object3D, source: GLTF | null, config: TentConfig) {
     const object = this.preparePhysical(source, config.physicalSize, config.fit, 0x5c8dbe);
+    attachTentLod(object);
+    this.tentPalettes.apply(object, config.palette);
     object.updateMatrixWorld(true);
     const measuredPhysicalSize = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
     if (!physicalSizeIsValid(measuredPhysicalSize, config.physicalSize, config.fit)) {
@@ -286,7 +333,10 @@ export class CampWorld {
       label: config.label,
       model: config.model,
     };
-    object.position.add(new THREE.Vector3(x, y + terrainHeight(x, z) + (config.groundOffset ?? 0), z));
+    const floor = object.getObjectByName('Tent_Groundsheet');
+    const floorHeight = floor ? new THREE.Box3().setFromObject(floor).min.y : 0;
+    const groundOffset = tentTerrainOffset(config, floorHeight, terrainHeight);
+    object.position.add(new THREE.Vector3(x, y + terrainHeight(x, z) + groundOffset, z));
     object.rotation.y = config.rotationY;
     scene.add(object);
     scene.updateMatrixWorld(true);
@@ -579,7 +629,8 @@ export class CampWorld {
   }
 
   /** Aktualizuje proceduralną animację trawy, skybox oraz pozycję panoramy horyzontu. */
-  update(time: number, cameraPosition?: THREE.Vector3) {
+  update(time: number, cameraPosition?: THREE.Vector3, deltaSeconds = 0, reduceMotion = false) {
+    this.wheel?.update(deltaSeconds, reduceMotion);
     this.grass.update(time);
     this.skybox.update();
     if (cameraPosition) this.panorama.update(cameraPosition);
@@ -587,9 +638,13 @@ export class CampWorld {
 
   /** Zwalnia zasoby panoramy, skyboxa, trawy oraz tablice runtime świata. */
   dispose() {
+    this.wheel?.dispose();
+    this.wheel = null;
+    this.tentPalettes.clear();
     this.panorama.dispose();
     this.skybox.dispose();
     this.grass.dispose();
+    this.grassWorldMask.dispose();
     this.colliders.length = 0;
     this.interactables.length = 0;
   }

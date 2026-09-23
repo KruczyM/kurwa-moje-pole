@@ -1,5 +1,20 @@
+import { createFestivalCamp, type CampPalette } from './festivalCamping';
+import { MARKET_LANE, MARKET_STALL_LAYOUT, marketColliderBounds } from './festivalMarket';
+
 export type TentModelId =
-  'main' | 'small' | 'small2' | 'large' | 'big2' | 'white' | 'colorful' | 'blue' | 'blueOrange';
+  | 'main'
+  | 'small'
+  | 'small2'
+  | 'large'
+  | 'big2'
+  | 'white'
+  | 'colorful'
+  | 'blue'
+  | 'blueOrange'
+  | 'trekkingDome'
+  | 'baseShelter'
+  | 'domeVestibule'
+  | 'familyTunnel';
 
 export type PhysicalSize = readonly [widthX: number, heightY: number, depthZ: number];
 export type TentFit = 'uniform-height' | 'exact-source-correction';
@@ -16,6 +31,8 @@ export type TentConfig = {
   fit: TentFit;
   /** Korekta styku z gruntem dla modeli zawierających geometrię poniżej właściwej podłogi namiotu. */
   groundOffset?: number;
+  palette?: CampPalette;
+  terrainFit?: boolean;
   collider: {
     type: 'box';
     /** Szerokość X i długość Z uproszczonego proxy kolizji w metrach. */
@@ -215,7 +232,7 @@ export function tentColliderBounds(tent: TentConfig) {
 
 /** Sprawdza punkt drogi z marginesem kapsuły gracza/NPC względem wszystkich namiotów. */
 export function isOutsideTentColliders(x: number, z: number, radius = 0.34) {
-  return tentLayout.every((tent) => {
+  return allTentLayout.every((tent) => {
     const bounds = tentColliderBounds(tent);
     return (
       x <= bounds.minX - radius ||
@@ -289,6 +306,105 @@ export const FIRE_ROADS: readonly RoadSegment[] = [
 function smoothstep(min: number, max: number, value: number): number {
   const x = Math.max(0, Math.min(1, (value - min) / (max - min)));
   return x * x * (3 - 2 * x);
+}
+
+/** Reference prototypes outside the original T01–T15 camp; no existing tent is displaced. */
+export const prototypeTentLayout: readonly TentConfig[] = [
+  {
+    id: 'T16',
+    label: 'Kopułowy namiot trekkingowy',
+    model: 'trekkingDome',
+    position: [-11, 0, 24],
+    rotationY: Math.PI,
+    physicalSize: [3.4, 1.42, 3.5],
+    fit: 'uniform-height',
+    collider: { type: 'box', size: [2.3, 2.8] },
+  },
+  {
+    id: 'T17',
+    label: 'Wysoki przedsionek kempingowy',
+    model: 'baseShelter',
+    position: [0, 0, 24],
+    rotationY: Math.PI,
+    physicalSize: [4.1, 2.389, 4.1],
+    fit: 'uniform-height',
+    // 15 mm clearance for the local terrain slope beneath the wide groundsheet.
+    groundOffset: 0.015,
+    collider: { type: 'box', size: [3.0, 3.0] },
+  },
+  {
+    id: 'T18',
+    label: 'Namiot kopułowy z przedsionkiem',
+    model: 'domeVestibule',
+    position: [11, 0, 24],
+    rotationY: Math.PI,
+    physicalSize: [3.8, 1.72, 3.8],
+    fit: 'uniform-height',
+    collider: { type: 'box', size: [2.55, 3.7] },
+  },
+  {
+    id: 'T19',
+    label: 'Rodzinny namiot tunelowy',
+    model: 'familyTunnel',
+    position: [22, 0, 24],
+    rotationY: Math.PI,
+    physicalSize: [5.3, 2.36, 5.2],
+    fit: 'uniform-height',
+    groundOffset: 0.04,
+    collider: { type: 'box', size: [3.6, 4.8] },
+  },
+];
+
+export const festivalTentLayout = createFestivalCamp(prototypeTentLayout, [
+  ...[...tentLayout, ...prototypeTentLayout].map(tentColliderBounds),
+  MARKET_LANE,
+  ...MARKET_STALL_LAYOUT.map(marketColliderBounds),
+]);
+export const allTentLayout: readonly TentConfig[] = [
+  ...tentLayout,
+  ...prototypeTentLayout,
+  ...festivalTentLayout,
+];
+
+const grassExclusions = allTentLayout.map((tent) => ({
+  x: tent.position[0],
+  z: tent.position[2],
+  cosine: Math.cos(tent.rotationY),
+  sine: Math.sin(tent.rotationY),
+  halfWidth: tent.collider.size[0] / 2 + 0.12,
+  halfDepth: tent.collider.size[1] / 2 + 0.12,
+}));
+
+// Buckets keep grass generation proportional to local footprints, not every tent in the world.
+const grassBuckets = new Map<string, typeof grassExclusions>();
+for (const tent of grassExclusions) {
+  const halfX = Math.abs(tent.cosine) * tent.halfWidth + Math.abs(tent.sine) * tent.halfDepth + 0.2;
+  const halfZ = Math.abs(tent.sine) * tent.halfWidth + Math.abs(tent.cosine) * tent.halfDepth + 0.2;
+  for (let x = Math.floor((tent.x - halfX) / 8); x <= Math.floor((tent.x + halfX) / 8); x++) {
+    for (let z = Math.floor((tent.z - halfZ) / 8); z <= Math.floor((tent.z + halfZ) / 8); z++) {
+      const key = `${x},${z}`;
+      const bucket = grassBuckets.get(key) ?? [];
+      bucket.push(tent);
+      grassBuckets.set(key, bucket);
+    }
+  }
+}
+
+/** Removes blades below tent floors, with a short feathered edge outside the footprint. */
+export function sampleTentGrassMask(x: number, z: number): number {
+  let mask = 1;
+  const nearby = grassBuckets.get(`${Math.floor(x / 8)},${Math.floor(z / 8)}`);
+  if (!nearby) return mask;
+  for (const tent of nearby) {
+    const dx = x - tent.x;
+    const dz = z - tent.z;
+    const localX = dx * tent.cosine - dz * tent.sine;
+    const localZ = dx * tent.sine + dz * tent.cosine;
+    const distance = Math.max(Math.abs(localX) - tent.halfWidth, Math.abs(localZ) - tent.halfDepth);
+    if (distance <= 0) return 0;
+    mask = Math.min(mask, smoothstep(0, 0.2, distance));
+  }
+  return mask;
 }
 
 /**

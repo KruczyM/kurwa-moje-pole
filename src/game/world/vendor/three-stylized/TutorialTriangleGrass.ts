@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { worldGrassMaskShader, worldGrassMaskUniforms } from '../../grassWorldMask';
 import { DEFAULT_GRASS_PRESET, GRASS_PRESETS, type GrassQualityPreset } from '../../grassQuality';
 
 function createGrassGeometry(count: number): THREE.BufferGeometry {
@@ -57,10 +58,12 @@ export class TutorialTriangleGrass extends THREE.Mesh {
       vertexColors: true,
       side: THREE.DoubleSide,
       uniforms: {
+        ...worldGrassMaskUniforms(),
         uTime: time,
         uPlayerPosition: player,
       },
       vertexShader: `
+        ${worldGrassMaskShader}
         attribute vec3 aYaw;
         uniform float uTime;
         uniform vec3 uPlayerPosition;
@@ -89,7 +92,7 @@ export class TutorialTriangleGrass extends THREE.Mesh {
           vec2 origin = mod(position.xz - uPlayerPosition.xz + 26.0, 52.0) - 26.0;
           p.xz = uPlayerPosition.xz + origin;
 
-          float cov = campCoverage(p.xz);
+          float cov = campCoverage(p.xz) * worldGrassCoverage(p.xz);
           if (cov <= 0.01) {
             gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
             return;
@@ -164,4 +167,3 @@ export class TutorialTriangleGrass extends THREE.Mesh {
     }
   }
 }
-

@@ -27,6 +27,10 @@ export const environmentAssets = {
   chair: gameAsset(catalog.environment.chair),
   speaker: gameAsset(catalog.environment.speaker),
   toilet: gameAsset(catalog.environment.toilet),
+  lidlRockShop: gameAsset(catalog.environment.lidlRockShop),
+  allegroWheel: gameAsset(catalog.environment.allegroWheel),
+  marketStalls: gameAsset(catalog.environment.marketStalls),
+  festivalZones: gameAsset(catalog.environment.festivalZones),
 };
 
 export const tentAssets = Object.fromEntries(

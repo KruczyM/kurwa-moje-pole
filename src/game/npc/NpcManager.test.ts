@@ -4,6 +4,7 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { NpcManager } from './NpcManager';
 import { INTERACTION_LAYER } from '../interactions/InteractionManager';
 import { NpcNavigationGrid } from './NpcNavigationGrid';
+import { terrainHeight } from '../world/CampWorld';
 
 /** Buduje mały, całkowicie przechodni grid używany przez testy menedżera. */
 function openNavigation() {
@@ -23,6 +24,92 @@ function animatedScaleAsset(): GLTF {
 }
 
 describe('NpcManager', () => {
+  it('keeps the speaker stationary and independently interactive while NPCs move', () => {
+    const scene = new THREE.Scene();
+    const speaker = { scene: new THREE.Group() } as GLTF;
+    speaker.scene.add(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.5, 0.3), new THREE.MeshBasicMaterial()));
+    const manager = new NpcManager(scene, new Map(), speaker, openNavigation());
+    const before = manager.getSpeakerWorldPosition()!.clone();
+    const anchor = manager.speakerAnchor!;
+    expect(anchor.parent).toBe(scene);
+    anchor.traverse((object) => {
+      expect(object.userData.interactionRoot).toBe(anchor);
+      expect(object.layers.isEnabled(INTERACTION_LAYER)).toBe(true);
+    });
+    expect(anchor.userData.interaction.kind).toBe('speaker');
+    manager.npcs[0].root.position.set(12, 0, 12);
+    manager.npcs[0].root.rotation.y = Math.PI;
+    for (let i = 0; i < 120; i++) manager.update(1 / 30, i / 30);
+    expect(manager.getSpeakerWorldPosition()!.toArray()).toEqual(before.toArray());
+    manager.dispose();
+  });
+  it('keeps resting feet grounded instead of bobbing the entire character', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    manager.update(0.05, 0.9);
+    const npc = manager.npcs[0];
+    expect(npc.root.position.y).toBe(terrainHeight(npc.root.position.x, npc.root.position.z));
+    manager.dispose();
+  });
+
+  it('feeds actual horizontal displacement to animation, not a stale requested speed', () => {
+    const models = new Map([['amper', animatedScaleAsset()]]);
+    const manager = new NpcManager(new THREE.Scene(), models, null, openNavigation());
+    const npc = manager.npcs[0];
+    npc.speed = 0.95;
+    npc.velocity.set(0, 0, 0.95);
+    manager.update(0.05, 0);
+    expect(npc.speed).toBeGreaterThan(0);
+    expect(npc.animator?.getDiagnostics().worldSpeed).toBe(0);
+    expect(npc.animator?.getDiagnostics().requestedLocomotion).toBe('Idle');
+    manager.dispose();
+  });
+
+  it('recognizes arrival on elevated terrain using the horizontal route', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    const npc = manager.npcs[0];
+    npc.root.position.set(5, 3, 0);
+    npc.target.set(5, 0, 0);
+    npc.waypoints = [npc.target.clone()];
+    npc.behavior.state = 'wander';
+    npc.behavior.travelling = true;
+    manager.update(0.05, 0);
+    expect(npc.behavior.state).toBe('idle');
+    expect(npc.stationary).toBe(true);
+    manager.dispose();
+  });
+
+  it('uses both bounds on an asymmetric map instead of treating negative coordinates as its edge', () => {
+    const navigation = new NpcNavigationGrid({ minX: -40, maxX: 10, minZ: -40, maxZ: 10 }, 1, () => true);
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, navigation);
+    const npc = manager.npcs[0];
+    npc.root.position.set(-20, 0, -20);
+    manager.update(0.05, 0);
+    expect(npc.returning).toBe(false);
+    npc.root.position.x = -39;
+    manager.update(0.05, 0.05);
+    expect(npc.returning).toBe(true);
+    manager.dispose();
+  });
+
+  it('brakes into a tight turn and keeps its angular speed bounded', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    const npc = manager.npcs[0];
+    manager.npcs.forEach((other, index) => other.root.position.set(100 + index * 3, 0, 100));
+    npc.root.position.set(0, 0, 0);
+    npc.target.set(0, 0, -10);
+    npc.waypoints = [npc.target.clone()];
+    npc.behavior.state = 'wander';
+    npc.behavior.travelling = true;
+    npc.steeringDirection.set(0, 0, 1);
+    npc.speed = 0.95;
+    manager.update(0.1, 0);
+    expect(npc.speed).toBeLessThan(0.95);
+    expect(npc.speed).toBeGreaterThan(0);
+    expect(Math.abs(npc.root.rotation.y)).toBeLessThan(0.43);
+    expect(npc.velocity.y).toBe(0);
+    manager.dispose();
+  });
+
   it('fits a character after applying its initial animated pose', () => {
     const scene = new THREE.Scene();
     const models = new Map([['amper', animatedScaleAsset()]]);

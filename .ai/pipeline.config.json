@@ -26,6 +26,8 @@
       "probeArgs": ["--version"],
       "subscriptionAuthConfirmed": true,
       "implementationArgs": [
+        "--add-dir",
+        "{cwd}",
         "--input-format",
         "stream-json",
         "--output-format",
@@ -43,6 +45,8 @@
         "30m"
       ],
       "reviewArgs": [
+        "--add-dir",
+        "{cwd}",
         "--input-format",
         "stream-json",
         "--output-format",
@@ -60,6 +64,8 @@
         "30m"
       ],
       "browserArgs": [
+        "--add-dir",
+        "{cwd}",
         "--input-format",
         "stream-json",
         "--output-format",

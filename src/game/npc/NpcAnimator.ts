@@ -49,9 +49,14 @@ export type NpcAnimatorOptions = {
   minimumStateSeconds?: Partial<Record<LocomotionClip, number>>;
 };
 
-/** Usuwa tylko nadmierne przesunięcie Hips, zachowując pozostałe tracki animacji. */
+/** Usuwa błędne przesunięcia oraz postęp Walk/Run, którym zarządza nawigacja.
+ * Odejmowanie dryfu cyklu zachowuje kołysanie i ruch pionowy, także w rigach Z-up.
+ * Klipy źródłowe pozostają niezmienione (wspólny cache assetów).
+ */
 export function stabilizeLocomotionRoot(root: THREE.Object3D, clip: THREE.AnimationClip) {
   let corrected = false;
+  const canonical = resolveCanonicalAnimationName(clip.name);
+  const inPlace = canonical === 'Walk' || canonical === 'Run';
   const tracks = clip.tracks.map((track) => {
     if (!(track instanceof THREE.VectorKeyframeTrack) || !track.name.endsWith('.position')) return track;
     const parsed = THREE.PropertyBinding.parseTrackName(track.name);
@@ -76,7 +81,34 @@ export function stabilizeLocomotionRoot(root: THREE.Object3D, clip: THREE.Animat
         break;
       }
     }
-    if (!excessive) return track;
+    if (!excessive) {
+      if (!inPlace || track.times.length < 2) return track;
+      hips.parent?.updateWorldMatrix(true, false);
+      const parentTransform = hips.parent
+        ? new THREE.Matrix3().setFromMatrix4(hips.parent.matrixWorld)
+        : new THREE.Matrix3();
+      const last = values.length - 3;
+      const drift = new THREE.Vector3(
+        values[last] - values[0],
+        values[last + 1] - values[1],
+        values[last + 2] - values[2],
+      );
+      // Hips.position jest w przestrzeni rodzica, nie zawsze Y-up.
+      drift.applyMatrix3(parentTransform).setY(0).applyMatrix3(parentTransform.clone().invert());
+      if (drift.lengthSq() < 1e-14) return track;
+      const firstTime = track.times[0];
+      const duration = track.times[track.times.length - 1] - firstTime;
+      if (duration <= 0) return track;
+      const safe = track.clone();
+      for (let frame = 0; frame < track.times.length; frame += 1) {
+        const phase = (track.times[frame] - firstTime) / duration;
+        safe.values[frame * 3] -= drift.x * phase;
+        safe.values[frame * 3 + 1] -= drift.y * phase;
+        safe.values[frame * 3 + 2] -= drift.z * phase;
+      }
+      corrected = true;
+      return safe;
+    }
     const safe = track.clone();
     for (let index = 0; index + 2 < safe.values.length; index += 3) {
       safe.values[index] = hips.position.x;

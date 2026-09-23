@@ -846,7 +846,7 @@ export class Game {
       }
       this.remotePlayersManager?.update(dt, this.camera);
       if (state === 'seated') this.seatController?.update(dt);
-      this.world?.update(this.clock.elapsedTime, this.camera.position);
+      this.world?.update(this.clock.elapsedTime, this.camera.position, dt, this.settings.reduceMotion);
       this.effects?.update(dt);
       const speakerPos = this.npcs?.getSpeakerWorldPosition();
       if (speakerPos) {

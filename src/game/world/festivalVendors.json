@@ -1,0 +1,54 @@
+{
+  "siemaShop": {
+    "label": "SiemaShop",
+    "source": "https://newsroom.polandrockfestival.pl/466163-juz-w-czwartek-oficjalnie-rozpoczniemy-festiwal",
+    "presence": "organizer-confirmed-2026",
+    "appearance": "user-photo-large-colourful-hall-estimated-dimensions",
+    "visualReference": "user-attachment:siemashop-three-facade-photos",
+    "position": "review-layout-not-surveyed"
+  },
+  "pomorze": {
+    "label": "Pomorze Zachodnie",
+    "source": "https://newsroom.polandrockfestival.pl/466920-pop-artowe-szalenstwo-w-strefie-pomorza-zachodniego-na-32-polandrock-festival",
+    "presence": "organizer-confirmed-2026",
+    "appearance": "photo-led-estimated-dimensions",
+    "position": "review-layout-not-surveyed"
+  },
+  "redBull": {
+    "label": "Red Bull",
+    "source": "https://issuu.com/fundacjawosp/docs/informator_32._pol_and_rock_festival_2026",
+    "presence": "festival-guide-and-user-reference",
+    "appearance": "user-photo-star-tent-provisional-dimensions",
+    "visualReference": "docs/festival-user-reference-batch.md",
+    "referenceImages": [1, 25],
+    "position": "review-layout-not-surveyed"
+  },
+  "antykwariat": {
+    "label": "Festiwalowy Antykwariat",
+    "source": "user-attachment:festival-reference-batch/16",
+    "presence": "user-photo-year-not-independently-verified",
+    "appearance": "photo-led-provisional-segment-hall",
+    "position": "review-layout-not-surveyed"
+  },
+  "informacja": {
+    "label": "Punkt Informacyjny",
+    "source": "user-attachment:festival-reference-batch/13",
+    "presence": "user-photo-year-not-independently-verified",
+    "appearance": "photo-led-provisional-segment-hall",
+    "position": "review-layout-not-surveyed"
+  },
+  "kodano": {
+    "label": "Kodano Optyk",
+    "source": "user-attachment:festival-reference-batch/13",
+    "presence": "user-photo-year-not-independently-verified",
+    "appearance": "photo-led-provisional-segment-hall",
+    "position": "review-layout-not-surveyed"
+  },
+  "iqos": {
+    "label": "IQOS",
+    "source": "https://pl.iqos.com/pl/aktualnosci/strefy-iqos-na-festiwalach",
+    "presence": "brand-lists-2026-date-discrepancy",
+    "appearance": "provisional-not-photo-verified",
+    "position": "review-layout-not-surveyed"
+  }
+}

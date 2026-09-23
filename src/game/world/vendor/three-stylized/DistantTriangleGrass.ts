@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { worldGrassMaskShader, worldGrassMaskUniforms } from '../../grassWorldMask';
 import { DEFAULT_GRASS_PRESET, GRASS_PRESETS, type GrassQualityPreset } from '../../grassQuality';
 
 function createDistantGeometry(count: number): THREE.BufferGeometry {
@@ -49,8 +50,9 @@ export class DistantTriangleGrass extends THREE.Mesh {
     const m = new THREE.ShaderMaterial({
       vertexColors: true,
       side: THREE.DoubleSide,
-      uniforms: { uTime: time },
+      uniforms: { uTime: time, ...worldGrassMaskUniforms() },
       vertexShader: `
+        ${worldGrassMaskShader}
         attribute vec3 aYaw;
         uniform float uTime;
         varying float vTip;
@@ -74,7 +76,7 @@ export class DistantTriangleGrass extends THREE.Mesh {
 
         void main() {
           vec3 q = position;
-          float cov = campCoverage(q.xz);
+          float cov = campCoverage(q.xz) * worldGrassCoverage(q.xz);
           if (cov <= 0.01) {
             gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
             return;
@@ -131,4 +133,3 @@ export class DistantTriangleGrass extends THREE.Mesh {
     }
   }
 }
-

@@ -25,6 +25,17 @@ import { runValidation } from '../orchestrator/validation.mjs';
 import { validateCodexReviewReport } from '../orchestrator/providers/codex.mjs';
 import { parseAntigravityOutput } from '../orchestrator/providers/antigravity.mjs';
 import { implementationPrompt, reviewPrompt } from '../orchestrator/prompts.mjs';
+import { loadConfig } from '../orchestrator/config.mjs';
+
+test('Antigravity receives the issue worktree explicitly for every capability', async () => {
+  const config = await loadConfig();
+  for (const key of ['implementationArgs', 'reviewArgs', 'browserArgs']) {
+    const args = config.providers.antigravity[key];
+    assert.ok(args.includes('--add-dir'));
+    assert.equal(args[args.indexOf('--add-dir') + 1], '{cwd}');
+    assert.ok(args.includes('--sandbox'));
+  }
+});
 
 async function withTemporaryDirectory(callback) {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'camp-ai-pipeline-'));

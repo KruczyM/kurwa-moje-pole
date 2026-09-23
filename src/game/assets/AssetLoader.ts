@@ -28,6 +28,10 @@ export type LoadedAssets = {
   chair: GLTF | null;
   speaker: GLTF | null;
   toilet: GLTF | null;
+  lidlRockShop: GLTF | null;
+  allegroWheel: GLTF | null;
+  marketStalls: GLTF | null;
+  festivalZones: GLTF | null;
   interactables: Map<string, GLTF>;
   textures: WorldTextures;
   errors: string[];
@@ -118,12 +122,17 @@ export class AssetLoader {
         if (gltf) tents.set(id as TentModelId, gltf);
       }),
     );
-    const [flag, chair, speaker, toilet] = await Promise.all([
-      this.load(environmentAssets.flag, 'maszt z flagą', 'fabric'),
-      this.load(environmentAssets.chair, 'krzesło campingowe', 'mixed'),
-      this.load(environmentAssets.speaker, 'głośnik', 'plastic'),
-      this.load(environmentAssets.toilet, 'toi-toi wcTron', 'plastic'),
-    ]);
+    const [flag, chair, speaker, toilet, lidlRockShop, allegroWheel, marketStalls, festivalZones] =
+      await Promise.all([
+        this.load(environmentAssets.flag, 'maszt z flagą', 'fabric'),
+        this.load(environmentAssets.chair, 'krzesło campingowe', 'mixed'),
+        this.load(environmentAssets.speaker, 'głośnik', 'plastic'),
+        this.load(environmentAssets.toilet, 'toi-toi wcTron', 'plastic'),
+        this.load(environmentAssets.lidlRockShop, 'Lidl Rock Shop', 'mixed'),
+        this.load(environmentAssets.allegroWheel, 'młyn Allegro', 'mixed'),
+        this.load(environmentAssets.marketStalls, 'stoiska pasażu handlowego', 'mixed'),
+        this.load(environmentAssets.festivalZones, 'strefy festiwalowe i scena Pomorza', 'mixed'),
+      ]);
     const [grassColor, grassNormal, grassRoughness, horizon] = await Promise.all([
       this.loadTexture(textureAssets.grass.color, 'tekstura trawy (kolor)', THREE.SRGBColorSpace),
       this.loadTexture(textureAssets.grass.normal, 'tekstura trawy (normal)', THREE.NoColorSpace),
@@ -137,6 +146,10 @@ export class AssetLoader {
       chair,
       speaker,
       toilet,
+      lidlRockShop,
+      allegroWheel,
+      marketStalls,
+      festivalZones,
       interactables,
       textures: {
         grassColor,

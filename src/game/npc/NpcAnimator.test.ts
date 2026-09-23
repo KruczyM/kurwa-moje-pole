@@ -49,9 +49,54 @@ describe('stabilizeLocomotionRoot', () => {
     hips.name = 'Hips';
     root.add(hips);
     const clip = new THREE.AnimationClip('Walk', 1, [
-      new THREE.VectorKeyframeTrack('Hips.position', [0, 1], [0, 1, 0, 0, 1.1, 0.1]),
+      new THREE.VectorKeyframeTrack('Hips.position', [0, 0.5, 1], [0, 1, 0, 0.1, 1.1, 0.1, 0, 1, 0]),
     ]);
     expect(stabilizeLocomotionRoot(root, clip)).toBe(clip);
+  });
+
+  it('removes small forward root motion while preserving bounce, sway and the source clip', () => {
+    const root = new THREE.Group();
+    const hips = new THREE.Bone();
+    hips.name = 'Hips';
+    hips.position.y = 1;
+    root.add(hips);
+    const values = [0, 1, 0, 0.1, 1.1, 0.8, 0, 1, 1.4];
+    const track = new THREE.VectorKeyframeTrack('Hips.position', [0, 0.5, 1], values);
+    const clip = new THREE.AnimationClip('Walking', 1, [track]);
+    const before = [...track.values];
+    const safe = stabilizeLocomotionRoot(root, clip);
+    expect(safe).not.toBe(clip);
+    expect([...safe.tracks[0].values]).toEqual([
+      0,
+      1,
+      0,
+      expect.closeTo(0.1, 5),
+      expect.closeTo(1.1, 5),
+      expect.closeTo(0.1, 5),
+      0,
+      1,
+      0,
+    ]);
+    expect([...track.values]).toEqual(before);
+    const gesture = new THREE.AnimationClip('HipHopDancing', 1, [track]);
+    expect(stabilizeLocomotionRoot(root, gesture)).toBe(gesture);
+  });
+
+  it('projects root drift in world space for rotated scaled armatures instead of deleting vertical bounce', () => {
+    const root = new THREE.Group();
+    root.rotation.x = -Math.PI / 2;
+    root.scale.setScalar(0.01);
+    const hips = new THREE.Bone();
+    hips.name = 'Hips';
+    hips.position.z = 1;
+    root.add(hips);
+    const clip = new THREE.AnimationClip('Run', 1, [
+      new THREE.VectorKeyframeTrack('Hips.position', [0, 0.5, 1], [0, 0, 1, 0, -0.7, 1.1, 0, -1.4, 1]),
+    ]);
+    const safe = stabilizeLocomotionRoot(root, clip);
+    expect(safe.tracks[0].values[4]).toBeCloseTo(0, 6);
+    expect(safe.tracks[0].values[5]).toBeCloseTo(1.1, 6);
+    expect(safe.tracks[0].values[7]).toBeCloseTo(0, 6);
   });
 
   it('also stabilizes an extreme Idle pose', () => {
