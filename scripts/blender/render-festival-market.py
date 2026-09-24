@@ -34,7 +34,7 @@ def geometry(name,points,faces,material):
 
 road=data['road'];positions=road['positions'];indices=road['indices']
 obj=geometry('Runtime_Paved_Lane',[positions[i:i+3] for i in range(0,len(positions),3)],
-             [indices[i:i+3] for i in range(0,len(indices),3)],bpy.data.materials['Market_Concrete'])
+             [indices[i:i+3] for i in range(0,len(indices),3)],bpy.data.materials['Market_Asphalt'])
 uv=obj.data.uv_layers.new(name='UVMap')
 for loop in obj.data.loops: uv.data[loop.index].uv=road['uv'][loop.vertex_index*2:loop.vertex_index*2+2]
 ground=bpy.data.materials.new('Inspection_Ground');ground.use_nodes=True
@@ -49,9 +49,9 @@ scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.65,.74,.88,1
 scene.world.node_tree.nodes['Background'].inputs[1].default_value=.6
 bpy.ops.object.light_add(type='SUN',location=(-20,-20,30))
 bpy.context.object.data.energy=2;bpy.context.object.rotation_euler=(.5,-.5,-.5)
-bpy.ops.object.camera_add(location=(-3,45,37))
+bpy.ops.object.camera_add(location=(0,-65,95))
 scene.camera=bpy.context.object
-scene.camera.rotation_euler=(Vector((-41,0,1.8))-scene.camera.location).to_track_quat('-Z','Y').to_euler()
-scene.camera.data.type='ORTHO';scene.camera.data.ortho_scale=76
+scene.camera.rotation_euler=(Vector((0,43,1.8))-scene.camera.location).to_track_quat('-Z','Y').to_euler()
+scene.camera.data.type='ORTHO';scene.camera.data.ortho_scale=295
 scene.render.image_settings.file_format='PNG';scene.render.filepath=str(REPORT/'passage.png')
 bpy.ops.render.render(write_still=True)

@@ -4,11 +4,11 @@ import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 /** Temporary asset-review location, NOT the georeferenced 2026 festival plan. */
 export const ROCK_SHOP_SITE = {
-  x: 0,
-  z: -38,
+  x: -87,
+  z: -50,
   halfWidth: 12.15,
   halfDepth: 9.15,
-  frontApron: 2,
+  frontApron: 0.85,
 } as const;
 
 export function sampleRockShopGrassMask(x: number, z: number) {

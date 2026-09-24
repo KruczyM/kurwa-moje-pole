@@ -32,10 +32,10 @@ import {
 import { FLAG_CONFIG, MAD_DOG_CONFIG, seatLayout, TOILET_CONFIG } from './campLandmarks';
 import { Grass } from './vendor/three-stylized/index';
 import { bindGrassWorldMask, createGrassWorldMask } from './grassWorldMask';
-import { DEFAULT_GRASS_PRESET, type GrassQualityPreset } from './grassQuality';
+import { DEFAULT_GRASS_PRESET, grassDensityForSurface, type GrassQualityPreset } from './grassQuality';
 
-const WORLD_SIZE = 117.6;
-export const WORLD_LIMIT = WORLD_SIZE / 2;
+import { WORLD_SIZE, WORLD_LIMIT } from './festivalLayout';
+export { WORLD_LIMIT } from './festivalLayout';
 /** Wysokość wcTronu: co najmniej dwukrotność nominalnej postaci mierzącej 1,8 m. */
 export const TOILET_HEIGHT_METERS = 3.6;
 
@@ -70,7 +70,7 @@ const simpleMaterial = (color: number) => new THREE.MeshStandardMaterial({ color
 /** Tworzy fakturowany materiał ziemi PBR na bazie map albedo, normalnych i roughness. */
 export function createGroundMaterial(textures?: GroundTextures) {
   if (textures?.grassColor && textures?.grassNormal && textures?.grassRoughness) {
-    const repeat = 32;
+    const repeat = WORLD_SIZE / 1.4;
     textures.grassColor.repeat.set(repeat, repeat);
     textures.grassColor.wrapS = THREE.RepeatWrapping;
     textures.grassColor.wrapT = THREE.RepeatWrapping;
@@ -85,6 +85,8 @@ export function createGroundMaterial(textures?: GroundTextures) {
     textures.grassRoughness.wrapS = THREE.RepeatWrapping;
     textures.grassRoughness.wrapT = THREE.RepeatWrapping;
     textures.grassRoughness.colorSpace = THREE.NoColorSpace;
+    for (const texture of [textures.grassColor, textures.grassNormal, textures.grassRoughness])
+      texture.anisotropy = 8;
 
     return new THREE.MeshStandardMaterial({
       map: textures.grassColor,
@@ -93,7 +95,7 @@ export function createGroundMaterial(textures?: GroundTextures) {
       roughnessMap: textures.grassRoughness,
       roughness: 0.88,
       metalness: 0.0,
-      color: 0x889e77,
+      color: 0xffffff,
     });
   }
   return simpleMaterial(0x1a3816);
@@ -210,7 +212,7 @@ export class CampWorld {
       {
         surface: ground,
         grass: {
-          density: 18,
+          density: grassDensityForSurface(18, WORLD_SIZE, WORLD_SIZE),
           brightness: 0.44,
           coverage: {
             sample: (point) => vegetationCoverage(point.position.x, point.position.z),

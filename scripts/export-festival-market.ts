@@ -36,11 +36,12 @@ async function main() {
     uv: Array.from(lane.geometry.attributes.uv.array),
   };
   const ground: number[][] = [];
-  for (let z = -35; z <= 35; z++) for (let x = -58; x <= -26; x++) ground.push([x, terrainHeight(x, z), z]);
+  for (let z = -65; z <= -20; z++)
+    for (let x = -145; x <= 145; x += 2) ground.push([x, terrainHeight(x, z), z]);
   mkdirSync('reports/festival-market', { recursive: true });
   writeFileSync(
     'reports/festival-market/layout.json',
-    JSON.stringify({ asset: catalog.environment.marketStalls, stalls, road, ground, groundColumns: 33 }),
+    JSON.stringify({ asset: catalog.environment.marketStalls, stalls, road, ground, groundColumns: 146 }),
   );
   parent.add(source.scene);
   disposeObjectTree(parent);

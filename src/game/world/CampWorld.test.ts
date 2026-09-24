@@ -65,7 +65,8 @@ describe('CampWorld terrain placement', () => {
     expect(mat.roughnessMap).toBe(roughnessTex);
     expect(colorTex.wrapS).toBe(THREE.RepeatWrapping);
     expect(colorTex.wrapT).toBe(THREE.RepeatWrapping);
-    expect(colorTex.repeat.x).toBe(32);
+    expect(colorTex.repeat.x).toBeCloseTo(320 / 1.4);
+    expect(mat.color.getHex()).toBe(0xffffff);
     expect(colorTex.colorSpace).toBe(THREE.SRGBColorSpace);
     expect(normalTex.colorSpace).toBe(THREE.NoColorSpace);
   });

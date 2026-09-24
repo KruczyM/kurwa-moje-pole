@@ -1,11 +1,59 @@
 """Photo-led large SiemaShop hall; original decorative artwork, estimated dimensions."""
 import math
+from pathlib import Path
 import bpy
 
 
-def build(T, U, root, cloth, metal, floor, dark, white, box, bar, label):
+def front_banner(T, U, photo_path=None, source_photo=False):
+    """One UV-mapped gable, ready for a rectified photograph (not a scene screenshot)."""
+    material = U.material('SiemaShop_Front_Banner', (.025, .03, .035), .85)
+    if photo_path:
+        source = Path(photo_path).resolve(strict=True)
+        if source.suffix.lower() not in ('.png', '.jpg', '.jpeg'):
+            raise ValueError('Front banner must be a rectified PNG or JPEG.')
+        image = bpy.data.images.load(str(source), check_existing=False)
+        if min(image.size) <= 0 or max(image.size) > 4096:
+            raise ValueError('Front banner must be a valid image, at most 4096 pixels per edge.')
+        image.name = 'SiemaShop_Front_Photo'
+        material.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (1, 1, 1, 1)
+    else:
+        material['tentBaseColorLinear'] = [.025, .03, .035]
+        image = bpy.data.images.new('SiemaShop_Front_Placeholder', width=1, height=1)
+        image.generated_color = (1, 1, 1, 1)
+    image.colorspace_settings.name = 'sRGB'
+    image.pack()
+    node = U.texture_node(material, image, 'TentDetail')
+    node.extension = 'EXTEND'
+    material.node_tree.links.new(node.outputs['Color'], material.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
+    vertices = [
+        (-12, -9.025, 3.18), (12, -9.025, 3.18), (12, -9.025, 3.6),
+        (0, -9.025, 7), (-12, -9.025, 3.6),
+    ]
+    faces = [(0, 1, 2, 3, 4)]
+    if source_photo:
+        vertices.append((0,-9.025,3.18))
+        faces=[(0,5,3,4),(5,1,2,3)]
+    panel = T.mesh('SiemaShop_Front_Print', vertices, faces, material)
+    uv = panel.data.uv_layers['TentDetail']
+    for loop in panel.data.loops:
+        point = panel.data.vertices[loop.vertex_index].co
+        uv.data[loop.index].uv = ((point.x + 12) / 24, (point.z - 3.18) / 3.82)
+        if source_photo:
+            # Native UV projection of the visible gable: unchanged source pixels.
+            # Right edge is cropped in the supplied photo, so this is not a measured rectification.
+            points=[(179,811),(1918,742),(1918,607),(812,390),(179,789),(812,783)]
+            px,py=points[loop.vertex_index]
+            uv.data[loop.index].uv=(px/1920,1-py/1280)
+    panel['frontUVMode']='source-photo-visible-crop' if source_photo else 'rectified'
+    panel['siemaShopFront'] = True
+    return panel
+
+
+def build(T, U, root, cloth, metal, floor, dark, white, box, bar, label, photo_path=None, source_photo=False):
     before = set(bpy.context.scene.objects)
     root['marketArchitecture'] = 'largeHall'
+    root['frontArtwork'] = 'rectified-photo' if photo_path else 'placeholder-awaiting-photo'
+    if source_photo: root['frontArtwork']='user-photo-UV-visible-crop'
     glass = U.material('SiemaShop_Glass', (.2, .27, .3), .22)
     glass.node_tree.nodes['Principled BSDF'].inputs['Alpha'].default_value = .25
     glass.surface_render_method = 'DITHERED'
@@ -20,9 +68,9 @@ def build(T, U, root, cloth, metal, floor, dark, white, box, bar, label):
         T.quad('SiemaShop_Roof',[(0,-9,7),(side*12,-9,3.6),(side*12,9,3.6),(0,9,7)],cloth)
         T.quad('SiemaShop_Side',[(side*12,-9,.09),(side*12,9,.09),(side*12,9,3.6),(side*12,-9,3.6)],cloth)
     T.mesh('SiemaShop_Rear',[(-12,9,.08),(12,9,.08),(12,9,3.6),(0,9,7),(-12,9,3.6)],[(0,1,2,3,4)],cloth)
-    T.mesh('SiemaShop_Front_Print',[(-12,-9.025,3.18),(12,-9.025,3.18),(12,-9.025,3.6),(0,-9.025,7),(-12,-9.025,3.6)],[(0,1,2,3,4)],dark)
+    front_banner(T, U, photo_path, source_photo)
     # Colourful, original pop-art ribbons clipped to the gabled banner.
-    for i in range(60):
+    for i in range(0 if photo_path else 60):
         x0=-12+i*.4
         for j in range(9):
             z=3.2+j*.4
@@ -42,12 +90,13 @@ def build(T, U, root, cloth, metal, floor, dark, white, box, bar, label):
             box('SiemaShop_Entrance_Header',(x+1.5,-9.12,3.05),(2.9,.08,.35),white)
             label('WEJSCIE',(x+1.5,-9.18,2.94),.24,dark)
     bar('SiemaShop_Front_Frame',(12,-9.08,.06),(12,-9.08,3.2),.04)
-    box('SiemaShop_Sign',(-4.2,-9.14,4.35),(3.5,.06,2.1),dark)
-    label('SIEMA',(-4.2,-9.19,4.52),.78,white)
-    label('SHOP',(-4.2,-9.19,3.7),.85,white)
-    box('Festival_Sign',(2,-9.14,4.38),(7.7,.06,1.5),dark)
-    label("Pol'and'Rock",(2,-9.19,4.28),1.04,white)
-    label('FESTIVAL',(2,-9.19,3.85),.32,white)
+    if not photo_path:
+        box('SiemaShop_Sign',(-4.2,-9.14,4.35),(3.5,.06,2.1),dark)
+        label('SIEMA',(-4.2,-9.19,4.52),.78,white)
+        label('SHOP',(-4.2,-9.19,3.7),.85,white)
+        box('Festival_Sign',(2,-9.14,4.38),(7.7,.06,1.5),dark)
+        label("Pol'and'Rock",(2,-9.19,4.28),1.04,white)
+        label('FESTIVAL',(2,-9.19,3.85),.32,white)
     for x in (-8,-2,4,9):
         box('SiemaShop_Sales_Counter',(x,-5,.95),(3.4,.8,1.8),white)
         for y in (0,4):

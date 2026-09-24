@@ -1,4 +1,5 @@
 import type { SectorRect, TentConfig } from './campLayout';
+import { CAMPING_PLOTS } from './festivalLayout';
 
 export const CAMP_PALETTES = {
   sage: { fly: '#9ba995', accent: '#465e48' },
@@ -11,17 +12,25 @@ export const CAMP_PALETTES = {
 export type CampPalette = keyof typeof CAMP_PALETTES;
 
 /** Small playable staging sectors, NOT a geographical reconstruction of the 2026 festival. */
-export const FESTIVAL_CAMP_SECTORS = [
-  { id: 'NW', minX: -50, maxX: -20, minZ: -50, maxZ: -20 },
-  { id: 'NE', minX: 20, maxX: 50, minZ: -50, maxZ: -20 },
-  { id: 'SW', minX: -50, maxX: -20, minZ: 20, maxZ: 50 },
-  { id: 'SE', minX: 20, maxX: 50, minZ: 20, maxZ: 50 },
-] as const;
+export const FESTIVAL_CAMP_SECTORS = CAMPING_PLOTS;
 
 export const FESTIVAL_CAMP_ROADS: readonly SectorRect[] = FESTIVAL_CAMP_SECTORS.flatMap((s) => [
-  { minX: s.minX + 14, maxX: s.minX + 17, minZ: s.minZ, maxZ: s.maxZ },
-  { minX: s.minX, maxX: s.maxX, minZ: s.minZ + 8.5, maxZ: s.minZ + 11.5 },
-  { minX: s.minX, maxX: s.maxX, minZ: s.minZ + 19.5, maxZ: s.minZ + 22.5 },
+  ...[9, 18, 27].map((offset) => ({
+    minX: s.minX + offset - 1.5,
+    maxX: s.minX + offset + 1.5,
+    minZ: s.minZ,
+    maxZ: s.maxZ,
+  })),
+  ...[9, 18, 27].map((offset) => ({
+    minX: s.minX,
+    maxX: s.maxX,
+    minZ: s.minZ + offset - 1.5,
+    maxZ: s.minZ + offset + 1.5,
+  })),
+  { minX: s.minX - 2, maxX: s.maxX + 2, minZ: s.minZ - 2, maxZ: s.minZ },
+  { minX: s.minX - 2, maxX: s.maxX + 2, minZ: s.maxZ, maxZ: s.maxZ + 2 },
+  { minX: s.minX - 2, maxX: s.minX, minZ: s.minZ, maxZ: s.maxZ },
+  { minX: s.maxX, maxX: s.maxX + 2, minZ: s.minZ, maxZ: s.maxZ },
 ]);
 
 function randomSequence(seed: number) {
@@ -32,7 +41,7 @@ function randomSequence(seed: number) {
   };
 }
 
-/** Fixed slots preserve lanes; seeded jitter changes only small offsets and appearance. */
+/** Fixed slots preserve straight rows and lanes; the seed changes models and palettes only. */
 export function createFestivalCamp(
   templates: readonly TentConfig[],
   reserved: readonly SectorRect[],
@@ -44,14 +53,14 @@ export function createFestivalCamp(
   const result: TentConfig[] = [];
   let slot = 0;
   for (const sector of FESTIVAL_CAMP_SECTORS) {
-    for (let row = 0; row < 3; row++) {
-      for (const column of [4, 10.5, 20.5, 27]) {
+    for (let row = 0; row < 4; row++) {
+      for (const column of [4.5, 13.5, 22.5, 31.5]) {
         const index = slot++;
-        const x = sector.minX + column + (random() - 0.5) * 0.16;
-        const z = sector.minZ + 4 + row * 11 + (random() - 0.5) * 0.16;
+        const x = sector.minX + column;
+        const z = sector.minZ + 4.5 + row * 9;
         const modelIndex = Math.floor(random() * templates.length);
         const palette = palettes[Math.floor(random() * palettes.length)];
-        const rotationY = (row === 0 ? 0 : Math.PI) + (random() - 0.5) * 0.08;
+        const rotationY = row % 2 === 0 ? 0 : Math.PI;
         // 3.15 m radius includes ropes, not only the solid collider; stable holes keep IDs stable.
         if (
           reserved.some(

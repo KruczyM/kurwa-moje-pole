@@ -94,8 +94,8 @@ export class HorizonPanorama {
   private disposed = false;
 
   constructor(texture?: THREE.Texture | null) {
-    const radius = 85;
-    const height = 34;
+    const radius = 460;
+    const height = 184;
     const geometry = new THREE.CylinderGeometry(radius, radius, height, 64, 1, true);
 
     if (texture) {
@@ -145,12 +145,12 @@ export class HorizonPanorama {
       side: THREE.BackSide,
       transparent: true,
       depthWrite: false,
-      fog: true,
+      fog: false,
     });
 
     this.mesh = new THREE.Mesh(geometry, this.material);
     // Ustawienie wysokości środka cylindra tak, aby linia drzew wypadała na wysokości oczu/horyzontu
-    this.mesh.position.y = 7.5;
+    this.mesh.position.y = 7.5 * (radius / 85);
     this.mesh.renderOrder = -1;
   }
 

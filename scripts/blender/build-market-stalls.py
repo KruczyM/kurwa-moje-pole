@@ -4,8 +4,10 @@ Generic categories plus confirmed SiemaShop presence; dimensions/position provis
 One GLB library with shared structural meshes, no external image services.
 """
 import importlib.util
+import argparse
 import json
 import math
+import sys
 from pathlib import Path
 import bpy
 import numpy as np
@@ -14,7 +16,16 @@ SPEC=importlib.util.spec_from_file_location('tent_tools',Path(__file__).with_nam
 T=importlib.util.module_from_spec(SPEC);SPEC.loader.exec_module(T)
 U=T.U
 OUT=Path(__file__).resolve().parents[2]/'public/game-assets/world/festival/marketStalls.glb'
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--siemashop-front-texture',type=Path,help='Already rectified PNG/JPEG, not an unprocessed photograph')
+parser.add_argument('--siemashop-source-photo',type=Path,help='User photograph mapped directly by UV; pixels are not edited')
+parser.add_argument('--output',type=Path,default=OUT)
+args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+OUT=args.output.resolve()
+if args.siemashop_front_texture and not args.siemashop_front_texture.is_file():
+    parser.error('SiemaShop front texture does not exist; output left unchanged.')
 VENDORS=json.loads((Path(__file__).resolve().parents[2]/'src/game/world/festivalVendors.json').read_text(encoding='utf-8'))
+SIGNS={s['id']:s for s in json.loads((Path(__file__).resolve().parents[2]/'src/game/world/festivalSigns.json').read_text(encoding='utf-8'))}
 bpy.ops.wm.read_factory_settings(use_empty=True)
 maps=U.weave_maps()
 cloth=T.canvas('Market_White_Canvas',(.8,.79,.73),maps)
@@ -58,6 +69,14 @@ def label(body,location,size,mat):
     obj.location=location;obj.rotation_euler.x=math.pi/2;curve.materials.append(mat)
     bpy.ops.object.select_all(action='DESELECT');obj.select_set(True);bpy.context.view_layer.objects.active=obj
     bpy.ops.object.convert(target='MESH');U.cloth_detail_uv(bpy.context.object,1)
+    bpy.context.view_layer.update()
+    if bpy.context.object.dimensions.x > 3.8:
+        bpy.context.object.scale *= 3.8 / bpy.context.object.dimensions.x
+
+def sign_material(name,hex_color):
+    rgb=tuple(int(hex_color[i:i+2],16)/255 for i in (1,3,5))
+    linear=tuple(c/12.92 if c<=.04045 else ((c+.055)/1.055)**2.4 for c in rgb)
+    return U.material(name,linear,.9)
 
 # 4.6 x 4 m pavilion. The roof extends beyond the wall line, with tensioned panels.
 corners=[(-2.4,-2.2),(2.4,-2.2),(2.4,2.2),(-2.4,2.2)]
@@ -114,22 +133,27 @@ roofs['segmentHall']=batch(set(bpy.context.scene.objects)-before,'Hall')
 for architecture,parts in roofs.items():
     for obj in parts: obj['marketRoof']=architecture
 
-variants=[('merch','KOSZULKI',colors[0]),('food','JEDZENIE',colors[1]),('coffee','KAWA',colors[2]),
+variants=[('merch','SZARAWARY',colors[0]),('food','STACJA SKIERNIEWICE',colors[1]),('coffee','KAWA',colors[2]),
           ('siemaShop',VENDORS['siemaShop']['label'],colors[2]),
           ('antykwariat','Antykwariat',colors[0]),('informacja','INFORMACJA',white),
           ('kodano',VENDORS['kodano']['label'],white)]
+variants += [(kind,s['title'],sign_material('Sign_'+kind,s['background'])) for kind,s in SIGNS.items()]
 for index,(kind,title,color) in enumerate(variants):
     root=bpy.data.objects.new('Market_'+kind,None);bpy.context.collection.objects.link(root)
     root['marketVariant']=kind;root['units']='metres'
-    architecture='segmentHall' if kind in ('antykwariat','informacja','kodano') else 'pagoda'
+    architecture='segmentHall' if kind in ('antykwariat','informacja','kodano') or kind in SIGNS else 'pagoda'
     root['marketArchitecture']=architecture
     root['referenceStatus']='Provisional dimensions and review position; '+('generic category' if kind not in VENDORS else VENDORS[kind]['presence'])
     if kind in VENDORS: root['vendorSource']=VENDORS[kind]['source']
+    if kind in SIGNS:
+        root['vendorSource']=SIGNS[kind]['source']
+        root['signArtwork']=SIGNS[kind]['artwork']
+        root['signText']=SIGNS[kind]['title']+' '+SIGNS[kind]['subtitle']
     if kind=='siemaShop':
         spec=importlib.util.spec_from_file_location('siema_hall',Path(__file__).with_name('siema-shop-hall.py'))
         hall=importlib.util.module_from_spec(spec);spec.loader.exec_module(hall)
         before=set(bpy.context.scene.objects)
-        hall.build(T,U,root,cloth,metal,floor,dark,white,box,bar,label)
+        hall.build(T,U,root,cloth,metal,floor,dark,white,box,bar,label,args.siemashop_front_texture or args.siemashop_source_photo, bool(args.siemashop_source_photo))
         for obj in batch(set(bpy.context.scene.objects)-before,'SiemaShop'): obj.parent=root
         root.location.x=40
         continue
@@ -137,14 +161,28 @@ for index,(kind,title,color) in enumerate(variants):
         copy=obj.copy();copy.data=obj.data;bpy.context.collection.objects.link(copy);copy.parent=root
     before=set(bpy.context.scene.objects)
     box('Sign_Backboard',(0,-2.89,2.46),(3.95,.035,.43),color)
-    if kind=='antykwariat':
+    if kind in SIGNS:
+        spec=SIGNS[kind]
+        ink=sign_material('Sign_Ink_'+kind,spec['ink'])
+        label(spec['title'],(0,-2.915,2.47 if spec['subtitle'] else 2.34),.28,ink)
+        if spec['subtitle']: label(spec['subtitle'],(0,-2.915,2.29),.115,ink)
+        # Minimal graphic motifs read from the references, not claimed exact logos.
+        if kind=='lokaah':
+            bar('Tree_Trunk',(-1.8,-2.923,2.3),(-1.8,-2.923,2.56),.012)
+            for dx in (-.12,-.06,.06,.12):
+                T.tube('Tree_Branch',[(-1.8,-2.93,2.41),(-1.8+dx,-2.93,2.57)],.012,ink)
+        if kind=='vesper':
+            for a in range(8):
+                theta=a*math.pi/4
+                T.tube('Vesper_Star',[(-1.83,-2.93,2.48),(-1.83+.09*math.cos(theta),-2.93,2.48+.09*math.sin(theta))],.007,ink)
+    elif kind=='antykwariat':
         label('Festiwalowy',(0,-2.915,2.53),.13,white)
         label(title,(0,-2.915,2.28),.29,white)
     elif kind=='informacja':
         label('PUNKT INFORMACYJNY',(0,-2.915,2.47),.23,dark)
         label('INFORMATION',(0,-2.915,2.28),.16,dark)
     else: label(title,(0,-2.915,2.33),.31 if kind=='kodano' else .36,dark if kind=='kodano' else white)
-    if kind in ('merch','siemaShop'):
+    if kind in ('merch','siemaShop','zuch','altercore','militaria','lokaah','siva','sankowo'):
         bar('Clothes_Rail',(-1.7,.8,2.13),(1.7,.8,2.13))
         for x in (-1.55,-.78,0,.78,1.55):
             T.tube('Hanger',[(x-.25,.79,1.86),(x,.79,2.08),(x+.25,.79,1.86),(x-.25,.79,1.86)],.012,metal)
@@ -175,7 +213,7 @@ for index,(kind,title,color) in enumerate(variants):
         box('Menu_Board',(0,1.86,1.85),(1.5,.04,.72),dark)
         label('KAWA  HERBATA',(0,1.82,1.93),.13,white)
         label('ZIMNE NAPOJE',(0,1.82,1.68),.12,white)
-    elif kind=='antykwariat':
+    elif kind in ('antykwariat','ksiazki','vesper'):
         # Open shelves with upright books, front stacks and record sleeves.
         for x in (-1.7,1.7): box('Bookshelf_Upright',(x,1.55,1.2),(.09,.45,2.25),wood)
         for level in range(4):
@@ -194,7 +232,7 @@ for index,(kind,title,color) in enumerate(variants):
         label('PROGRAM   MAPA',(0,1.82,1.64),.18,dark)
         for x in (-1.35,-.45,.45,1.35):
             for z in (1.035,1.05,1.065): box('Leaflets',(x,-1.65,z),(.36,.29,.012),white)
-    elif kind=='kodano':
+    elif kind in ('kodano','bizuteria','kwiatek','swiece'):
         box('Optical_Display',(0,1.76,1.55),(3.1,.16,1.5),white)
         for z in (1.08,1.47,1.86):
             box('Optical_Shelf',(0,1.5,z),(3,.45,.035),wood)
@@ -209,18 +247,24 @@ for index,(kind,title,color) in enumerate(variants):
     root.location.x=(index-1)*6
 for obj in common+roofs['pagoda']+roofs['segmentHall']: bpy.data.objects.remove(obj,do_unlink=True)
 # A reusable asphalt material swatch; runtime builds a terrain-following lane with it.
-asphalt=U.material('Market_Concrete',(.44,.43,.4),.94)
-rng=np.random.default_rng(32026);grain=rng.random((128,128))
-pixels=np.ones((128,128,4));pixels[:,:,:3]=(.36+.09*grain)[:,:,None]
-pixels[:2,:,:3]*=.65;pixels[:,:2,:3]*=.65
-texture=U.image_data('Market_Asphalt_Color',pixels)
-node=U.texture_node(asphalt,texture,'TentDetail')
-asphalt.node_tree.links.new(node.outputs['Color'],asphalt.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
-pixels[:,:,:3]=(.78+.15*grain)[:,:,None]
-node=U.texture_node(asphalt,U.image_data('Market_Asphalt_Roughness',pixels),'TentDetail')
-asphalt.node_tree.links.new(node.outputs['Color'],asphalt.node_tree.nodes['Principled BSDF'].inputs['Roughness'])
+asphalt=U.material('Market_Asphalt',(1,1,1),1)
+asphalt['source']='https://ambientcg.com/view?id=Asphalt012'
+asphalt['license']='CC0-1.0'
+for suffix,socket in [('Color','Base Color'),('Roughness','Roughness'),('NormalGL','Normal')]:
+    path=Path(__file__).resolve().parents[2]/'public/game-assets/textures/asphalt'/('Asphalt012_1K-JPG_'+suffix+'.jpg')
+    texture=bpy.data.images.load(str(path),check_existing=True)
+    texture.colorspace_settings.name='sRGB' if suffix=='Color' else 'Non-Color'
+    texture.pack()
+    node=U.texture_node(asphalt,texture,'TentDetail')
+    output=node.outputs['Color']
+    if suffix=='NormalGL':
+        normal=asphalt.node_tree.nodes.new('ShaderNodeNormalMap')
+        normal.inputs['Strength'].default_value=.45
+        asphalt.node_tree.links.new(output,normal.inputs['Color'])
+        output=normal.outputs['Normal']
+    asphalt.node_tree.links.new(output,asphalt.node_tree.nodes['Principled BSDF'].inputs[socket])
 tile=T.quad('Market_Asphalt_Template',[(-.5,-4.5,0),(.5,-4.5,0),(.5,-3.5,0),(-.5,-3.5,0)],asphalt)
-tile['marketSurface']='concrete'
+tile['marketSurface']='asphalt'
 OUT.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=str(OUT),export_format='GLB',export_extras=True,export_animations=False)
 U.finalize_gltf(OUT)

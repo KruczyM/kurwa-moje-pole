@@ -156,7 +156,7 @@ export class Game {
   readonly canvas = qs<HTMLCanvasElement>('#game');
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
-  readonly camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
+  readonly camera = new THREE.PerspectiveCamera(65, 1, 0.1, 500);
   readonly clock = new THREE.Clock();
   readonly speakerAudio = new SpeakerAudio(musicAsset);
   readonly campAmbient = new CampAmbientAudio();
@@ -219,7 +219,7 @@ export class Game {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     configureColorPipeline(this.renderer, 'world');
     this.scene.background = new THREE.Color(0x9bb9d0);
-    this.scene.fog = new THREE.Fog(0x8da1b5, 45, 120);
+    this.scene.fog = new THREE.Fog(0x8da1b5, 100, 380);
     this.events.listen(window, 'resize', () => this.resize());
     this.events.listen(window, 'keydown', (event) => this.key(event as KeyboardEvent));
     this.events.listen(document, 'pointerlockchange', () => this.pointerLockChanged());

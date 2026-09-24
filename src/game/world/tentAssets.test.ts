@@ -195,7 +195,7 @@ describe('tent grass mask', () => {
       expect(sampleTentGrassMask(tent.position[0], tent.position[2])).toBe(0);
     }
     expect(sampleTentGrassMask(0, 0)).toBe(1);
-    expect(sampleTentGrassMask(35, 35)).toBe(1);
+    expect(sampleTentGrassMask(140, 140)).toBe(1);
     for (let x = -20; x <= 20; x += 0.7) {
       for (let z = -20; z <= 20; z += 0.7) {
         expect(sampleTentGrassMask(x, z)).toBeGreaterThanOrEqual(0);

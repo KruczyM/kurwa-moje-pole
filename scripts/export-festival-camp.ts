@@ -28,7 +28,7 @@ async function main() {
     );
     sources.set(t.model, parsed.scene);
   }
-  const tents = festivalTentLayout.map((t) => {
+  const tents = [...prototypeTentLayout, ...festivalTentLayout].map((t) => {
     const root = sources.get(t.model)!;
     const bounds = new THREE.Box3().setFromObject(root);
     const scale = t.physicalSize[1] / bounds.getSize(new THREE.Vector3()).y;

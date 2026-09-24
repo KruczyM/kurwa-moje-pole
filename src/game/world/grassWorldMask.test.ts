@@ -53,6 +53,13 @@ describe('world grass exclusion mask', () => {
       expect(material.uniforms.uWorldGrassMask.value).toBe(texture);
       expect(material.uniforms.uWorldGrassMaskEnabled.value).toBe(1);
       expect(material.vertexShader).toContain('worldGrassCoverage(');
+      expect(material.fog).toBe(true);
+      expect(material.uniforms.fogColor).toBeDefined();
+      expect(material.vertexShader).toContain('#include <fog_vertex>');
+      expect(material.fragmentShader).toContain('#include <tonemapping_fragment>');
+      expect(material.fragmentShader).toContain('#include <colorspace_fragment>');
+      expect(material.fragmentShader).toContain('#include <fog_fragment>');
+      expect(material.vertexShader).not.toContain('campCoverage');
       // The moving tile must sample AFTER wrapping to the player's world position.
       if (layer instanceof TutorialTriangleGrass)
         expect(material.vertexShader.indexOf('p.xz = uPlayerPosition')).toBeLessThan(

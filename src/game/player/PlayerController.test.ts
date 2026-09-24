@@ -124,11 +124,18 @@ describe('PlayerController mouse look', () => {
     vi.stubGlobal('document', documentTarget);
 
     const camera = new THREE.PerspectiveCamera();
-    const controller = new PlayerController(camera, canvas, () => true, false, {
-      position: [10, 20],
-      yaw: 0,
-    });
-    expect(camera.position.y).not.toBe(1.9);
+    const controller = new PlayerController(
+      camera,
+      canvas,
+      () => true,
+      false,
+      {
+        position: [10, 20],
+        yaw: 0,
+      },
+      (x, z) => x * 0.01 + z * 0.02,
+    );
+    expect(camera.position.y).toBeCloseTo(2.4);
     controller.dispose();
   });
 });

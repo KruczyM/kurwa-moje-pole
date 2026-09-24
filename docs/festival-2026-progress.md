@@ -6,7 +6,20 @@ Baza: `382488d` (animacje używania przedmiotów).
 Główny katalog nadal na `feat/issue-24-use-animations`; nie uruchamiać stamtąd odbioru tych zmian.
 Plan: [festival-2026-plan.md](festival-2026-plan.md).
 
-## Najnowszy checkpoint — SiemaShop, pasaż, trawa i głośnik
+## Najnowszy checkpoint — większa mapa i regularne parcele
+
+- Teren 320 × 320 m; jedna asfaltowa aleja 280 × 10 m. Siedem sklepów, w tym SiemaShop, oraz cztery Red Bulle stoją po tej samej stronie drogi i są zwrócone do niej frontem.
+- 13 równych, płaskich parceli 36 × 36 m. 192 namioty w dwunastu północnych parcelach, w regularnej siatce co 9 m; 15 starszych namiotów pozostaje w centralnej parceli. Prototypy T16–T19 przeniesiono do siatki, bez osobnych namiotów na trawie.
+- Powiększono granice ruchu, zasięg kamery i horyzont. Budżet źdźbeł trawy nie rośnie proporcjonalnie do powierzchni świata. Lidl i młyńskie koło przesunięto poza nowe przejścia.
+- Mapa 2025 jest referencją przestrzenną, nie pomiarem 1:1 ani potwierdzeniem układu 2026. Testy obejmują parcele, kolizje, maski trawy i osiągalność dojść.
+- Lepsze zdjęcie SiemaShopu otrzymano lokalnie: `525580463_1164787219011080_6659716488999073643_n.jpg` (2048 × 1365). Wyciągnięcie prawdziwej tekstury pozostaje na następny etap modelowania; nie jest jeszcze nałożona.
+- Ten etap pozostaje w dedykowanym worktree, bez publikacji zgodnie z AGENTS.md. `VISUAL_GAMEPLAY_VERIFICATION_PENDING_HUMAN`: backend przeglądarki niedostępny. Zatrzymać pracę przed następnymi modelami i poinformować użytkownika.
+- Walidacja: `ci:code`, build i `ci:assets` zaliczone; 539 testów jednostkowych w 64 plikach, 180 assetów i 8 rigów bez błędów; trzy testy przygotowania frontu w Blenderze zaliczone. Pozostaje ostrzeżenie rozmiaru bundla. Obejrzano aktualne rendery offline `reports/festival-camp/north-parcels.png` (192 namioty) i `reports/festival-market/passage.png` (siedem sklepów, bez Red Bulli w tym narzędziu podglądu). Nie są to zrzuty rozgrywki ani pomiar FPS.
+
+## Poprzedni checkpoint — SiemaShop, pasaż, trawa i głośnik
+
+- Publikacja online: `6f07b14` wysłany na `main`, a następnie `314761d` z poprawką przenośności testu Windows/Linux i pobieraniem GLB przez LFS w CI. Dla `314761d` CI i GitHub Pages zakończone sukcesem; HTTP 200 dla strony, bundla z właściwym SHA oraz modelu pasażu. To kontrola dostarczenia plików, nie odbiór rozgrywki.
+- Dalsze prace: front SiemaShopu przygotowany do osadzenia wyprostowanego zdjęcia, osobny materiał i UV; generator usuwa wtedy zastępcze napisy/wstęgi. Nadal brak docelowej ostrej fotografii. Szczegóły i test Blendera w `festival-market.md`.
 
 - SiemaShop jest dużą halą 24 × 18 m z kolorowym, na razie zastępczym frontem. Obejrzano rendery frontu i pasażu. Prawdziwa tekstura ze zdjęcia jest na liście zadań; do ostrego banera potrzebny lepszy oryginał od użytkownika.
 - Siedem istniejących stoisk ustawiono przy betonowej drodze 7 × 64 m. Generator namiotów omija drogę i halę, a testy sprawdzają brak nakładania i dostępne dojścia.

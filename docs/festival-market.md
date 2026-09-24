@@ -1,5 +1,7 @@
 # Pasaż handlowy — prototyp
 
+> Aktualizacja 24.09.2026: bieżący stan opisuje [raport nawierzchni i pasażu](festival-materials-2026-09-24.md). Obecnie: 18 stoisk, Lidl i IQOS przy asfaltowej drodze, dwa Red Bulle oraz front SiemaShopu z fotografii użytkownika. Poniższy tekst jest historią wcześniejszych iteracji, nie aktualną specyfikacją.
+
 Inspiracja: zdjęcie alei z białymi stoiskami i mapa przekazane przez użytkownika. Autorskie pawilony i wymiary szacunkowe; nie pełna lista wystawców ani rekonstrukcja układu 2026. Fotografii nie użyto jako tekstur.
 
 ## Domknięcie iteracji — segmentowe hale i trzy nowe szyldy
@@ -56,6 +58,20 @@ Poprawiono quaternionowy obrót importowanych GLB w podglądzie pasażu oraz fla
 **VISUAL_GAMEPLAY_VERIFICATION_PENDING_HUMAN**. Ostatnia próba przeglądarki wykazała brak backendu `iab`; brak raportu rozgrywki. Sprawdzić ręcznie fronty, styki nawierzchni, przejścia, cienie, dzień/noc i wydajność.
 
 ## Odtworzenie
+
+### Przygotowany front fotograficzny — 23.09.2026
+
+Hala ma osobny materiał `SiemaShop_Front_Banner` i pojedynczą wyspę UV obejmującą cały baner (24 × 3,82 m, trzy trójkąty). Test rzeczywistego GLB sprawdza orientację obrazu i brak lustrzanego odbicia. Generator przyjmuje `--siemashop-front-texture <plik.png>`: **wcześniej wyprostowany i wykadrowany** front, nie całe zdjęcie sceny. Obraz jest osadzany w GLB w sRGB, bez dodatkowego przyciemnienia i bez powtarzania. Po podaniu tekstury zastępcze wstęgi oraz napisy 3D nie zasłaniają zdjęcia. Bez argumentu pozostaje dotychczasowy wygląd i status `placeholder-awaiting-photo`.
+
+Otrzymano fotografię użytkownika 2048 × 1365; korekcja perspektywy i nałożenie frontu pozostają na następny etap modelowania. Nie publikować diagnostycznej siatki testowej jako grafiki SiemaShopu. Docelowa tekstura po korekcji perspektywy: maksymalnie 4096 px na krawędź; pole prostokątne w proporcji 24:3,82, wycięte przez kształt szczytu. Nie są wymagane nowy loader ani dodatkowe zapytania sieciowe gry.
+
+Test materiału w Blenderze (trzy przypadki, plik próbny wyłącznie w katalogu tymczasowym):
+
+```powershell
+& 'C:\Program Files\Blender Foundation\Blender 5.0\blender.exe' --background --factory-startup --python-exit-code 1 --python scripts/blender/test-siema-shop-front.py
+```
+
+Generator pozwala podać `--output <ścieżka.glb>` do kontrolnego eksportu, bez zastępowania assetu gry. Niepoprawna lub brakująca tekstura przerywa eksport zamiast pozorować powodzenie.
 
 Z dedykowanego worktree:
 

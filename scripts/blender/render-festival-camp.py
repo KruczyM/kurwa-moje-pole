@@ -30,6 +30,8 @@ for tent in data['tents']:
 
 palettes={}
 def tinted(source,palette):
+    if not palette:
+        return source
     role=source.get('tentFabricRole')
     if role not in ('fly','accent'):
         return source
@@ -49,8 +51,6 @@ def tinted(source,palette):
     return palettes[key]
 
 for tent in data['tents']:
-    if tent['position'][0] < 20 or tent['position'][2] < 20:
-        continue
     originals=library[tent['model']]
     copies={obj:obj.copy() for obj in originals}
     root=bpy.data.objects.new(tent['id'],None)
@@ -64,7 +64,7 @@ for tent in data['tents']:
             for slot in obj.material_slots:
                 original_material=slot.material
                 slot.link='OBJECT'
-                slot.material=tinted(original_material,tent['palette'])
+                slot.material=tinted(original_material,tent.get('palette'))
     root.scale=(tent['scale'],)*3
     root.location=(tent['position'][0],-tent['position'][2],tent['baseY'])
     root.rotation_euler.z=tent['rotationY']
@@ -84,8 +84,8 @@ path=material('Preview_Lanes_Only',(.26,.23,.16))
 vertices=[]
 for j in range(81):
     for i in range(81):
-        x,z=15+i*.5,15+j*.5
-        h=.18*math.sin(x*.065)*math.cos(z*.055)+.09*math.sin(x*.19+z*.13)
+        x,z=-125+i*3.1,-145+j*1.1
+        h=0
         vertices.append((x,-z,h))
 faces=[(j*81+i,j*81+i+1,(j+1)*81+i+1,(j+1)*81+i) for j in range(80) for i in range(80)]
 mesh=bpy.data.meshes.new('PreviewGround')
@@ -112,11 +112,11 @@ scene.world.node_tree.nodes['Background'].inputs[1].default_value=.6
 bpy.ops.object.light_add(type='SUN',location=(15,-15,30))
 bpy.context.object.data.energy=2.0
 bpy.context.object.rotation_euler=(.45,-.5,-.5)
-bpy.ops.object.camera_add(location=(66,-64,29))
+bpy.ops.object.camera_add(location=(0,-70,190))
 scene.camera=bpy.context.object
-scene.camera.rotation_euler=(Vector((35,-35,0))-scene.camera.location).to_track_quat('-Z','Y').to_euler()
+scene.camera.rotation_euler=(Vector((0,102,0))-scene.camera.location).to_track_quat('-Z','Y').to_euler()
 scene.camera.data.type='ORTHO'
-scene.camera.data.ortho_scale=47
+scene.camera.data.ortho_scale=255
 scene.render.image_settings.file_format='PNG'
-scene.render.filepath=str(REPORT/'sector-SE.png')
+scene.render.filepath=str(REPORT/'north-parcels.png')
 bpy.ops.render.render(write_still=True)

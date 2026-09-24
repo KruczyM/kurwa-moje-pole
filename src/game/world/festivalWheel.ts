@@ -3,7 +3,7 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 /** Staging location only; estimated geometry, not the surveyed festival layout. */
-export const FESTIVAL_WHEEL_SITE = { x: 37, z: 0, halfWidth: 16.2, halfDepth: 5.5 } as const;
+export const FESTIVAL_WHEEL_SITE = { x: 116, z: -52, halfWidth: 16.2, halfDepth: 5.5 } as const;
 export const WHEEL_REVOLUTION_SECONDS = 120;
 const AXIS = new THREE.Vector3(0, 0, 1);
 

@@ -16,7 +16,7 @@ import {
 import { GrassLayer } from './GrassLayer'
 import { TutorialTriangleGrass } from './TutorialTriangleGrass'
 import { DistantTriangleGrass } from './DistantTriangleGrass'
-import { DEFAULT_GRASS_PRESET, GRASS_PRESETS, type GrassQualityPreset } from '../../grassQuality'
+import { DEFAULT_GRASS_PRESET, GRASS_PRESETS, grassDensityForSurface, type GrassQualityPreset } from '../../grassQuality'
 import type {
   GrassCoverageMap,
   GrassOptions,
@@ -408,7 +408,8 @@ export class Grass extends THREE.Group {
     const config = GRASS_PRESETS[preset]
     this.tutorialGrass.setPreset(preset)
     this.distantGrass.setPreset(preset)
-    this.blades.setOptions({ density: config.grassLayerDensity })
+    const { width, depth } = surfaceSize(this.activeSurface)
+    this.blades.setOptions({ density: grassDensityForSurface(config.grassLayerDensity, width, depth) })
   }
 
   setOptions(patch: GrassOptions): void {
