@@ -25,3 +25,4 @@ token.txt
 .ai/logs/
 .ai/artifacts/
 .ai/worktrees/
+.ai/archive/

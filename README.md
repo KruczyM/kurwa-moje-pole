@@ -1,6 +1,6 @@
 # Kurwa, moje pole!
 
-Przeglądarkowa gra 3D z festiwalowym obozem, animowanymi NPC, interakcjami i efektami wizualnymi. Projekt używa Three.js, TypeScriptu oraz Vite.
+Przeglądarkowa gra 3D dążąca do możliwie wiernego odwzorowania Pol’and’Rock: układu terenu, rozpoznawalnych miejsc, stoisk, obozowisk i atmosfery. Prywatny obóz pozostaje częścią większego festiwalu. Projekt używa Three.js, TypeScriptu oraz Vite. Stopień zgodności z referencjami i skróty skali muszą być jawne — prototyp nie jest rekonstrukcją 1:1.
 
 ## Uruchomienie
 
@@ -30,17 +30,14 @@ npm run check:assets # modele, tekstury, dźwięki i klipy animacji
 npm run check:rigs   # zgodność rigów i bibliotek animacji postaci
 npm run format       # automatyczne formatowanie własnego kodu
 npm run format:check # sprawdzenie formatowania bez zmiany plików
-npm run ai:dry-run   # bezkosztowy plan kolejnego Issue, bez uruchamiania AI
-npm run ai:one       # autonomiczny przebieg jednego Issue oznaczonego ai-ready
-npm run ai:continue  # wznowienie zapisanego przebiegu
-npm run ai:status    # bieżąca faza, branch, worktree i ostatni wynik
+npm run test:tools   # niezależne testy narzędzi i audytora assetów
 npm run ci:code      # te same bramki kodu, które wykonuje GitHub Actions
 npm run ci:assets    # te same bramki assetów, które wykonuje GitHub Actions
 ```
 
-## Automatyczny pipeline AI bez dodatkowych opłat
+## Ręczne zadania i końcowy code review
 
-Kod w `.ai/` prowadzi po jednym GitHub Issue przez izolowany worktree, walidację projektu, uruchomienie gry, raport WebGL/gameplay i świeży review Codex. Nie wykonuje automatycznego merge i blokuje płatne API, kredyty oraz fallback pay-as-you-go. Szczegółowa konfiguracja, status aktualnego Antigravity i zasady wznawiania znajdują się w [`.ai/README.md`](.ai/README.md).
+Automatyczny orkiestrator ai-ready został wycofany. Każde Issue realizujemy na osobnej gałęzi/worktree, ręcznie wybierając wykonawcę. Po implementacji wykonawca przekazuje raport i nie scala zmian. Codex wykonuje końcowe code review w osobnym przebiegu, a publikacja/merge wymaga odrębnej decyzji użytkownika. Zwykłe CI, testy, walidatory i lokalny pipeline Hunyuan pozostają niezależne. Nie usuwamy istniejących worktrees ani źródeł modeli. Szczegóły: [ręczny workflow](docs/manual-task-workflow.md).
 
 Katalog `dist/` jest generowany i nie jest wersjonowany. Raporty walidacji trafiają do lokalnego `reports/`.
 
