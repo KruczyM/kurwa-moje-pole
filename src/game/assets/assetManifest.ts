@@ -19,8 +19,19 @@ export const characterAssets: CharacterAsset[] = catalog.characters.map(({ id, n
   id,
   name,
   url: gameAsset(`characters/${id}/npc-animations.glb`),
-  previewUrl: gameAsset(`characters/${id}/preview.glb`),
+  previewUrl: gameAsset(
+    `characters/${id}/${id === 'klatwa' ? 'new-preview-animations.glb' : id === 'amper' ? 'preview.glb' : 'npc-animations.glb'}`,
+  ),
 }));
+
+/** Background crowd assets are separate from selectable, animated player characters. */
+export const festivalNpcAssets = catalog.festivalNpcs.map(({ id, name, path }) => ({
+  id: `festival:${id}`,
+  name,
+  url: gameAsset(path),
+}));
+
+export const festivalMotionBankUrl = gameAsset('animations/festival-motion-bank.glb');
 
 export const environmentAssets = {
   flag: gameAsset(catalog.environment.flag),
@@ -31,6 +42,29 @@ export const environmentAssets = {
   allegroWheel: gameAsset(catalog.environment.allegroWheel),
   marketStalls: gameAsset(catalog.environment.marketStalls),
   festivalZones: gameAsset(catalog.environment.festivalZones),
+  mainStage: gameAsset(catalog.environment.mainStage),
+  smallStage: gameAsset(catalog.environment.smallStage),
+  festivalGate: gameAsset(catalog.environment.festivalGate),
+  festivalSignpost: gameAsset(catalog.environment.festivalSignpost),
+  fohTower: gameAsset(catalog.environment.fohTower),
+  delayTower: gameAsset(catalog.environment.delayTower),
+  mudBath: gameAsset(catalog.environment.mudBath),
+  fireTruckOsp: gameAsset(catalog.environment.fireTruckOsp),
+  waterCurtain: gameAsset(catalog.environment.waterCurtain),
+  patrolTent: gameAsset(catalog.environment.patrolTent),
+  krishnaVillage: gameAsset(catalog.environment.krishnaVillage),
+  trashCorral: gameAsset(catalog.environment.trashCorral),
+  grzybek: gameAsset(catalog.environment.grzybek),
+  washTaps: gameAsset(catalog.environment.washTaps),
+  toitoiRow: gameAsset(catalog.environment.toitoiRow),
+  fieldShowers: gameAsset(catalog.environment.fieldShowers),
+  crowdBarrier: gameAsset(catalog.environment.crowdBarrier),
+  festivalFoodTent: gameAsset(catalog.environment.festivalFoodTent),
+  foodtruckFrytki: gameAsset(catalog.environment.foodtruckFrytki),
+  foodtruckChurros: gameAsset(catalog.environment.foodtruckChurros),
+  foodtruckBurger: gameAsset(catalog.environment.foodtruckBurger),
+  foodtruckMakarun: gameAsset(catalog.environment.foodtruckMakarun),
+  rollbarLech: gameAsset(catalog.environment.rollbarLech),
 };
 
 export const tentAssets = Object.fromEntries(

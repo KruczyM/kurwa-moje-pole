@@ -182,7 +182,40 @@ for index,(kind,title,color) in enumerate(variants):
         label('PUNKT INFORMACYJNY',(0,-2.915,2.47),.23,dark)
         label('INFORMATION',(0,-2.915,2.28),.16,dark)
     else: label(title,(0,-2.915,2.33),.31 if kind=='kodano' else .36,dark if kind=='kodano' else white)
-    if kind in ('merch','siemaShop','zuch','altercore','militaria','lokaah','siva','sankowo'):
+    if kind=='swiece':
+        for row in range(2):
+            y=-1.66+row*.27
+            for i in range(11):
+                x=-1.65+i*.33; height=.18+(i%4)*.075
+                bpy.ops.mesh.primitive_cylinder_add(vertices=12,radius=.065,depth=height,location=(x,y,1.01+height/2))
+                candle=bpy.context.object;candle.name='Painted_Candle';candle.data.materials.append(colors[i%2]);U.cloth_detail_uv(candle,1)
+                T.tube('Unlit_Wick',[(x,y,1.01+height),(x,y,1.035+height)],.004,dark)
+                for band in range(2):
+                    z=1.05+height*.25+band*height*.35
+                    T.mesh('Candle_Painted_Band',[(x+.066*math.cos(a*math.tau/12),y+.066*math.sin(a*math.tau/12),z+dz) for dz in (-.008,.008) for a in range(12)],[(a,(a+1)%12,(a+1)%12+12,a+12) for a in range(12)],white)
+    elif kind=='bizuteria':
+        for x in (-1.35,0,1.35):
+            box('Jewellery_Tray',(x,-1.63,1.035),(.85,.42,.04),dark)
+            bar('Necklace_Stand',(x,.45,1.0),(x,.45,1.85),.018)
+            bar('Necklace_Hanger',(x-.35,.45,1.85),(x+.35,.45,1.85),.018)
+            for dx in (-.22,0,.22):
+                T.tube('Necklace',[(x+dx-.08,.43,1.83),(x+dx-.06,.43,1.55),(x+dx,.43,1.42),(x+dx+.06,.43,1.55),(x+dx+.08,.43,1.83)],.006,metal)
+                box('Pendant',(x+dx,.43,1.42),(.065,.025,.09),colors[int((dx+.23)*10)%2])
+            for i in range(3):
+                T.tube('Bracelet',[(x-.26+i*.26+.085*math.cos(a*math.tau/16),-1.63+.085*math.sin(a*math.tau/16),1.07) for a in range(17)],.012,colors[i%2])
+    elif kind=='sankowo':
+        bar('Handmade_Cat_Rail',(-1.7,.8,2.13),(1.7,.8,2.13))
+        # Simplified sewn cat silhouettes; approximate merchandise, not brand artwork.
+        outline=[(-.16,0),(-.21,.1),(-.21,.37),(-.15,.46),(-.16,.62),(-.03,.53),(.03,.53),(.16,.62),(.15,.46),(.21,.37),(.21,.1),(.16,0)]
+        for i in range(7):
+            x=-1.5+i*.5
+            T.tube('Hanging_Cord',[(x,.8,2.12),(x,.8,1.92)],.006,white)
+            T.mesh('Sewn_Cat',[(x+dx,.77,1.32+dz) for dx,dz in outline],[tuple(range(len(outline)))],colors[i%2])
+            for dx in (-.06,.06): box('Cat_Eye',(x+dx,.758,1.76),(.025,.008,.025),white)
+    elif kind=='kwiatek':
+        # Reference does not establish the merchandise: leave a neutral display.
+        for z in (.5,1.1,1.7): box('Neutral_Display_Shelf',(0,1.5,z),(3.2,.5,.06),wood)
+    elif kind in ('merch','siemaShop','zuch','altercore','militaria','lokaah','siva'):
         bar('Clothes_Rail',(-1.7,.8,2.13),(1.7,.8,2.13))
         for x in (-1.55,-.78,0,.78,1.55):
             T.tube('Hanger',[(x-.25,.79,1.86),(x,.79,2.08),(x+.25,.79,1.86),(x-.25,.79,1.86)],.012,metal)
@@ -232,7 +265,7 @@ for index,(kind,title,color) in enumerate(variants):
         label('PROGRAM   MAPA',(0,1.82,1.64),.18,dark)
         for x in (-1.35,-.45,.45,1.35):
             for z in (1.035,1.05,1.065): box('Leaflets',(x,-1.65,z),(.36,.29,.012),white)
-    elif kind in ('kodano','bizuteria','kwiatek','swiece'):
+    elif kind=='kodano':
         box('Optical_Display',(0,1.76,1.55),(3.1,.16,1.5),white)
         for z in (1.08,1.47,1.86):
             box('Optical_Shelf',(0,1.5,z),(3,.45,.035),wood)
@@ -246,25 +279,28 @@ for index,(kind,title,color) in enumerate(variants):
     for obj in batch(set(bpy.context.scene.objects)-before,kind): obj.parent=root
     root.location.x=(index-1)*6
 for obj in common+roofs['pagoda']+roofs['segmentHall']: bpy.data.objects.remove(obj,do_unlink=True)
-# A reusable asphalt material swatch; runtime builds a terrain-following lane with it.
-asphalt=U.material('Market_Asphalt',(1,1,1),1)
-asphalt['source']='https://ambientcg.com/view?id=Asphalt012'
-asphalt['license']='CC0-1.0'
+# A reusable concrete material swatch; runtime builds terrain-following lanes with it.
+concrete=U.material('Market_Concrete',(1,1,1),1)
+concrete['source']='https://ambientcg.com/view?id=Concrete019'
+concrete['license']='CC0-1.0'
 for suffix,socket in [('Color','Base Color'),('Roughness','Roughness'),('NormalGL','Normal')]:
-    path=Path(__file__).resolve().parents[2]/'public/game-assets/textures/asphalt'/('Asphalt012_1K-JPG_'+suffix+'.jpg')
+    path=Path(__file__).resolve().parents[2]/'public/game-assets/textures/concrete'/('Concrete019_1K-JPG_'+suffix+'.jpg')
     texture=bpy.data.images.load(str(path),check_existing=True)
     texture.colorspace_settings.name='sRGB' if suffix=='Color' else 'Non-Color'
+    texture.scale(512,512)
     texture.pack()
-    node=U.texture_node(asphalt,texture,'TentDetail')
+    node=U.texture_node(concrete,texture,'TentDetail')
     output=node.outputs['Color']
     if suffix=='NormalGL':
-        normal=asphalt.node_tree.nodes.new('ShaderNodeNormalMap')
+        normal=concrete.node_tree.nodes.new('ShaderNodeNormalMap')
         normal.inputs['Strength'].default_value=.45
-        asphalt.node_tree.links.new(output,normal.inputs['Color'])
+        concrete.node_tree.links.new(output,normal.inputs['Color'])
         output=normal.outputs['Normal']
-    asphalt.node_tree.links.new(output,asphalt.node_tree.nodes['Principled BSDF'].inputs[socket])
-tile=T.quad('Market_Asphalt_Template',[(-.5,-4.5,0),(.5,-4.5,0),(.5,-3.5,0),(-.5,-3.5,0)],asphalt)
-tile['marketSurface']='asphalt'
+    concrete.node_tree.links.new(output,concrete.node_tree.nodes['Principled BSDF'].inputs[socket])
+tile=T.quad('Market_Concrete_Template',[(-.5,-4.5,0),(.5,-4.5,0),(.5,-3.5,0),(-.5,-3.5,0)],concrete)
+tile['marketSurface']='concrete'
+tile_asphalt=T.quad('Market_Asphalt_Template',[(-.5,-5.5,0),(.5,-5.5,0),(.5,-4.5,0),(-.5,-4.5,0)],concrete)
+tile_asphalt['marketSurface']='asphalt'
 OUT.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=str(OUT),export_format='GLB',export_extras=True,export_animations=False)
 U.finalize_gltf(OUT)

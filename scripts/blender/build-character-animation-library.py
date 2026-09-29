@@ -195,7 +195,9 @@ def bone_depth(bone: bpy.types.Bone) -> int:
 
 def skeleton_span(armature: bpy.types.Object) -> float:
     """Measure a rig in armature space for proportional root translation."""
-    points = [point for bone in armature.data.bones for point in (bone.head_local, bone.tail_local)]
+    # glTF does not store bone tails. Blender may invent very long terminal
+    # tails on import, so only joint positions are a reliable scale reference.
+    points = [bone.head_local for bone in armature.data.bones]
     low = Vector(tuple(min(point[index] for point in points) for index in range(3)))
     high = Vector(tuple(max(point[index] for point in points) for index in range(3)))
     return max((high - low).length, 1e-6)
@@ -224,6 +226,13 @@ def retarget_action(
         raise RuntimeError(f"{wanted_name}: source and target rigs have no common bones")
 
     scale_ratio = skeleton_span(target_armature) / skeleton_span(source_armature)
+    # Imported glTF rigs may keep a Y-up -> Z-up rotation on the armature.
+    # Bone matrices are armature-local, not world-space: conjugate the motion
+    # into the target basis before applying it to its rest pose.
+    basis = (
+        target_armature.matrix_world.to_quaternion().inverted()
+        @ source_armature.matrix_world.to_quaternion()
+    )
     source_start, source_end = source_action.frame_range
     sample_count = max(1, round(source_end - source_start))
     scene = bpy.context.scene
@@ -250,12 +259,13 @@ def retarget_action(
                 source_matrix.to_quaternion()
                 @ source_bone.matrix_local.to_quaternion().inverted()
             )
+            rest_delta = basis @ rest_delta @ basis.inverted()
             desired_rotation = rest_delta @ bone.matrix_local.to_quaternion()
             pose_bone = target_armature.pose.bones[bone.name]
             desired_location = pose_bone.matrix.translation.copy()
             if bone.parent is None:
                 source_displacement = source_matrix.translation - source_bone.head_local
-                desired_location = bone.head_local + source_displacement * scale_ratio
+                desired_location = bone.head_local + (basis @ source_displacement) * scale_ratio
             pose_bone.matrix = Matrix.LocRotScale(
                 desired_location,
                 desired_rotation,

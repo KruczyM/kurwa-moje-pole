@@ -1,0 +1,15 @@
+{
+  "input": "E:\\kodowanie\\gra\\.ai\\worktrees\\festival-2026-tent-upgrades\\public\\game-assets\\characters\\klatwa\\preview.glb",
+  "output": "E:\\kodowanie\\gra\\.ai\\worktrees\\festival-2026-tent-upgrades\\source-assets\\rigged-festival\\klatwa-preview\\t-pose.glb",
+  "bones": 22,
+  "clips": [
+    "Idle",
+    "Run",
+    "Walk"
+  ],
+  "firstViewExtracted": false,
+  "quality": "automatic-draft-needs-visual-review",
+  "vertices": 27735,
+  "fallbackVertices": 27735,
+  "heatWarning": "Bone heat left unweighted vertices; geometric fallback used"
+}

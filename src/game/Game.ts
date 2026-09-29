@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { AssetLoader } from './assets/AssetLoader';
 import { characterAssets, effectAssets, musicAsset } from './assets/assetManifest';
-import { CampWorld, WORLD_LIMIT } from './world/CampWorld';
+import { CampWorld, WORLD_LIMIT, terrainHeight } from './world/CampWorld';
 import { DEFAULT_GRASS_PRESET, isGrassQualityPreset } from './world/grassQuality';
 import { PlayerController } from './player/PlayerController';
 import { PLAYER_SPAWN_CONFIG } from './world/campLandmarks';
@@ -13,6 +13,7 @@ import { EffectManager, EffectId, VisualSettings, defaultVisualSettings } from '
 import { InteractionManager } from './interactions/InteractionManager';
 import { SpeakerAudio } from './audio/SpeakerAudio';
 import { CampAmbientAudio } from './audio/CampAmbientAudio';
+import { GrzybekWaterAudio } from './audio/GrzybekWaterAudio';
 import { InspectableItemId, itemById } from './interactions/itemConfig';
 import { itemPresentation } from './interactions/itemPresentationConfig';
 import { centerInspectModel, inspectCameraDistance } from './interactions/inspectPresentation';
@@ -160,6 +161,7 @@ export class Game {
   readonly clock = new THREE.Clock();
   readonly speakerAudio = new SpeakerAudio(musicAsset);
   readonly campAmbient = new CampAmbientAudio();
+  readonly grzybekAudio = new GrzybekWaterAudio();
   readonly voiceReactions = new VoiceReactionManager();
   player?: PlayerController;
   world?: CampWorld;
@@ -241,6 +243,7 @@ export class Game {
     this.unsubscribeState = this.state.subscribe(({ to }) => this.syncState(to));
     this.speakerAudio.setUserVolume(this.audioSettings.speakerVolume);
     this.campAmbient.setVolume(this.audioSettings.ambientVolume);
+    this.grzybekAudio.setVolume(this.audioSettings.ambientVolume);
     this.syncSettingsUi();
     this.syncInventoryUi();
     const lsdOverlay = qs('#lsd-overlay');
@@ -287,7 +290,14 @@ export class Game {
         NPC_NAVIGATION_CELL_SIZE,
         (x, z) => this.world!.canMove(x, z, NPC_NAVIGATION_RADIUS),
       );
-      this.npcs = new NpcManager(this.scene, assets.characters, assets.speaker, npcNavigation);
+      this.npcs = new NpcManager(
+        this.scene,
+        assets.characters,
+        assets.speaker,
+        npcNavigation,
+        undefined,
+        Math.floor(Math.random() * 0x100000000),
+      );
       this.remotePlayersManager = new RemotePlayersManager(this.scene, assets.characters, this.networkClient);
       if (isNpcDebugAllowed() && this.world) {
         this.npcDebugOverlay = new NpcDebugOverlay({
@@ -334,12 +344,36 @@ export class Game {
         (x, z) => this.world!.canMove(x, z),
       );
       this.seatController = new SeatController(this.scene, this.camera, selectedCharacter);
+      const motionSelect = document.querySelector<HTMLSelectElement>('#player-motion');
+      motionSelect?.replaceChildren(
+        ...this.seatController.animationNames.map(
+          (name) => new Option(name.replace(/([a-z])([A-Z])/g, '$1 $2'), name),
+        ),
+      );
       this.campAmbient.start();
+      this.grzybekAudio.init();
       if (this.audioSettings.speakerEnabled) {
         void this.speakerAudio.play();
       }
       this.startLoop();
       this.state.transition('playing');
+      this.toast('Festiwalowicze doczytują się w tle. Szukaj ich przy asfaltowym pasażu.');
+      void loader
+        .loadFestivalNpcs(
+          (asset, model) => this.npcs?.addFestivalNpc(asset, model) ?? false,
+          () => this.disposed,
+        )
+        .then((result) => {
+          if (!this.disposed) {
+            console.info('Festiwalowicze:', result);
+            this.toast(
+              `Festiwalowicze: ${result.loaded}/${result.total}${result.failed ? ' — część modeli nie została wczytana' : ' — tłum gotowy'}`,
+            );
+          }
+        })
+        .catch((cause) => {
+          if (!this.disposed) console.error('Ładowanie festiwalowiczów przerwane:', cause);
+        });
     } catch (cause) {
       if (this.disposed) return;
       error.textContent = `Nie udało się uruchomić gry: ${cause instanceof Error ? cause.message : String(cause)}`;
@@ -380,6 +414,10 @@ export class Game {
 
   /** Sprząta bieżący modal i przechodzi do wskazanego stanu. */
   private closeCurrentState(target: AppState) {
+    if (this.state.current === 'seated' && target === 'playing') {
+      this.leaveSeat();
+      return;
+    }
     if (this.state.current === 'seated') this.seatController?.stop();
     if (this.state.current === 'inspecting') {
       this.voiceReactions.playInspectCancel();
@@ -429,6 +467,20 @@ export class Game {
       });
       return;
     }
+    if (interaction.kind === 'toitoi_door') {
+      const doorId = interaction.doorId;
+      const controller = this.world?.infrastructure?.toiToiDoors;
+      if (controller) {
+        controller.toggle(doorId);
+        const door = controller.getDoor(doorId);
+        this.toast(door?.isOpen ? 'Drzwi toi-toia otwarte' : 'Drzwi toi-toia zamknięte');
+      }
+      return;
+    }
+    if (interaction.kind === 'field_shower') {
+      this.toast('Orzeźwiający prysznic! Zmyłeś z siebie festiwalowy kurz i błoto.');
+      return;
+    }
     if (interaction.kind === 'toilet') {
       this.voiceReactions.playToilet();
       this.toiletTimer = 2;
@@ -468,8 +520,32 @@ export class Game {
   /** Kończy animację siedzenia i wraca do sterowania pierwszoosobowego. */
   private leaveSeat() {
     if (this.state.current !== 'seated') return;
-    this.seatController?.stop();
-    this.state.transition('playing');
+    this.seatController?.requestStop();
+    if (!this.seatController?.active) this.state.transition('playing');
+  }
+
+  /** Preview gestures/rest with the existing avatar, camera and update loop. */
+  performMotion(name: string) {
+    if (this.state.current !== 'paused' || !this.seatController?.animationNames.includes(name)) return;
+    const position = this.camera.position;
+    if (!this.world?.canMove(position.x, position.z, 2)) {
+      this.toast('Podejdź na wolne miejsce — animacja potrzebuje miejsca wokół postaci.');
+      return;
+    }
+    const direction = this.camera.getWorldDirection(new THREE.Vector3());
+    if (
+      this.seatController.start(
+        {
+          seatId: 'player-motion',
+          position: [position.x, terrainHeight(position.x, position.z), position.z],
+          rotationY: Math.atan2(direction.x, direction.z),
+        },
+        name,
+      )
+    ) {
+      this.state.transition('seated');
+      this.toast('E lub Esc — zakończ animację; podczas odpoczynku najpierw wstaniesz.');
+    }
   }
 
   /** Wypełnia opis przedmiotu i otwiera scenę jego inspekcji. */
@@ -726,6 +802,7 @@ export class Game {
     }
     if (typeof values.ambientVolume === 'number') {
       this.campAmbient.setVolume(this.audioSettings.ambientVolume);
+      this.grzybekAudio.setVolume(this.audioSettings.ambientVolume);
     }
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('camp-audio-settings', JSON.stringify(this.audioSettings));
@@ -771,8 +848,10 @@ export class Game {
     qs('#use-sequence').hidden = state !== 'using-item';
     if (state === 'paused') {
       this.campAmbient.pause();
+      this.grzybekAudio.pause();
     } else if (state === 'playing') {
       this.campAmbient.resume();
+      this.grzybekAudio.resume();
     }
     const inputMode = this.mobileInput ? 'mobile' : 'desktop';
     qs('#controls-hud').textContent = controlHintForState(state, inputMode);
@@ -845,7 +924,13 @@ export class Game {
         }
       }
       this.remotePlayersManager?.update(dt, this.camera);
-      if (state === 'seated') this.seatController?.update(dt);
+      if (state === 'seated') {
+        this.seatController?.update(dt);
+        if (this.seatController?.finished) {
+          this.seatController.stop();
+          this.state.transition('playing');
+        }
+      }
       this.world?.update(this.clock.elapsedTime, this.camera.position, dt, this.settings.reduceMotion);
       this.effects?.update(dt);
       const speakerPos = this.npcs?.getSpeakerWorldPosition();
@@ -853,6 +938,9 @@ export class Game {
         this.speakerAudio.setSpeakerPosition(speakerPos);
       }
       this.speakerAudio.update(this.camera.position, dt);
+      if (this.world?.infrastructure?.grzybekParticles) {
+        this.grzybekAudio.update(this.camera.position.x, this.camera.position.z);
+      }
       if (state === 'using-item') {
         const event = this.useSequence?.update(dt);
         if (event?.activateEffect) this.commitItemUse();
@@ -916,7 +1004,11 @@ export class Game {
             ? itemById.get(interaction.itemId)?.label || 'Obejrzyj przedmiot'
             : interaction.kind === 'seat'
               ? 'Usiądź na krześle'
-              : 'Wejdź do toi-toia';
+              : interaction.kind === 'toitoi_door'
+                ? this.world?.infrastructure?.toiToiDoors?.getDoor(interaction.doorId)?.label || 'Otwórz / zamknij toi-toi'
+                : interaction.kind === 'field_shower'
+                  ? 'Umyj się pod prysznicem'
+                  : 'Wejdź do toi-toia';
     prompt.textContent = interactionControlHint(action, this.mobileInput ? 'mobile' : 'desktop');
     prompt.hidden = false;
   }
@@ -1041,6 +1133,7 @@ export class Game {
     this.matrixController.reset();
     this.speakerAudio.dispose();
     this.campAmbient.dispose();
+    this.grzybekAudio.dispose();
     this.voiceReactions.dispose();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
     disposeObjectTree(this.scene);

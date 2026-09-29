@@ -22,6 +22,7 @@ import { FESTIVAL_WHEEL_SITE } from './festivalWheel';
 import { MARKET_STALL_LAYOUT, marketColliderBounds } from './festivalMarket';
 import { FESTIVAL_ZONE_SITES, zoneBounds } from './festivalZones';
 import { WORLD_LIMIT } from './festivalLayout';
+import { FESTIVAL_STAGE_SITES, stageBounds } from './festivalStages';
 
 const overlap = (a: ReturnType<typeof tentColliderBounds>, b: ReturnType<typeof tentColliderBounds>) =>
   a.maxX > b.minX && a.minX < b.maxX && a.maxZ > b.minZ && a.minZ < b.maxZ;
@@ -29,8 +30,9 @@ const overlap = (a: ReturnType<typeof tentColliderBounds>, b: ReturnType<typeof 
 describe('festival camping staging sectors', () => {
   it('keeps intersections bare even inside the feathered edge of another lane', () => {
     const sector = FESTIVAL_CAMP_SECTORS[0];
-    expect(sampleFestivalRoadMask(sector.minX + 9, sector.minZ + 9)).toBe(0);
-    expect(sampleFestivalRoadMask(sector.minX + 7.4, sector.minZ + 4.5)).toBeCloseTo(0.4);
+    expect(sampleFestivalRoadMask(sector.minX - 1, sector.minZ + 9)).toBe(0);
+    expect(sampleFestivalRoadMask(sector.minX + 0.1, sector.minZ + 4.5)).toBeCloseTo(0.4);
+    expect(sampleFestivalRoadMask(sector.minX + 18, sector.minZ + 18)).toBe(1);
   });
   it('creates a deterministic, varied layout without mutating templates', () => {
     const before = JSON.stringify(prototypeTentLayout);
@@ -75,6 +77,7 @@ describe('festival camping staging sectors', () => {
     const boxes = allTentLayout.map(tentColliderBounds);
     boxes.push(...MARKET_STALL_LAYOUT.map(marketColliderBounds));
     boxes.push(...FESTIVAL_ZONE_SITES.map(zoneBounds));
+    boxes.push(...FESTIVAL_STAGE_SITES.map(stageBounds));
     for (const site of [ROCK_SHOP_SITE, FESTIVAL_WHEEL_SITE]) {
       boxes.push({
         minX: site.x - site.halfWidth,

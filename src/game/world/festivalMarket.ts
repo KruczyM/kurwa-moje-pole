@@ -3,7 +3,7 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import vendors from './festivalVendors.json';
 import signs from './festivalSigns.json';
-import { MAIN_ASPHALT_ROAD } from './festivalLayout';
+import { MAIN_ASPHALT_ROAD, NORTH_CONCRETE_LANE, SOUTH_CONCRETE_LANE } from './festivalLayout';
 
 export type MarketVariant =
   | 'merch'
@@ -48,7 +48,7 @@ const STALL_ORDER: readonly MarketVariant[] = [
 export const MARKET_STALL_LAYOUT = STALL_ORDER.map((variant, index) => ({
   id: `Market_${index + 1}`,
   variant,
-  x: variant === 'siemaShop' ? 75 : -66 + (index - 1) * 7,
+  x: variant === 'siemaShop' ? 75 : index <= 5 ? -100 + (index - 1) * 7 : -33 + (index - 6) * 7,
   z: variant === 'siemaShop' ? -50 : -43,
   rotationY: 0,
 }));
@@ -75,17 +75,22 @@ export function marketLaneMaterial(source: GLTF | null | undefined): THREE.Mater
   source?.scene.traverse((object) => {
     if (
       object instanceof THREE.Mesh &&
-      object.userData.marketSurface === 'asphalt' &&
-      !Array.isArray(object.material)
+      (object.userData.marketSurface === 'concrete' || object.userData.marketSurface === 'asphalt') &&
+      !Array.isArray(object.material) &&
+      !material
     )
       material = object.material;
   });
   return material;
 }
 
-/** Single static strip, subdivided to follow the existing terrain; no separate renderer. */
-function createLane(heightAt: (x: number, z: number) => number, material: THREE.Material) {
-  const lane = MARKET_LANE;
+/** Static strip subdivided to follow terrain; no separate renderer. */
+function createLane(
+  lane: { minX: number; maxX: number; minZ: number; maxZ: number },
+  heightAt: (x: number, z: number) => number,
+  material: THREE.Material,
+  name = 'Market_Paved_Lane',
+) {
   const geometry = new THREE.PlaneGeometry(lane.maxX - lane.minX, lane.maxZ - lane.minZ, 9, 72).rotateX(
     -Math.PI / 2,
   );
@@ -101,7 +106,7 @@ function createLane(heightAt: (x: number, z: number) => number, material: THREE.
   }
   geometry.computeVertexNormals();
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.name = 'Market_Paved_Lane';
+  mesh.name = name;
   mesh.receiveShadow = true;
   mesh.userData.excludeMushroomWireframe = true;
   return mesh;
@@ -115,7 +120,9 @@ export function createMarketGrassMask(available: ReadonlySet<MarketVariant>) {
     const b = marketColliderBounds(stall);
     return { minX: b.minX - 0.25, maxX: b.maxX + 0.25, minZ: b.minZ - 0.2, maxZ: MARKET_LANE.minZ };
   });
-  if (footprints.length) footprints.push(MARKET_LANE);
+  if (footprints.length) {
+    footprints.push(NORTH_CONCRETE_LANE, SOUTH_CONCRETE_LANE);
+  }
   return (x: number, z: number) => {
     let mask = 1;
     for (const b of footprints) {
@@ -137,7 +144,10 @@ export function placeFestivalMarket(
   if (!templates.size) return colliders;
   const group = new THREE.Group();
   group.name = 'Festival_Shopping_Passage';
-  if (laneMaterial) group.add(createLane(heightAt, laneMaterial));
+  if (laneMaterial) {
+    group.add(createLane(NORTH_CONCRETE_LANE, heightAt, laneMaterial, 'Market_Paved_Lane'));
+    group.add(createLane(SOUTH_CONCRETE_LANE, heightAt, laneMaterial, 'Market_Second_Paved_Lane'));
+  }
   for (const stall of MARKET_STALL_LAYOUT) {
     const source = templates.get(stall.variant);
     if (!source) continue;

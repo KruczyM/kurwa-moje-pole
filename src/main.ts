@@ -261,6 +261,8 @@ qs<HTMLButtonElement>('#play').onclick = () => void startGame();
 qs<HTMLButtonElement>('#retry-load').onclick = () => void startGame();
 qs<HTMLButtonElement>('#back-to-start').onclick = backToStart;
 qs<HTMLButtonElement>('#resume').onclick = () => game?.setPause(false);
+qs<HTMLButtonElement>('#perform-motion').onclick = () =>
+  game?.performMotion(qs<HTMLSelectElement>('#player-motion').value);
 qs<HTMLButtonElement>('#exit-to-start').onclick = backToStart;
 qs<HTMLButtonElement>('#close-dialog').onclick = () => game?.closeDialog();
 qs<HTMLButtonElement>('#inspect-close').onclick = () => game?.closeInspect();

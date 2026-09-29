@@ -24,7 +24,7 @@ const transitions: Record<AppState, readonly AppState[]> = {
   'effect-warning': ['using-item', 'playing', 'inventory', 'inspecting', 'error', 'start'],
   dialog: ['playing', 'error', 'start'],
   inventory: ['playing', 'using-item', 'effect-warning', 'error', 'start'],
-  paused: ['playing', 'error', 'start'],
+  paused: ['playing', 'seated', 'error', 'start'],
   error: ['loading', 'start'],
 };
 

@@ -14,19 +14,17 @@ export type CampPalette = keyof typeof CAMP_PALETTES;
 /** Small playable staging sectors, NOT a geographical reconstruction of the 2026 festival. */
 export const FESTIVAL_CAMP_SECTORS = CAMPING_PLOTS;
 
+/** Sixteen tents around a shared courtyard, rather than sixteen isolated grid cells. */
+export const CAMP_TENT_SLOTS = [
+  ...[4, 11, 18, 25, 32].map((x) => ({ x, z: 4, rotationY: 0 })),
+  ...[11, 18, 25].flatMap((z) => [
+    { x: 4, z, rotationY: Math.PI / 2 },
+    { x: 32, z, rotationY: -Math.PI / 2 },
+  ]),
+  ...[4, 11, 18, 25, 32].map((x) => ({ x, z: 32, rotationY: Math.PI })),
+];
+
 export const FESTIVAL_CAMP_ROADS: readonly SectorRect[] = FESTIVAL_CAMP_SECTORS.flatMap((s) => [
-  ...[9, 18, 27].map((offset) => ({
-    minX: s.minX + offset - 1.5,
-    maxX: s.minX + offset + 1.5,
-    minZ: s.minZ,
-    maxZ: s.maxZ,
-  })),
-  ...[9, 18, 27].map((offset) => ({
-    minX: s.minX,
-    maxX: s.maxX,
-    minZ: s.minZ + offset - 1.5,
-    maxZ: s.minZ + offset + 1.5,
-  })),
   { minX: s.minX - 2, maxX: s.maxX + 2, minZ: s.minZ - 2, maxZ: s.minZ },
   { minX: s.minX - 2, maxX: s.maxX + 2, minZ: s.maxZ, maxZ: s.maxZ + 2 },
   { minX: s.minX - 2, maxX: s.minX, minZ: s.minZ, maxZ: s.maxZ },
@@ -53,34 +51,30 @@ export function createFestivalCamp(
   const result: TentConfig[] = [];
   let slot = 0;
   for (const sector of FESTIVAL_CAMP_SECTORS) {
-    for (let row = 0; row < 4; row++) {
-      for (const column of [4.5, 13.5, 22.5, 31.5]) {
-        const index = slot++;
-        const x = sector.minX + column;
-        const z = sector.minZ + 4.5 + row * 9;
-        const modelIndex = Math.floor(random() * templates.length);
-        const palette = palettes[Math.floor(random() * palettes.length)];
-        const rotationY = row % 2 === 0 ? 0 : Math.PI;
-        // 3.15 m radius includes ropes, not only the solid collider; stable holes keep IDs stable.
-        if (
-          reserved.some(
-            (r) => x + 3.15 > r.minX && x - 3.15 < r.maxX && z + 3.15 > r.minZ && z - 3.15 < r.maxZ,
-          )
-        )
-          continue;
-        const source = templates[modelIndex];
-        result.push({
-          ...source,
-          id: `T${20 + index}`,
-          label: `Namiot ${sector.id}-${index + 1}`,
-          position: [x, 0, z],
-          rotationY,
-          palette,
-          terrainFit: true,
-          physicalSize: [...source.physicalSize],
-          collider: { type: 'box', size: [...source.collider.size] },
-        });
-      }
+    for (const site of CAMP_TENT_SLOTS) {
+      const index = slot++;
+      const x = sector.minX + site.x;
+      const z = sector.minZ + site.z;
+      const modelIndex = Math.floor(random() * templates.length);
+      const palette = palettes[Math.floor(random() * palettes.length)];
+      const rotationY = site.rotationY;
+      // 3.15 m radius includes ropes, not only the solid collider; stable holes keep IDs stable.
+      if (
+        reserved.some((r) => x + 3.15 > r.minX && x - 3.15 < r.maxX && z + 3.15 > r.minZ && z - 3.15 < r.maxZ)
+      )
+        continue;
+      const source = templates[modelIndex];
+      result.push({
+        ...source,
+        id: `T${20 + index}`,
+        label: `Namiot ${sector.id}-${index + 1}`,
+        position: [x, 0, z],
+        rotationY,
+        palette,
+        terrainFit: true,
+        physicalSize: [...source.physicalSize],
+        collider: { type: 'box', size: [...source.collider.size] },
+      });
     }
   }
   return result;

@@ -4,19 +4,20 @@ import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 /** Temporary asset-review location, NOT the georeferenced 2026 festival plan. */
 export const ROCK_SHOP_SITE = {
-  x: -87,
-  z: -50,
+  x: -70,
+  z: 88,
   halfWidth: 12.15,
   halfDepth: 9.15,
   frontApron: 0.85,
+  rotationY: Math.PI,
 } as const;
 
 export function sampleRockShopGrassMask(x: number, z: number) {
   const site = ROCK_SHOP_SITE;
   const distance = Math.max(
     Math.abs(x - site.x) - site.halfWidth,
-    site.z - site.halfDepth - z,
-    z - (site.z + site.halfDepth + site.frontApron),
+    (site.z - site.halfDepth - site.frontApron) - z,
+    z - (site.z + site.halfDepth),
   );
   return THREE.MathUtils.smoothstep(distance, 0, 0.3);
 }
@@ -33,6 +34,7 @@ export function placeRockShop(
   root.name = 'Festival_Lidl_Rock_Shop';
   root.userData.campObject = { id: 'lidlRockShop', label: 'Lidl Rock Shop — prototyp' };
   root.userData.exteriorOnly = true;
+  root.rotation.y = site.rotationY;
   // Native GLB coordinates are metres; retain the portal spacing and roof pitch.
   const bounds = new THREE.Box3().setFromObject(root);
   let ground = -Infinity;

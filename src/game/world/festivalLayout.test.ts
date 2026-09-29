@@ -4,6 +4,7 @@ import {
   CAMP_PLOT_SIZE,
   CAMPING_PLOTS,
   MAIN_ASPHALT_ROAD,
+  SOUTH_CONCRETE_LANE,
   WORLD_LIMIT,
   WORLD_SIZE,
 } from './festivalLayout';
@@ -14,10 +15,11 @@ import { ROCK_SHOP_SITE } from './festivalLandmarks';
 import { terrainHeight } from './terrainHeight';
 import { grassDensityForSurface, GRASS_PRESETS } from './grassQuality';
 import { WORLD_GRASS_MASK_EXTENT } from './grassWorldMask';
+import { CAMP_TENT_SLOTS } from './festivalCamping';
 
 describe('map-led airfield layout', () => {
   it('expands the physical map, mask and static grass budget consistently', () => {
-    expect(WORLD_SIZE).toBe(320);
+    expect(WORLD_SIZE).toBe(520);
     expect(WORLD_GRASS_MASK_EXTENT).toBe(WORLD_LIMIT);
     for (const preset of Object.values(GRASS_PRESETS)) {
       expect(
@@ -79,20 +81,26 @@ describe('map-led airfield layout', () => {
           t.position[2] > p.minZ &&
           t.position[2] < p.maxZ,
       )!;
-      expect((t.position[0] - p.minX - 4.5) % 9).toBe(0);
-      expect((t.position[2] - p.minZ - 4.5) % 9).toBe(0);
+      expect(
+        CAMP_TENT_SLOTS.some((s) => s.x === t.position[0] - p.minX && s.z === t.position[2] - p.minZ),
+      ).toBe(true);
     }
   });
 
   it('places six populated neighbouring camps around the main camp and Lidl on the market road', () => {
+    const redBulls = FESTIVAL_ZONE_SITES.filter((s) => s.id === 'redBull');
+    expect(redBulls[0].x).toBeCloseTo(
+      MAIN_ASPHALT_ROAD.minX + (MAIN_ASPHALT_ROAD.maxX - MAIN_ASPHALT_ROAD.minX) / 3,
+    );
+    expect(MAIN_ASPHALT_ROAD.maxX - redBulls[1].x).toBeLessThan(10);
     const neighbours = CAMPING_PLOTS.filter((p) => p.id.startsWith('Neighbour-'));
     expect(neighbours).toHaveLength(6);
     expect(neighbours.some((p) => p.maxX < -18)).toBe(true);
     expect(neighbours.some((p) => p.minX > 18)).toBe(true);
     expect(neighbours.some((p) => p.minZ > 18)).toBe(true);
-    expect(ROCK_SHOP_SITE.z + ROCK_SHOP_SITE.halfDepth).toBeLessThan(MAIN_ASPHALT_ROAD.minZ);
-    expect(ROCK_SHOP_SITE.z + ROCK_SHOP_SITE.halfDepth + ROCK_SHOP_SITE.frontApron).toBe(
-      MAIN_ASPHALT_ROAD.minZ,
+    expect(ROCK_SHOP_SITE.z - ROCK_SHOP_SITE.halfDepth).toBeGreaterThan(SOUTH_CONCRETE_LANE.maxZ);
+    expect(ROCK_SHOP_SITE.z - ROCK_SHOP_SITE.halfDepth - ROCK_SHOP_SITE.frontApron).toBe(
+      SOUTH_CONCRETE_LANE.maxZ,
     );
   });
 });

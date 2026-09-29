@@ -16,8 +16,35 @@ import {
 } from './festivalMarket';
 import { TutorialTriangleGrass } from './vendor/three-stylized/TutorialTriangleGrass';
 import { DistantTriangleGrass } from './vendor/three-stylized/DistantTriangleGrass';
+import { ALL_CAMPING_PLOTS } from './festivalLayout';
 
 describe('world grass exclusion mask', () => {
+  it('keeps permanent grass distributed across every camp when the near tile moves', () => {
+    const layer = new DistantTriangleGrass('low');
+    try {
+      const positions = layer.geometry.getAttribute('position');
+      const initial = positions.array.slice();
+      const counts = ALL_CAMPING_PLOTS.map(() => 0);
+      for (let i = 0; i < positions.count; i += 3) {
+        const index = ALL_CAMPING_PLOTS.findIndex(
+          (p) =>
+            positions.getX(i) >= p.minX &&
+            positions.getX(i) <= p.maxX &&
+            positions.getZ(i) >= p.minZ &&
+            positions.getZ(i) <= p.maxZ,
+        );
+        if (index >= 0) counts[index]++;
+      }
+      expect(counts.every((count) => count > 2500)).toBe(true);
+      expect(counts.reduce((a, b) => a + b, 0)).toBeGreaterThanOrEqual(40000);
+      layer.setPreset('medium');
+      layer.setPreset('low');
+      expect(layer.geometry.getAttribute('position').array).toEqual(initial);
+      expect((layer.material as THREE.ShaderMaterial).uniforms.uPlayerPosition).toBeUndefined();
+    } finally {
+      layer.dispose();
+    }
+  });
   it('excludes Lidl, every passage floor and concrete lane for both supplemental grass layers', () => {
     const market = createMarketGrassMask(new Set(MARKET_VARIANTS));
     const texture = createGrassWorldMask((x, z) => market(x, z) * sampleRockShopGrassMask(x, z));

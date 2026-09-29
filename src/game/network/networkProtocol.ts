@@ -9,6 +9,14 @@ export const CANONICAL_CHARACTERS = [
   'Pień',
   'Pierścień',
   'Zawór',
+  'Ambona',
+  'Chlebak',
+  'Dziąsło',
+  'Hemoroid',
+  'Jęczmień',
+  'Kobra',
+  'Korba',
+  'Szerszeń',
 ] as const;
 
 export type CharacterName = (typeof CANONICAL_CHARACTERS)[number];

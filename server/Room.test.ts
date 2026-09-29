@@ -45,11 +45,11 @@ describe('Room', () => {
     });
   });
 
-  it('inicjalizuje wszystkie 8 postaci jako wolne (free)', () => {
+  it('inicjalizuje wszystkie 16 postaci jako wolne (free)', () => {
     const state = room.getPublicState();
     expect(state.roomId).toBe('test-room');
     expect(state.playerCount).toBe(0);
-    expect(Object.keys(state.slots).length).toBe(8);
+    expect(Object.keys(state.slots).length).toBe(16);
     expect(state.slots['Amper'].status).toBe('free');
   });
 

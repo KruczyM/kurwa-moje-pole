@@ -2,6 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { AppStateMachine, escapeTarget } from './AppStateMachine';
 
 describe('AppStateMachine', () => {
+  it('opens an animation from pause without briefly enabling FPS input', () => {
+    const machine = new AppStateMachine('paused');
+    const listener = vi.fn();
+    machine.subscribe(listener);
+    machine.transition('seated');
+    expect(machine.current).toBe('seated');
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
   it('follows the application lifecycle', () => {
     const machine = new AppStateMachine();
     machine.transition('loading');

@@ -4,6 +4,32 @@ import { describe, expect, it } from 'vitest';
 import { findSittingClip, seatCameraPosition, SeatController } from './SeatController';
 
 describe('SeatController helpers', () => {
+  it('finishes the get-up transition before returning control after rest', () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera();
+    const model = new THREE.Group();
+    model.add(new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshBasicMaterial()));
+    const character = {
+      scene: model,
+      animations: ['Idle', 'LieDown', 'LayingIdle', 'StandUpFromLaying', 'Waving'].map(
+        (name) => new THREE.AnimationClip(name, 1, []),
+      ),
+    } as GLTF;
+    const controller = new SeatController(scene, camera, character);
+    const pose = { seatId: 'preview', position: [0, 0, 0] as [number, number, number], rotationY: 0 };
+    expect(controller.start(pose, 'LayingIdle')).toBe(true);
+    controller.update(1.01);
+    controller.requestStop();
+    controller.update(0.01);
+    expect(controller.finished).toBe(false);
+    controller.update(1.01);
+    expect(controller.finished).toBe(true);
+    controller.stop();
+    expect(controller.start(pose, 'Waving')).toBe(true);
+    controller.requestStop();
+    expect(controller.finished).toBe(true);
+    controller.dispose();
+  });
   it('selects the canonical sitting animation', () => {
     const idle = new THREE.AnimationClip('Idle', 1);
     const sitting = new THREE.AnimationClip('SittingLaughing', 2);

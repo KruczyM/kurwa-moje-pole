@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { WORLD_LIMIT } from '../../festivalLayout';
+import { ALL_CAMPING_PLOTS, WORLD_LIMIT } from '../../festivalLayout';
 import { worldGrassMaskShader, worldGrassMaskUniforms } from '../../grassWorldMask';
 import { DEFAULT_GRASS_PRESET, GRASS_PRESETS, type GrassQualityPreset } from '../../grassQuality';
 
@@ -15,8 +15,11 @@ function createDistantGeometry(count: number): THREE.BufferGeometry {
   };
 
   for (let i = 0; i < count; i++) {
-    const x = rnd() * extent * 2 - extent;
-    const z = rnd() * extent * 2 - extent;
+    // Permanent world-space meadow: concentrate the existing budget in populated camps.
+    const plot = ALL_CAMPING_PLOTS[i % ALL_CAMPING_PLOTS.length];
+    const inCamp = i % 5 !== 0;
+    const x = inCamp ? plot.minX + rnd() * (plot.maxX - plot.minX) : rnd() * extent * 2 - extent;
+    const z = inCamp ? plot.minZ + rnd() * (plot.maxZ - plot.minZ) : rnd() * extent * 2 - extent;
     const a = rnd() * Math.PI * 2;
     for (let v = 0; v < 3; v++) {
       const o = (i * 3 + v) * 3;
@@ -76,7 +79,7 @@ export class DistantTriangleGrass extends THREE.Mesh {
           float tip = color.g;
           float side = color.r > 0.05 ? 1.0 : (color.b > 0.05 ? -1.0 : 0.0);
           float h = (0.12 + fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5) * 0.18) * cov;
-          q += aYaw * side * 0.007;
+          q += aYaw * side * 0.055;
           q.y += tip * h;
           float wind = sin(uTime * 0.5 + q.x * 0.2 + q.z * 0.15) * 0.018 * tip * tip;
           q.x += wind;

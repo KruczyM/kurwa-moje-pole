@@ -8,6 +8,7 @@ import {
   terrainHeight,
   TOILET_HEIGHT_METERS,
 } from './CampWorld';
+import { WORLD_SIZE } from './festivalLayout';
 import { campPosition } from './campLayout';
 
 describe('CampWorld terrain placement', () => {
@@ -65,7 +66,7 @@ describe('CampWorld terrain placement', () => {
     expect(mat.roughnessMap).toBe(roughnessTex);
     expect(colorTex.wrapS).toBe(THREE.RepeatWrapping);
     expect(colorTex.wrapT).toBe(THREE.RepeatWrapping);
-    expect(colorTex.repeat.x).toBeCloseTo(320 / 1.4);
+    expect(colorTex.repeat.x).toBeCloseTo(WORLD_SIZE / 1.4);
     expect(mat.color.getHex()).toBe(0xffffff);
     expect(colorTex.colorSpace).toBe(THREE.SRGBColorSpace);
     expect(normalTex.colorSpace).toBe(THREE.NoColorSpace);

@@ -124,7 +124,57 @@ obj=bpy.data.objects.new('Allegro_Lettering',curve)
 bpy.context.collection.objects.link(obj)
 obj.location=(0,-5.26,2.1);obj.rotation_euler.x=math.pi/2;curve.materials.append(sign)
 bpy.ops.object.select_all(action='DESELECT');obj.select_set(True);bpy.context.view_layer.objects.active=obj
-bpy.ops.object.convert(target='MESH');U.cloth_detail_uv(bpy.context.object,1)
+# Hub emblem material with high-res Allegro festival logo
+hub_tex_path = Path(__file__).resolve().parents[2] / 'public/game-assets/world/festival/textures/allegro_wheel_hub.png'
+hub_mat = bpy.data.materials.new('Wheel_Hub_Emblem')
+hub_mat.use_nodes = True
+bsdf = hub_mat.node_tree.nodes.get('Principled BSDF')
+bsdf.inputs['Roughness'].default_value = 0.35
+bsdf.inputs['Metallic'].default_value = 0.05
+if hub_tex_path.exists():
+    tex_node = hub_mat.node_tree.nodes.new(type='ShaderNodeTexImage')
+    tex_node.image = bpy.data.images.load(str(hub_tex_path))
+    hub_mat.node_tree.links.new(tex_node.outputs['Color'], bsdf.inputs['Base Color'])
+
+def hub_disk(name, y, r, mat, sign_y=-1):
+    sides = 64
+    center = (0, y, 18)
+    points = [center]
+    uvs = [(0.5, 0.5)]
+    for i in range(sides):
+        ang = i * math.tau / sides
+        if sign_y < 0:
+            px = r * math.sin(ang)
+        else:
+            px = -r * math.sin(ang)
+        pz = 18.0 + r * math.cos(ang)
+        points.append((px, y, pz))
+        uvs.append((0.5 + 0.5 * math.sin(ang), 0.5 + 0.5 * math.cos(ang)))
+    faces = []
+    for i in range(sides):
+        next_i = (i + 1) % sides
+        if sign_y < 0:
+            faces.append((0, 1 + next_i, 1 + i))
+        else:
+            faces.append((0, 1 + i, 1 + next_i))
+    mesh = bpy.data.meshes.new(name + '_Mesh')
+    mesh.from_pydata(points, [], faces)
+    mesh.update()
+    uv_layer = mesh.uv_layers.new(name='UVMap')
+    for poly in mesh.polygons:
+        for loop_idx in poly.loop_indices:
+            vert_idx = mesh.loops[loop_idx].vertex_index
+            uv_layer.data[loop_idx].uv = uvs[vert_idx]
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    obj.data.materials.append(mat)
+    return obj
+
+hub_disk('Hub_Disk_Front', -1.18, 2.4, hub_mat, -1)
+hub_disk('Hub_Disk_Back', 1.18, 2.4, hub_mat, 1)
+rod('Hub_Rim_Front', (0, -1.185, 18), (0, -1.165, 18), 2.42, white, 64)
+rod('Hub_Rim_Back', (0, 1.165, 18), (0, 1.185, 18), 2.42, white, 64)
+
 batch(set(bpy.context.scene.objects)-before,root,'Static')
 
 rotor=empty('Wheel_Rotor','rotor')

@@ -5,6 +5,9 @@ import { cloneDisposableSkinnedModel, disposeObjectTree } from '../lifecycle/dis
 import { calculatePreviewLayout, previewBoundsFit } from './previewLayout';
 import { applyPbrMaterialPolicy } from '../rendering/pbrMaterials';
 import { configureColorPipeline } from '../rendering/colorPipeline';
+import { repairSkinSeams } from '../animation/repairSkinSeams';
+import { startPreviewIdle } from './previewIdle';
+import { amperPreviewPose } from './amperPreviewPose';
 
 type Cached = { scene: THREE.Object3D; animations: THREE.AnimationClip[] };
 type PreviewStatus = { state: 'ready' | 'error'; message?: string };
@@ -86,7 +89,21 @@ export class CharacterPreview {
         this.cache.set(key, source);
       }
       if (this.disposed || token !== this.token) return;
-      this.replaceModel(name, source);
+      let reference: Cached | undefined;
+      if (asset.id === 'zawor' || asset.id === 'korba') {
+        const amper = characterAssets.find((character) => character.id === 'amper')!;
+        const referenceKey = `${amper.id}:${amper.previewUrl || amper.url}`;
+        reference = this.cache.get(referenceKey);
+        if (!reference) {
+          reference = await this.loadWithTimeout(amper.previewUrl || amper.url);
+          if (this.disposed || token !== this.token) {
+            disposeObjectTree(reference.scene);
+            return;
+          }
+          this.cache.set(referenceKey, reference);
+        }
+      }
+      this.replaceModel(name, source, reference);
       this.onStatus({ state: 'ready' });
     } catch (error) {
       if (this.disposed || token !== this.token) return;
@@ -116,6 +133,7 @@ export class CharacterPreview {
           }
           settled = true;
           window.clearTimeout(timeout);
+          repairSkinSeams(gltf.scene);
           applyPbrMaterialPolicy(gltf.scene, 'character');
           resolve({ scene: gltf.scene, animations: gltf.animations });
         },
@@ -131,18 +149,32 @@ export class CharacterPreview {
   }
 
   /** Klonuje model, uruchamia Idle i oblicza pierwsze bezpieczne kadrowanie. */
-  private replaceModel(name: string, source: Cached) {
+  private replaceModel(name: string, source: Cached, reference?: Cached) {
     const model = cloneDisposableSkinnedModel(source.scene);
     const group = new THREE.Group();
     group.add(model);
+    const clips = reference
+      ? [
+          amperPreviewPose(
+            model,
+            reference.scene,
+            reference.animations,
+            characterAssets.find((asset) => asset.name === name)?.id,
+          ),
+        ]
+      : source.animations;
+    const mixer = startPreviewIdle(model, clips);
     const bounds = new THREE.Box3().setFromObject(model);
     if (bounds.isEmpty()) {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(model);
       disposeObjectTree(group);
       throw new Error('model nie zawiera widocznej geometrii');
     }
     const layout = this.calculateLayout(bounds);
 
     this.mixer?.stopAllAction();
+    if (this.currentModel) this.mixer?.uncacheRoot(this.currentModel);
     if (this.current) {
       this.scene.remove(this.current);
       disposeObjectTree(this.current);
@@ -152,12 +184,7 @@ export class CharacterPreview {
     this.currentName = name;
     this.bounds = bounds;
     this.boundsCheckElapsed = 0;
-    this.mixer = new THREE.AnimationMixer(model);
-    const idle =
-      source.animations.find((clip) => /^idle(?: neutral)?$/i.test(clip.name)) ||
-      source.animations.find((clip) => /idle/i.test(clip.name)) ||
-      source.animations[0];
-    if (idle) this.mixer.clipAction(idle).reset().play();
+    this.mixer = mixer;
     this.scene.add(group);
     this.applyLayout(layout);
   }

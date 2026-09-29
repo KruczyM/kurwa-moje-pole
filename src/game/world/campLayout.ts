@@ -1,5 +1,6 @@
 import { createFestivalCamp, type CampPalette } from './festivalCamping';
 import { MARKET_LANE, MARKET_STALL_LAYOUT, marketColliderBounds } from './festivalMarket';
+import { SOUTH_CONCRETE_LANE } from './festivalLayout';
 
 export type TentModelId =
   | 'main'
@@ -314,7 +315,7 @@ export const prototypeTentLayout: readonly TentConfig[] = [
     id: 'T16',
     label: 'Kopułowy namiot trekkingowy',
     model: 'trekkingDome',
-    position: [-113.5, 0, -135.5],
+    position: [-114, 0, -136],
     rotationY: 0,
     physicalSize: [3.4, 1.42, 3.5],
     fit: 'uniform-height',
@@ -324,7 +325,7 @@ export const prototypeTentLayout: readonly TentConfig[] = [
     id: 'T17',
     label: 'Wysoki przedsionek kempingowy',
     model: 'baseShelter',
-    position: [-104.5, 0, -135.5],
+    position: [-107, 0, -136],
     rotationY: 0,
     physicalSize: [4.1, 2.389, 4.1],
     fit: 'uniform-height',
@@ -336,7 +337,7 @@ export const prototypeTentLayout: readonly TentConfig[] = [
     id: 'T18',
     label: 'Namiot kopułowy z przedsionkiem',
     model: 'domeVestibule',
-    position: [-95.5, 0, -135.5],
+    position: [-100, 0, -136],
     rotationY: 0,
     physicalSize: [3.8, 1.72, 3.8],
     fit: 'uniform-height',
@@ -346,7 +347,7 @@ export const prototypeTentLayout: readonly TentConfig[] = [
     id: 'T19',
     label: 'Rodzinny namiot tunelowy',
     model: 'familyTunnel',
-    position: [-86.5, 0, -135.5],
+    position: [-93, 0, -136],
     rotationY: 0,
     physicalSize: [5.3, 2.36, 5.2],
     fit: 'uniform-height',
@@ -358,6 +359,7 @@ export const prototypeTentLayout: readonly TentConfig[] = [
 export const festivalTentLayout = createFestivalCamp(prototypeTentLayout, [
   ...[...tentLayout, ...prototypeTentLayout].map(tentColliderBounds),
   MARKET_LANE,
+  SOUTH_CONCRETE_LANE,
   ...MARKET_STALL_LAYOUT.map(marketColliderBounds),
 ]);
 export const allTentLayout: readonly TentConfig[] = [

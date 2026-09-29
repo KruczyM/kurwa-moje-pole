@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { terrainHeight } from './terrainHeight';
+import { createStageGrassMask, placeFestivalStages } from './festivalStages';
 export { terrainHeight } from './terrainHeight';
 import { attachTentLod } from './tentLod';
 import { TentPaletteCache } from './tentPalettes';
@@ -13,6 +14,12 @@ import {
   marketTemplates,
   placeFestivalMarket,
 } from './festivalMarket';
+import {
+  FestivalInfrastructureInstance,
+  placeFestivalInfrastructure,
+  sampleInfrastructureGrassMask,
+} from './festivalInfrastructure';
+import { FestivalStageEffects } from './festivalStageEffects';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { inspectableItems } from '../interactions/itemConfig';
@@ -42,7 +49,10 @@ export const TOILET_HEIGHT_METERS = 3.6;
 export type WorldObject =
   | { object: THREE.Object3D; label: string; action: 'toilet' }
   | { object: THREE.Object3D; label: string; action: 'seat'; seatId: string }
-  | { object: THREE.Object3D; label: string; action: 'item'; itemId: string };
+  | { object: THREE.Object3D; label: string; action: 'item'; itemId: string }
+  | { object: THREE.Object3D; label: string; action: 'toitoi_door'; doorId: string }
+  | { object: THREE.Object3D; label: string; action: 'field_shower'; showerId: string }
+  | { object: THREE.Object3D; label: string; action: 'patrol_checkpoint' };
 
 export type GroundTextures = {
   grassColor?: THREE.Texture | null;
@@ -60,6 +70,29 @@ type WorldModels = {
   allegroWheel?: GLTF | null;
   marketStalls?: GLTF | null;
   festivalZones?: GLTF | null;
+  mainStage?: GLTF | null;
+  smallStage?: GLTF | null;
+  festivalGate?: GLTF | null;
+  festivalSignpost?: GLTF | null;
+  fohTower?: GLTF | null;
+  delayTower?: GLTF | null;
+  mudBath?: GLTF | null;
+  fireTruckOsp?: GLTF | null;
+  waterCurtain?: GLTF | null;
+  patrolTent?: GLTF | null;
+  krishnaVillage?: GLTF | null;
+  trashCorral?: GLTF | null;
+  grzybek?: GLTF | null;
+  washTaps?: GLTF | null;
+  toitoiRow?: GLTF | null;
+  fieldShowers?: GLTF | null;
+  crowdBarrier?: GLTF | null;
+  festivalFoodTent?: GLTF | null;
+  foodtruckFrytki?: GLTF | null;
+  foodtruckChurros?: GLTF | null;
+  foodtruckBurger?: GLTF | null;
+  foodtruckMakarun?: GLTF | null;
+  rollbarLech?: GLTF | null;
   interactables: Map<string, GLTF>;
   textures?: GroundTextures;
 };
@@ -88,7 +121,7 @@ export function createGroundMaterial(textures?: GroundTextures) {
     for (const texture of [textures.grassColor, textures.grassNormal, textures.grassRoughness])
       texture.anisotropy = 8;
 
-    return new THREE.MeshStandardMaterial({
+    const material = new THREE.MeshStandardMaterial({
       map: textures.grassColor,
       normalMap: textures.grassNormal,
       normalScale: new THREE.Vector2(0.85, 0.85),
@@ -97,6 +130,19 @@ export function createGroundMaterial(textures?: GroundTextures) {
       metalness: 0.0,
       color: 0xffffff,
     });
+    // The meadow must remain visible when individual blades become sub-pixel.
+    // Retain photographic detail and PBR lighting, but remove the dry-earth cast.
+    material.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <map_fragment>',
+        `#include <map_fragment>
+        float meadowValue = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+        vec3 meadowTint = vec3(0.48, 0.76, 0.27) * max(meadowValue, 0.035);
+        diffuseColor.rgb = mix(diffuseColor.rgb, meadowTint, 0.72);`,
+      );
+    };
+    material.customProgramCacheKey = () => 'festival-meadow-v1';
+    return material;
   }
   return simpleMaterial(0x1a3816);
 }
@@ -154,8 +200,10 @@ export function physicalSizeIsValid(actual: THREE.Vector3, target: PhysicalSize,
 /** Buduje teren, oświetlenie, obiekty obozu, kolizje i punkty interakcji. */
 export class CampWorld {
   private wheel: FestivalWheel | null = null;
+  public infrastructure: FestivalInfrastructureInstance | null = null;
+  private stageEffects: FestivalStageEffects | null = null;
   private tentPalettes = new TentPaletteCache();
-  colliders: ({ x: number; z: number; r: number } | { box: THREE.Box3 })[] = [];
+  colliders: ({ x: number; z: number; r: number } | { box: THREE.Box3; enabled?: () => boolean })[] = [];
   interactables: WorldObject[] = [];
   private grass: Grass;
   private grassWorldMask: THREE.DataTexture;
@@ -200,6 +248,7 @@ export class CampWorld {
     const marketGrassMask = createMarketGrassMask(new Set(market.keys()));
     const zones = festivalZoneTemplates(models.festivalZones);
     const zoneGrassMask = createZoneGrassMask(new Set(zones.keys()));
+    const stageGrassMask = createStageGrassMask(models);
     const vegetationCoverage = (x: number, z: number) =>
       sampleCampGrassCoverage(x, z) *
       sampleTentGrassMask(x, z) *
@@ -207,7 +256,9 @@ export class CampWorld {
       (models.lidlRockShop ? sampleRockShopGrassMask(x, z) : 1) *
       (models.allegroWheel ? sampleWheelGrassMask(x, z) : 1) *
       marketGrassMask(x, z) *
-      zoneGrassMask(x, z);
+      zoneGrassMask(x, z) *
+      stageGrassMask(x, z) *
+      sampleInfrastructureGrassMask(x, z);
     this.grass = new Grass(
       {
         surface: ground,
@@ -257,7 +308,6 @@ export class CampWorld {
     this.madDog(madDogRoot, models.tents.get('main') ?? null);
     this.chairs(madDogRoot, models.chair);
     allTentLayout.forEach((tent) => this.placeTent(tentsRoot, models.tents.get(tent.model) ?? null, tent));
-    this.toilet(propsRoot, models.toilet);
     this.flag(landmarksRoot, models.flag);
     const shopCollider = placeRockShop(landmarksRoot, models.lidlRockShop, terrainHeight);
     if (shopCollider) this.colliders.push({ box: shopCollider });
@@ -272,6 +322,36 @@ export class CampWorld {
       this.colliders.push({ box });
     this.table(madDogRoot, models.interactables);
     for (const box of placeFestivalZones(landmarksRoot, zones, terrainHeight)) this.colliders.push({ box });
+    for (const box of placeFestivalStages(landmarksRoot, models, terrainHeight)) this.colliders.push({ box });
+    this.infrastructure = placeFestivalInfrastructure(landmarksRoot, models, terrainHeight);
+    if (this.infrastructure) {
+      for (const box of this.infrastructure.colliders) this.colliders.push({ box });
+      for (const doorRec of this.infrastructure.toiToiDoors?.getAllRecords() ?? []) {
+        this.interactables.push({
+          object: doorRec.interactionMesh,
+          label: doorRec.label,
+          action: 'toitoi_door',
+          doorId: doorRec.id,
+        });
+      }
+      for (const showerTrigger of this.infrastructure.showerTriggers ?? []) {
+        this.interactables.push({
+          object: showerTrigger,
+          label: 'Umyj się pod prysznicem',
+          action: 'field_shower',
+          showerId: showerTrigger.name,
+        });
+      }
+      for (const checkpoint of this.infrastructure.patrolCheckpoints ?? []) {
+        this.interactables.push({
+          object: checkpoint,
+          label: 'Kontrola Pokojowego Patrolu — Duża Scena',
+          action: 'patrol_checkpoint',
+        });
+      }
+    }
+    this.stageEffects = new FestivalStageEffects();
+    landmarksRoot.add(this.stageEffects.group);
   }
 
   /** Klonuje model, dopasowuje jego wysokość oraz konfiguruje cienie. */
@@ -608,14 +688,15 @@ export class CampWorld {
       x < WORLD_LIMIT - radius &&
       z > -WORLD_LIMIT + radius &&
       z < WORLD_LIMIT - radius &&
-      !this.colliders.some((collider) =>
-        'box' in collider
+      !this.colliders.some((collider) => {
+        if ('enabled' in collider && collider.enabled && !collider.enabled()) return false;
+        return 'box' in collider
           ? x > collider.box.min.x - radius &&
             x < collider.box.max.x + radius &&
             z > collider.box.min.z - radius &&
             z < collider.box.max.z + radius
-          : Math.hypot(x - collider.x, z - collider.z) < collider.r + radius,
-      )
+          : Math.hypot(x - collider.x, z - collider.z) < collider.r + radius;
+      })
     );
   }
 
@@ -633,6 +714,8 @@ export class CampWorld {
   /** Aktualizuje proceduralną animację trawy, skybox oraz pozycję panoramy horyzontu. */
   update(time: number, cameraPosition?: THREE.Vector3, deltaSeconds = 0, reduceMotion = false) {
     this.wheel?.update(deltaSeconds, reduceMotion);
+    this.infrastructure?.update(deltaSeconds);
+    this.stageEffects?.update(deltaSeconds);
     this.grass.update(time);
     this.skybox.update();
     if (cameraPosition) this.panorama.update(cameraPosition);
@@ -642,6 +725,10 @@ export class CampWorld {
   dispose() {
     this.wheel?.dispose();
     this.wheel = null;
+    this.infrastructure?.dispose();
+    this.infrastructure = null;
+    this.stageEffects?.dispose();
+    this.stageEffects = null;
     this.tentPalettes.clear();
     this.panorama.dispose();
     this.skybox.dispose();

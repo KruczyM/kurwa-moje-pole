@@ -59,7 +59,9 @@ describe('modular festival market', () => {
         new URL(`../../../public/game-assets/${catalog.environment.marketStalls}`, import.meta.url),
       );
       const json = JSON.parse(data.toString('utf8', 20, 20 + data.readUInt32LE(12)));
-      const exported = json.materials.find((m: { name: string }) => m.name === 'Market_Asphalt');
+      const exported = json.materials.find(
+        (m: { name: string }) => m.name === 'Market_Concrete' || m.name === 'Market_Asphalt',
+      );
       const sampler =
         json.samplers[json.textures[exported.pbrMetallicRoughness.baseColorTexture.index].sampler];
       expect(sampler.wrapS ?? 10497).toBe(10497);

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { closeLocomotionLoop } from './locomotionLoop';
 import {
   CanonicalAnimationClip,
   LocomotionClip,
@@ -47,7 +48,11 @@ export type NpcAnimationDiagnostics = {
 export type NpcAnimatorOptions = {
   fadeSeconds?: number;
   minimumStateSeconds?: Partial<Record<LocomotionClip, number>>;
+  /** Normalized starting phase; callers supply seeded randomness for crowds. */
+  initialPhase?: number;
 };
+
+export type NpcActivityStep = { name: string; seconds?: number };
 
 /** Usuwa błędne przesunięcia oraz postęp Walk/Run, którym zarządza nawigacja.
  * Odejmowanie dryfu cyklu zachowuje kołysanie i ruch pionowy, także w rigach Z-up.
@@ -135,6 +140,8 @@ export class NpcAnimator {
   private lastTransition: NpcAnimationTransition | null = null;
   private movementSpeed = 0;
   private crossfadeUntil = 0;
+  private activitySteps: NpcActivityStep[] = [];
+  private activityRemaining = 0;
   private readonly fadeSeconds: number;
   private readonly minimumStateSeconds: Record<LocomotionClip, number>;
 
@@ -148,16 +155,17 @@ export class NpcAnimator {
     for (const clip of clips) {
       const canonical = resolveCanonicalAnimationName(clip.name);
       if (canonical) {
-        const safe = stabilizeLocomotionRoot(root, clip);
+        const safe = closeLocomotionLoop(stabilizeLocomotionRoot(root, clip));
         this.actions.set(canonical, this.mixer.clipAction(safe));
       }
     }
     this.mixer.addEventListener('finished', this.handleFinished);
-    this.startInitialLocomotion();
+    const phase = options.initialPhase ?? 0;
+    this.startInitialLocomotion(Number.isFinite(phase) ? THREE.MathUtils.euclideanModulo(phase, 1) : 0);
   }
 
   /** Uruchamia pierwszy dostępny klip locomotion bez tworzenia sztucznego przejścia. */
-  private startInitialLocomotion() {
+  private startInitialLocomotion(phase: number) {
     const initial = locomotionClipNames.find((name) => this.actions.has(name));
     if (!initial) return;
     this.locomotionState = initial;
@@ -165,6 +173,7 @@ export class NpcAnimator {
     this.currentClip = initial;
     const action = this.actions.get(initial)!;
     action.reset().setEffectiveTimeScale(this.timeScaleFor(initial)).setEffectiveWeight(1).play();
+    action.time = phase * action.getClip().duration;
   }
 
   /** Zwraca tempo właściwe dla klipu, zachowując dopasowanie chodu do prędkości świata. */
@@ -263,6 +272,11 @@ export class NpcAnimator {
 
   /** Po zdarzeniu finished uruchamia kolejny one-shot albo wraca do bieżącego locomotion. */
   private handleFinished = (event: THREE.AnimationMixerEventMap['finished']) => {
+    if (this.activitySteps.length && event.action === this.actions.get(this.activitySteps[0].name)) {
+      this.activitySteps.shift();
+      this.startActivityStep();
+      return;
+    }
     if (!this.activeOneShot || event.action !== this.actions.get(this.activeOneShot)) return;
     this.activeOneShot = null;
     this.startNextOneShot();
@@ -285,7 +299,7 @@ export class NpcAnimator {
   /** Żąda stanu Idle/Walk/Run; krótkie oscylacje są odkładane zamiast restartować klip. */
   play(name: LocomotionClip, fade = this.fadeSeconds) {
     this.requestedLocomotion = name;
-    if (this.activeOneShot) return;
+    if (this.activeOneShot || this.activitySteps.length) return;
     if (name === this.locomotionState) {
       this.pendingLocomotion = null;
       return;
@@ -300,10 +314,67 @@ export class NpcAnimator {
 
   /** Dodaje nie-lokomocyjną animację jednorazową; kolejne akcje wykonują się w kolejności FIFO. */
   queueOneShot(name: CanonicalAnimationClip) {
+    if (this.activitySteps.length) return false;
     if (locomotionClipNames.includes(name as LocomotionClip) || !this.actions.has(name)) return false;
     this.oneShotQueue.push(name);
     if (!this.activeOneShot) this.startNextOneShot();
     return true;
+  }
+
+  get activityActive() {
+    return this.activitySteps.length > 0;
+  }
+
+  hasClip(name: string) {
+    return this.actions.has(name);
+  }
+
+  endActivityHold() {
+    for (const step of this.activitySteps) if (step.seconds !== undefined) step.seconds = 0.001;
+    if (this.activitySteps[0]?.seconds !== undefined) this.activityRemaining = 0.001;
+  }
+
+  cancelActivity() {
+    this.activitySteps.length = 0;
+    this.enterLocomotion(this.requestedLocomotion);
+  }
+
+  /** Keeps locomotion paused through enter -> timed rest -> exit. */
+  startActivity(steps: NpcActivityStep[]) {
+    if (
+      this.activeOneShot ||
+      this.activityActive ||
+      !steps.length ||
+      steps.some(
+        (step) =>
+          !this.hasClip(step.name) ||
+          (step.seconds !== undefined && (!Number.isFinite(step.seconds) || step.seconds <= 0)),
+      )
+    )
+      return false;
+    this.activitySteps = steps.map((step) => ({ ...step }));
+    this.startActivityStep();
+    return true;
+  }
+
+  private startActivityStep() {
+    const step = this.activitySteps[0];
+    if (!step) {
+      this.enterLocomotion(this.requestedLocomotion);
+      return;
+    }
+    const previous = this.actions.get(this.currentClip);
+    const action = this.actions.get(step.name)!;
+    action.reset().setEffectiveTimeScale(1).setEffectiveWeight(1);
+    action.setLoop(
+      step.seconds === undefined ? THREE.LoopOnce : THREE.LoopRepeat,
+      step.seconds === undefined ? 1 : Infinity,
+    );
+    action.clampWhenFinished = true;
+    action.play();
+    if (previous && previous !== action) action.crossFadeFrom(previous, this.fadeSeconds, false);
+    this.currentClip = step.name;
+    this.activityRemaining = step.seconds ?? 0;
   }
 
   /** Udostępnia stabilny zrzut stanu dla overlayu diagnostycznego i testów. */
@@ -334,10 +405,19 @@ export class NpcAnimator {
     const safeDelta = Math.max(0, deltaTime);
     const wasCrossfading = this.mixer.time < this.crossfadeUntil;
     this.stateElapsed += safeDelta;
+    const heldStep = this.activitySteps[0];
     this.mixer.update(safeDelta);
+    if (heldStep?.seconds !== undefined && this.activitySteps[0] === heldStep) {
+      this.activityRemaining -= safeDelta;
+      if (this.activityRemaining <= 0) {
+        this.activitySteps.shift();
+        this.startActivityStep();
+      }
+    }
     if (wasCrossfading && this.mixer.time >= this.crossfadeUntil) this.applyMovementTimeScales();
     if (
       !this.activeOneShot &&
+      !this.activityActive &&
       this.pendingLocomotion &&
       this.stateElapsed >= this.minimumStateSeconds[this.locomotionState]
     ) {
@@ -350,6 +430,7 @@ export class NpcAnimator {
     this.mixer.removeEventListener('finished', this.handleFinished);
     this.mixer.stopAllAction();
     this.oneShotQueue.length = 0;
+    this.activitySteps.length = 0;
     this.actions.clear();
   }
 }
