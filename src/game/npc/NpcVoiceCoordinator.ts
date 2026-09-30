@@ -102,6 +102,7 @@ export class NpcVoiceCoordinator {
   private lastSpokenText = '';
   private lastSpokenVoiceSettings: NpcVoiceSettings = { pitch: 1, rate: 1, volume: 1 };
   private ttsEnabled = true;
+  private history: Array<{ sender: string; text: string; isPlayer: boolean }> = [];
 
   private readonly dialogRoot?: HTMLElement;
   private readonly nameElement?: HTMLElement;
@@ -383,9 +384,8 @@ export class NpcVoiceCoordinator {
             ? persona.greetings[Math.floor(Math.random() * persona.greetings.length)]
             : 'Siemanko! Czym mogę służyć na naszym polu?');
 
-    if (this.textElement) {
-      this.textElement.textContent = initialLine;
-    }
+    this.history = [{ sender: this.currentNpcName, text: initialLine, isPlayer: false }];
+    this.renderHistory();
 
     // 3. Wypowiedzenie linii powitalnej przez syntezator mowy:
     this.speakText(initialLine, persona.voiceSettings, () => {
@@ -407,6 +407,7 @@ export class NpcVoiceCoordinator {
       this.currentNpcName = undefined;
     }
 
+    this.history = [];
     this.setStatus('idle');
   }
 
@@ -449,29 +450,53 @@ export class NpcVoiceCoordinator {
     if (!this.currentNpcName || !input.trim()) return;
 
     this.stopListening();
-    const isGemini = geminiNpcService.hasApiKey();
-    this.setStatus(
-      'processing',
-      isGemini ? '🤖 Gemini AI generuje odpowiedź...' : '🤖 NPC myśli nad odpowiedzią...'
-    );
+    this.setStatus('processing', `⏳ ${this.currentNpcName || 'NPC'} myśli nad odpowiedzią...`);
 
-    // 1. Wygenerowanie odpowiedzi przez GeminiNpcService (z fallbackiem do NpcAiAgent):
+    // 1. Dodanie wypowiedzi gracza do historii rozmowy:
+    this.history.push({ sender: 'Ty', text: input.trim(), isPlayer: true });
+    this.renderHistory();
+
+    // 2. Wygenerowanie odpowiedzi przez GeminiNpcService (z fallbackiem do NpcAiAgent):
     const response = await geminiNpcService.generateResponse(this.currentNpcName, input);
     const persona = NpcAiAgent.getPersona(this.currentNpcName);
 
-    // 2. Wyświetlenie odpowiedzi w oknie dialogu:
-    if (this.textElement) {
-      const badge =
-        response.source === 'gemini'
-          ? '<span class="gemini-tag" title="Odpowiedź z modelu Gemini AI">⚡ Gemini AI</span>'
-          : '';
-      this.textElement.innerHTML = `<strong>Ty:</strong> "${escapeHtml(input)}"<br/><br/><strong>${escapeHtml(this.currentNpcName)}:</strong> ${escapeHtml(response.text)} ${badge}`;
-    }
+    // 3. Dodanie odpowiedzi NPC do historii (bez technicznych etykiet i badge'y AI):
+    this.history.push({ sender: this.currentNpcName, text: response.text, isPlayer: false });
+    this.renderHistory();
 
-    // 3. Wypowiedzenie odpowiedzi przez syntezator mowy (TTS):
+    // 4. Wypowiedzenie odpowiedzi przez syntezator mowy (TTS):
     this.speakText(response.text, persona.voiceSettings, () => {
       this.setStatus('idle', '🎤 Gotowy na kolejne pytanie. Dotknij "Mów" lub wpisz tekst.');
     });
+  }
+
+  /**
+   * Renderuje całą historię rozmowy w oknie dialogu i przewija widok do najnowszej wypowiedzi.
+   */
+  private renderHistory(): void {
+    if (!this.textElement) return;
+
+    const html = this.history
+      .map((entry) => {
+        const roleClass = entry.isPlayer ? 'dialog-msg-player' : 'dialog-msg-npc';
+        return `<div class="dialog-msg ${roleClass}"><strong class="dialog-msg-author">${escapeHtml(entry.sender)}:</strong> <span class="dialog-msg-body">${escapeHtml(entry.text)}</span></div>`;
+      })
+      .join('');
+
+    this.textElement.innerHTML = html;
+
+    // Wsparcie dla uproszczonych obiektów mock w testach jednostkowych (gdzie innerHTML nie aktualizuje textContent):
+    const target = this.textElement as any;
+    if (!target.tagName) {
+      target.textContent = this.history
+        .map((entry) => `${entry.sender}: ${entry.text}`)
+        .join(' ');
+    }
+
+    const scrollContainer = this.textElement.parentElement ?? this.textElement;
+    if (typeof scrollContainer.scrollTop === 'number' && typeof scrollContainer.scrollHeight === 'number') {
+      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    }
   }
 
   /**
