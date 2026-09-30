@@ -20,6 +20,7 @@ import {
   sampleInfrastructureGrassMask,
 } from './festivalInfrastructure';
 import { FestivalStageEffects } from './festivalStageEffects';
+import { ColliderSpatialGrid, type WorldCollider } from './ColliderSpatialGrid';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { inspectableItems } from '../interactions/itemConfig';
@@ -203,7 +204,13 @@ export class CampWorld {
   public infrastructure: FestivalInfrastructureInstance | null = null;
   private stageEffects: FestivalStageEffects | null = null;
   private tentPalettes = new TentPaletteCache();
-  colliders: ({ x: number; z: number; r: number } | { box: THREE.Box3; enabled?: () => boolean })[] = [];
+  private readonly colliderGrid = new ColliderSpatialGrid(16);
+  colliders: WorldCollider[] = [];
+
+  addCollider(collider: WorldCollider): void {
+    this.colliders.push(collider);
+    this.colliderGrid.add(collider);
+  }
   interactables: WorldObject[] = [];
   private grass: Grass;
   private grassWorldMask: THREE.DataTexture;
@@ -310,22 +317,22 @@ export class CampWorld {
     allTentLayout.forEach((tent) => this.placeTent(tentsRoot, models.tents.get(tent.model) ?? null, tent));
     this.flag(landmarksRoot, models.flag);
     const shopCollider = placeRockShop(landmarksRoot, models.lidlRockShop, terrainHeight);
-    if (shopCollider) this.colliders.push({ box: shopCollider });
+    if (shopCollider) this.addCollider({ box: shopCollider });
     this.wheel = placeFestivalWheel(landmarksRoot, models.allegroWheel, terrainHeight);
-    if (this.wheel) this.colliders.push({ box: this.wheel.collider });
+    if (this.wheel) this.addCollider({ box: this.wheel.collider });
     for (const box of placeFestivalMarket(
       landmarksRoot,
       market,
       terrainHeight,
       marketLaneMaterial(models.marketStalls),
     ))
-      this.colliders.push({ box });
+      this.addCollider({ box });
     this.table(madDogRoot, models.interactables);
-    for (const box of placeFestivalZones(landmarksRoot, zones, terrainHeight)) this.colliders.push({ box });
-    for (const box of placeFestivalStages(landmarksRoot, models, terrainHeight)) this.colliders.push({ box });
+    for (const box of placeFestivalZones(landmarksRoot, zones, terrainHeight)) this.addCollider({ box });
+    for (const box of placeFestivalStages(landmarksRoot, models, terrainHeight)) this.addCollider({ box });
     this.infrastructure = placeFestivalInfrastructure(landmarksRoot, models, terrainHeight);
     if (this.infrastructure) {
-      for (const box of this.infrastructure.colliders) this.colliders.push({ box });
+      for (const box of this.infrastructure.colliders) this.addCollider({ box });
       for (const doorRec of this.infrastructure.toiToiDoors?.getAllRecords() ?? []) {
         this.interactables.push({
           object: doorRec.interactionMesh,
@@ -430,7 +437,7 @@ export class CampWorld {
       new THREE.Vector3(bounds.minX, -2, bounds.minZ),
       new THREE.Vector3(bounds.maxX, 4, bounds.maxZ),
     );
-    this.colliders.push({ box });
+    this.addCollider({ box });
   }
 
   /** Umieszcza właściwy model Mad Dog zamiast proceduralnej płachty i słupów. */
@@ -527,7 +534,7 @@ export class CampWorld {
       parent.add(root);
 
       // Zmodyfikowana pozycja automatycznie aktualizuje colidery i interakcje
-      this.colliders.push({ x: worldPosition[0], z: worldPosition[2], r: 0.48 });
+      this.addCollider({ x: worldPosition[0], z: worldPosition[2], r: 0.48 });
       this.interactables.push({
         object: root,
         label: `Usiądź (${seat.id})`,
@@ -572,7 +579,7 @@ export class CampWorld {
     toilet.position.set(x, terrainHeight(x, z), z);
     scene.add(toilet);
     toilet.updateMatrixWorld(true);
-    this.colliders.push({ box: new THREE.Box3().setFromObject(cabin) });
+    this.addCollider({ box: new THREE.Box3().setFromObject(cabin) });
     this.interactables.push({ object: entrance, label: 'Wejdź do toi-toia', action: 'toilet' });
   }
 
@@ -583,7 +590,7 @@ export class CampWorld {
     const [x, , z] = FLAG_CONFIG.position;
     flag.position.add(new THREE.Vector3(x, terrainHeight(x, z), z));
     parent.add(flag);
-    this.colliders.push({
+    this.addCollider({
       x: FLAG_CONFIG.position[0],
       z: FLAG_CONFIG.position[2],
       r: FLAG_CONFIG.colliderRadius,
@@ -610,7 +617,7 @@ export class CampWorld {
     scene.add(tableRoot);
     scene.updateWorldMatrix(true, true);
     const tableWorldPosition = tableRoot.getWorldPosition(new THREE.Vector3());
-    this.colliders.push({ x: tableWorldPosition.x, z: tableWorldPosition.z, r: 1.35 });
+    this.addCollider({ x: tableWorldPosition.x, z: tableWorldPosition.z, r: 1.35 });
 
     inspectableItems.forEach((item) => {
       for (let copy = 0; copy < item.tableQuantity; copy++) {
@@ -681,22 +688,14 @@ export class CampWorld {
     return true;
   }
 
-  /** Sprawdza granice świata oraz kolizje dla gracza i NPC. */
+  /** Sprawdza granice świata oraz kolizje dla gracza i NPC z wykorzystaniem siatki przestrzennej O(1). */
   canMove(x: number, z: number, radius = 0.34) {
     return (
       x > -WORLD_LIMIT + radius &&
       x < WORLD_LIMIT - radius &&
       z > -WORLD_LIMIT + radius &&
       z < WORLD_LIMIT - radius &&
-      !this.colliders.some((collider) => {
-        if ('enabled' in collider && collider.enabled && !collider.enabled()) return false;
-        return 'box' in collider
-          ? x > collider.box.min.x - radius &&
-            x < collider.box.max.x + radius &&
-            z > collider.box.min.z - radius &&
-            z < collider.box.max.z + radius
-          : Math.hypot(x - collider.x, z - collider.z) < collider.r + radius;
-      })
+      !this.colliderGrid.hasCollision(x, z, radius)
     );
   }
 
@@ -735,6 +734,7 @@ export class CampWorld {
     this.grass.dispose();
     this.grassWorldMask.dispose();
     this.colliders.length = 0;
+    this.colliderGrid.clear();
     this.interactables.length = 0;
   }
 }
