@@ -35,6 +35,7 @@ import { SeatController, type SeatPose } from './interactions/SeatController';
 import { configureColorPipeline } from './rendering/colorPipeline';
 import { RemotePlayersManager } from './network/RemotePlayersManager';
 import type { NetworkClient } from './network/NetworkClient';
+import { UIManager } from './ui/UIManager';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -108,9 +109,9 @@ export class Game {
   private inspectControls?: InspectControls;
   private inspectCameraBaseDistance = 1;
   private inspectId?: string;
+  readonly ui = new UIManager();
   private events = new EventScope();
   private unsubscribeState: () => void;
-  private toastTimer = 0;
   private started = false;
   private disposed = false;
   private animationLoop = new AnimationLoop(() => this.updateFrame());
@@ -161,9 +162,7 @@ export class Game {
     this.grzybekAudio.setVolume(this.audioSettings.ambientVolume);
     this.syncSettingsUi();
     this.syncInventoryUi();
-    const lsdOverlay = qs('#lsd-overlay');
-    lsdOverlay.style.setProperty('--lsd-image-a', `url("${effectAssets.lsdOverlays[0]}")`);
-    lsdOverlay.style.setProperty('--lsd-image-b', `url("${effectAssets.lsdOverlays[1]}")`);
+    this.ui.initLsdOverlays(effectAssets.lsdOverlays[0], effectAssets.lsdOverlays[1]);
     this.syncState(this.state.current);
   }
 
@@ -259,12 +258,7 @@ export class Game {
         (x, z) => this.world!.canMove(x, z),
       );
       this.seatController = new SeatController(this.scene, this.camera, selectedCharacter);
-      const motionSelect = document.querySelector<HTMLSelectElement>('#player-motion');
-      motionSelect?.replaceChildren(
-        ...this.seatController.animationNames.map(
-          (name) => new Option(name.replace(/([a-z])([A-Z])/g, '$1 $2'), name),
-        ),
-      );
+      this.ui.populateMotionSelect(this.seatController.animationNames);
       this.campAmbient.start();
       this.grzybekAudio.init();
       if (this.audioSettings.speakerEnabled) {
@@ -373,10 +367,7 @@ export class Game {
   }
 
   private syncFreeCameraHud(active: boolean) {
-    const badge = document.querySelector<HTMLElement>('#freecam-badge');
-    if (badge) {
-      badge.hidden = !active;
-    }
+    this.ui.setFreeCameraBadge(active);
   }
 
   /** Otwiera pauzę wyłącznie po rzeczywistej utracie wcześniej uzyskanego pointer lock. */
@@ -428,7 +419,7 @@ export class Game {
       this.voiceReactions.playToilet();
       this.toiletTimer = 2;
       if (this.player) this.player.enabled = false;
-      qs('#fade').classList.add('show');
+      this.ui.setFade(true);
       this.toast('Chwila prywatności…');
       return;
     }
@@ -454,8 +445,7 @@ export class Game {
     if (interaction.kind === 'npc' && this.npcs) {
       const npc = this.npcs.npcs.find((candidate) => candidate.name === interaction.name);
       if (!npc) return;
-      qs('#dialog-name').textContent = npc.name;
-      qs('#dialog-text').textContent = npc.line[Math.floor(Math.random() * npc.line.length)];
+      this.ui.openDialog(npc.name, npc.line[Math.floor(Math.random() * npc.line.length)]);
       this.state.transition('dialog');
     }
   }
@@ -495,11 +485,10 @@ export class Game {
   private inspect(id: string) {
     const item = itemById.get(id as InspectableItemId);
     if (!item || this.state.current !== 'playing') return;
-    qs('#inspect-name').textContent = item.label;
-    qs('#inspect-text').textContent = item.description;
-    qs('#inspect-help').textContent = controlHintForState(
-      'inspecting',
-      this.mobileInput ? 'mobile' : 'desktop',
+    this.ui.openInspect(
+      item.label,
+      item.description,
+      controlHintForState('inspecting', this.mobileInput ? 'mobile' : 'desktop'),
     );
     this.createInspectScene(id);
     this.state.transition('inspecting');
@@ -619,7 +608,7 @@ export class Game {
     if (!this.effects || !this.player || !this.useSequence) return false;
     if (!this.useSequence.start(id, this.player.yaw)) return false;
     this.pendingItemUse = { effect: id, source, itemId, committed: false };
-    qs('#use-sequence-label').textContent = itemUseSequenceConfig[id].label;
+    this.ui.setUseSequenceLabel(itemUseSequenceConfig[id].label);
     if (this.state.current !== 'using-item') {
       this.state.transition('using-item');
     }
@@ -632,7 +621,7 @@ export class Game {
     const item = this.pendingWarningItem;
     this.pendingWarningItem = undefined;
 
-    const dontShowAgain = qs<HTMLInputElement>('#warning-dont-show-again')?.checked;
+    const dontShowAgain = this.ui.isWarningDontShowAgainChecked();
     if (dontShowAgain) {
       localStorage.setItem('camp-effect-warning', '1');
     }
@@ -694,16 +683,7 @@ export class Game {
 
   /** Odświeża liczniki oraz dostępność przycisków całego ekwipunku. */
   private syncInventoryUi() {
-    document.querySelectorAll<HTMLButtonElement>('[data-effect]').forEach((button) => {
-      const effect = button.dataset.effect as EffectId;
-      const quantity = this.inventory.quantity(effect);
-      button.disabled = quantity < 1;
-      button.querySelector<HTMLElement>('.item-count')!.textContent = `× ${quantity}`;
-      button.setAttribute('aria-label', `${effect}, liczba sztuk: ${quantity}`);
-    });
-    qs('#inventory-status').textContent = this.inventory.total
-      ? `Przedmioty w plecaku: ${this.inventory.total}. Wybierz jeden, aby go użyć.`
-      : 'Plecak jest pusty. Przedmioty możesz znaleźć w obozie.';
+    this.ui.syncInventory(this.inventory);
   }
   /** Rozpoczyna kontrolowane wygaszanie aktywnego efektu. */
   cancelEffect() {
@@ -740,40 +720,12 @@ export class Game {
 
   /** Odświeża kontrolki dostępności i audio na podstawie bieżących ustawień. */
   private syncSettingsUi() {
-    /** Ustawia wartość pojedynczej kontrolki formularza ustawień. */
-    const set = (id: string, value: boolean | number) => {
-      const input = document.querySelector<HTMLInputElement>(id);
-      if (!input) return;
-      if (input.type === 'range') input.value = String(Math.round(Number(value) * 100));
-      else input.checked = Boolean(value);
-    };
-    set('#setting-intensity', this.settings.intensity);
-    set('#setting-speaker-volume', this.audioSettings.speakerVolume);
-    set('#setting-ambient-volume', this.audioSettings.ambientVolume);
-    set('#setting-reduce-motion', this.settings.reduceMotion);
-    set('#setting-limit-sway', this.settings.limitSway);
-    set('#setting-disable-shake', this.settings.disableShake);
-    set('#setting-disable-bloom', this.settings.disableBloom);
-    set('#setting-disable-flashes', this.settings.disableFlashes);
-    set('#setting-disable-aberration', this.settings.disableAberration);
-    const grassSelect = document.querySelector<HTMLSelectElement>('#setting-grass-quality');
-    if (grassSelect) grassSelect.value = this.settings.grassQuality;
-    const matrixModeSelect = document.querySelector<HTMLSelectElement>('#setting-matrix-mode');
-    if (matrixModeSelect) matrixModeSelect.value = this.settings.matrixMode;
-    const matrixQualitySelect = document.querySelector<HTMLSelectElement>('#setting-matrix-quality');
-    if (matrixQualitySelect) matrixQualitySelect.value = this.settings.matrixQuality;
+    this.ui.syncSettings(this.settings, this.audioSettings);
   }
 
   /** Synchronizuje HUD, modale, sterowanie graczem i pointer lock ze stanem aplikacji. */
   private syncState(state: AppState) {
-    const gameVisible = !['start', 'loading', 'error'].includes(state);
-    qs('#hud').hidden = !gameVisible;
-    qs('#inspect').hidden = state !== 'inspecting';
-    qs('#dialog').hidden = state !== 'dialog';
-    qs('#inventory').hidden = state !== 'inventory';
-    qs('#pause').hidden = state !== 'paused';
-    qs('#effect-warning').hidden = state !== 'effect-warning';
-    qs('#use-sequence').hidden = state !== 'using-item';
+    this.ui.syncState(state, this.mobileInput);
     if (state === 'paused') {
       this.campAmbient.pause();
       this.grzybekAudio.pause();
@@ -781,24 +733,7 @@ export class Game {
       this.campAmbient.resume();
       this.grzybekAudio.resume();
     }
-    const inputMode = this.mobileInput ? 'mobile' : 'desktop';
-    qs('#controls-hud').textContent = controlHintForState(state, inputMode);
-    qs('#inventory-help').textContent = controlHintForState('inventory', inputMode);
-    qs('#pause-help').textContent = controlHintForState('paused', inputMode);
-    qs('#dialog-help').textContent = controlHintForState('dialog', inputMode);
-    qs('#effect-warning-help').textContent = controlHintForState('effect-warning', inputMode);
-    if (state === 'effect-warning') {
-      requestAnimationFrame(() => {
-        qs<HTMLButtonElement>('#warning-proceed')?.focus();
-      });
-    }
-    if (this.mobileInput) {
-      qs('#inspect-use').textContent = 'UŻYJ';
-      qs('#inspect-take').textContent = 'WEŹ';
-      qs('#inspect-close').textContent = 'WRÓĆ';
-    }
     this.mobileControls?.setState(state);
-    qs('#crosshair').hidden = state !== 'playing';
     if (this.player) {
       this.player.enabled = state === 'playing' && !this.toiletTimer;
       if (!this.player.enabled) this.player.stop();
@@ -814,7 +749,6 @@ export class Game {
     }
     if (state !== 'playing') {
       this.interactions?.clear();
-      qs('#prompt').hidden = true;
     }
   }
 
@@ -917,10 +851,9 @@ export class Game {
 
   /** Buduje tekst podpowiedzi dla aktualnie wskazanego obiektu. */
   private updateInteractionPrompt() {
-    const interaction = this.interactions?.update(),
-      prompt = qs('#prompt');
+    const interaction = this.interactions?.update();
     if (!interaction) {
-      prompt.hidden = true;
+      this.ui.setInteractionPrompt(null);
       return;
     }
     const action =
@@ -937,36 +870,24 @@ export class Game {
                 : interaction.kind === 'field_shower'
                   ? 'Umyj się pod prysznicem'
                   : 'Wejdź do toi-toia';
-    prompt.textContent = interactionControlHint(action, this.mobileInput ? 'mobile' : 'desktop');
-    prompt.hidden = false;
+    this.ui.setInteractionPrompt(interactionControlHint(action, this.mobileInput ? 'mobile' : 'desktop'));
   }
 
   /** Aktualizuje licznik efektu oraz nakładki LSD i papierosa. */
   private updateEffectHud() {
-    const active = this.effects?.active;
-    const phaseLabels = {
-      inactive: 'nieaktywny',
-      fadeIn: 'wchodzenie',
-      active: 'aktywny',
-      fadeOut: 'wygaszanie',
-    } as const;
-    qs('#effect-hud').textContent = active
-      ? `${active} · ${phaseLabels[this.effects!.phase]} · ${Math.ceil(this.effects!.remaining)} s`
-      : 'Brak aktywnego efektu';
-    qs('#smoke').hidden = active !== 'Papieros';
-    const lsdOverlay = qs('#lsd-overlay');
-    lsdOverlay.hidden = active !== 'LSD';
-    lsdOverlay.style.setProperty(
-      '--lsd-strength',
-      String(active === 'LSD' ? this.effects!.visualIntensity : 0),
+    this.ui.updateEffectHud(
+      this.effects?.active || null,
+      this.effects?.phase || 'inactive',
+      this.effects?.remaining || 0,
+      this.effects?.visualIntensity || 0,
+      this.effects?.settings.reduceMotion === true,
     );
-    lsdOverlay.classList.toggle('reduced-motion', this.effects?.settings.reduceMotion === true);
   }
 
   /** Kończy sekwencję toi-toia i przywraca sterowanie. */
   private finishToilet() {
     this.toiletTimer = 0;
-    qs('#fade').classList.remove('show');
+    this.ui.setFade(false);
     if (this.player) {
       this.player.enabled = this.state.current === 'playing';
       this.player.requestPointerLock();
@@ -1017,11 +938,7 @@ export class Game {
 
   /** Pokazuje krótką wiadomość HUD i odnawia jej czas wygaszenia. */
   toast(message: string) {
-    const toast = qs('#toast');
-    toast.textContent = message;
-    toast.classList.add('visible');
-    clearTimeout(this.toastTimer);
-    this.toastTimer = window.setTimeout(() => toast.classList.remove('visible'), 2200);
+    this.ui.showToast(message);
   }
 
   /** Deterministycznie zatrzymuje grę i zwalnia wszystkie zasoby oraz listenery. */
@@ -1029,7 +946,7 @@ export class Game {
     if (this.disposed) return;
     this.disposed = true;
     this.animationLoop.stop();
-    clearTimeout(this.toastTimer);
+    this.ui.dispose();
     this.events.dispose();
     this.unsubscribeState();
     this.disposeInspectScene();
@@ -1064,11 +981,5 @@ export class Game {
     this.renderer.renderLists.dispose();
     this.renderer.dispose();
     this.propModels.clear();
-    qs('#fade').classList.remove('show');
-    const lsdOverlay = qs('#lsd-overlay');
-    lsdOverlay.hidden = true;
-    lsdOverlay.style.removeProperty('--lsd-strength');
-    qs('#prompt').hidden = true;
-    this.syncFreeCameraHud(false);
   }
 }
