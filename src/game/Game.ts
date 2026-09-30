@@ -2,14 +2,13 @@ import * as THREE from 'three';
 import { AssetLoader } from './assets/AssetLoader';
 import { characterAssets, effectAssets, musicAsset } from './assets/assetManifest';
 import { CampWorld, WORLD_LIMIT, terrainHeight } from './world/CampWorld';
-import { DEFAULT_GRASS_PRESET, isGrassQualityPreset } from './world/grassQuality';
 import { PlayerController } from './player/PlayerController';
 import { PLAYER_SPAWN_CONFIG } from './world/campLandmarks';
 import { isMobileInputDevice, MobileControls } from './player/MobileControls';
 import { NpcManager } from './npc/NpcManager';
 import { NPC_NAVIGATION_CELL_SIZE, NPC_NAVIGATION_RADIUS, NpcNavigationGrid } from './npc/NpcNavigationGrid';
 import { NpcDebugOverlay, isNpcDebugAllowed } from './npc/NpcDebugOverlay';
-import { EffectManager, EffectId, VisualSettings, defaultVisualSettings } from './effects/EffectManager';
+import { EffectManager, EffectId, VisualSettings } from './effects/EffectManager';
 import { InteractionManager } from './interactions/InteractionManager';
 import { SpeakerAudio } from './audio/SpeakerAudio';
 import { CampAmbientAudio } from './audio/CampAmbientAudio';
@@ -52,106 +51,27 @@ type PendingWarningItem = {
   itemId?: InspectableItemId;
 };
 
-export const INTENSE_EFFECTS: readonly EffectId[] = ['Grzyb', 'MDMA', 'LSD', 'Kreska'];
+import {
+  SettingsService,
+  INTENSE_EFFECTS,
+  isIntenseEffect,
+  detectSystemReducedMotion,
+  loadVisualSettings,
+  AudioSettings,
+  defaultAudioSettings,
+  loadAudioSettings,
+} from './services/SettingsService';
 
-export function isIntenseEffect(id: EffectId): boolean {
-  return INTENSE_EFFECTS.includes(id);
-}
-
-/** Wykrywa systemową preferencję ograniczenia ruchu (prefers-reduced-motion). */
-export function detectSystemReducedMotion(): boolean {
-  const target =
-    typeof window !== 'undefined'
-      ? window
-      : typeof globalThis !== 'undefined'
-        ? (globalThis as unknown as Window)
-        : undefined;
-  return (
-    typeof target !== 'undefined' &&
-    typeof target.matchMedia === 'function' &&
-    target.matchMedia('(prefers-reduced-motion: reduce)').matches
-  );
-}
-
-/** Odczytuje ustawienia efektów z localStorage i uzupełnia brakujące wartości domyślne. */
-export function loadVisualSettings(): VisualSettings {
-  try {
-    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('camp-visual-settings') : null;
-    const parsed = raw ? JSON.parse(raw) : {};
-    const systemReducedMotion = detectSystemReducedMotion();
-
-    const loaded: VisualSettings = {
-      ...defaultVisualSettings,
-      ...(systemReducedMotion && !raw
-        ? {
-            reduceMotion: true,
-            limitSway: true,
-            disableShake: true,
-            disableFlashes: true,
-            disableAberration: true,
-          }
-        : {}),
-      ...parsed,
-    };
-    if (!isGrassQualityPreset(loaded.grassQuality)) {
-      loaded.grassQuality = DEFAULT_GRASS_PRESET;
-    }
-    if (loaded.matrixMode !== 'auto' && loaded.matrixMode !== 'always' && loaded.matrixMode !== 'off') {
-      loaded.matrixMode = defaultVisualSettings.matrixMode;
-    }
-    if (
-      loaded.matrixQuality !== 'low' &&
-      loaded.matrixQuality !== 'medium' &&
-      loaded.matrixQuality !== 'high'
-    ) {
-      loaded.matrixQuality = defaultVisualSettings.matrixQuality;
-    }
-    if (typeof loaded.intensity !== 'number' || Number.isNaN(loaded.intensity)) {
-      loaded.intensity = defaultVisualSettings.intensity;
-    } else {
-      loaded.intensity = THREE.MathUtils.clamp(loaded.intensity, 0, 1);
-    }
-    return loaded;
-  } catch {
-    return { ...defaultVisualSettings };
-  }
-}
-
-export type AudioSettings = {
-  speakerVolume: number;
-  ambientVolume: number;
-  speakerEnabled: boolean;
+export {
+  SettingsService,
+  INTENSE_EFFECTS,
+  isIntenseEffect,
+  detectSystemReducedMotion,
+  loadVisualSettings,
+  type AudioSettings,
+  defaultAudioSettings,
+  loadAudioSettings,
 };
-
-export const defaultAudioSettings: AudioSettings = {
-  speakerVolume: 0.7,
-  ambientVolume: 0.35,
-  speakerEnabled: false,
-};
-
-/** Odczytuje ustawienia dźwiękowe z localStorage lub zwraca wartości domyślne. */
-export function loadAudioSettings(): AudioSettings {
-  try {
-    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('camp-audio-settings') : null;
-    const parsed = raw ? JSON.parse(raw) : {};
-    return {
-      speakerVolume:
-        typeof parsed.speakerVolume === 'number' && !Number.isNaN(parsed.speakerVolume)
-          ? THREE.MathUtils.clamp(parsed.speakerVolume, 0, 1)
-          : defaultAudioSettings.speakerVolume,
-      ambientVolume:
-        typeof parsed.ambientVolume === 'number' && !Number.isNaN(parsed.ambientVolume)
-          ? THREE.MathUtils.clamp(parsed.ambientVolume, 0, 1)
-          : defaultAudioSettings.ambientVolume,
-      speakerEnabled:
-        typeof parsed.speakerEnabled === 'boolean'
-          ? parsed.speakerEnabled
-          : defaultAudioSettings.speakerEnabled,
-    };
-  } catch {
-    return { ...defaultAudioSettings };
-  }
-}
 
 export class Game {
   readonly canvas = qs<HTMLCanvasElement>('#game');
@@ -172,8 +92,13 @@ export class Game {
   interactions?: InteractionManager;
   toiletTimer = 0;
   private networkSyncTimer = 0;
-  private settings = loadVisualSettings();
-  private audioSettings = loadAudioSettings();
+  readonly settingsService = new SettingsService();
+  get settings(): VisualSettings {
+    return this.settingsService.visual;
+  }
+  get audioSettings(): AudioSettings {
+    return this.settingsService.audio;
+  }
   private propModels = new Map<string, THREE.Object3D>();
   private inspectRenderer?: THREE.WebGLRenderer;
   private inspectScene?: THREE.Scene;
@@ -204,8 +129,6 @@ export class Game {
   private seatController?: SeatController;
   private pendingItemUse?: PendingItemUse;
   private pendingWarningItem?: PendingWarningItem;
-  private mediaQueryList?: MediaQueryList;
-  private mediaQueryHandler?: (event: MediaQueryListEvent) => void;
   constructor(
     readonly state: AppStateMachine,
     readonly networkClient?: NetworkClient,
@@ -225,21 +148,13 @@ export class Game {
     this.events.listen(window, 'resize', () => this.resize());
     this.events.listen(window, 'keydown', (event) => this.key(event as KeyboardEvent));
     this.events.listen(document, 'pointerlockchange', () => this.pointerLockChanged());
-    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-      this.mediaQueryList = window.matchMedia('(prefers-reduced-motion: reduce)');
-      this.mediaQueryHandler = (event: MediaQueryListEvent) => {
-        if (!localStorage.getItem('camp-visual-settings')) {
-          this.updateSettings({
-            reduceMotion: event.matches,
-            limitSway: event.matches,
-            disableShake: event.matches,
-            disableFlashes: event.matches,
-            disableAberration: event.matches,
-          });
-        }
-      };
-      this.mediaQueryList.addEventListener?.('change', this.mediaQueryHandler);
-    }
+    this.settingsService.onVisualChange((visual) => {
+      this.effects?.setSettings(visual);
+      if (this.world && visual.grassQuality) this.world.setGrassQuality(visual.grassQuality);
+      if (visual.matrixMode) this.matrixController.setMode(visual.matrixMode);
+      if (visual.matrixQuality) this.matrixRain.setQuality(visual.matrixQuality);
+      this.syncSettingsUi();
+    });
     this.unsubscribeState = this.state.subscribe(({ to }) => this.syncState(to));
     this.speakerAudio.setUserVolume(this.audioSettings.speakerVolume);
     this.campAmbient.setVolume(this.audioSettings.ambientVolume);
@@ -490,10 +405,7 @@ export class Game {
         this.voiceReactions.playFirstSpeaker();
       }
       this.speakerAudio.toggle().then((playing) => {
-        this.audioSettings.speakerEnabled = playing;
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem('camp-audio-settings', JSON.stringify(this.audioSettings));
-        }
+        this.updateAudioSettings({ speakerEnabled: playing });
         this.toast(playing ? 'Głośnik: muzyka włączona' : 'Głośnik: muzyka wyłączona');
       });
       return;
@@ -810,33 +722,18 @@ export class Game {
 
   /** Zapisuje częściowe ustawienia wizualne i przekazuje je do EffectManagera oraz świata. */
   updateSettings(values: Partial<VisualSettings>) {
-    Object.assign(this.settings, values);
-    localStorage.setItem('camp-visual-settings', JSON.stringify(this.settings));
-    this.effects?.setSettings(values);
-    if (values.grassQuality && this.world) {
-      this.world.setGrassQuality(values.grassQuality);
-    }
-    if (values.matrixMode) {
-      this.matrixController.setMode(this.settings.matrixMode);
-    }
-    if (values.matrixQuality) {
-      this.matrixRain.setQuality(this.settings.matrixQuality);
-    }
-    this.syncSettingsUi();
+    this.settingsService.updateVisual(values);
   }
 
   /** Zapisuje częściowe ustawienia audio i natychmiast aktualizuje głośności głośnika i ambientu. */
   updateAudioSettings(values: Partial<AudioSettings>) {
-    Object.assign(this.audioSettings, values);
+    this.settingsService.updateAudio(values);
     if (typeof values.speakerVolume === 'number') {
       this.speakerAudio.setUserVolume(this.audioSettings.speakerVolume);
     }
     if (typeof values.ambientVolume === 'number') {
       this.campAmbient.setVolume(this.audioSettings.ambientVolume);
       this.grzybekAudio.setVolume(this.audioSettings.ambientVolume);
-    }
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('camp-audio-settings', JSON.stringify(this.audioSettings));
     }
     this.syncSettingsUi();
   }
@@ -1142,11 +1039,7 @@ export class Game {
     this.seatController = undefined;
     this.pendingItemUse = undefined;
     this.pendingWarningItem = undefined;
-    if (this.mediaQueryList && this.mediaQueryHandler) {
-      this.mediaQueryList.removeEventListener?.('change', this.mediaQueryHandler);
-      this.mediaQueryList = undefined;
-      this.mediaQueryHandler = undefined;
-    }
+    this.settingsService.dispose();
     this.interactions?.dispose();
     this.mobileControls?.dispose();
     this.mobileControls = undefined;
