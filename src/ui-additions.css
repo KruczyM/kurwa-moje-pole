@@ -202,50 +202,136 @@
   user-select: none;
 }
 
-/* Swobodna kamera UI */
-.start-actions {
+/* Wskaźnik czatu głosowego w HUD */
+.voice-hud {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 15;
+  pointer-events: auto;
+}
+.voice-mic-btn, #voice-mic-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(23, 20, 36, 0.9);
+  border: 1px solid rgba(157, 255, 78, 0.5);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+#voice-mic-toggle:hover {
+  border-color: #9dff4e;
+  background: rgba(35, 30, 56, 0.95);
+  transform: translateY(-1px);
+}
+#voice-mic-toggle.active {
+  border-color: #9dff4e;
+  box-shadow: 0 0 12px rgba(157, 255, 78, 0.4);
+}
+#voice-mic-toggle.muted {
+  border-color: #ff5050;
+  color: #ff8585;
+}
+#voice-mic-toggle.denied, #voice-mic-toggle.unsupported {
+  border-color: #887d96;
+  color: #aaa;
+}
+
+/* Okno dialogowe z botami NPC */
+#dialog {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  max-width: 420px;
-  margin: 12px 0 6px;
-}
-
-.freecam-btn {
-  background: #14233c !important;
-  border: 1px solid #4a90e2 !important;
-  color: #c9e4ff !important;
-  font-size: 13px !important;
-  padding: 10px 18px !important;
-  cursor: pointer;
-  border-radius: 4px;
-  letter-spacing: 0.05em;
-  transition: all 0.2s ease;
-}
-
-.freecam-btn:hover {
-  background: #1e355b !important;
-  border-color: #64b5f6 !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 12px rgba(77, 163, 255, 0.4);
-}
-
-#freecam-badge {
+  gap: 12px;
+  width: min(600px, 92vw);
+  max-width: 600px;
+  padding: 24px;
+  background: rgba(23, 20, 36, 0.96);
+  border: 1px solid rgba(157, 255, 78, 0.4);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85);
+  border-radius: 8px;
   position: fixed;
-  top: 18px;
   left: 50%;
-  transform: translateX(-50%);
-  background: rgba(14, 25, 45, 0.9);
-  border: 1px solid #4da3ff;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 14px rgba(77, 163, 255, 0.35);
-  color: #d8ecff;
-  padding: 6px 18px;
-  border-radius: 20px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  pointer-events: auto;
+}
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+  gap: 8px;
+}
+.dialog-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #9dff4e;
+}
+.dialog-voice-status {
+  font-size: 11px;
+  color: #d8cce5;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+.dialog-transcript {
+  max-height: 220px;
+  min-height: 80px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+#dialog-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #f1edfa;
+}
+.dialog-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+#dialog-text-input {
+  flex: 1;
+  background: #141120;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+#dialog-text-input:focus {
+  border-color: #9dff4e;
+}
+#dialog-send-btn, #dialog-mic-btn {
+  padding: 8px 14px;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  z-index: 100;
-  pointer-events: none;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
 }
+#dialog-mic-btn {
+  background: rgba(157, 255, 78, 0.15);
+  border: 1px solid #9dff4e;
+  color: #9dff4e;
+}
+#dialog-mic-btn:hover {
+  background: rgba(157, 255, 78, 0.3);
+}
+

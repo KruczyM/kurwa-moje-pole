@@ -60,6 +60,7 @@ export type LoadedAssets = {
   foodtruckBurger: GLTF | null;
   foodtruckMakarun: GLTF | null;
   rollbarLech: GLTF | null;
+  sunflower: GLTF | null;
   interactables: Map<string, GLTF>;
   textures: WorldTextures;
   errors: string[];
@@ -230,6 +231,7 @@ export class AssetLoader {
       foodtruckBurger,
       foodtruckMakarun,
       rollbarLech,
+      sunflower,
     ] = await Promise.all([
       this.load(environmentAssets.flag, 'maszt z flagą', 'fabric'),
       this.load(environmentAssets.chair, 'krzesło campingowe', 'mixed'),
@@ -262,6 +264,7 @@ export class AssetLoader {
       this.load(environmentAssets.foodtruckBurger, 'Foodtruck Burger', 'mixed'),
       this.load(environmentAssets.foodtruckMakarun, 'Foodtruck Makarun', 'mixed'),
       this.load(environmentAssets.rollbarLech, 'Rollbar Piwo Lech', 'mixed'),
+      this.load(environmentAssets.sunflower, 'Słonecznik Festiwalowy', 'mixed'),
     ]);
     const [grassColor, grassNormal, grassRoughness, horizon] = await Promise.all([
       this.loadTexture(textureAssets.grass.color, 'tekstura trawy (kolor)', THREE.SRGBColorSpace),
@@ -303,6 +306,7 @@ export class AssetLoader {
       foodtruckBurger,
       foodtruckMakarun,
       rollbarLech,
+      sunflower,
       interactables,
       textures: {
         grassColor,

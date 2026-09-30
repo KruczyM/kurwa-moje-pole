@@ -74,9 +74,11 @@
         <div id="smoke" hidden></div>
         <div id="lsd-overlay" aria-hidden="true" hidden></div>
         <button id="cancel-effect">Anuluj efekt</button>
-        <div id="use-sequence" role="status" hidden>
-          <strong id="use-sequence-label"></strong
-          ><button id="cancel-use-sequence" type="button">ANULUJ</button>
+        <div id="voice-hud" class="voice-hud">
+          <button id="voice-mic-toggle" type="button" aria-label="Przełącz mikrofon" title="Kliknij lub naciśnij [M], aby włączyć/wyciszyć mikrofon">
+            <span id="voice-mic-icon">🎤</span>
+            <span id="voice-mic-text">Mikrofon: Wyłączony</span>
+          </button>
         </div>
       </section>
       <section id="inventory" role="dialog" aria-modal="true" aria-labelledby="inventory-title" hidden>
@@ -175,9 +177,26 @@
         <small id="effect-warning-help"></small>
       </section>
       <section id="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-name" hidden>
-        <h2 id="dialog-name"></h2>
-        <p id="dialog-text"></p>
-        <small id="dialog-help"></small><button id="close-dialog">Wróć</button>
+        <div class="dialog-header">
+          <h2 id="dialog-name"></h2>
+          <span id="dialog-voice-status" class="dialog-voice-status">🎤 Gotowy do rozmowy</span>
+        </div>
+        <div id="dialog-transcript" class="dialog-transcript">
+          <p id="dialog-text"></p>
+        </div>
+        <div class="dialog-input-row">
+          <input
+            id="dialog-text-input"
+            type="text"
+            placeholder="Mów do mikrofonu lub wpisz wiadomość..."
+            maxlength="200"
+            autocomplete="off"
+          />
+          <button id="dialog-send-btn" type="button">Wyślij</button>
+          <button id="dialog-mic-btn" type="button" title="Włącz/wyłącz nasłuch mikrofonu">🎤 Mów</button>
+        </div>
+        <small id="dialog-help"></small>
+        <button id="close-dialog">Zakończ rozmowę</button>
       </section>
       <section
         id="inspect"

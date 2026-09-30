@@ -55,6 +55,7 @@ const environmentPbrProfiles = {
   foodtruckBurger: 'mixed',
   foodtruckMakarun: 'mixed',
   rollbarLech: 'mixed',
+  sunflower: 'organic',
 };
 const interactivePbrProfiles = {
   table: 'wood',

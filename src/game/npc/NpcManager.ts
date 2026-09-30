@@ -34,6 +34,7 @@ export type Npc = {
   isCampMember: boolean;
   festivalRole?: 'stage_dancer' | 'asp_listener' | 'food_queue' | 'chiller' | 'walker';
   animLodAccumulator: number;
+  inConversation?: boolean;
 };
 const CAMP_RADIUS = 13;
 const SPEAKER_POSITION = { x: -1.45, z: 0.65 };
@@ -113,11 +114,11 @@ export class NpcManager {
         : festivalRole === 'stage_dancer'
           ? { minX: 130, maxX: 180, minZ: 0, maxZ: 35 }
           : festivalRole === 'asp_listener'
-            ? { minX: -10, maxX: 10, minZ: 92, maxZ: 102 }
+            ? { minX: -75, maxX: -55, minZ: 92, maxZ: 102 }
             : festivalRole === 'food_queue'
               ? (behavior.random() < 0.5
-                  ? { minX: 48, maxX: 104, minZ: 76, maxZ: 83 }
-                  : { minX: -125, maxX: -44, minZ: -28, maxZ: -23 })
+                  ? { minX: -36, maxX: 36, minZ: 81, maxZ: 86 }
+                  : { minX: -125, maxX: -44, minZ: -25, maxZ: -18 })
               : { minX: -70, maxX: 50, minZ: 30, maxZ: 55 };
     let spawn: THREE.Vector3 | null = null;
     for (let attempt = 0; attempt < 80; attempt++) {
@@ -546,6 +547,13 @@ export class NpcManager {
       npc.returning = npc.behavior.state === 'run-home';
       npc.stationary = !npc.behavior.travelling;
 
+      if (npc.inConversation) {
+        npc.speed = 0;
+        npc.velocity.set(0, 0, 0);
+        this.updateAnimation(npc, dt);
+        continue;
+      }
+
       if (npc.stationary) {
         this.tryActivity(npc, playerPosition);
         npc.root.position.y = terrainHeight(npc.root.position.x, npc.root.position.z);
@@ -732,7 +740,7 @@ export class NpcManager {
     }
 
     // 2. Namiot ASP: słuchanie, siedzenie i oklaski
-    if (npc.festivalRole === 'asp_listener' || (pos.x >= -16 && pos.x <= 16 && pos.z >= 86 && pos.z <= 108)) {
+    if (npc.festivalRole === 'asp_listener' || (pos.x >= -85 && pos.x <= -45 && pos.z >= 86 && pos.z <= 108)) {
       const aspActivities = [
         'Sitting',
         'SittingIdle',
@@ -754,8 +762,8 @@ export class NpcManager {
     // 3. Kolejka po jedzenie przed namiotami gastronomicznymi
     if (
       npc.festivalRole === 'food_queue' ||
-      (pos.z >= 74 && pos.z <= 90 && pos.x >= 45 && pos.x <= 108) ||
-      (pos.z >= -30 && pos.z <= -18 && pos.x >= -130 && pos.x <= -42)
+      (pos.z >= 79 && pos.z <= 90 && pos.x >= -38 && pos.x <= 38) ||
+      (pos.z >= -26 && pos.z <= -16 && pos.x >= -130 && pos.x <= -42)
     ) {
       const queueClips = [
         'TextingWhileStanding',
@@ -813,6 +821,39 @@ export class NpcManager {
   getSpeakerWorldPosition(target: THREE.Vector3 = new THREE.Vector3()): THREE.Vector3 | null {
     if (!this.speakerAnchor) return null;
     return this.speakerAnchor.getWorldPosition(target);
+  }
+
+  /** Zatrzymuje ruch bota na czas rozmowy z graczem i obraca go w stronę gracza. */
+  pauseNpcForConversation(name: string, facePosition?: THREE.Vector3): Npc | undefined {
+    const npc = this.npcs.find((n) => n.name === name);
+    if (!npc) return undefined;
+    npc.inConversation = true;
+    npc.stationary = true;
+    npc.speed = 0;
+    npc.velocity.set(0, 0, 0);
+    npc.waypoints.length = 0;
+    if (facePosition) {
+      const dx = facePosition.x - npc.root.position.x;
+      const dz = facePosition.z - npc.root.position.z;
+      if (dx * dx + dz * dz > 0.0001) {
+        npc.root.rotation.y = Math.atan2(dx, dz);
+        npc.steeringDirection.set(dx, 0, dz).normalize();
+      }
+    }
+    return npc;
+  }
+
+  /** Wznawia naturalne zachowanie NPC po zakończeniu dialogu. */
+  resumeNpcAfterConversation(name: string, resumeWaitSeconds = 2.0): void {
+    const npc = this.npcs.find((n) => n.name === name);
+    if (!npc) return;
+    npc.inConversation = false;
+    npc.stationary = false;
+    npc.wait = resumeWaitSeconds;
+    npc.speed = 0;
+    npc.velocity.set(0, 0, 0);
+    npc.target.copy(npc.root.position);
+    npc.watchdog.resetPosition(npc.root.position);
   }
 
   /** Zatrzymuje miksery animacji wszystkich NPC. */

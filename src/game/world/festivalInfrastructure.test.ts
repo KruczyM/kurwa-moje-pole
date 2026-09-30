@@ -141,29 +141,54 @@ describe('festivalInfrastructure', () => {
     expect(grzybek!.x).toBe(160);
     expect(grzybek!.z).toBe(-8);
 
-    // South Passage (z = 86, facing North onto South Avenue):
+    // South Passage (z = 94, facing North onto South Avenue):
     const southTent1 = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'food_tent_south_1');
     const southRollbar = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'rollbar_lech_south');
     const southTent2 = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'food_tent_south_2');
     const southFrytki = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'foodtruck_frytki_south');
-    expect(southTent1).toMatchObject({ x: 52, z: 86, rotationY: 0 });
-    expect(southRollbar).toMatchObject({ x: 68, z: 86, rotationY: 0 });
-    expect(southTent2).toMatchObject({ x: 84, z: 86, rotationY: 0 });
-    expect(southFrytki).toMatchObject({ x: 104, z: 86, rotationY: 0 });
+    expect(southTent1).toMatchObject({ x: -22, z: 94, rotationY: 0 });
+    expect(southRollbar).toMatchObject({ x: -2, z: 94, rotationY: 0 });
+    expect(southTent2).toMatchObject({ x: 16, z: 94, rotationY: 0 });
+    expect(southFrytki).toMatchObject({ x: 36, z: 94, rotationY: 0 });
 
-    // North Passage (z = -20, south side of North Avenue, shifted away from Duża Scena):
+    // North Passage (z = -12, south side of North Avenue, shifted away from Duża Scena):
     const northMakarun = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'foodtruck_makarun_north');
     const northChurros = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'foodtruck_churros_north');
     const northTent2 = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'food_tent_north_2');
     const northRollbar = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'rollbar_lech_north');
     const northTent1 = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'food_tent_north_1');
     const northBurger = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'foodtruck_burger_north');
-    expect(northMakarun).toMatchObject({ x: -127, z: -20, rotationY: 0 });
-    expect(northChurros).toMatchObject({ x: -115, z: -20, rotationY: 0 });
-    expect(northTent2).toMatchObject({ x: -96, z: -20, rotationY: 0 });
-    expect(northRollbar).toMatchObject({ x: -80, z: -20, rotationY: 0 });
-    expect(northTent1).toMatchObject({ x: -64, z: -20, rotationY: 0 });
-    expect(northBurger).toMatchObject({ x: -46, z: -20, rotationY: 0 });
+    expect(northMakarun).toMatchObject({ x: -127, z: -12, rotationY: 0 });
+    expect(northChurros).toMatchObject({ x: -115, z: -12, rotationY: 0 });
+    expect(northTent2).toMatchObject({ x: -96, z: -12, rotationY: 0 });
+    expect(northRollbar).toMatchObject({ x: -80, z: -12, rotationY: 0 });
+    expect(northTent1).toMatchObject({ x: -64, z: -12, rotationY: 0 });
+    expect(northBurger).toMatchObject({ x: -46, z: -12, rotationY: 0 });
+  });
+
+  it('places festival entrance gate at start of south passage with open walkway between towers', () => {
+    const gate = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'festival_gate_main');
+    expect(gate).toBeDefined();
+    expect(gate).toMatchObject({ x: 112, z: 73 });
+    expect(Math.abs(Math.cos(gate!.rotationY))).toBeLessThan(1e-4);
+
+    const parent = new THREE.Group();
+    const fakeGltf: any = { scene: new THREE.Group() };
+    const instance = placeFestivalInfrastructure(parent, { festivalGate: fakeGltf }, () => 0.0);
+
+    // Center road walkway at x = 112, z = 73 is clear
+    const roadPoint = new THREE.Vector3(112, 1.0, 73);
+    expect(instance.colliders.some((box) => box.containsPoint(roadPoint))).toBe(false);
+
+    // North side tower at z = 65 is blocked
+    const northTower = new THREE.Vector3(112, 1.0, 65);
+    expect(instance.colliders.some((box) => box.containsPoint(northTower))).toBe(true);
+
+    // South side tower at z = 81 is blocked
+    const southTower = new THREE.Vector3(112, 1.0, 81);
+    expect(instance.colliders.some((box) => box.containsPoint(southTower))).toBe(true);
+
+    instance.dispose();
   });
 });
 

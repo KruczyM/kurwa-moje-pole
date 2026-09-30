@@ -19,6 +19,11 @@ import {
   placeFestivalInfrastructure,
   sampleInfrastructureGrassMask,
 } from './festivalInfrastructure';
+import {
+  placeSunflowerField,
+  sampleSunflowerFieldGrassMask,
+  type SunflowerFieldInstance,
+} from './festivalSunflowerField';
 import { FestivalStageEffects } from './festivalStageEffects';
 import { ColliderSpatialGrid, type WorldCollider } from './ColliderSpatialGrid';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -94,6 +99,7 @@ type WorldModels = {
   foodtruckBurger?: GLTF | null;
   foodtruckMakarun?: GLTF | null;
   rollbarLech?: GLTF | null;
+  sunflower?: GLTF | null;
   interactables: Map<string, GLTF>;
   textures?: GroundTextures;
 };
@@ -202,6 +208,7 @@ export function physicalSizeIsValid(actual: THREE.Vector3, target: PhysicalSize,
 export class CampWorld {
   private wheel: FestivalWheel | null = null;
   public infrastructure: FestivalInfrastructureInstance | null = null;
+  public sunflowerField: SunflowerFieldInstance | null = null;
   private stageEffects: FestivalStageEffects | null = null;
   private tentPalettes = new TentPaletteCache();
   private readonly colliderGrid = new ColliderSpatialGrid(16);
@@ -265,7 +272,8 @@ export class CampWorld {
       marketGrassMask(x, z) *
       zoneGrassMask(x, z) *
       stageGrassMask(x, z) *
-      sampleInfrastructureGrassMask(x, z);
+      sampleInfrastructureGrassMask(x, z) *
+      sampleSunflowerFieldGrassMask(x, z);
     this.grass = new Grass(
       {
         surface: ground,
@@ -359,6 +367,7 @@ export class CampWorld {
     }
     this.stageEffects = new FestivalStageEffects();
     landmarksRoot.add(this.stageEffects.group);
+    this.sunflowerField = placeSunflowerField(landmarksRoot, models.sunflower, terrainHeight);
   }
 
   /** Klonuje model, dopasowuje jego wysokość oraz konfiguruje cienie. */
@@ -726,6 +735,8 @@ export class CampWorld {
     this.wheel = null;
     this.infrastructure?.dispose();
     this.infrastructure = null;
+    this.sunflowerField?.dispose();
+    this.sunflowerField = null;
     this.stageEffects?.dispose();
     this.stageEffects = null;
     this.tentPalettes.clear();

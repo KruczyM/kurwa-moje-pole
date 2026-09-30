@@ -97,7 +97,8 @@
     "foodtruckChurros": "world/festival/foodtruck_churros.glb",
     "foodtruckBurger": "world/festival/foodtruck_burger.glb",
     "foodtruckMakarun": "world/festival/foodtruck_makarun.glb",
-    "rollbarLech": "world/festival/rollbar_lech.glb"
+    "rollbarLech": "world/festival/rollbar_lech.glb",
+    "sunflower": "world/festival/sunflower.glb"
   },
   "tents": {
     "main": "world/tents/upgraded/main.glb",

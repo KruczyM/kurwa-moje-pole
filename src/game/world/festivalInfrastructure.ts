@@ -41,14 +41,14 @@ export type LandmarkPlacement = {
 };
 
 export const FESTIVAL_INFRASTRUCTURE_PLACEMENTS: LandmarkPlacement[] = [
-  // 1. Monumental Main Entrance Gate
+  // 1. Monumental Main Entrance Gate (at beginning of South Passage near Duża Scena)
   {
     id: 'festival_gate_main',
     modelKey: 'festivalGate',
     label: 'Brama Festiwalowa — Główne Wejście',
-    x: 0,
-    z: -68,
-    rotationY: 0,
+    x: 112,
+    z: 73,
+    rotationY: Math.PI / 2,
     // Portals allow walking through middle, collider on left/right towers
     colliderSize: [18.0, 9.5, 4.0],
     grassMaskRadius: 9.0,
@@ -250,13 +250,13 @@ export const FESTIVAL_INFRASTRUCTURE_PLACEMENTS: LandmarkPlacement[] = [
     colliderSize: [0.7, 4.2, 0.7],
     grassMaskRadius: 6.0,
   },
-  // 12. Gastro Zone — Paired Large White Food Tents on South Passage
+  // 12. Gastro Zone — Paired Large White Food Tents on South Passage (shifted west along red arrow, set back from road)
   {
     id: 'food_tent_south_1',
     modelKey: 'festivalFoodTent',
     label: 'Hala Gastronomiczna — Pasaż Południowy 1',
-    x: 52,
-    z: 86,
+    x: -22,
+    z: 94,
     rotationY: 0,
     colliderSize: [26.0, 5.0, 10.0],
     grassMaskRadius: 14.0,
@@ -265,8 +265,8 @@ export const FESTIVAL_INFRASTRUCTURE_PLACEMENTS: LandmarkPlacement[] = [
     id: 'rollbar_lech_south',
     modelKey: 'rollbarLech',
     label: 'Rollbar Piwo Lech — Pasaż Południowy',
-    x: 68,
-    z: 86,
+    x: -2,
+    z: 94,
     rotationY: 0,
     colliderSize: [4.8, 3.0, 2.8],
     grassMaskRadius: 2.8,
@@ -275,8 +275,8 @@ export const FESTIVAL_INFRASTRUCTURE_PLACEMENTS: LandmarkPlacement[] = [
     id: 'food_tent_south_2',
     modelKey: 'festivalFoodTent',
     label: 'Hala Gastronomiczna — Pasaż Południowy 2',
-    x: 84,
-    z: 86,
+    x: 16,
+    z: 94,
     rotationY: 0,
     colliderSize: [26.0, 5.0, 10.0],
     grassMaskRadius: 14.0,
@@ -285,19 +285,19 @@ export const FESTIVAL_INFRASTRUCTURE_PLACEMENTS: LandmarkPlacement[] = [
     id: 'foodtruck_frytki_south',
     modelKey: 'foodtruckFrytki',
     label: 'Foodtruck Frytki Belgijskie',
-    x: 104,
-    z: 86,
+    x: 36,
+    z: 94,
     rotationY: 0,
     colliderSize: [6.5, 3.2, 2.6],
     grassMaskRadius: 3.5,
   },
-  // 13. Gastro Zone — Paired Large White Food Tents & Foodtrucks on North Passage (south side of North road, away from Duża Scena)
+  // 13. Gastro Zone — Paired Large White Food Tents & Foodtrucks on North Passage (set back from road to z: -12)
   {
     id: 'foodtruck_makarun_north',
     modelKey: 'foodtruckMakarun',
     label: 'Foodtruck Makarun Spaghetti Bar',
     x: -127,
-    z: -20,
+    z: -12,
     rotationY: 0,
     colliderSize: [6.5, 3.2, 2.6],
     grassMaskRadius: 3.5,
@@ -307,7 +307,7 @@ export const FESTIVAL_INFRASTRUCTURE_PLACEMENTS: LandmarkPlacement[] = [
     modelKey: 'foodtruckChurros',
     label: 'Foodtruck Gorące Churros',
     x: -115,
-    z: -20,
+    z: -12,
     rotationY: 0,
     colliderSize: [6.5, 3.2, 2.6],
     grassMaskRadius: 3.5,
@@ -317,7 +317,7 @@ export const FESTIVAL_INFRASTRUCTURE_PLACEMENTS: LandmarkPlacement[] = [
     modelKey: 'festivalFoodTent',
     label: 'Hala Gastronomiczna — Pasaż Północny 2',
     x: -96,
-    z: -20,
+    z: -12,
     rotationY: 0,
     colliderSize: [26.0, 5.0, 10.0],
     grassMaskRadius: 14.0,
@@ -327,7 +327,7 @@ export const FESTIVAL_INFRASTRUCTURE_PLACEMENTS: LandmarkPlacement[] = [
     modelKey: 'rollbarLech',
     label: 'Rollbar Piwo Lech — Pasaż Północny',
     x: -80,
-    z: -20,
+    z: -12,
     rotationY: 0,
     colliderSize: [4.8, 3.0, 2.8],
     grassMaskRadius: 2.8,
@@ -337,7 +337,7 @@ export const FESTIVAL_INFRASTRUCTURE_PLACEMENTS: LandmarkPlacement[] = [
     modelKey: 'festivalFoodTent',
     label: 'Hala Gastronomiczna — Pasaż Północny 1',
     x: -64,
-    z: -20,
+    z: -12,
     rotationY: 0,
     colliderSize: [26.0, 5.0, 10.0],
     grassMaskRadius: 14.0,
@@ -347,7 +347,7 @@ export const FESTIVAL_INFRASTRUCTURE_PLACEMENTS: LandmarkPlacement[] = [
     modelKey: 'foodtruckBurger',
     label: 'Foodtruck Smash Burger & Zapiekanki',
     x: -46,
-    z: -20,
+    z: -12,
     rotationY: 0,
     colliderSize: [6.5, 3.2, 2.6],
     grassMaskRadius: 3.5,
@@ -450,6 +450,24 @@ export function placeFestivalInfrastructure(
           new THREE.Box3(
             new THREE.Vector3(px - pillarRadius, floor - 1.0, pz - pillarRadius),
             new THREE.Vector3(px + pillarRadius, floor + pillarHeight, pz + pillarRadius),
+          ),
+        );
+      }
+    } else if (site.modelKey === 'festivalGate') {
+      // Split into two side tower colliders so the central roadway is open to walk through
+      const towerSize = 2.8;
+      const towerHeight = 9.5;
+      for (const towerOffset of [-8.0, 8.0]) {
+        const towerPos = new THREE.Vector3(towerOffset, 0, 0).applyAxisAngle(
+          new THREE.Vector3(0, 1, 0),
+          site.rotationY,
+        );
+        const tx = site.x + towerPos.x;
+        const tz = site.z + towerPos.z;
+        instance.colliders.push(
+          new THREE.Box3(
+            new THREE.Vector3(tx - towerSize / 2, floor - 1.0, tz - towerSize / 2),
+            new THREE.Vector3(tx + towerSize / 2, floor + towerHeight, tz + towerSize / 2),
           ),
         );
       }

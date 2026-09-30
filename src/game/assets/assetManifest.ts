@@ -65,6 +65,7 @@ export const environmentAssets = {
   foodtruckBurger: gameAsset(catalog.environment.foodtruckBurger),
   foodtruckMakarun: gameAsset(catalog.environment.foodtruckMakarun),
   rollbarLech: gameAsset(catalog.environment.rollbarLech),
+  sunflower: gameAsset(catalog.environment.sunflower),
 };
 
 export const tentAssets = Object.fromEntries(

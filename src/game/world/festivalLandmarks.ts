@@ -4,7 +4,7 @@ import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 /** Temporary asset-review location, NOT the georeferenced 2026 festival plan. */
 export const ROCK_SHOP_SITE = {
-  x: -70,
+  x: -115,
   z: 88,
   halfWidth: 12.15,
   halfDepth: 9.15,

@@ -17,7 +17,7 @@ export const FESTIVAL_STAGE_SITES = [
   {
     id: 'smallStage',
     label: 'Mała Scena — robocza',
-    x: 0,
+    x: -65,
     z: 97,
     width: 38,
     depth: 54,

@@ -34,6 +34,8 @@ import { configureColorPipeline } from './rendering/colorPipeline';
 import { RemotePlayersManager } from './network/RemotePlayersManager';
 import type { NetworkClient } from './network/NetworkClient';
 import { UIManager } from './ui/UIManager';
+import { SpatialVoiceManager, type MicState } from './audio/SpatialVoiceManager';
+import { NpcVoiceCoordinator } from './npc/NpcVoiceCoordinator';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -87,6 +89,8 @@ export class Game {
   npcs?: NpcManager;
   npcDebugOverlay?: NpcDebugOverlay;
   remotePlayersManager?: RemotePlayersManager;
+  spatialVoice?: SpatialVoiceManager;
+  npcVoiceCoordinator?: NpcVoiceCoordinator;
   effects?: EffectManager;
   interactions?: InteractionManager;
   toiletTimer = 0;
@@ -257,6 +261,32 @@ export class Game {
       if (this.audioSettings.speakerEnabled) {
         void this.speakerAudio.play();
       }
+
+      // Przestrzenny czat głosowy WebRTC:
+      this.spatialVoice = new SpatialVoiceManager(this.networkClient, {
+        userVolume: 1.0,
+        onMicStateChange: (micState) => this.syncMicUi(micState),
+      });
+      this.syncMicUi(this.spatialVoice.getMicState());
+      const micBtn = document.querySelector<HTMLButtonElement>('#voice-mic-toggle');
+      if (micBtn) {
+        micBtn.onclick = () => {
+          this.spatialVoice?.toggleMute();
+        };
+      }
+      void this.spatialVoice.requestMicrophone();
+
+      // Koordynator rozmów głosowych z botami NPC:
+      this.npcVoiceCoordinator = new NpcVoiceCoordinator(this.npcs!, {
+        dialogRoot: qs('#dialog'),
+        nameElement: qs('#dialog-name'),
+        textElement: qs('#dialog-text'),
+        voiceStatusElement: qs('#dialog-voice-status'),
+        textInputElement: document.querySelector('#dialog-text-input') as HTMLInputElement | undefined,
+        sendButton: document.querySelector('#dialog-send-btn') as HTMLButtonElement | undefined,
+        micButton: document.querySelector('#dialog-mic-btn') as HTMLButtonElement | undefined,
+      });
+
       this.startLoop();
       this.state.transition('playing');
       this.toast('Festiwalowicze doczytują się w tle. Szukaj ich przy asfaltowym pasażu.');
@@ -288,9 +318,51 @@ export class Game {
     }
   }
 
+  private syncMicUi(state: MicState) {
+    const icon = document.querySelector<HTMLSpanElement>('#voice-mic-icon');
+    const text = document.querySelector<HTMLSpanElement>('#voice-mic-text');
+    const btn = document.querySelector<HTMLButtonElement>('#voice-mic-toggle');
+    if (!icon || !text || !btn) return;
+
+    btn.className = `voice-mic-btn ${state}`;
+    switch (state) {
+      case 'active':
+        icon.textContent = '🎤';
+        text.textContent = 'Mikrofon: Włączony [M]';
+        break;
+      case 'muted':
+        icon.textContent = '🔇';
+        text.textContent = 'Mikrofon: Wyciszony [M]';
+        break;
+      case 'requesting':
+        icon.textContent = '⏳';
+        text.textContent = 'Łączenie mikrofonu...';
+        break;
+      case 'denied':
+        icon.textContent = '🚫';
+        text.textContent = 'Mikrofon: Zablokowany';
+        break;
+      case 'unsupported':
+        icon.textContent = '⚠️';
+        text.textContent = 'Brak mikrofonu';
+        break;
+      default:
+        icon.textContent = '🎤';
+        text.textContent = 'Mikrofon: Wyłączony';
+        break;
+    }
+  }
+
   /** Obsługuje globalne skróty Escape, Tab, E oraz Ctrl+K zgodnie ze stanem gry. */
   private key(event: KeyboardEvent) {
     if (this.disposed) return;
+    if (
+      (event.key === 'm' || event.key === 'M') &&
+      (this.state.current === 'playing' || this.state.current === 'seated')
+    ) {
+      this.spatialVoice?.toggleMute();
+      return;
+    }
     if (event.ctrlKey && event.key.toLowerCase() === 'k') {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -338,6 +410,9 @@ export class Game {
     if (this.state.current === 'using-item') {
       this.useSequence?.cancel();
       this.pendingItemUse = undefined;
+    }
+    if (this.state.current === 'dialog') {
+      this.npcVoiceCoordinator?.endConversation();
     }
     if (this.state.current === 'effect-warning') {
       this.pendingWarningItem = undefined;
@@ -435,11 +510,10 @@ export class Game {
       }
       return;
     }
-    if (interaction.kind === 'npc' && this.npcs) {
-      const npc = this.npcs.npcs.find((candidate) => candidate.name === interaction.name);
-      if (!npc) return;
-      this.ui.openDialog(npc.name, npc.line[Math.floor(Math.random() * npc.line.length)]);
+    if (interaction.kind === 'npc') {
       this.state.transition('dialog');
+      this.npcVoiceCoordinator?.startConversation(interaction.name, this.camera.position);
+      return;
     }
   }
 
@@ -629,7 +703,10 @@ export class Game {
   }
   /** Zamyka dialog NPC i wraca do rozgrywki. */
   closeDialog() {
-    if (this.state.current === 'dialog') this.state.transition('playing');
+    if (this.state.current === 'dialog') {
+      this.npcVoiceCoordinator?.endConversation();
+      this.state.transition('playing');
+    }
   }
   /** Włącza albo wyłącza pauzę, o ile bieżący stan pozwala na przejście. */
   setPause(on: boolean) {
@@ -723,6 +800,14 @@ export class Game {
         }
       }
       this.remotePlayersManager?.update(dt, this.camera);
+      if (this.spatialVoice && this.remotePlayersManager) {
+        const remotePositions = new Map<string, { x: number; y: number; z: number }>();
+        for (const [id, entity] of this.remotePlayersManager.remotePlayers) {
+          remotePositions.set(id, entity.currentPosition);
+        }
+        const euler = new THREE.Euler().setFromQuaternion(this.camera.quaternion, 'YXZ');
+        this.spatialVoice.update(this.camera.position, euler.y, remotePositions);
+      }
       if (state === 'seated') {
         this.seatController?.update(dt);
         if (this.seatController?.finished) {
@@ -866,6 +951,10 @@ export class Game {
     this.npcs?.dispose();
     this.remotePlayersManager?.dispose();
     this.remotePlayersManager = undefined;
+    this.spatialVoice?.dispose();
+    this.spatialVoice = undefined;
+    this.npcVoiceCoordinator?.dispose();
+    this.npcVoiceCoordinator = undefined;
     this.npcDebugOverlay?.dispose();
     this.npcDebugOverlay = undefined;
     this.world?.dispose();
