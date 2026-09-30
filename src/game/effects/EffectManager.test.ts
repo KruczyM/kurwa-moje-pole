@@ -198,4 +198,36 @@ describe('accessibility settings & reduced motion', () => {
 
     manager.dispose();
   });
+
+  it('bypasses EffectComposer when no post-processing effects are active', () => {
+    let directRenderCalls = 0;
+    let composerRenderCalls = 0;
+    const dummyRenderer = {
+      ...createMockRenderer(),
+      render: () => {
+        directRenderCalls++;
+      },
+    } as unknown as THREE.WebGLRenderer;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera();
+
+    const manager = new EffectManager(dummyRenderer, scene, camera);
+    manager.composer.render = () => {
+      composerRenderCalls++;
+    };
+
+    // When inactive, direct renderer is used
+    expect(manager.isPostProcessingActive).toBe(false);
+    manager.render();
+    expect(directRenderCalls).toBe(1);
+    expect(composerRenderCalls).toBe(0);
+
+    // When an effect is active, composer is used
+    manager.use('Piwo');
+    expect(manager.isPostProcessingActive).toBe(true);
+    manager.render();
+    expect(composerRenderCalls).toBe(1);
+
+    manager.dispose();
+  });
 });

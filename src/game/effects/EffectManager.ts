@@ -363,10 +363,10 @@ export class EffectManager {
   private disposed = false;
   settings: VisualSettings = { ...defaultVisualSettings };
   constructor(
-    renderer: THREE.WebGLRenderer,
-    scene: THREE.Scene,
-    private camera: THREE.PerspectiveCamera,
-    private audio?: EffectAudioTarget,
+    private readonly renderer: THREE.WebGLRenderer,
+    private readonly scene: THREE.Scene,
+    private readonly camera: THREE.PerspectiveCamera,
+    private readonly audio?: EffectAudioTarget,
   ) {
     this.composer = new EffectComposer(renderer);
     this.composer.addPass(new RenderPass(scene, camera));
@@ -539,9 +539,21 @@ export class EffectManager {
     };
   }
 
-  /** Renderuje scenę przez łańcuch efektów post-processingu. */
+  /** Zwraca true, jeśli aktywny jest postprocessing wymagający EffectComposera. */
+  get isPostProcessingActive(): boolean {
+    if (this.active && this.phase !== 'inactive') return true;
+    if (this.bloom.enabled && this.bloom.strength > 0.01) return true;
+    if (this.afterimage.enabled && (this.afterimage.uniforms.damp?.value ?? 0) > 0) return true;
+    return false;
+  }
+
+  /** Renderuje scenę bezpośrednio lub przez EffectComposer, gdy aktywny jest efekt. */
   render() {
-    this.composer.render();
+    if (this.isPostProcessingActive) {
+      this.composer.render();
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
   }
 
   /** Dopasowuje bufory post-processingu do nowego rozmiaru widoku. */
