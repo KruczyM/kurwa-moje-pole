@@ -54,7 +54,7 @@ describe('festivalInfrastructure', () => {
       washTaps: fakeGltf,
     };
 
-    const heightAt = (_x: number, _z: number) => 0.5;
+    const heightAt = () => 0.5;
     const instance = placeFestivalInfrastructure(parent, models, heightAt);
 
     expect(instance.roots.length).toBeGreaterThan(0);

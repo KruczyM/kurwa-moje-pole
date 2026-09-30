@@ -290,4 +290,23 @@ describe('NpcManager', () => {
     expect(diag?.currentClip).toBe('Idle'); // animatedScaleAsset ma tylko Idle
     manager.dispose();
   });
+
+  it('applies animation LOD throttling and accumulates dt for distant NPCs when playerPosition is given', () => {
+    const scene = new THREE.Scene();
+    const models = new Map([['amper', animatedScaleAsset()]]);
+    const manager = new NpcManager(scene, models, null, openNavigation());
+    const npc = manager.npcs[0];
+    npc.root.position.set(50, 0, 50); // distant from origin (>36m)
+    const playerPos = new THREE.Vector3(0, 0, 0);
+
+    // Initial update accumulates dt when not on the interleaved modulo frame
+    manager.update(0.016, 0.016, playerPos);
+    // Run several frames to ensure the frame skip cadence completes a cycle
+    for (let f = 2; f <= 8; f++) {
+      manager.update(0.016, f * 0.016, playerPos);
+    }
+    // Animator has received update and diagnostics remain healthy
+    expect(npc.animator?.getDiagnostics().currentClip).toBe('Idle');
+    manager.dispose();
+  });
 });

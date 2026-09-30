@@ -34,7 +34,6 @@ export class FestivalStageEffects {
     // 6 moving head spot beams suspended from front stage roof truss
     const numSpots = 6;
     const trussY = config.stageY + 15.5;
-    const stageFacing = config.stageRotationY; // -Math.PI / 2 faces -X
 
     const colors = [
       0x06b6d4, // Cyan

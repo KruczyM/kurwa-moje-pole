@@ -33,6 +33,7 @@ export type Npc = {
   activityCooldown: number;
   isCampMember: boolean;
   festivalRole?: 'stage_dancer' | 'asp_listener' | 'food_queue' | 'chiller' | 'walker';
+  animLodAccumulator: number;
 };
 const CAMP_RADIUS = 13;
 const SPEAKER_POSITION = { x: -1.45, z: 0.65 };
@@ -58,6 +59,7 @@ export class NpcManager {
   speakerAnchor: THREE.Object3D | null = null;
   private disposed = false;
   private readonly ids = new Set<string>();
+  private updateFrameIndex = 0;
   constructor(
     private readonly scene: THREE.Scene,
     models: Map<string, GLTF>,
@@ -207,6 +209,7 @@ export class NpcManager {
       activityCooldown: 8 + (index % 19),
       isCampMember,
       festivalRole,
+      animLodAccumulator: 0,
     };
     npc.target.copy(root.position);
     this.npcs.push(npc);
@@ -455,23 +458,67 @@ export class NpcManager {
     npc.animator?.update(deltaTime);
   }
 
+  /** Aktualizuje animację NPC z adaptacyjnym LOD dystansowym i przeplataniem klatek dla tłumu. */
+  private stepNpcAnimation(
+    npc: Npc,
+    dt: number,
+    playerPosition?: THREE.Vector3,
+    index = 0,
+    isActivity = false,
+  ) {
+    if (!npc.animator) return;
+    if (!playerPosition) {
+      if (isActivity) npc.animator.update(dt);
+      else this.updateAnimation(npc, dt);
+      return;
+    }
+
+    const distSq = npc.root.position.distanceToSquared(playerPosition);
+    let frameSkip = 1;
+    if (distSq > 75 * 75) {
+      frameSkip = 8;
+    } else if (distSq > 36 * 36) {
+      frameSkip = 4;
+    } else if (distSq > 16 * 16) {
+      frameSkip = 2;
+    }
+
+    if (frameSkip === 1) {
+      const totalDt = npc.animLodAccumulator + dt;
+      npc.animLodAccumulator = 0;
+      if (isActivity) npc.animator.update(totalDt);
+      else this.updateAnimation(npc, totalDt);
+      return;
+    }
+
+    npc.animLodAccumulator += dt;
+    if ((this.updateFrameIndex + index) % frameSkip === 0) {
+      const totalDt = npc.animLodAccumulator;
+      npc.animLodAccumulator = 0;
+      if (isActivity) npc.animator.update(totalDt);
+      else this.updateAnimation(npc, totalDt);
+    }
+  }
+
   /** Aktualizuje decyzje ruchu, obrót, powroty od granicy i płynne animacje NPC. */
   update(dt: number, _time: number, playerPosition?: THREE.Vector3) {
     if (!Number.isFinite(dt) || dt <= 0) return;
+    this.updateFrameIndex++;
     const snapshots = this.npcs.map((npc) => ({
       npc,
       position: npc.root.position.clone(),
       velocity: npc.velocity.clone(),
     }));
     let socialCount = this.npcs.filter((npc) => npc.behavior.state === 'social').length;
-    for (const npc of this.npcs) {
+    for (let index = 0; index < this.npcs.length; index++) {
+      const npc = this.npcs[index];
       npc.activityCooldown = Math.max(0, npc.activityCooldown - dt);
       if (npc.animator?.activityActive) {
         npc.speed = 0;
         npc.velocity.set(0, 0, 0);
         npc.stationary = true;
         npc.watchdog.resetPosition(npc.root.position);
-        npc.animator.update(dt);
+        this.stepNpcAnimation(npc, dt, playerPosition, index, true);
         continue;
       }
       const nearEdge =
@@ -613,7 +660,7 @@ export class NpcManager {
         npc.target,
       );
       if (recoveryAction) this.applyWatchdogRecovery(npc, recoveryAction);
-      this.updateAnimation(npc, dt);
+      this.stepNpcAnimation(npc, dt, playerPosition, index, false);
     }
   }
 
