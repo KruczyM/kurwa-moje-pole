@@ -1,0 +1,579 @@
+import * as THREE from 'three';
+import { NpcManager } from './NpcManager';
+import { NpcAiAgent, type NpcDialogueResponse, type NpcVoiceSettings } from './NpcAiAgent';
+import { geminiNpcService } from './GeminiNpcService';
+
+export function cleanTextForSpeech(text: string): string {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*[^*]+\*/g, '')
+    .replace(/[_~`#]/g, '')
+    .replace(/\([^\)]*\)/g, '')
+    .replace(/\[[^\]]*\]/g, '')
+    .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Deklaracje typów Web Speech API dla TypeScript:
+interface SpeechRecognitionEventLike extends Event {
+  results: {
+    length: number;
+    [index: number]: {
+      isFinal: boolean;
+      [index: number]: {
+        transcript: string;
+      };
+    };
+  };
+}
+
+interface SpeechRecognitionErrorEventLike extends Event {
+  error: string;
+  message?: string;
+}
+
+interface SpeechRecognitionLike extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onstart: ((this: SpeechRecognitionLike, ev: Event) => void) | null;
+  onend: ((this: SpeechRecognitionLike, ev: Event) => void) | null;
+  onerror: ((this: SpeechRecognitionLike, ev: SpeechRecognitionErrorEventLike) => void) | null;
+  onresult: ((this: SpeechRecognitionLike, ev: SpeechRecognitionEventLike) => void) | null;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition?: new () => SpeechRecognitionLike;
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+  }
+}
+
+export type VoiceCoordinatorStatus =
+  | 'idle'
+  | 'listening'
+  | 'processing'
+  | 'speaking'
+  | 'unsupported'
+  | 'error';
+
+export interface NpcVoiceCoordinatorOptions {
+  dialogRoot?: HTMLElement;
+  nameElement?: HTMLElement;
+  textElement?: HTMLElement;
+  voiceStatusElement?: HTMLElement;
+  textInputElement?: HTMLInputElement;
+  sendButton?: HTMLButtonElement;
+  micButton?: HTMLButtonElement;
+  replayButton?: HTMLButtonElement;
+  geminiButton?: HTMLButtonElement;
+  geminiConfigElement?: HTMLElement;
+  geminiInputElement?: HTMLInputElement;
+  geminiSaveButton?: HTMLButtonElement;
+  geminiClearButton?: HTMLButtonElement;
+  geminiCloseButton?: HTMLButtonElement;
+  geminiStatusElement?: HTMLElement;
+  onStatusChange?: (status: VoiceCoordinatorStatus, message?: string) => void;
+}
+
+export class NpcVoiceCoordinator {
+  private currentNpcName?: string;
+  private recognition?: SpeechRecognitionLike;
+  private currentUtterance?: SpeechSynthesisUtterance;
+  private status: VoiceCoordinatorStatus = 'idle';
+  private listeningActive = false;
+  private disposed = false;
+
+  private voices: SpeechSynthesisVoice[] = [];
+  private readonly activeUtterances = new Set<SpeechSynthesisUtterance>();
+  private lastSpokenText = '';
+  private lastSpokenVoiceSettings: NpcVoiceSettings = { pitch: 1, rate: 1, volume: 1 };
+  private ttsEnabled = true;
+
+  private readonly dialogRoot?: HTMLElement;
+  private readonly nameElement?: HTMLElement;
+  private readonly textElement?: HTMLElement;
+  private readonly voiceStatusElement?: HTMLElement;
+  private readonly textInputElement?: HTMLInputElement;
+  private readonly sendButton?: HTMLButtonElement;
+  private readonly micButton?: HTMLButtonElement;
+  private readonly replayButton?: HTMLButtonElement;
+  private readonly geminiButton?: HTMLButtonElement;
+  private readonly geminiConfigElement?: HTMLElement;
+  private readonly geminiInputElement?: HTMLInputElement;
+  private readonly geminiSaveButton?: HTMLButtonElement;
+  private readonly geminiClearButton?: HTMLButtonElement;
+  private readonly geminiCloseButton?: HTMLButtonElement;
+  private readonly geminiStatusElement?: HTMLElement;
+  private readonly onStatusChange?: (status: VoiceCoordinatorStatus, message?: string) => void;
+
+  constructor(
+    private readonly npcManager: NpcManager,
+    options: NpcVoiceCoordinatorOptions = {},
+  ) {
+    this.dialogRoot = options.dialogRoot;
+    this.nameElement = options.nameElement;
+    this.textElement = options.textElement;
+    this.voiceStatusElement = options.voiceStatusElement;
+    this.textInputElement = options.textInputElement;
+    this.sendButton = options.sendButton;
+    this.micButton = options.micButton;
+    this.replayButton = options.replayButton;
+    this.geminiButton = options.geminiButton;
+    this.geminiConfigElement = options.geminiConfigElement;
+    this.geminiInputElement = options.geminiInputElement;
+    this.geminiSaveButton = options.geminiSaveButton;
+    this.geminiClearButton = options.geminiClearButton;
+    this.geminiCloseButton = options.geminiCloseButton;
+    this.geminiStatusElement = options.geminiStatusElement;
+    this.onStatusChange = options.onStatusChange;
+
+    this.initSpeechSynthesis();
+    this.initSpeechRecognition();
+    this.bindUiEvents();
+  }
+
+  private initSpeechSynthesis(): void {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    const loadVoices = () => {
+      this.voices = window.speechSynthesis.getVoices();
+    };
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }
+
+  private initSpeechRecognition(): void {
+    if (typeof window === 'undefined') return;
+
+    const SpeechRecConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecConstructor) {
+      this.setStatus('unsupported', 'Brak wsparcia rozpoznawania mowy w tej przeglądarce.');
+      return;
+    }
+
+    try {
+      this.recognition = new SpeechRecConstructor();
+      this.recognition.lang = 'pl-PL';
+      this.recognition.continuous = false;
+      this.recognition.interimResults = true;
+
+      this.recognition.onstart = () => {
+        this.listeningActive = true;
+        this.setStatus('listening', '🎤 Słucham... Mów do mikrofonu');
+      };
+
+      this.recognition.onresult = (event: SpeechRecognitionEventLike) => {
+        if (!event.results || event.results.length === 0) return;
+        const lastResult = event.results[event.results.length - 1];
+        const transcript = lastResult[0]?.transcript?.trim() || '';
+
+        if (lastResult.isFinal) {
+          if (this.textInputElement) {
+            this.textInputElement.value = transcript;
+          }
+          this.submitSpeechInput(transcript);
+        } else {
+          // Wyświetlanie rozpoznawanego tekstu na żywo w czasie mówienia:
+          if (this.voiceStatusElement) {
+            this.voiceStatusElement.textContent = `🎤 Słyszę: "${transcript}"...`;
+          }
+        }
+      };
+
+      this.recognition.onerror = (err: SpeechRecognitionErrorEventLike) => {
+        this.listeningActive = false;
+        // Błąd 'no-speech' oznacza po prostu ciszę:
+        if (err.error === 'no-speech') {
+          this.setStatus('idle', '🎤 Dotknij "Mów" lub wpisz tekst, aby kontynuować');
+        } else if (err.error === 'not-allowed') {
+          this.setStatus('error', 'Odmowa dostępu do mikrofonu (użyj wpisywania tekstu).');
+        } else {
+          this.setStatus('idle', `Mikrofon: ${err.error || 'błąd'}`);
+        }
+      };
+
+      this.recognition.onend = () => {
+        this.listeningActive = false;
+        if (this.status === 'listening') {
+          this.setStatus('idle', '🎤 Dotknij "Mów" lub wpisz tekst');
+        }
+      };
+    } catch {
+      this.setStatus('unsupported', 'Nie udało się zainicjalizować modułu rozpoznawania mowy.');
+    }
+  }
+
+  private bindUiEvents(): void {
+    if (this.sendButton && this.textInputElement) {
+      this.sendButton.onclick = () => {
+        const text = this.textInputElement?.value.trim();
+        if (text) {
+          void this.submitSpeechInput(text);
+          if (this.textInputElement) this.textInputElement.value = '';
+        }
+      };
+
+      this.textInputElement.onkeydown = (e: KeyboardEvent) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.sendButton?.click();
+        }
+      };
+    }
+
+    if (this.micButton) {
+      this.micButton.onclick = () => {
+        if (this.listeningActive) {
+          this.stopListening();
+        } else {
+          this.startListening();
+        }
+      };
+    }
+
+    if (this.replayButton) {
+      this.replayButton.onclick = () => {
+        this.replayLastSpeech();
+      };
+    }
+
+    if (this.geminiButton && this.geminiConfigElement) {
+      this.geminiButton.onclick = () => {
+        const isHidden =
+          this.geminiConfigElement!.hasAttribute('hidden') ||
+          this.geminiConfigElement!.style.display === 'none';
+        if (isHidden) {
+          this.openGeminiConfig();
+        } else {
+          this.closeGeminiConfig();
+        }
+      };
+    }
+
+    if (this.geminiCloseButton) {
+      this.geminiCloseButton.onclick = () => {
+        this.closeGeminiConfig();
+      };
+    }
+
+    if (this.geminiSaveButton && this.geminiInputElement) {
+      this.geminiSaveButton.onclick = () => {
+        const val = this.geminiInputElement!.value.trim();
+        if (val) {
+          if (val.includes('...')) {
+            this.setGeminiStatus('Klucz jest już zapisany.');
+            return;
+          }
+          geminiNpcService.setApiKey(val);
+          this.geminiInputElement!.value = geminiNpcService.getMaskedApiKey();
+          this.setGeminiStatus('✓ Klucz zapisany w pamięci przeglądarki.');
+          this.updateGeminiIndicator();
+        } else {
+          this.setGeminiStatus('Wprowadź poprawny klucz Gemini API.');
+        }
+      };
+    }
+
+    if (this.geminiClearButton) {
+      this.geminiClearButton.onclick = () => {
+        geminiNpcService.setApiKey('');
+        if (this.geminiInputElement) this.geminiInputElement.value = '';
+        this.setGeminiStatus('Klucz usunięty. Aktywny wbudowany fallback.');
+        this.updateGeminiIndicator();
+      };
+    }
+
+    this.updateGeminiIndicator();
+  }
+
+  openGeminiConfig(): void {
+    if (!this.geminiConfigElement) return;
+    this.geminiConfigElement.removeAttribute('hidden');
+    this.geminiConfigElement.style.display = 'block';
+    if (this.geminiInputElement) {
+      this.geminiInputElement.value = geminiNpcService.getApiKey()
+        ? geminiNpcService.getMaskedApiKey()
+        : '';
+    }
+    if (geminiNpcService.hasApiKey()) {
+      this.setGeminiStatus('✓ Klucz aktywny (zapisany lokalnie)');
+    } else {
+      this.setGeminiStatus('Brak klucza (używany jest wbudowany model lokalny)');
+    }
+  }
+
+  closeGeminiConfig(): void {
+    if (!this.geminiConfigElement) return;
+    this.geminiConfigElement.setAttribute('hidden', '');
+    this.geminiConfigElement.style.display = 'none';
+  }
+
+  private setGeminiStatus(msg: string): void {
+    if (this.geminiStatusElement) {
+      this.geminiStatusElement.textContent = msg;
+    }
+  }
+
+  private updateGeminiIndicator(): void {
+    if (this.geminiButton) {
+      if (geminiNpcService.hasApiKey()) {
+        this.geminiButton.classList.add('has-gemini');
+        this.geminiButton.title = 'Gemini AI aktywny (kliknij, aby zmienić klucz)';
+      } else {
+        this.geminiButton.classList.remove('has-gemini');
+        this.geminiButton.title = 'Konfiguracja klucza Gemini AI';
+      }
+    }
+  }
+
+  /**
+   * Otwiera interakcję z wybranym botem NPC, zatrzymuje jego ruch i zwraca go ku graczowi.
+   */
+  startConversation(npcName: string, playerPosition?: THREE.Vector3): void {
+    this.currentNpcName = npcName;
+    this.updateGeminiIndicator();
+
+    // 1. Zatrzymanie ruchu bota i obrót ku graczowi:
+    const npc = this.npcManager.pauseNpcForConversation(npcName, playerPosition);
+
+    // 2. Prezentacja w UI:
+    const persona = NpcAiAgent.getPersona(npcName);
+    if (this.nameElement) {
+      this.nameElement.textContent = `${persona.name} · ${persona.title}`;
+    }
+
+    const initialLine =
+      npc?.line && npc.line.length > 0
+        ? npc.line[Math.floor(Math.random() * npc.line.length)]
+        : (persona.greetings && persona.greetings.length > 0
+            ? persona.greetings[Math.floor(Math.random() * persona.greetings.length)]
+            : 'Siemanko! Czym mogę służyć na naszym polu?');
+
+    if (this.textElement) {
+      this.textElement.textContent = initialLine;
+    }
+
+    // 3. Wypowiedzenie linii powitalnej przez syntezator mowy:
+    this.speakText(initialLine, persona.voiceSettings, () => {
+      // Po wypowiedzeniu powitania automatycznie uruchom nasłuchiwanie mikrofonu:
+      this.startListening();
+    });
+  }
+
+  /**
+   * Zatrzymuje nasłuchiwanie oraz syntezę i wznawia naturalne poruszanie się NPC.
+   */
+  endConversation(): void {
+    this.stopListening();
+    this.cancelSpeaking();
+    this.closeGeminiConfig();
+
+    if (this.currentNpcName) {
+      this.npcManager.resumeNpcAfterConversation(this.currentNpcName, 2.0);
+      this.currentNpcName = undefined;
+    }
+
+    this.setStatus('idle');
+  }
+
+  /**
+   * Uruchamia nasłuchiwanie mowy przez mikrofon.
+   */
+  startListening(): boolean {
+    if (!this.recognition) return false;
+    if (this.listeningActive) return true;
+
+    // Zatrzymujemy mowę bota, gdy gracz zaczyna mówić:
+    this.cancelSpeaking();
+
+    try {
+      this.recognition.start();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Zatrzymuje nasłuchiwanie mikrofonu.
+   */
+  stopListening(): void {
+    if (this.recognition && this.listeningActive) {
+      try {
+        this.recognition.stop();
+      } catch {
+        // Ignorujemy błędy zatrzymania
+      }
+    }
+    this.listeningActive = false;
+  }
+
+  /**
+   * Przetwarza wejściowy tekst (z mowy lub formularza) przez AI Agenta / Gemini API i odtwarza odpowiedź TTS.
+   */
+  async submitSpeechInput(input: string): Promise<void> {
+    if (!this.currentNpcName || !input.trim()) return;
+
+    this.stopListening();
+    const isGemini = geminiNpcService.hasApiKey();
+    this.setStatus(
+      'processing',
+      isGemini ? '🤖 Gemini AI generuje odpowiedź...' : '🤖 NPC myśli nad odpowiedzią...'
+    );
+
+    // 1. Wygenerowanie odpowiedzi przez GeminiNpcService (z fallbackiem do NpcAiAgent):
+    const response = await geminiNpcService.generateResponse(this.currentNpcName, input);
+    const persona = NpcAiAgent.getPersona(this.currentNpcName);
+
+    // 2. Wyświetlenie odpowiedzi w oknie dialogu:
+    if (this.textElement) {
+      const badge =
+        response.source === 'gemini'
+          ? '<span class="gemini-tag" title="Odpowiedź z modelu Gemini AI">⚡ Gemini AI</span>'
+          : '';
+      this.textElement.innerHTML = `<strong>Ty:</strong> "${escapeHtml(input)}"<br/><br/><strong>${escapeHtml(this.currentNpcName)}:</strong> ${escapeHtml(response.text)} ${badge}`;
+    }
+
+    // 3. Wypowiedzenie odpowiedzi przez syntezator mowy (TTS):
+    this.speakText(response.text, persona.voiceSettings, () => {
+      this.setStatus('idle', '🎤 Gotowy na kolejne pytanie. Dotknij "Mów" lub wpisz tekst.');
+    });
+  }
+
+  /**
+   * Odtwarza tekst za pomocą syntezatora głosu (Web SpeechSynthesis) z dopasowaną barwą głosu postaci.
+   */
+  speakText(text: string, voiceSettings: NpcVoiceSettings, onComplete?: () => void): void {
+    this.lastSpokenText = text;
+    this.lastSpokenVoiceSettings = voiceSettings;
+
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      onComplete?.();
+      return;
+    }
+
+    const cleanedText = cleanTextForSpeech(text);
+    if (!cleanedText) {
+      onComplete?.();
+      return;
+    }
+
+    this.cancelSpeaking();
+
+    try {
+      window.speechSynthesis.resume();
+    } catch {
+      // Ignorujemy błędy wznawiania audio context
+    }
+
+    const utterance = new SpeechSynthesisUtterance(cleanedText);
+    utterance.lang = 'pl-PL';
+    utterance.pitch = Math.max(0.5, Math.min(2.0, voiceSettings.pitch ?? 1.0));
+    utterance.rate = Math.max(0.6, Math.min(1.8, voiceSettings.rate ?? 1.0));
+    utterance.volume = Math.max(0.1, Math.min(1.0, voiceSettings.volume ?? 1.0));
+
+    // Próba wybrania głosu polskiego z zainstalowanych w przeglądarce:
+    const voices = this.voices.length > 0 ? this.voices : window.speechSynthesis.getVoices();
+    const polishVoice = voices.find(
+      (v) => v.lang.startsWith('pl') || v.lang.toLowerCase().includes('pl')
+    );
+    if (polishVoice) {
+      utterance.voice = polishVoice;
+    }
+
+    this.activeUtterances.add(utterance);
+
+    utterance.onstart = () => {
+      this.setStatus('speaking', `🗣️ ${this.currentNpcName || 'NPC'} mówi...`);
+    };
+
+    const cleanup = () => {
+      this.activeUtterances.delete(utterance);
+      if (this.currentUtterance === utterance) {
+        this.currentUtterance = undefined;
+      }
+      onComplete?.();
+    };
+
+    utterance.onend = cleanup;
+    utterance.onerror = () => {
+      cleanup();
+    };
+
+    this.currentUtterance = utterance;
+
+    // Krótkie opóźnienie przed speak() zapobiega bugowi Blink/Chrome, gdzie cancel() natychmiast anuluje nową wypowiedź:
+    setTimeout(() => {
+      if (!this.disposed && typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.speak(utterance);
+      }
+    }, 30);
+  }
+
+  /**
+   * Powtarza ostatnią wypowiedź bota.
+   */
+  replayLastSpeech(): void {
+    if (this.lastSpokenText) {
+      this.speakText(this.lastSpokenText, this.lastSpokenVoiceSettings);
+    }
+  }
+
+  /**
+   * Natychmiast przerywa trwające wypowiedzi syntezatora.
+   */
+  cancelSpeaking(): void {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        // Ignorujemy błędy przerwania
+      }
+    }
+    this.activeUtterances.clear();
+    this.currentUtterance = undefined;
+  }
+
+  private setStatus(status: VoiceCoordinatorStatus, message?: string): void {
+    this.status = status;
+    if (this.voiceStatusElement && message) {
+      this.voiceStatusElement.textContent = message;
+    }
+    this.onStatusChange?.(status, message);
+  }
+
+  getStatus(): VoiceCoordinatorStatus {
+    return this.status;
+  }
+
+  getCurrentNpcName(): string | undefined {
+    return this.currentNpcName;
+  }
+
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.endConversation();
+    if (this.recognition) {
+      try {
+        this.recognition.abort();
+      } catch {
+        // ignore
+      }
+      this.recognition = undefined;
+    }
+  }
+}

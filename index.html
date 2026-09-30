@@ -179,7 +179,29 @@
       <section id="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-name" hidden>
         <div class="dialog-header">
           <h2 id="dialog-name"></h2>
+          <div class="dialog-header-actions">
+            <button id="dialog-replay-btn" type="button" class="dialog-btn-small" title="Odtwórz odpowiedź głosem (syntezator mowy)">🔊 Powtórz</button>
+            <button id="dialog-gemini-btn" type="button" class="dialog-btn-small" title="Konfiguracja klucza Gemini AI">⚙️ Gemini</button>
+          </div>
           <span id="dialog-voice-status" class="dialog-voice-status">🎤 Gotowy do rozmowy</span>
+        </div>
+        <div id="dialog-gemini-config" class="dialog-gemini-config" hidden>
+          <div class="dialog-gemini-title-row">
+            <strong>🤖 Klucz Gemini API (Osobowości AI)</strong>
+            <button id="dialog-gemini-close-btn" type="button" class="dialog-close-mini" aria-label="Zamknij panel Gemini">✕</button>
+          </div>
+          <p class="dialog-gemini-desc">Podaj swój klucz do Gemini API. Każda postać zyska unikalną, dynamiczną inteligencję festiwalową!</p>
+          <div class="dialog-gemini-row">
+            <input
+              id="dialog-gemini-key-input"
+              type="password"
+              placeholder="Wklej klucz API (AIzaSy...)"
+              autocomplete="off"
+            />
+            <button id="dialog-gemini-save-btn" type="button">Zapisz</button>
+            <button id="dialog-gemini-clear-btn" type="button">Usuń</button>
+          </div>
+          <small id="dialog-gemini-status" class="dialog-gemini-status"></small>
         </div>
         <div id="dialog-transcript" class="dialog-transcript">
           <p id="dialog-text"></p>

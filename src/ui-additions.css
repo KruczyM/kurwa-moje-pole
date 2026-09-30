@@ -335,3 +335,117 @@
   background: rgba(157, 255, 78, 0.3);
 }
 
+.dialog-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dialog-btn-small {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #f1edfa;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.dialog-btn-small:hover {
+  background: rgba(157, 255, 78, 0.2);
+  border-color: #9dff4e;
+  color: #9dff4e;
+}
+.dialog-gemini-config {
+  background: rgba(15, 12, 26, 0.95);
+  border: 1px solid rgba(255, 227, 77, 0.5);
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.dialog-gemini-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #ffe34d;
+}
+.dialog-close-mini {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.dialog-close-mini:hover {
+  color: #fff;
+}
+.dialog-gemini-desc {
+  margin: 0;
+  font-size: 11px;
+  color: #c9c3d4;
+  line-height: 1.4;
+}
+.dialog-gemini-row {
+  display: flex;
+  gap: 6px;
+}
+#dialog-gemini-key-input {
+  flex: 1;
+  background: #090710;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  outline: none;
+}
+#dialog-gemini-key-input:focus {
+  border-color: #ffe34d;
+}
+#dialog-gemini-save-btn, #dialog-gemini-clear-btn {
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 4px;
+  cursor: pointer;
+}
+#dialog-gemini-save-btn {
+  background: #ffe34d;
+  border: 1px solid #ffe34d;
+  color: #1a1726;
+}
+#dialog-gemini-save-btn:hover {
+  background: #fff;
+}
+#dialog-gemini-clear-btn {
+  background: rgba(255, 80, 80, 0.15);
+  border: 1px solid #ff5050;
+  color: #ff8585;
+}
+#dialog-gemini-clear-btn:hover {
+  background: rgba(255, 80, 80, 0.3);
+}
+.dialog-gemini-status {
+  font-size: 11px;
+  color: #9dff4e;
+}
+.gemini-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #ffe34d;
+  background: rgba(255, 227, 77, 0.15);
+  border: 1px solid rgba(255, 227, 77, 0.4);
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+

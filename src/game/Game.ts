@@ -285,6 +285,14 @@ export class Game {
         textInputElement: document.querySelector('#dialog-text-input') as HTMLInputElement | undefined,
         sendButton: document.querySelector('#dialog-send-btn') as HTMLButtonElement | undefined,
         micButton: document.querySelector('#dialog-mic-btn') as HTMLButtonElement | undefined,
+        replayButton: document.querySelector('#dialog-replay-btn') as HTMLButtonElement | undefined,
+        geminiButton: document.querySelector('#dialog-gemini-btn') as HTMLButtonElement | undefined,
+        geminiConfigElement: document.querySelector('#dialog-gemini-config') as HTMLElement | undefined,
+        geminiInputElement: document.querySelector('#dialog-gemini-key-input') as HTMLInputElement | undefined,
+        geminiSaveButton: document.querySelector('#dialog-gemini-save-btn') as HTMLButtonElement | undefined,
+        geminiClearButton: document.querySelector('#dialog-gemini-clear-btn') as HTMLButtonElement | undefined,
+        geminiCloseButton: document.querySelector('#dialog-gemini-close-btn') as HTMLButtonElement | undefined,
+        geminiStatusElement: document.querySelector('#dialog-gemini-status') as HTMLElement | undefined,
       });
 
       this.startLoop();
