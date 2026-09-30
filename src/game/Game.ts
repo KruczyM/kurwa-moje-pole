@@ -14,11 +14,10 @@ import { SpeakerAudio } from './audio/SpeakerAudio';
 import { CampAmbientAudio } from './audio/CampAmbientAudio';
 import { GrzybekWaterAudio } from './audio/GrzybekWaterAudio';
 import { InspectableItemId, itemById } from './interactions/itemConfig';
-import { itemPresentation } from './interactions/itemPresentationConfig';
-import { centerInspectModel, inspectCameraDistance } from './interactions/inspectPresentation';
+import { ItemInspectController } from './interactions/ItemInspectController';
 import { AppState, AppStateMachine, escapeTarget } from './lifecycle/AppStateMachine';
 import { EventScope } from './lifecycle/EventScope';
-import { cloneDisposableModel, disposeObjectTree } from './lifecycle/disposeThree';
+import { disposeObjectTree } from './lifecycle/disposeThree';
 import { AnimationLoop } from './lifecycle/AnimationLoop';
 import { MushroomWireframeEffect } from './effects/MushroomWireframeEffect';
 import { MatrixRainOverlay } from './effects/MatrixRainOverlay';
@@ -28,7 +27,6 @@ import { VoiceReactionManager } from './audio/VoiceReactionManager';
 import { POINTER_LOCK_ESCAPE_SUPPRESSION_MS, PointerLockPauseGate } from './lifecycle/PointerLockPauseGate';
 import { controlHintForState, interactionControlHint, resolveGameInput } from './lifecycle/InputBindings';
 import { ConsumableInventory } from './inventory/ConsumableInventory';
-import { InspectControls } from './interactions/InspectControls';
 import { ItemUseSequence } from './interactions/ItemUseSequence';
 import { itemUseSequenceConfig } from './interactions/itemUseSequenceConfig';
 import { SeatController, type SeatPose } from './interactions/SeatController';
@@ -101,14 +99,9 @@ export class Game {
     return this.settingsService.audio;
   }
   private propModels = new Map<string, THREE.Object3D>();
-  private inspectRenderer?: THREE.WebGLRenderer;
-  private inspectScene?: THREE.Scene;
-  private inspectCamera?: THREE.PerspectiveCamera;
-  private inspectModel?: THREE.Object3D;
-  private inspectPivot?: THREE.Group;
-  private inspectControls?: InspectControls;
-  private inspectCameraBaseDistance = 1;
-  private inspectId?: string;
+  private readonly inspectController = new ItemInspectController({
+    getPropModel: (id) => this.propModels.get(id),
+  });
   readonly ui = new UIManager();
   private events = new EventScope();
   private unsubscribeState: () => void;
@@ -340,7 +333,7 @@ export class Game {
     if (this.state.current === 'seated') this.seatController?.stop();
     if (this.state.current === 'inspecting') {
       this.voiceReactions.playInspectCancel();
-      this.finishInspect();
+      this.inspectController.close();
     }
     if (this.state.current === 'using-item') {
       this.useSequence?.cancel();
@@ -490,92 +483,36 @@ export class Game {
       item.description,
       controlHintForState('inspecting', this.mobileInput ? 'mobile' : 'desktop'),
     );
-    this.createInspectScene(id);
+    this.inspectController.show(id);
     this.state.transition('inspecting');
     this.voiceReactions.playInspectEnter();
-  }
-
-  /** Tworzy osobną, małą scenę podglądu z naturalną orientacją źródłowego modelu. */
-  private createInspectScene(id: string) {
-    this.clearInspectModel();
-    if (!this.inspectRenderer || !this.inspectScene || !this.inspectCamera) {
-      const canvas = qs<HTMLCanvasElement>('#inspect-canvas');
-      this.inspectRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-      this.inspectRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-      configureColorPipeline(this.inspectRenderer, 'itemInspect');
-      this.inspectScene = new THREE.Scene();
-      this.inspectScene.background = new THREE.Color(0x09070f);
-      this.inspectCamera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
-      this.inspectScene.add(new THREE.HemisphereLight(0xbdd8ff, 0x241630, 2.2));
-      const light = new THREE.DirectionalLight(0xffffff, 2.5);
-      light.position.set(2, 3, 3);
-      this.inspectScene.add(light);
-      this.inspectControls = new InspectControls(canvas);
-    }
-    this.inspectControls?.reset();
-    const source = this.propModels.get(id);
-    this.inspectModel = source
-      ? cloneDisposableModel(source)
-      : new THREE.Mesh(
-          new THREE.IcosahedronGeometry(0.5),
-          new THREE.MeshStandardMaterial({ color: 0xa8e04a }),
-        );
-    const presentation = itemPresentation[id as InspectableItemId];
-    this.inspectModel.rotation.set(...presentation.inspectRotation);
-    const box = new THREE.Box3().setFromObject(this.inspectModel);
-    const dimensions = box.getSize(new THREE.Vector3());
-    this.inspectModel.scale.setScalar(
-      presentation.inspectSize / Math.max(0.01, dimensions.x, dimensions.y, dimensions.z),
-    );
-    const centered = centerInspectModel(this.inspectModel, presentation.inspectOffsetY);
-    this.inspectPivot = centered.pivot;
-    this.inspectScene.add(this.inspectPivot);
-    this.inspectId = id;
-    this.resizeInspectPreview();
-  }
-
-  /** Dopasowuje renderer i kamerę tak, aby obracany model zawsze mieścił się w canvasie. */
-  private resizeInspectPreview() {
-    if (!this.inspectRenderer || !this.inspectCamera || !this.inspectPivot) return;
-    const canvas = qs<HTMLCanvasElement>('#inspect-canvas');
-    const width = Math.max(1, Math.round(canvas.clientWidth || 360));
-    const height = Math.max(1, Math.round(canvas.clientHeight || 280));
-    this.inspectRenderer.setSize(width, height, false);
-    this.inspectCamera.aspect = width / height;
-    this.inspectCamera.updateProjectionMatrix();
-    this.inspectPivot.updateMatrixWorld(true);
-    const bounds = new THREE.Box3().setFromObject(this.inspectPivot);
-    this.inspectCameraBaseDistance = inspectCameraDistance(
-      bounds,
-      this.inspectCamera.aspect,
-      this.inspectCamera.fov,
-    );
-    this.inspectCamera.position.set(0, 0, this.inspectCameraBaseDistance);
-    this.inspectCamera.lookAt(0, 0, 0);
   }
 
   /** Zamyka inspekcję bez użycia przedmiotu. */
   closeInspect() {
     if (this.state.current === 'inspecting') this.closeCurrentState('playing');
   }
+
   /** Kończy inspekcję i uruchamia efekt przypisany do przedmiotu. */
   acceptInspect() {
-    if (this.state.current !== 'inspecting' || !this.inspectId) return;
-    const item = itemById.get(this.inspectId as InspectableItemId);
+    const id = this.inspectController.activeItemId;
+    if (this.state.current !== 'inspecting' || !id) return;
+    const item = itemById.get(id as InspectableItemId);
     if (!item) return;
     if (!this.beginItemUse(item.effect, 'world', item.id)) return;
     this.interactions?.clear();
-    this.finishInspect();
+    this.inspectController.close();
   }
 
   /** Zabiera oglądany egzemplarz ze świata i dodaje go do pustego początkowo plecaka. */
   takeInspectedItem() {
-    if (this.state.current !== 'inspecting' || !this.inspectId) return;
-    const item = itemById.get(this.inspectId as InspectableItemId);
+    const id = this.inspectController.activeItemId;
+    if (this.state.current !== 'inspecting' || !id) return;
+    const item = itemById.get(id as InspectableItemId);
     if (!item || !this.world?.removeItem(item.id)) return;
     this.inventory.add(item.effect);
     this.interactions?.clear();
-    this.finishInspect();
+    this.inspectController.close();
     this.syncInventoryUi();
     this.state.transition('playing');
     this.toast(`${item.label}: dodano do ekwipunku`);
@@ -744,7 +681,7 @@ export class Game {
     } else if (document.pointerLockElement === this.canvas) document.exitPointerLock();
     if (state === 'inspecting') {
       requestAnimationFrame(() => {
-        if (!this.disposed && this.state.current === 'inspecting') this.resizeInspectPreview();
+        if (!this.disposed && this.state.current === 'inspecting') this.inspectController.resize();
       });
     }
     if (state !== 'playing') {
@@ -831,13 +768,8 @@ export class Game {
         matrixAlpha,
         this.settings.reduceMotion,
       );
-      if (state === 'inspecting' && this.inspectRenderer && this.inspectScene && this.inspectCamera) {
-        this.inspectControls?.update(dt);
-        if (this.inspectPivot && this.inspectControls) {
-          this.inspectPivot.rotation.set(this.inspectControls.pitch, this.inspectControls.yaw, 0);
-          this.inspectCamera.position.z = this.inspectCameraBaseDistance * this.inspectControls.distanceScale;
-        }
-        this.inspectRenderer.render(this.inspectScene, this.inspectCamera);
+      if (state === 'inspecting') {
+        this.inspectController.update(dt);
       }
     }
     if (state === 'paused' || state === 'error') {
@@ -895,36 +827,6 @@ export class Game {
     this.toast('Gotowe.');
   }
 
-  /** Usuwa wyłącznie bieżący model, pozostawiając renderer do ponownego użycia. */
-  private clearInspectModel() {
-    if (this.inspectPivot) {
-      this.inspectScene?.remove(this.inspectPivot);
-      disposeObjectTree(this.inspectPivot);
-    }
-    this.inspectModel = undefined;
-    this.inspectPivot = undefined;
-  }
-
-  /** Czyści identyfikator i zasoby klonu po każdej ścieżce zakończenia inspekcji. */
-  private finishInspect() {
-    this.inspectId = undefined;
-    this.clearInspectModel();
-  }
-
-  /** Zwalnia renderer, model, geometrie i materiały dopiero przy zamykaniu całej gry. */
-  private disposeInspectScene() {
-    this.clearInspectModel();
-    this.inspectControls?.dispose();
-    if (this.inspectScene) disposeObjectTree(this.inspectScene);
-    this.inspectRenderer?.dispose();
-    this.inspectRenderer = undefined;
-    this.inspectScene = undefined;
-    this.inspectCamera = undefined;
-    this.inspectControls = undefined;
-    this.inspectCameraBaseDistance = 1;
-    this.inspectId = undefined;
-  }
-
   /** Dopasowuje kamerę i postprocessing do aktualnego rozmiaru okna. */
   resize() {
     if (this.disposed) return;
@@ -933,7 +835,7 @@ export class Game {
     this.renderer.setSize(innerWidth, innerHeight);
     this.effects?.resize(innerWidth, innerHeight);
     this.matrixRain.resize(innerWidth, innerHeight);
-    if (this.state.current === 'inspecting') this.resizeInspectPreview();
+    if (this.state.current === 'inspecting') this.inspectController.resize();
   }
 
   /** Pokazuje krótką wiadomość HUD i odnawia jej czas wygaszenia. */
@@ -949,7 +851,7 @@ export class Game {
     this.ui.dispose();
     this.events.dispose();
     this.unsubscribeState();
-    this.disposeInspectScene();
+    this.inspectController.dispose();
     this.useSequence?.dispose();
     this.useSequence = undefined;
     this.seatController?.dispose();
