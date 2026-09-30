@@ -19,9 +19,11 @@ describe('GeminiNpcService', () => {
         delete mockStorage[key];
       },
     });
+    vi.stubEnv('VITE_GEMINI_API_KEY', '');
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });

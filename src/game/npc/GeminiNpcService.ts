@@ -98,9 +98,15 @@ export class GeminiNpcService {
     const identityDesc = persona.identity.join(' ');
     const loreKeys = Object.keys(persona.festivalLore || {}).slice(0, 4).join(', ');
 
+    const isFemale = persona.voiceSettings?.gender === 'female';
+    const genderInstruction = isFemale
+      ? "TWOJA PŁEĆ: KOBIETA. Wypowiadaj się gramatycznie w 1. osobie jako kobieta (używaj żeńskich końcówek czasu przeszłego i trybu przypuszczającego: 'byłam', 'widziałam', 'chciałabym', 'poszłam', 'zrobiłam', 'słyszałam')."
+      : "TWOJA PŁEĆ: MĘŻCZYZNA. Wypowiadaj się gramatycznie w 1. osobie jako mężczyzna (używaj męskich końcówek: 'byłem', 'widziałem', 'chciałbym', 'poszedłem', 'zrobiłem', 'słyszałem').";
+
     return `Jesteś postacią "${persona.name}" (${persona.title}) w grze "Kurwa Moje Pole", osadzonej w realiach festiwalu Pol'and'Rock (dawny Przystanek Woodstock) na dawnym pasie startowym lotniska Czaplinek-Broczyno w obozie "Kurwa Moje Pole".
 
 TWOJA OSOBOWOŚĆ I TOŻSAMOŚĆ:
+${genderInstruction}
 ${identityDesc}
 Twoje charakterystyczne hasła i styl: ${persona.genericCatchphrases.join(' ')}
 Przykładowy ton wypowiedzi: "${greetingsSample}"

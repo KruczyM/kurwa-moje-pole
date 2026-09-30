@@ -19,6 +19,7 @@ describe('NpcVoiceCoordinator', () => {
         delete mockStorage[key];
       },
     });
+    vi.stubEnv('VITE_GEMINI_API_KEY', '');
 
     testNpc = {
       root: new THREE.Group(),
@@ -79,6 +80,7 @@ describe('NpcVoiceCoordinator', () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -182,6 +184,52 @@ describe('NpcVoiceCoordinator', () => {
 
     coordinator.replayLastSpeech();
     expect(speakSpy).toHaveBeenCalledTimes(2);
+
+    coordinator.dispose();
+  });
+
+  it('selects female voice and applies higher pitch for female characters', () => {
+    let capturedUtterance: any;
+    const mockVoices = [
+      { name: 'Microsoft Adam - Polish', lang: 'pl-PL', voiceURI: 'adam' },
+      { name: 'Microsoft Paulina - Polish', lang: 'pl-PL', voiceURI: 'paulina' },
+    ];
+
+    vi.stubGlobal('SpeechSynthesisUtterance', class MockUtterance {
+      text: string;
+      lang = '';
+      pitch = 1.0;
+      rate = 1.0;
+      volume = 1.0;
+      voice: any;
+      onstart: any;
+      onend: any;
+      onerror: any;
+      constructor(text: string) {
+        this.text = text;
+        capturedUtterance = this;
+      }
+    });
+
+    vi.stubGlobal('speechSynthesis', {
+      speak: vi.fn(),
+      cancel: vi.fn(),
+      resume: vi.fn(),
+      getVoices: () => mockVoices,
+    });
+
+    const coordinator = new NpcVoiceCoordinator(npcManagerMock);
+
+    // Speak as female (Korba):
+    coordinator.speakText('Hejka!', { pitch: 1.3, rate: 1.1, volume: 1.0, gender: 'female' });
+    expect(capturedUtterance).toBeDefined();
+    expect(capturedUtterance.voice?.name).toBe('Microsoft Paulina - Polish');
+    expect(capturedUtterance.pitch).toBeGreaterThanOrEqual(1.24);
+
+    // Speak as male (Pień):
+    coordinator.speakText('Siemanko!', { pitch: 0.85, rate: 0.95, volume: 1.0, gender: 'male' });
+    expect(capturedUtterance.voice?.name).toBe('Microsoft Adam - Polish');
+    expect(capturedUtterance.pitch).toBeLessThanOrEqual(1.05);
 
     coordinator.dispose();
   });

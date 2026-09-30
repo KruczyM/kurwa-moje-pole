@@ -146,13 +146,34 @@ export class NpcVoiceCoordinator {
     this.bindUiEvents();
   }
 
+  private getSpeechSynthesis(): SpeechSynthesis | undefined {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      return window.speechSynthesis;
+    }
+    if (typeof globalThis !== 'undefined' && (globalThis as any).speechSynthesis) {
+      return (globalThis as any).speechSynthesis;
+    }
+    return undefined;
+  }
+
+  private getSpeechSynthesisUtterance(): (new (text?: string) => SpeechSynthesisUtterance) | undefined {
+    if (typeof window !== 'undefined' && (window as any).SpeechSynthesisUtterance) {
+      return (window as any).SpeechSynthesisUtterance;
+    }
+    if (typeof globalThis !== 'undefined' && (globalThis as any).SpeechSynthesisUtterance) {
+      return (globalThis as any).SpeechSynthesisUtterance;
+    }
+    return undefined;
+  }
+
   private initSpeechSynthesis(): void {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    const synth = this.getSpeechSynthesis();
+    if (!synth) return;
     const loadVoices = () => {
-      this.voices = window.speechSynthesis.getVoices();
+      this.voices = synth.getVoices();
     };
     loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
+    synth.onvoiceschanged = loadVoices;
   }
 
   private initSpeechRecognition(): void {
@@ -460,7 +481,9 @@ export class NpcVoiceCoordinator {
     this.lastSpokenText = text;
     this.lastSpokenVoiceSettings = voiceSettings;
 
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
+    const synth = this.getSpeechSynthesis();
+    const UtteranceConstructor = this.getSpeechSynthesisUtterance();
+    if (!synth || !UtteranceConstructor) {
       onComplete?.();
       return;
     }
@@ -474,24 +497,46 @@ export class NpcVoiceCoordinator {
     this.cancelSpeaking();
 
     try {
-      window.speechSynthesis.resume();
+      synth.resume();
     } catch {
       // Ignorujemy błędy wznawiania audio context
     }
 
-    const utterance = new SpeechSynthesisUtterance(cleanedText);
+    const utterance = new UtteranceConstructor(cleanedText);
     utterance.lang = 'pl-PL';
-    utterance.pitch = Math.max(0.5, Math.min(2.0, voiceSettings.pitch ?? 1.0));
     utterance.rate = Math.max(0.6, Math.min(1.8, voiceSettings.rate ?? 1.0));
     utterance.volume = Math.max(0.1, Math.min(1.0, voiceSettings.volume ?? 1.0));
 
-    // Próba wybrania głosu polskiego z zainstalowanych w przeglądarce:
-    const voices = this.voices.length > 0 ? this.voices : window.speechSynthesis.getVoices();
-    const polishVoice = voices.find(
+    // Wyszukanie głosów zainstalowanych w przeglądarce (z preferencją języka polskiego i płci postaci):
+    const voices = this.voices.length > 0 ? this.voices : synth.getVoices();
+    const polishVoices = voices.filter(
       (v) => v.lang.startsWith('pl') || v.lang.toLowerCase().includes('pl')
     );
-    if (polishVoice) {
-      utterance.voice = polishVoice;
+
+    const isFemale = voiceSettings.gender === 'female';
+    const femaleVoiceRegex =
+      /(paulina|agnieszka|zofia|zosia|ewa|maja|anna|monika|aleksandra|magda|katarzyna|female|kobieta|woman|girl|helena|sabina|zira|kalina)/i;
+    const maleVoiceRegex =
+      /(adam|marek|krzysztof|jan|piotr|tomasz|male|mezczyzna|man|boy|david|george|mateusz)/i;
+
+    let selectedVoice: SpeechSynthesisVoice | undefined;
+    if (isFemale) {
+      selectedVoice =
+        polishVoices.find((v) => femaleVoiceRegex.test(v.name) || femaleVoiceRegex.test(v.voiceURI)) ||
+        polishVoices[0];
+      // Kobieca modulacja tonu (pitch): gwarantuje kobiece brzmienie nawet na pojedynczym zainstalowanym głosie:
+      const basePitch = voiceSettings.pitch ?? 1.30;
+      utterance.pitch = Math.max(1.24, Math.min(1.85, basePitch < 1.15 ? basePitch * 1.32 : basePitch));
+    } else {
+      selectedVoice =
+        polishVoices.find((v) => maleVoiceRegex.test(v.name) || maleVoiceRegex.test(v.voiceURI)) ||
+        polishVoices[0];
+      const basePitch = voiceSettings.pitch ?? 0.90;
+      utterance.pitch = Math.max(0.65, Math.min(1.05, basePitch > 1.15 ? basePitch * 0.85 : basePitch));
+    }
+
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
     }
 
     this.activeUtterances.add(utterance);
@@ -517,8 +562,11 @@ export class NpcVoiceCoordinator {
 
     // Krótkie opóźnienie przed speak() zapobiega bugowi Blink/Chrome, gdzie cancel() natychmiast anuluje nową wypowiedź:
     setTimeout(() => {
-      if (!this.disposed && typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.speak(utterance);
+      if (!this.disposed) {
+        const liveSynth = this.getSpeechSynthesis();
+        if (liveSynth) {
+          liveSynth.speak(utterance);
+        }
       }
     }, 30);
   }
@@ -536,9 +584,10 @@ export class NpcVoiceCoordinator {
    * Natychmiast przerywa trwające wypowiedzi syntezatora.
    */
   cancelSpeaking(): void {
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
+    const synth = this.getSpeechSynthesis();
+    if (synth) {
       try {
-        window.speechSynthesis.cancel();
+        synth.cancel();
       } catch {
         // Ignorujemy błędy przerwania
       }

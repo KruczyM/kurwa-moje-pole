@@ -123,6 +123,25 @@ describe('NpcAiAgent', () => {
       expect(hippie.voiceSettings.pitch).toBeGreaterThan(1.0);
     });
 
+    it('detects female models and configures female gender and elevated pitch', () => {
+      const girlRocker = analyzeModelPersonality('078_girl_with_guitar.glb');
+      expect(girlRocker.voiceSettings.gender).toBe('female');
+      expect(girlRocker.voiceSettings.pitch).toBeGreaterThanOrEqual(1.25);
+      expect(girlRocker.title).toContain('Gitarzystka');
+
+      const shortsGirl = analyzeModelPersonality('070_vintage_denim_shorts.glb');
+      expect(shortsGirl.voiceSettings.gender).toBe('female');
+      expect(shortsGirl.title).toContain('Bywalczyni');
+
+      const bohoGirl = analyzeModelPersonality('005_boho_festival_girl.glb');
+      expect(bohoGirl.voiceSettings.gender).toBe('female');
+      expect(bohoGirl.voiceSettings.pitch).toBeGreaterThanOrEqual(1.25);
+
+      const korba = NpcAiAgent.getPersona('Korba');
+      expect(korba.voiceSettings.gender).toBe('female');
+      expect(korba.voiceSettings.pitch).toBeGreaterThan(1.25);
+    });
+
     it('falls back gracefully on arbitrary unknown model strings', () => {
       const fallback = NpcAiAgent.getPersona('unknown_random_npc_999');
       expect(fallback).toBeDefined();

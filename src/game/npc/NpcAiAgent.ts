@@ -11,6 +11,7 @@ export interface NpcVoiceSettings {
   pitch: number;
   rate: number;
   volume: number;
+  gender?: 'male' | 'female';
 }
 
 export interface NpcDialogueResponse {
@@ -448,7 +449,7 @@ export const EXTENDED_HERO_PERSONAS: Record<string, NpcPersona> = {
   'Korba': {
     name: 'Korba',
     title: 'Zakręcona Tancerka Festiwalowa',
-    voiceSettings: { pitch: 1.25, rate: 1.22, volume: 1.0 },
+    voiceSettings: { pitch: 1.32, rate: 1.20, volume: 1.0, gender: 'female' },
     greetings: [
       'HEEEJ! Tańczysz ze mną?! Muzyka gra w naszych żyłach non stop!',
       'Siemanko! Nie ma spania, szkoda życia, zaraz zaczyna się kolejny gigantyczny set!',
@@ -509,7 +510,7 @@ export const SIGNATURE_MODEL_PERSONAS: Record<string, NpcPersona> = {
   '050_blue_alien_girl': {
     name: 'Niebieska Kosmitka',
     title: 'Międzygalaktyczna Fanka Rocka',
-    voiceSettings: { pitch: 1.35, rate: 1.05, volume: 1.0 },
+    voiceSettings: { pitch: 1.35, rate: 1.05, volume: 1.0, gender: 'female' },
     greetings: [
       'Pozdrowienia z Mgławicy Andromedy, Ziemianinie!',
       'Wylądowałam na Czaplinku, bo wasze gitary słychać w całym kwadrancie kosmicznym!',
@@ -537,7 +538,7 @@ export const SIGNATURE_MODEL_PERSONAS: Record<string, NpcPersona> = {
   '082_hotdog_girl': {
     name: 'Parówkowa Wojowniczka',
     title: 'Królowa Festiwalowej Gastronomii',
-    voiceSettings: { pitch: 1.15, rate: 1.18, volume: 1.0 },
+    voiceSettings: { pitch: 1.25, rate: 1.18, volume: 1.0, gender: 'female' },
     greetings: [
       'Siemanko! Bułka chrupiąca, parówka gorąca, a pogo pod sceną jeszcze gorętsze!',
       'Cześć! Keczup czy musztarda? A może od razu skok w tłum?!',
@@ -649,7 +650,7 @@ export const SIGNATURE_MODEL_PERSONAS: Record<string, NpcPersona> = {
   '001_pirate_parrot_girl': {
     name: 'Korsarka z Papugą',
     title: 'Korsarka Oceanu Namiotów',
-    voiceSettings: { pitch: 1.12, rate: 1.15, volume: 1.0 },
+    voiceSettings: { pitch: 1.30, rate: 1.15, volume: 1.0, gender: 'female' },
     greetings: [
       'Ahoj załogo! Na horyzoncie widzę scenę pełną rockowych skarbów!',
       'Siemanko szczurze lądowy! Wstąp na pokład pod naszą plandekę!',
@@ -677,7 +678,7 @@ export const SIGNATURE_MODEL_PERSONAS: Record<string, NpcPersona> = {
   '079_guy_in_kilt': {
     name: 'Wojownik w Kilcie',
     title: 'Góral ze Szkockiej Brygady Pogo',
-    voiceSettings: { pitch: 0.94, rate: 1.05, volume: 1.0 },
+    voiceSettings: { pitch: 0.94, rate: 1.05, volume: 1.0, gender: 'male' },
     greetings: [
       'Fàilte! Siema! W kiltach najwygodniej skacze się pod sceną – pełna przewiewność!',
       'Czołem! Prawdziwy wojownik nie boi się wiatru hulającego po pasie lotniska!',
@@ -705,7 +706,7 @@ export const SIGNATURE_MODEL_PERSONAS: Record<string, NpcPersona> = {
   '026_bubble_blower_hippie': {
     name: 'Bańkarka Hipiska',
     title: 'Czarodziejka Mydlanych Baniek',
-    voiceSettings: { pitch: 1.22, rate: 1.0, volume: 1.0 },
+    voiceSettings: { pitch: 1.32, rate: 1.0, volume: 1.0, gender: 'female' },
     greetings: [
       'Cześć kochana duszo! Złap bańkę i pomyśl życzenie pełne pokoju!',
       'Hej! Świat widziany przez tęczową powłokę mydlanej bańki jest o wiele piękniejszy!',
@@ -841,10 +842,19 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
 
   const cleanString = cleanTokens.join(' ');
 
+  const isFemale =
+    /\b(girl|woman|lady|female|dziewczyna|kobieta|tancerka|hipiska|kosmitka|korsarka|wojowniczka|bankarka|curly|boho|crown|poncho|braided|bun|shorts)\b/i.test(
+      normalizedKey + ' ' + cleanString
+    ) ||
+    normalizedKey.includes('girl') ||
+    normalizedKey.includes('korba');
+
   // Domyślny profil bazowy:
-  let personaName = cleanTokens.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Festiwalowicz';
-  let title = 'Bywalec Pol\'and\'Rock';
-  let pitch = 1.0;
+  let personaName =
+    cleanTokens.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') ||
+    (isFemale ? 'Festiwalowiczka' : 'Festiwalowicz');
+  let title = isFemale ? "Bywalczyni Pol'and'Rock" : "Bywalec Pol'and'Rock";
+  let pitch = isFemale ? 1.32 : 0.94;
   let rate = 1.0;
   let greetings: string[] = [
     'Siemanko! Piękny dzień na festiwalu, prawda?',
@@ -852,8 +862,12 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
     'Hej! Cieszysz się muzyką tak samo jak ja?',
   ];
   let identity: string[] = [
-    `Nazywają mnie ${personaName}. Przyjechałem na Czaplinek, by chłonąć muzykę, wolność i niezwykłą energię tego miejsca.`,
-    `Jestem jednym z setek tysięcy uczestników Najpiękniejszego Festiwalu Świata. Każdy z nas tworzy ten klimat!`,
+    isFemale
+      ? `Nazywają mnie ${personaName}. Przyjechałam na Czaplinek, by chłonąć muzykę, wolność i niezwykłą energię tego miejsca.`
+      : `Nazywają mnie ${personaName}. Przyjechałem na Czaplinek, by chłonąć muzykę, wolność i niezwykłą energię tego miejsca.`,
+    isFemale
+      ? `Jestem jedną z setek tysięcy uczestniczek Najpiękniejszego Festiwalu Świata. Każdy z nas tworzy ten klimat!`
+      : `Jestem jednym z setek tysięcy uczestników Najpiękniejszego Festiwalu Świata. Każdy z nas tworzy ten klimat!`,
   ];
   let customDarkReply = 'ZAMKNIJ SIĘ! Klasyka gatunku, która łączy pokolenia!';
   let customMudReply = 'Błoto na Pol\'and\'Rocku to nasza druga natura, wskakuj śmiało!';
@@ -1025,9 +1039,9 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
     ];
     customDarkReply = 'ZAMKNIJ SIĘ! Ale spójrz w górę, gwiazdy nad lotniskiem świecą dla każdego z nas.';
   } else if (cleanString.includes('guitar') || cleanString.includes('songster') || cleanString.includes('troubadour') || cleanString.includes('acoustic')) {
-    personaName = 'Obozowy Bard';
-    title = 'Gitarzysta Ogniskowy';
-    pitch = 1.02;
+    personaName = isFemale ? 'Obozowa Bardka' : 'Obozowy Bard';
+    title = isFemale ? 'Gitarzystka Ogniskowa' : 'Gitarzysta Ogniskowy';
+    pitch = isFemale ? 1.30 : 1.02;
     rate = 1.0;
     greetings = [
       'Siemanko! Znasz chwyty do Wehikułu Czasu? Zaraz możemy zagrać!',
@@ -1062,10 +1076,19 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
     ];
   }
 
+  const finalPitch = isFemale
+    ? Math.max(1.26, Math.min(1.55, pitch < 1.15 ? pitch * 1.32 : pitch))
+    : pitch;
+
   const dynamicPersona: NpcPersona = {
     name: personaName,
     title,
-    voiceSettings: { pitch, rate, volume: 1.0 },
+    voiceSettings: {
+      pitch: finalPitch,
+      rate,
+      volume: 1.0,
+      gender: isFemale ? 'female' : 'male',
+    },
     greetings,
     identity,
     festivalLore: {
