@@ -66,8 +66,8 @@ export function repairDraftArmSkin(
       // started inside the chest and pulled its outer edge down with the arm.
       const shoulderBlend = THREE.MathUtils.smoothstep(
         x,
-        a * (preserveUpperChest ? 0.85 : 0.55),
-        a * (preserveUpperChest ? 1.6 : 1.12),
+        a * (preserveUpperChest ? 0.95 : 0.55),
+        a * (preserveUpperChest ? 1.85 : 1.12),
       );
       const elbowBlend = THREE.MathUtils.smoothstep(x, e - scale * 0.07, e + scale * 0.07);
       const wristBlend = THREE.MathUtils.smoothstep(x, w - scale * 0.045, w + scale * 0.045);

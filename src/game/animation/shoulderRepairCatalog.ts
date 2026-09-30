@@ -28,5 +28,6 @@ export const raisedShoulderAssets = shoulderRepairAssets.filter(
 
 export function shoulderLiftForAsset(id: string) {
   if (id === 'hemoroid') return 0.03;
+  if (id === 'korba') return 0.025;
   return raisedShoulderAssets.some((asset) => asset.id === id) ? 0.045 : 0;
 }

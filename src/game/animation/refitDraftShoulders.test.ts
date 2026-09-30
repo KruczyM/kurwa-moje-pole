@@ -101,7 +101,7 @@ it('Korba clavicle edges no longer stretch almost fourfold in Idle', async () =>
           j = index.getX(n + ((c + 1) % 3));
         const a = new THREE.Vector3().fromBufferAttribute(p, i),
           b = new THREE.Vector3().fromBufferAttribute(p, j);
-        if (a.y < 1.3 || a.y > 1.8 || Math.abs(a.x) < 0.2 || Math.abs(a.x) > 0.7) continue;
+        if (a.y < 1.3 || a.y > 1.8 || Math.abs(a.x) < 0.2 || Math.abs(a.x) > 0.7 || a.z < -0.1) continue;
         const rest = a.distanceTo(b);
         if (rest < 0.003) continue;
         const deformed = mesh

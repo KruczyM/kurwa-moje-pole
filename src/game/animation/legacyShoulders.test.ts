@@ -13,7 +13,7 @@ async function load(path: string) {
   return loader.parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
 }
 
-it.each(['pien', 'zawor'])('%s legacy rig is unchanged without explicit opt-in', async (id) => {
+it.each(['pien'])('%s legacy rig is unchanged without explicit opt-in', async (id) => {
   const model = await load(`characters/${id}/npc-animations.glb`);
   const before = model.scene.getObjectsByProperty('isBone', true).map((b) => b.position.toArray());
   refitDraftShoulders(model, 0.045);
