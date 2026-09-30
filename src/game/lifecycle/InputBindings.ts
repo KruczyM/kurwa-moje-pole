@@ -90,7 +90,7 @@ export function startControlHint(mode: InputMode = 'desktop') {
   if (mode === 'mobile') {
     return 'Joystick — ruch i bieg · przeciągnięcie ekranu — rozglądanie · UŻYJ — interakcja · przyciski MENU i EKWIPUNEK';
   }
-  return `${inputBindings.move} — ruch · ${inputBindings.look} — rozglądanie · ${inputBindings.run} — szybciej · ${inputBindings.interact} — interakcja · ${inputBindings.inventory} — ekwipunek · ${inputBindings.escape} — pauza`;
+  return `${inputBindings.move} — ruch · ${inputBindings.look} — rozglądanie · ${inputBindings.run} — szybciej · ${inputBindings.interact} — interakcja · ${inputBindings.inventory} — ekwipunek · ${inputBindings.escape} — pauza · Ctrl+K — swobodna kamera`;
 }
 
 /** Buduje kontekstową podpowiedź E bez duplikowania nazwy klawisza w logice świata. */

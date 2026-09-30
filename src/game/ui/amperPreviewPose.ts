@@ -55,11 +55,12 @@ export function amperPreviewPose(
   // These two meshes were authored with horizontal arms. Their refitted
   // pivots are not aligned with the visible upper-arm axis; aiming those
   // pivots directly at Amper's elbows created the rejected bowed silhouette.
-  // Apply the same 80-degree skin rotation to the entire arm chain instead.
+  // Rotate each entire arm chain consistently. Zawor's loose poncho needs
+  // a wider relaxed stance (25 degrees from vertical), unlike Korba.
   for (const side of ['Left', 'Right']) {
     const delta = new THREE.Quaternion().setFromAxisAngle(
       new THREE.Vector3(0, 0, 1),
-      (side === 'Left' ? -1 : 1) * THREE.MathUtils.degToRad(characterId === 'zawor' ? 85 : 80),
+      (side === 'Left' ? -1 : 1) * THREE.MathUtils.degToRad(characterId === 'zawor' ? 65 : 80),
     );
     for (const part of ['Arm', 'ForeArm', 'Hand']) {
       const bone = bones.find((b) => b.name.endsWith(side + part))!;

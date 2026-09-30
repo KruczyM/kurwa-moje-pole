@@ -138,4 +138,58 @@ describe('PlayerController mouse look', () => {
     expect(camera.position.y).toBeCloseTo(2.4);
     controller.dispose();
   });
+
+  it('obsługuje tryb swobodnej kamery z lotem 3D i regulacją prędkości', () => {
+    const windowTarget = new EventTarget();
+    const documentTarget = Object.assign(new EventTarget(), { pointerLockElement: null });
+    const canvas = Object.assign(new EventTarget(), {
+      tabIndex: 0,
+      focus: vi.fn(),
+      requestPointerLock: vi.fn(() => Promise.resolve()),
+    }) as unknown as HTMLCanvasElement;
+    vi.stubGlobal('window', windowTarget);
+    vi.stubGlobal('document', documentTarget);
+
+    const camera = new THREE.PerspectiveCamera();
+    const controller = new PlayerController(camera, canvas, () => false, false, {
+      position: [0, 10],
+      yaw: 0,
+    });
+    controller.enabled = true;
+
+    expect(controller.isFreeCamera()).toBe(false);
+    controller.setFreeCamera(true, 15);
+    expect(controller.isFreeCamera()).toBe(true);
+    expect(camera.position.y).toBe(15);
+
+    // Klawisz W leci w przód w 3D (dla yaw=0: w stronę ujemnego Z)
+    windowTarget.dispatchEvent(keyEvent('keydown', 'w'));
+    controller.update(0.1, { speed: 1, sway: 0, shake: 0, bob: 0 });
+    expect(camera.position.z).toBeLessThan(10);
+
+    // Klawisz Space / Spacja unosi w górę
+    windowTarget.dispatchEvent(keyEvent('keyup', 'w'));
+    windowTarget.dispatchEvent(keyEvent('keydown', ' '));
+    controller.update(0.1, { speed: 1, sway: 0, shake: 0, bob: 0 });
+    expect(camera.position.y).toBeGreaterThan(15);
+
+    // Klawisz C obniża w dół
+    windowTarget.dispatchEvent(keyEvent('keyup', ' '));
+    windowTarget.dispatchEvent(keyEvent('keydown', 'c'));
+    const heightBefore = camera.position.y;
+    controller.update(0.1, { speed: 1, sway: 0, shake: 0, bob: 0 });
+    expect(camera.position.y).toBeLessThan(heightBefore);
+
+    // Rolka myszy zmienia prędkość
+    const wheelEvent = Object.assign(new Event('wheel'), { deltaY: -100 });
+    windowTarget.dispatchEvent(wheelEvent);
+    expect(controller.freeCamSpeed).toBe(25);
+
+    // Transform sieciowy w free camera
+    const transform = controller.getTransform();
+    expect(transform.locomotion).toBe('Idle');
+    expect(transform.speed).toBe(0);
+
+    controller.dispose();
+  });
 });

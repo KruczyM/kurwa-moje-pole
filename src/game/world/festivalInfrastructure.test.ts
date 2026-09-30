@@ -140,6 +140,30 @@ describe('festivalInfrastructure', () => {
     expect(grzybek).toBeDefined();
     expect(grzybek!.x).toBe(160);
     expect(grzybek!.z).toBe(-8);
+
+    // South Passage (z = 86, facing North onto South Avenue):
+    const southTent1 = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'food_tent_south_1');
+    const southRollbar = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'rollbar_lech_south');
+    const southTent2 = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'food_tent_south_2');
+    const southFrytki = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'foodtruck_frytki_south');
+    expect(southTent1).toMatchObject({ x: 52, z: 86, rotationY: 0 });
+    expect(southRollbar).toMatchObject({ x: 68, z: 86, rotationY: 0 });
+    expect(southTent2).toMatchObject({ x: 84, z: 86, rotationY: 0 });
+    expect(southFrytki).toMatchObject({ x: 104, z: 86, rotationY: 0 });
+
+    // North Passage (z = -20, south side of North Avenue, shifted away from Duża Scena):
+    const northMakarun = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'foodtruck_makarun_north');
+    const northChurros = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'foodtruck_churros_north');
+    const northTent2 = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'food_tent_north_2');
+    const northRollbar = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'rollbar_lech_north');
+    const northTent1 = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'food_tent_north_1');
+    const northBurger = FESTIVAL_INFRASTRUCTURE_PLACEMENTS.find((p) => p.id === 'foodtruck_burger_north');
+    expect(northMakarun).toMatchObject({ x: -127, z: -20, rotationY: 0 });
+    expect(northChurros).toMatchObject({ x: -115, z: -20, rotationY: 0 });
+    expect(northTent2).toMatchObject({ x: -96, z: -20, rotationY: 0 });
+    expect(northRollbar).toMatchObject({ x: -80, z: -20, rotationY: 0 });
+    expect(northTent1).toMatchObject({ x: -64, z: -20, rotationY: 0 });
+    expect(northBurger).toMatchObject({ x: -46, z: -20, rotationY: 0 });
   });
 });
 

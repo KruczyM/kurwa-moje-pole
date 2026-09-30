@@ -358,6 +358,10 @@ export class Game {
       this.startLoop();
       this.state.transition('playing');
       this.toast('Festiwalowicze doczytują się w tle. Szukaj ich przy asfaltowym pasażu.');
+      if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('camp-free-camera') === '1') {
+        sessionStorage.removeItem('camp-free-camera');
+        this.toggleFreeCamera(true);
+      }
       void loader
         .loadFestivalNpcs(
           (asset, model) => this.npcs?.addFestivalNpc(asset, model) ?? false,
@@ -382,9 +386,15 @@ export class Game {
     }
   }
 
-  /** Obsługuje globalne skróty Escape, Tab i E zgodnie z aktualnym stanem aplikacji. */
+  /** Obsługuje globalne skróty Escape, Tab, E oraz Ctrl+K zgodnie ze stanem gry. */
   private key(event: KeyboardEvent) {
     if (this.disposed) return;
+    if (event.ctrlKey && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      this.toggleFreeCamera();
+      return;
+    }
     const action = resolveGameInput(this.state.current, event.key, event.repeat);
     if (!action) return;
     event.preventDefault();
@@ -431,6 +441,27 @@ export class Game {
       this.pendingWarningItem = undefined;
     }
     this.state.transition(target);
+  }
+
+  /** Przełącza tryb swobodnej kamery 3D do inspekcji i obserwacji terenu festiwalu. */
+  toggleFreeCamera(force?: boolean): boolean {
+    if (!this.player) return false;
+    const next = force !== undefined ? force : !this.player.isFreeCamera();
+    this.player.setFreeCamera(next);
+    if (next) {
+      this.toast('Swobodna kamera: WSAD ruch 3D, Spacja/C góra/dół, Shift turbo, Rolka prędkość.');
+    } else {
+      this.toast('Powrót do trybu postaci.');
+    }
+    this.syncFreeCameraHud(next);
+    return next;
+  }
+
+  private syncFreeCameraHud(active: boolean) {
+    const badge = document.querySelector<HTMLElement>('#freecam-badge');
+    if (badge) {
+      badge.hidden = !active;
+    }
   }
 
   /** Otwiera pauzę wyłącznie po rzeczywistej utracie wcześniej uzyskanego pointer lock. */
@@ -1145,5 +1176,6 @@ export class Game {
     lsdOverlay.hidden = true;
     lsdOverlay.style.removeProperty('--lsd-strength');
     qs('#prompt').hidden = true;
+    this.syncFreeCameraHud(false);
   }
 }

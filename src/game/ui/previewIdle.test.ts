@@ -19,6 +19,20 @@ it.each(characterAssets)(
       '',
     );
     const mixer = startPreviewIdle(model.scene, model.animations);
+    if (asset.id === 'zawor') {
+      const idle = model.animations.find((clip) => clip.name === 'Idle')!;
+      expect(idle.duration).toBeGreaterThan(1);
+      expect(mixer.clipAction(idle).loop).toBe(THREE.LoopRepeat);
+      const pose = () => model.scene.getObjectsByProperty('isBone', true).flatMap((b) => b.quaternion.toArray());
+      const initial = pose();
+      mixer.setTime(0.7);
+      expect(pose().some((v, i) => Math.abs(v - initial[i]) > 1e-4)).toBe(true);
+      mixer.setTime(idle.duration + 0.7);
+      const wrapped = pose();
+      mixer.setTime(0.7);
+      expect(pose().every((v, i) => Math.abs(v - wrapped[i]) < 1e-5)).toBe(true);
+      mixer.setTime(0);
+    }
     const bones = model.scene.getObjectsByProperty('isBone', true);
     const bounds = new THREE.Box3().setFromObject(model.scene);
     const height = bounds.max.y - bounds.min.y;
@@ -51,3 +65,23 @@ it.each(characterAssets)(
     disposeObjectTree(model.scene);
   },
 );
+
+it('starts preview with preferred clip (e.g. Walk) on repeat when requested', async () => {
+  const bytes = readFileSync(
+    new URL('../../../public/game-assets/characters/zawor/npc-animations.glb', import.meta.url),
+  );
+  const loader = new GLTFLoader();
+  loader.register(() => ({ name: 'test-images', loadTexture: () => Promise.resolve(new THREE.Texture()) }));
+  const model = await loader.parseAsync(
+    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+    '',
+  );
+  const mixer = startPreviewIdle(model.scene, model.animations, 'Walk');
+  const walk = model.animations.find((c) => c.name === 'Walk')!;
+  expect(walk).toBeDefined();
+  expect(mixer.clipAction(walk).isRunning()).toBe(true);
+  expect(mixer.clipAction(walk).loop).toBe(THREE.LoopRepeat);
+  mixer.stopAllAction();
+  mixer.uncacheRoot(model.scene);
+  disposeObjectTree(model.scene);
+});

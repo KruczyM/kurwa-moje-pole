@@ -200,21 +200,30 @@ function createPreview() {
 }
 
 /** Zwalnia podgląd menu, zapisuje wybór postaci i uruchamia właściwą scenę gry. */
-async function startGame() {
+async function startGame(freeCamera = false) {
   if (state.current !== 'start' && state.current !== 'error') return;
 
-  // Walidacja pseudonimu:
-  const nickVal = validateAndSanitizeNickname(nicknameInput?.value ?? networkClient.getNickname());
-  if (!nickVal.valid) {
-    if (nicknameError) {
-      nicknameError.textContent = nickVal.error ?? 'Wpisz poprawny pseudonim.';
-      nicknameError.hidden = false;
-    }
-    nicknameInput?.focus();
-    return;
+  if (freeCamera) {
+    sessionStorage.setItem('camp-free-camera', '1');
   }
 
-  networkClient.setNickname(nickVal.sanitized);
+  // Walidacja pseudonimu:
+  const rawNick = nicknameInput?.value?.trim() || networkClient.getNickname() || (freeCamera ? 'Kamera' : '');
+  const nickVal = validateAndSanitizeNickname(rawNick);
+  if (!nickVal.valid) {
+    if (freeCamera) {
+      networkClient.setNickname('Kamera');
+    } else {
+      if (nicknameError) {
+        nicknameError.textContent = nickVal.error ?? 'Wpisz poprawny pseudonim.';
+        nicknameError.hidden = false;
+      }
+      nicknameInput?.focus();
+      return;
+    }
+  } else {
+    networkClient.setNickname(nickVal.sanitized);
+  }
 
   if (networkClient.isOnline()) {
     networkClient.confirmCharacter(selected);
@@ -230,6 +239,7 @@ async function startGame() {
   try {
     const nextGame = new Game(state, networkClient);
     game = nextGame;
+    (window as unknown as { __camp_game?: Game }).__camp_game = nextGame;
     if (!isMobileInputDevice()) nextGame.canvas.requestPointerLock().catch?.(() => undefined);
     await nextGame.start();
   } catch (cause) {
@@ -237,6 +247,12 @@ async function startGame() {
     qs('#load-error').hidden = false;
     state.transition('error');
   }
+}
+
+/** Uruchamia swobodną kamerę bezpośrednio z menu głównego (Ctrl+K lub przycisk). */
+async function startFreeCameraGame() {
+  if (state.current !== 'start' && state.current !== 'error') return;
+  await startGame(true);
 }
 
 /** Zamyka bieżącą grę i odtwarza ekran startowy wraz z podglądem postaci. */
@@ -257,7 +273,21 @@ qs('#inspect-use').textContent = `${inputBindings.interact} — uruchom efekt`;
 qs('#inspect-close').textContent = `${inputBindings.escape} — wróć`;
 createPreview();
 
+window.addEventListener('keydown', (event) => {
+  if (event.ctrlKey && event.key.toLowerCase() === 'k') {
+    if (state.current === 'start' || state.current === 'error') {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      void startFreeCameraGame();
+    }
+  }
+});
+
 qs<HTMLButtonElement>('#play').onclick = () => void startGame();
+const playFreecamBtn = document.querySelector<HTMLButtonElement>('#play-freecam');
+if (playFreecamBtn) {
+  playFreecamBtn.onclick = () => void startFreeCameraGame();
+}
 qs<HTMLButtonElement>('#retry-load').onclick = () => void startGame();
 qs<HTMLButtonElement>('#back-to-start').onclick = backToStart;
 qs<HTMLButtonElement>('#resume').onclick = () => game?.setPause(false);

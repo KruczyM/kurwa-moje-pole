@@ -113,7 +113,9 @@ export class NpcManager {
           : festivalRole === 'asp_listener'
             ? { minX: -10, maxX: 10, minZ: 92, maxZ: 102 }
             : festivalRole === 'food_queue'
-              ? { minX: -65, maxX: -40, minZ: 80, maxZ: 85 }
+              ? (behavior.random() < 0.5
+                  ? { minX: 48, maxX: 104, minZ: 76, maxZ: 83 }
+                  : { minX: -125, maxX: -44, minZ: -28, maxZ: -23 })
               : { minX: -70, maxX: 50, minZ: 30, maxZ: 55 };
     let spawn: THREE.Vector3 | null = null;
     for (let attempt = 0; attempt < 80; attempt++) {
@@ -291,8 +293,8 @@ export class NpcManager {
       }
     } else if (npc.festivalRole === 'food_queue') {
       const queueBounds = npc.root.position.z > 0
-        ? { minX: -74, maxX: -32, minZ: 80, maxZ: 85 }
-        : { minX: -42, maxX: 0, minZ: -48, maxZ: -43 };
+        ? { minX: 48, maxX: 104, minZ: 76, maxZ: 83 }
+        : { minX: -125, maxX: -44, minZ: -28, maxZ: -23 };
       for (let attempt = 0; attempt < 12; attempt++) {
         const candidate = this.navigation.randomWalkablePoint(() => npc.behavior.random(), queueBounds, isExcluded);
         if (candidate && candidate.distanceToSquared(npc.root.position) > 9 && this.routeTo(npc, candidate)) return true;
@@ -705,8 +707,8 @@ export class NpcManager {
     // 3. Kolejka po jedzenie przed namiotami gastronomicznymi
     if (
       npc.festivalRole === 'food_queue' ||
-      (pos.z >= 78 && pos.z <= 88 && pos.x >= -75 && pos.x <= -30) ||
-      (pos.z >= -50 && pos.z <= -40 && pos.x >= -42 && pos.x <= 0)
+      (pos.z >= 74 && pos.z <= 90 && pos.x >= 45 && pos.x <= 108) ||
+      (pos.z >= -30 && pos.z <= -18 && pos.x >= -130 && pos.x <= -42)
     ) {
       const queueClips = [
         'TextingWhileStanding',

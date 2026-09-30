@@ -31,6 +31,8 @@ const ambonaPose = process.argv.includes('--ambona-pose');
 const poncho = process.argv.includes('--zawor-poncho');
 const caps = process.argv.includes('--zawor-shoulders');
 const cloth = process.argv.includes('--zawor-cloth');
+if (cloth && install)
+  throw new Error('Clothing candidate is not approved: side fringe attachment and Run intersections remain.');
 if (poncho && install)
   throw new Error('Poncho candidate is not approved: Run deformation still requires repair.');
 const selectedIds = process.argv
@@ -39,23 +41,25 @@ const selectedIds = process.argv
   .split(',');
 const root = resolve('public/game-assets');
 const report = resolve(
-  cloth ? 'reports/zawor-cloth-weights-20260929' : caps
-    ? 'reports/zawor-shoulder-caps-20260929'
-    : poncho
-      ? 'reports/zawor-poncho-20260928'
-      : ambonaPose
-        ? 'reports/ambona-pose-20260928'
-        : legacyShoulders
-          ? 'reports/legacy-shoulders-20260928'
-          : props
-            ? 'reports/npc-prop-repair-20260928'
-            : klatwa
-              ? 'reports/klatwa-skin-repair-20260927'
-              : arms
-                ? 'reports/shoulder-rig-repair-20260926'
-                : beards
-                  ? 'reports/beard-weight-repair-20260926'
-                  : 'reports/skin-weight-repair-20260926',
+  cloth
+    ? 'reports/zawor-cloth-weights-20260929'
+    : caps
+      ? 'reports/zawor-shoulder-caps-20260929'
+      : poncho
+        ? 'reports/zawor-poncho-20260928'
+        : ambonaPose
+          ? 'reports/ambona-pose-20260928'
+          : legacyShoulders
+            ? 'reports/legacy-shoulders-20260928'
+            : props
+              ? 'reports/npc-prop-repair-20260928'
+              : klatwa
+                ? 'reports/klatwa-skin-repair-20260927'
+                : arms
+                  ? 'reports/shoulder-rig-repair-20260926'
+                  : beards
+                    ? 'reports/beard-weight-repair-20260926'
+                    : 'reports/skin-weight-repair-20260926',
 );
 const paths =
   poncho || caps || cloth
@@ -122,7 +126,8 @@ for (const path of paths) {
     repairSkinSeams(model.scene);
   }
   const refitted =
-    !cloth && (caps || legacyShoulders || (!beards && shoulderRepairAssets.some((asset) => asset.path === path)));
+    !cloth &&
+    (caps || legacyShoulders || (!beards && shoulderRepairAssets.some((asset) => asset.path === path)));
   if (caps) refitZaworCapPivots(model);
   else if (refitted) {
     const raised = legacyShoulders || raisedShoulderAssets.some((asset) => asset.path === path);

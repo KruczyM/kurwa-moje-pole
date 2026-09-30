@@ -19,6 +19,8 @@ export class PlayerController {
   yaw = 0;
   pitch = 0;
   enabled = false;
+  freeCamera = false;
+  freeCamSpeed = 22;
   private velocity = new THREE.Vector2();
   private bobTime = 0;
   private swayTime = 0;
@@ -47,12 +49,20 @@ export class PlayerController {
     );
     camera.rotation.set(0, this.yaw, 0, 'YXZ');
     canvas.tabIndex = -1;
-    this.events.listen(window, 'keydown', (event) =>
-      this.keys.add((event as KeyboardEvent).key.toLowerCase()),
-    );
+    this.events.listen(window, 'keydown', (event) => {
+      const e = event as KeyboardEvent;
+      if (e.ctrlKey && e.key.toLowerCase() === 'k') return;
+      this.keys.add(e.key.toLowerCase());
+    });
     this.events.listen(window, 'keyup', (event) =>
       this.keys.delete((event as KeyboardEvent).key.toLowerCase()),
     );
+    this.events.listen(window, 'wheel', (event) => {
+      if (!this.freeCamera || !this.enabled) return;
+      const wheel = event as WheelEvent;
+      const delta = wheel.deltaY < 0 ? 3 : -3;
+      this.freeCamSpeed = THREE.MathUtils.clamp(this.freeCamSpeed + delta, 4, 120);
+    });
     this.events.listen(canvas, 'click', () => {
       if (this.enabled) this.requestPointerLock();
     });
@@ -99,12 +109,66 @@ export class PlayerController {
   private axis(positive: string[], negative: string[]) {
     return Number(positive.some((k) => this.keys.has(k))) - Number(negative.some((k) => this.keys.has(k)));
   }
+  /** Sprawdza, czy aktywny jest tryb swobodnej kamery. */
+  isFreeCamera(): boolean {
+    return this.freeCamera;
+  }
+  /** Włącza lub wyłącza tryb swobodnej kamery. */
+  setFreeCamera(active = true, initialHeight?: number) {
+    this.freeCamera = active;
+    if (active) {
+      this.velocity.set(0, 0);
+      if (initialHeight !== undefined) {
+        this.camera.position.y = initialHeight;
+      } else if (this.camera.position.y < 3.5) {
+        this.camera.position.y = 12.0;
+      }
+    }
+  }
+  /** Zmienia bazową prędkość swobodnej kamery. */
+  adjustFreeCamSpeed(delta: number): number {
+    this.freeCamSpeed = THREE.MathUtils.clamp(this.freeCamSpeed + delta, 4, 120);
+    return this.freeCamSpeed;
+  }
   /** Aktualizuje ruch FPS, kolizje, kołysanie, drganie oraz pozycję kamery. */
   update(dt: number, mod: PlayerModifiers) {
     // Pointer Lock jest potrzebny tylko do rozglądania. Po zamknięciu pauzy
     // przeglądarka może odmówić jego natychmiastowego odzyskania, ale nie
     // powinno to blokować klawiatury ani wymuszać dodatkowego kliknięcia.
     if (!this.enabled) return;
+
+    if (this.freeCamera) {
+      const forwardDir = new THREE.Vector3();
+      this.camera.getWorldDirection(forwardDir);
+
+      const rightDir = new THREE.Vector3()
+        .crossVectors(forwardDir, new THREE.Vector3(0, 1, 0))
+        .normalize();
+
+      const forward =
+        this.axis(['w', 'arrowup'], ['s', 'arrowdown']) + this.mobileForward;
+      const right =
+        this.axis(['d', 'arrowright'], ['a', 'arrowleft']) + this.mobileRight;
+      const up =
+        this.axis([' ', 'space', 'e'], ['c', 'q']);
+
+      const moveVec = new THREE.Vector3();
+      moveVec.addScaledVector(forwardDir, forward);
+      moveVec.addScaledVector(rightDir, right);
+      moveVec.y += up;
+
+      if (moveVec.lengthSq() > 0) {
+        moveVec.normalize();
+      }
+
+      const runMultiplier = this.keys.has('shift') || this.mobileRun ? 2.2 : 1.0;
+      const currentSpeed = this.freeCamSpeed * runMultiplier;
+
+      this.camera.position.addScaledVector(moveVec, currentSpeed * dt);
+      this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
+      return;
+    }
+
     const forward = THREE.MathUtils.clamp(
       this.axis(['w', 'arrowup'], ['s', 'arrowdown']) + this.mobileForward,
       -1,
@@ -165,6 +229,16 @@ export class PlayerController {
   }
   /** Zwraca aktualną transformację gracza do synchronizacji sieciowej. */
   getTransform(now = Date.now()): PlayerTransform {
+    if (this.freeCamera) {
+      return {
+        position: [this.camera.position.x, this.camera.position.y - this.baseY, this.camera.position.z],
+        yaw: this.yaw,
+        pitch: this.pitch,
+        locomotion: 'Idle',
+        speed: 0,
+        timestamp: now,
+      };
+    }
     const speed = this.velocity.length();
     let locomotion: LocomotionState = 'Idle';
     if (speed > 4.0) {

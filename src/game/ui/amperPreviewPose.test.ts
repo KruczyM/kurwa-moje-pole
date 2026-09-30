@@ -46,7 +46,7 @@ it.each(['zawor', 'korba'])(
           y.getWorldPosition(new THREE.Vector3()).sub(x.getWorldPosition(new THREE.Vector3())).normalize();
         const expected = new THREE.Quaternion().setFromAxisAngle(
           new THREE.Vector3(0, 0, 1),
-          THREE.MathUtils.degToRad((side === 'Left' ? -1 : 1) * (id === 'zawor' ? 85 : 80)),
+          THREE.MathUtils.degToRad((side === 'Left' ? -1 : 1) * (id === 'zawor' ? 65 : 80)),
         );
         for (const part of ['Arm', 'ForeArm', 'Hand']) {
           const bone = target(part);

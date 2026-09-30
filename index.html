@@ -35,7 +35,11 @@
         </div>
         <p id="character-preview-status" role="status" hidden></p>
         <div id="character-preview-layer" class="character-preview-layer"></div>
-        <button id="play">WEJDŹ NA POLE</button><small id="start-controls"></small>
+        <div class="start-actions">
+          <button id="play">WEJDŹ NA POLE</button>
+          <button id="play-freecam" type="button" class="freecam-btn">SWOBODNA KAMERA (Ctrl+K)</button>
+        </div>
+        <small id="start-controls"></small>
       </section>
       <section id="loading" hidden>
         <strong>ŁADOWANIE OBOZU</strong><span id="load-text">Przygotowywanie sceny…</span
@@ -65,6 +69,7 @@
         <div id="controls-hud"></div>
         <div id="prompt" role="status" aria-live="polite" hidden></div>
         <div id="toast" role="status" aria-live="polite"></div>
+        <div id="freecam-badge" hidden>SWOBODNA KAMERA [Ctrl+K] · Rolka: prędkość</div>
         <div id="crosshair">+</div>
         <div id="smoke" hidden></div>
         <div id="lsd-overlay" aria-hidden="true" hidden></div>
