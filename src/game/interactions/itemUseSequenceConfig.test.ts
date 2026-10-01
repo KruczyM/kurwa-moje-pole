@@ -22,4 +22,14 @@ describe('itemUseSequenceConfig', () => {
     expect(itemUseSequenceConfig.Grzyb.gesture).toBe('eat');
     expect(itemUseSequenceConfig.Grzyb.consumeProp).toBe(true);
   });
+
+  it('configures contextual SFX sounds for substances', () => {
+    expect(itemUseSequenceConfig.Piwo.sfx?.sound).toBe('beer_open');
+    expect(itemUseSequenceConfig.Piwo.sfx?.delay).toBeGreaterThan(0);
+    expect(itemUseSequenceConfig.Papieros.sfx?.sound).toBe('lighter_flick');
+    expect(itemUseSequenceConfig.Joint.sfx?.sound).toBe('lighter_flick');
+    expect(itemUseSequenceConfig.Kreska.sfx?.sound).toBe('sniff');
+    expect(itemUseSequenceConfig.MDMA.sfx?.sound).toBe('swallow');
+    expect(itemUseSequenceConfig.LSD.sfx?.sound).toBe('swallow');
+  });
 });

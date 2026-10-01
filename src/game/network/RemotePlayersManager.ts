@@ -12,6 +12,7 @@ import { NpcAnimator } from '../npc/NpcAnimator';
 import { PlayerNametag } from '../ui/PlayerNametag';
 import { characterAssets } from '../assets/assetManifest';
 import { terrainHeight } from '../world/CampWorld';
+import type { SpatialVoiceManager } from '../audio/SpatialVoiceManager';
 
 export interface RemotePlayerEntity {
   playerId: string;
@@ -33,16 +34,46 @@ export interface RemotePlayerEntity {
 export class RemotePlayersManager {
   readonly remotePlayers = new Map<string, RemotePlayerEntity>();
   private unsubscribeSnapshot?: () => void;
+  private unsubscribeSpeaking?: () => void;
 
   constructor(
     private readonly scene: THREE.Scene,
     private readonly characterModels: Map<string, GLTF>,
     private readonly networkClient?: NetworkClient,
+    private spatialVoice?: SpatialVoiceManager,
   ) {
     if (this.networkClient) {
       this.unsubscribeSnapshot = this.networkClient.onWorldSnapshot((snapshot) => {
         this.handleWorldSnapshot(snapshot);
       });
+    }
+
+    if (this.spatialVoice) {
+      this.bindSpatialVoice(this.spatialVoice);
+    }
+  }
+
+  setSpatialVoice(spatialVoice?: SpatialVoiceManager): void {
+    this.unsubscribeSpeaking?.();
+    this.unsubscribeSpeaking = undefined;
+    this.spatialVoice = spatialVoice;
+    if (spatialVoice) {
+      this.bindSpatialVoice(spatialVoice);
+    }
+  }
+
+  private bindSpatialVoice(voice: SpatialVoiceManager): void {
+    this.unsubscribeSpeaking = voice.onSpeakingPeersChange((speakingPeers) => {
+      for (const [id, entity] of this.remotePlayers) {
+        entity.nametag.setSpeaking(speakingPeers.has(id));
+      }
+    });
+  }
+
+  setPlayerSpeaking(playerId: string, isSpeaking: boolean): void {
+    const entity = this.remotePlayers.get(playerId);
+    if (entity) {
+      entity.nametag.setSpeaking(isSpeaking);
     }
   }
 
@@ -77,7 +108,6 @@ export class RemotePlayersManager {
     const initialGroundY = terrainHeight(px, pz);
     root.position.set(px, initialGroundY, pz);
     root.rotation.set(0, player.transform.yaw, 0, 'YXZ');
-    root.rotation.set(0, player.transform.yaw + Math.PI, 0, 'YXZ');
 
     const assetId = this.resolveAssetId(player.character);
     const gltf = this.characterModels.get(assetId);
@@ -108,6 +138,9 @@ export class RemotePlayersManager {
       nickname: player.nickname,
       characterName: player.character,
     });
+    if (this.spatialVoice) {
+      nametag.setSpeaking(this.spatialVoice.isPeerSpeaking(player.playerId));
+    }
 
     const entity: RemotePlayerEntity = {
       playerId: player.playerId,
@@ -221,7 +254,6 @@ export class RemotePlayersManager {
       const yawFactor = 1 - Math.exp(-18 * dt);
       entity.currentYaw += diff * yawFactor;
       entity.root.rotation.set(0, entity.currentYaw, 0, 'YXZ');
-      entity.root.rotation.set(0, entity.currentYaw + Math.PI, 0, 'YXZ');
 
       // 3. Aktualizacja animacji:
       if (entity.animator) {
@@ -230,7 +262,10 @@ export class RemotePlayersManager {
         entity.animator.update(dt);
       }
 
-      // 4. Aktualizacja pozycji nametaga na ekranie:
+      // 4. Aktualizacja pozycji nametaga na ekranie oraz wskaźnika mówienia:
+      if (this.spatialVoice) {
+        entity.nametag.setSpeaking(this.spatialVoice.isPeerSpeaking(entity.playerId));
+      }
       entity.nametag.update(entity.root.position, camera);
     }
   }
@@ -239,6 +274,8 @@ export class RemotePlayersManager {
   dispose(): void {
     this.unsubscribeSnapshot?.();
     this.unsubscribeSnapshot = undefined;
+    this.unsubscribeSpeaking?.();
+    this.unsubscribeSpeaking = undefined;
 
     for (const playerId of Array.from(this.remotePlayers.keys())) {
       this.removeRemotePlayer(playerId);

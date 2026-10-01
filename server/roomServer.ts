@@ -65,6 +65,15 @@ export class RoomServer {
       socket.on('room:join', (payload: JoinRoomPayload = {}) => {
         const roomId = payload.roomId?.trim() || 'glowny-oboz';
         const room = this.getOrCreateRoom(roomId);
+
+        // Jeśli pokój jest pełny i gracz nie ma ważnego sessionToken (reconnect), emituj błąd z kodem 'ROOM_FULL':
+        const existingSlot = payload.sessionToken ? room.findSlotBySessionToken(payload.sessionToken) : undefined;
+        const hasValidSession = Boolean(existingSlot && existingSlot.status !== 'free');
+        if (room.isFull && !hasValidSession) {
+          socket.emit('error', { code: 'ROOM_FULL', message: 'Pokój jest pełny.' });
+          return;
+        }
+
         currentRoomId = roomId;
 
         void socket.join(roomId);
@@ -98,6 +107,16 @@ export class RoomServer {
 
         const room = this.getOrCreateRoom(currentRoomId);
         const sessionToken = payload.sessionToken || socket.id;
+
+        const existingSlot =
+          (payload.sessionToken ? room.findSlotBySessionToken(payload.sessionToken) : undefined) ??
+          room.findSlotByPlayerId(socket.id);
+        const hasValidSession = Boolean(existingSlot && existingSlot.status !== 'free');
+        if (room.isFull && !hasValidSession) {
+          socket.emit('error', { code: 'ROOM_FULL', message: 'Pokój jest pełny.' });
+          return;
+        }
+
         const result = room.reserve(socket.id, payload.character, payload.nickname, sessionToken);
 
         if (!result.success) {

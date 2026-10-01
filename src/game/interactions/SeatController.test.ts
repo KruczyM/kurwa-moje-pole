@@ -69,4 +69,55 @@ describe('SeatController helpers', () => {
     expect(camera.fov).toBe(65);
     expect(controller.active).toBe(false);
   });
+
+  it('orients the character toward the chair front and lowers into the seat cavity', () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
+    const model = new THREE.Group();
+    model.add(new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial()));
+    const character = {
+      scene: model,
+      animations: [new THREE.AnimationClip('SittingLaughing', 2)],
+    } as GLTF;
+    const controller = new SeatController(scene, camera, character);
+
+    expect(controller.start({ seatId: 'S01', position: [10, 0, 10], rotationY: 0 })).toBe(true);
+    const seatedRoot = scene.getObjectByName('SeatedPlayer_S01') as THREE.Group;
+    expect(seatedRoot).toBeDefined();
+    const visual = seatedRoot.children[0];
+    expect(visual.rotation.y).toBeCloseTo(Math.PI);
+    expect(visual.position.z).toBeCloseTo(-0.52);
+    // Spód modelu postaci w układzie krzesła jest obniżony o 0.38m poniżej poziomu stania (0)
+    const visualBounds = new THREE.Box3().setFromObject(visual);
+    expect(visualBounds.min.y).toBeCloseTo(-0.38);
+
+    // Domyślne krzesło przy rotationY = 0 ma przód w -Z.
+    // Kamera powinna stanąć przed siedzącą postacią (w stronę -Z) i patrzeć w stronę postaci.
+    expect(camera.position.z).toBeLessThan(10);
+    controller.stop();
+  });
+
+  it('reuses the pooled character model across multiple seated sessions without re-cloning', () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
+    const model = new THREE.Group();
+    model.add(new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial()));
+    const character = {
+      scene: model,
+      animations: [new THREE.AnimationClip('SittingLaughing', 2)],
+    } as GLTF;
+    const controller = new SeatController(scene, camera, character);
+
+    expect(controller.start({ seatId: 'S01', position: [0, 0, 0], rotationY: 0 })).toBe(true);
+    const firstVisual = scene.getObjectByName('SeatedPlayer_S01')?.children[0];
+    expect(firstVisual).toBeDefined();
+    controller.stop();
+
+    expect(controller.start({ seatId: 'S02', position: [5, 0, 5], rotationY: 1 })).toBe(true);
+    const secondVisual = scene.getObjectByName('SeatedPlayer_S02')?.children[0];
+    expect(secondVisual).toBe(firstVisual);
+    controller.stop();
+
+    controller.dispose();
+  });
 });

@@ -67,4 +67,36 @@ describe('VoiceReactionManager', () => {
     expect(distant.src).toContain('dude_buttsauce.wav');
     expect(distant.volume).toBe(0.24);
   });
+
+  it('plays festival camp shouts and triggers registered callback', () => {
+    const manager = new VoiceReactionManager();
+    const shouts: string[] = [];
+    manager.setCampShoutCallback((event) => {
+      shouts.push(event.text);
+    });
+
+    const shout1 = manager.playCampShout(0);
+    expect(shout1.text).toBe('Zaraz będzie ciemno!');
+    expect(shout1.response).toBe('ZAMKNIJ SIĘ!');
+    expect(shouts).toContain('Zaraz będzie ciemno!');
+
+    const shout2 = manager.playCampShout(1);
+    expect(shout2.text).toBe('Pooole! Kurwa, moje pole!');
+
+    const shout3 = manager.playCampShout(2);
+    expect(shout3.text).toBe('Siemankooo!');
+  });
+
+  it('triggers camp shouts periodically during update', () => {
+    const manager = new VoiceReactionManager(() => 0.5);
+    const triggered: string[] = [];
+    manager.setCampShoutCallback((event) => {
+      triggered.push(event.text);
+    });
+
+    // Advance by 120 seconds to trigger periodic camp shout
+    manager.update(120, null, 'inactive');
+    expect(triggered.length).toBeGreaterThanOrEqual(1);
+    manager.dispose();
+  });
 });

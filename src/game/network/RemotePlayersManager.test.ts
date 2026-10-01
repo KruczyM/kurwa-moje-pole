@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RemotePlayersManager } from './RemotePlayersManager';
 import { NetworkClient } from './NetworkClient';
+import { SpatialVoiceManager } from '../audio/SpatialVoiceManager';
 import type { WorldSnapshotPayload } from './networkProtocol';
 
 describe('RemotePlayersManager', () => {
@@ -146,6 +147,39 @@ describe('RemotePlayersManager', () => {
     expect(entity.currentPosition.x).toBeGreaterThan(2);
     expect(entity.currentYaw).toBeGreaterThan(1.0);
     expect(entity.currentYaw).toBeLessThanOrEqual(2.0);
+    expect(entity.root.rotation.y).toBeCloseTo(entity.currentYaw, 4);
+  });
+
+  it('orientuje model zdalnego gracza zgodnie z kątem yaw bez odwrócenia o 180 stopni', () => {
+    const snapshot: WorldSnapshotPayload = {
+      timestamp: Date.now(),
+      players: [
+        {
+          playerId: 'remote-1',
+          character: 'Amper',
+          nickname: 'Kolega1',
+          transform: {
+            position: [0, 0, 0],
+            yaw: 1.25,
+            locomotion: 'Idle',
+            speed: 0,
+            timestamp: Date.now(),
+          },
+        },
+      ],
+    };
+
+    manager.handleWorldSnapshot(snapshot);
+    const entity = manager.remotePlayers.get('remote-1')!;
+
+    // Przy spawnie obrót modelu root odpowiada yaw (bez odwrócenia o PI):
+    expect(entity.root.rotation.y).toBeCloseTo(1.25, 4);
+
+    // Po aktualizacji obrót nadal jest równy currentYaw, a nie currentYaw + PI:
+    entity.targetYaw = 2.5;
+    manager.update(0.1, camera);
+    expect(entity.root.rotation.y).toBeCloseTo(entity.currentYaw, 4);
+    expect(entity.root.rotation.y).not.toBeCloseTo(entity.currentYaw + Math.PI, 2);
   });
 
   it('teleportuje od razu jeśli dystans przekracza limit (np. respawn)', () => {
@@ -234,5 +268,74 @@ describe('RemotePlayersManager', () => {
     manager.dispose();
     expect(manager.remotePlayers.size).toBe(0);
     expect(scene.children.length).toBe(0);
+  });
+
+  it('aktualizuje stan mówienia na nametagu zdalnego gracza (setPlayerSpeaking)', () => {
+    const snapshot: WorldSnapshotPayload = {
+      timestamp: Date.now(),
+      players: [
+        {
+          playerId: 'remote-1',
+          character: 'Amper',
+          nickname: 'Kolega1',
+          transform: {
+            position: [1, 0, 1],
+            yaw: 0,
+            locomotion: 'Idle',
+            speed: 0,
+            timestamp: Date.now(),
+          },
+        },
+      ],
+    };
+    manager.handleWorldSnapshot(snapshot);
+    const entity = manager.remotePlayers.get('remote-1')!;
+    expect(entity.nametag.getIsSpeaking()).toBe(false);
+
+    manager.setPlayerSpeaking('remote-1', true);
+    expect(entity.nametag.getIsSpeaking()).toBe(true);
+
+    manager.setPlayerSpeaking('remote-1', false);
+    expect(entity.nametag.getIsSpeaking()).toBe(false);
+  });
+
+  it('integruje się ze SpatialVoiceManager i aktualizuje nametag na podstawie zdarzeń i pętli update', () => {
+    const spatialVoice = new SpatialVoiceManager();
+    const voiceManager = new RemotePlayersManager(scene, characterModels, networkClient, spatialVoice);
+
+    const snapshot: WorldSnapshotPayload = {
+      timestamp: Date.now(),
+      players: [
+        {
+          playerId: 'remote-speaker',
+          character: 'Amper',
+          nickname: 'Gaduła',
+          transform: {
+            position: [2, 0, 2],
+            yaw: 0,
+            locomotion: 'Idle',
+            speed: 0,
+            timestamp: Date.now(),
+          },
+        },
+      ],
+    };
+    voiceManager.handleWorldSnapshot(snapshot);
+    const entity = voiceManager.remotePlayers.get('remote-speaker')!;
+    expect(entity.nametag.getIsSpeaking()).toBe(false);
+
+    // SpatialVoiceManager zgłasza mówienie gracza przez callback onSpeakingPeersChange:
+    spatialVoice.setPeerSpeaking('remote-speaker', true);
+    expect(entity.nametag.getIsSpeaking()).toBe(true);
+
+    // Aktualizacja w update(dt, camera) również utrzymuje stan mówienia:
+    voiceManager.update(0.05, camera);
+    expect(entity.nametag.getIsSpeaking()).toBe(true);
+
+    spatialVoice.setPeerSpeaking('remote-speaker', false);
+    expect(entity.nametag.getIsSpeaking()).toBe(false);
+
+    voiceManager.dispose();
+    spatialVoice.dispose();
   });
 });

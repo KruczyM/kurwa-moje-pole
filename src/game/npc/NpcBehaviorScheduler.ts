@@ -1,4 +1,4 @@
-export type NpcBehaviorState = 'idle' | 'wander' | 'social' | 'run-home';
+export type NpcBehaviorState = 'idle' | 'wander' | 'social' | 'run-home' | 'dance' | 'sit';
 
 export type NpcBehaviorProfile = {
   initialIdleSeconds: number;
@@ -12,9 +12,13 @@ export type NpcBehaviorFacts = {
   insideSafeZone: boolean;
   arrived: boolean;
   socialAvailable: boolean;
+  speakerPlaying?: boolean;
+  canDance?: boolean;
+  seatAvailable?: boolean;
+  playerNearSeat?: boolean;
 };
 
-export type NpcBehaviorAction = 'idle' | 'wander' | 'social' | 'run-home';
+export type NpcBehaviorAction = 'idle' | 'wander' | 'social' | 'run-home' | 'dance' | 'sit';
 
 export const NPC_BEHAVIOR_PROFILES: readonly NpcBehaviorProfile[] = [
   { initialIdleSeconds: 1.2, idleSeconds: [8, 16], socialSeconds: [4, 8], socialChance: 0.34 },
@@ -46,6 +50,8 @@ export class NpcBehaviorScheduler {
   private remaining: number;
   private socialCooldown = 0;
   private runHomeCooldown = 0;
+  private danceCooldown = 0;
+  private seatCooldown = 0;
   private readonly recentSectors: number[] = [];
   private readonly randomSource: () => number;
 
@@ -55,6 +61,8 @@ export class NpcBehaviorScheduler {
   ) {
     this.remaining = profile.initialIdleSeconds;
     this.randomSource = createRandom(seed);
+    this.danceCooldown = 4 + this.random() * 8;
+    this.seatCooldown = 6 + this.random() * 12;
   }
 
   /** Zwraca losową wartość schedulera, aby również wybór celu był deterministyczny dla postaci. */
@@ -80,6 +88,8 @@ export class NpcBehaviorScheduler {
     const dt = Math.max(0, deltaTime);
     this.socialCooldown = Math.max(0, this.socialCooldown - dt);
     this.runHomeCooldown = Math.max(0, this.runHomeCooldown - dt);
+    this.danceCooldown = Math.max(0, this.danceCooldown - dt);
+    this.seatCooldown = Math.max(0, this.seatCooldown - dt);
 
     if (facts.nearEdge && this.state !== 'run-home' && this.runHomeCooldown <= 0) {
       return this.beginTravel('run-home');
@@ -95,26 +105,62 @@ export class NpcBehaviorScheduler {
         this.remaining = this.range(this.profile.socialSeconds);
         return null;
       }
+      if (this.state === 'dance') {
+        this.remaining = 6 + this.random() * 8;
+        return null;
+      }
+      if (this.state === 'sit') {
+        this.remaining = 10 + this.random() * 15;
+        return null;
+      }
       return this.beginIdle();
     }
 
     this.remaining -= dt;
-    if (this.remaining > 0) return null;
-    if (this.state === 'social') return this.beginIdle();
-    if (
-      this.state === 'idle' &&
-      facts.socialAvailable &&
-      this.socialCooldown <= 0 &&
-      this.random() < this.profile.socialChance
-    ) {
-      this.socialCooldown = 24 + this.random() * 20;
-      return this.beginTravel('social');
+    if (this.remaining > 0) {
+      if (this.state === 'sit' && facts.playerNearSeat) {
+        this.seatCooldown = 15;
+        return this.beginIdle(1.0, 2.0);
+      }
+      if (this.state === 'dance' && facts.speakerPlaying === false) {
+        this.danceCooldown = 10;
+        return this.beginIdle(1.0, 2.0);
+      }
+      return null;
+    }
+    if (this.state === 'social' || this.state === 'dance' || this.state === 'sit') {
+      if (this.state === 'dance') this.danceCooldown = 15 + this.random() * 20;
+      if (this.state === 'sit') this.seatCooldown = 25 + this.random() * 30;
+      return this.beginIdle();
+    }
+    if (this.state === 'idle') {
+      // 1. Głośnik gra -> szansa na podejście pod namiot i taniec
+      if (facts.speakerPlaying && facts.canDance && this.danceCooldown <= 0 && this.random() < 0.4) {
+        this.danceCooldown = 20 + this.random() * 25;
+        return this.beginTravel('dance');
+      }
+      // 2. Krzesło w obozie wolne -> szansa na podejście i odpoczynek na siedząco
+      if (facts.seatAvailable && this.seatCooldown <= 0 && this.random() < 0.3) {
+        this.seatCooldown = 25 + this.random() * 35;
+        return this.beginTravel('sit');
+      }
+      // 3. Social
+      if (
+        facts.socialAvailable &&
+        this.socialCooldown <= 0 &&
+        this.random() < this.profile.socialChance
+      ) {
+        this.socialCooldown = 24 + this.random() * 20;
+        return this.beginTravel('social');
+      }
     }
     return this.beginTravel('wander');
   }
 
   /** Przywraca krótki Idle, gdy grid nie potrafi wyznaczyć żądanej trasy. */
   routeFailed() {
+    if (this.state === 'dance') this.danceCooldown = 10;
+    if (this.state === 'sit') this.seatCooldown = 15;
     return this.beginIdle(0.8, 1.8);
   }
 

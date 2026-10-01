@@ -16,6 +16,85 @@ describe('PlayerNametag', () => {
     expect(nametag.getNickname()).toBe('NowyNick');
   });
 
+  it('obsługuje wskaźnik mówiącego gracza (setSpeaking)', () => {
+    const nametag = new PlayerNametag({
+      nickname: 'Kowalski',
+      characterName: 'Amper',
+    });
+
+    expect(nametag.getIsSpeaking()).toBe(false);
+    expect(nametag.isSpeakingPlayer()).toBe(false);
+
+    nametag.setSpeaking(true);
+    expect(nametag.getIsSpeaking()).toBe(true);
+    expect(nametag.isSpeakingPlayer()).toBe(true);
+
+    nametag.setSpeaking(false);
+    expect(nametag.getIsSpeaking()).toBe(false);
+    expect(nametag.isSpeakingPlayer()).toBe(false);
+  });
+
+  it('aktualizuje klasy i style DOM przy setSpeaking gdy document jest dostępny', () => {
+    const originalDocument = (globalThis as any).document;
+
+    const mockDocument = {
+      createElement: (tag: string) => {
+        const el: any = {
+          tagName: tag,
+          className: '',
+          textContent: '',
+          innerHTML: '',
+          title: '',
+          style: {},
+          children: [] as any[],
+          classList: {
+            classes: new Set<string>(),
+            add(c: string) {
+              this.classes.add(c);
+            },
+            remove(c: string) {
+              this.classes.delete(c);
+            },
+            contains(c: string) {
+              return this.classes.has(c);
+            },
+          },
+          appendChild(child: any) {
+            this.children.push(child);
+            return child;
+          },
+          remove() {},
+        };
+        return el;
+      },
+      body: {
+        appendChild: () => {},
+      },
+    };
+
+    (globalThis as any).document = mockDocument;
+
+    try {
+      const nametag = new PlayerNametag({
+        nickname: 'Mówca',
+        characterName: 'Klątwa',
+      });
+
+      expect(nametag.element).toBeDefined();
+      expect(nametag.element?.classList.contains('speaking')).toBe(false);
+
+      nametag.setSpeaking(true);
+      expect(nametag.getIsSpeaking()).toBe(true);
+      expect(nametag.element?.classList.contains('speaking')).toBe(true);
+
+      nametag.setSpeaking(false);
+      expect(nametag.getIsSpeaking()).toBe(false);
+      expect(nametag.element?.classList.contains('speaking')).toBe(false);
+    } finally {
+      (globalThis as any).document = originalDocument;
+    }
+  });
+
   describe('projectNametagPosition', () => {
     it('poprawnie rzutuje pozycję postaci przed kamerą na współrzędne ekranu', () => {
       const camera = new THREE.PerspectiveCamera(60, 16 / 9, 0.1, 100);

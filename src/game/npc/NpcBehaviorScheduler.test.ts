@@ -116,4 +116,82 @@ describe('NpcBehaviorScheduler', () => {
     expect(new Set(firstWanderSector).size).toBeGreaterThan(1);
     expect(actionTimes.size).toBeGreaterThan(20);
   });
+
+  it('triggers dance when music is playing and canDance is available', () => {
+    const scheduler = new NpcBehaviorScheduler(CALM, 1);
+    // Fast forward initial idle
+    scheduler.update(2.0, {
+      nearEdge: false,
+      insideSafeZone: true,
+      arrived: true,
+      socialAvailable: false,
+      speakerPlaying: true,
+      canDance: true,
+    });
+
+    // Advance ticks to trigger dance
+    let danced = false;
+    for (let i = 0; i < 60 && !danced; i++) {
+      const action = scheduler.update(0.5, {
+        nearEdge: false,
+        insideSafeZone: true,
+        arrived: scheduler.travelling,
+        socialAvailable: false,
+        speakerPlaying: true,
+        canDance: true,
+      });
+      if (action === 'dance' || scheduler.state === 'dance') {
+        danced = true;
+      }
+    }
+    expect(danced).toBe(true);
+  });
+
+  it('triggers sit when chair is available and vacates when player approaches', () => {
+    const scheduler = new NpcBehaviorScheduler(CALM, 2);
+    // Fast forward initial idle
+    scheduler.update(2.0, {
+      nearEdge: false,
+      insideSafeZone: true,
+      arrived: true,
+      socialAvailable: false,
+      seatAvailable: true,
+    });
+
+    let sat = false;
+    for (let i = 0; i < 60 && !sat; i++) {
+      const action = scheduler.update(0.5, {
+        nearEdge: false,
+        insideSafeZone: true,
+        arrived: scheduler.travelling,
+        socialAvailable: false,
+        seatAvailable: true,
+      });
+      if (action === 'sit' || scheduler.state === 'sit') {
+        sat = true;
+      }
+    }
+    expect(sat).toBe(true);
+
+    // Now arrive at seat
+    scheduler.travelling = true;
+    scheduler.update(0.1, {
+      nearEdge: false,
+      insideSafeZone: true,
+      arrived: true,
+      socialAvailable: false,
+    });
+    expect(scheduler.state).toBe('sit');
+
+    // Player approaches chair
+    const standAction = scheduler.update(0.1, {
+      nearEdge: false,
+      insideSafeZone: true,
+      arrived: false,
+      socialAvailable: false,
+      playerNearSeat: true,
+    });
+    expect(standAction).toBe('idle');
+    expect(scheduler.state).toBe('idle');
+  });
 });

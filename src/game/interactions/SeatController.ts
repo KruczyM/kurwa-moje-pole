@@ -37,6 +37,8 @@ export function seatCameraPosition(position: THREE.Vector3, rotationY: number) {
 
 /** Pokazuje wybraną postać na krześle i odtwarza zapętloną animację siedzenia. */
 export class SeatController {
+  private pooledRoot?: THREE.Group;
+  private pooledVisual?: THREE.Object3D;
   private root?: THREE.Group;
   private visual?: THREE.Object3D;
   private mixer?: THREE.AnimationMixer;
@@ -71,6 +73,18 @@ export class SeatController {
     return true;
   }
 
+  /** Zapewnia pojedynczą prealokowaną instancję siedzącego aktora bez klonowania przy każdym siadaniu. */
+  private ensureActor() {
+    if (!this.character) return null;
+    if (!this.pooledRoot || !this.pooledVisual) {
+      this.pooledRoot = new THREE.Group();
+      this.pooledVisual = cloneDisposableSkinnedModel(this.character.scene);
+      this.fitCharacter(this.pooledVisual);
+      this.pooledRoot.add(this.pooledVisual);
+    }
+    return { root: this.pooledRoot, visual: this.pooledVisual };
+  }
+
   /** Ustawia postać przy krześle, uruchamia SittingLaughing i przełącza kamerę na trzecią osobę. */
   start(pose: SeatPose, animationName?: string) {
     if (this.active || !this.character) return false;
@@ -78,22 +92,26 @@ export class SeatController {
       ? this.character.animations.find((candidate) => candidate.name === animationName)
       : findSittingClip(this.character.animations);
     if (!clip) return false;
+
+    const actor = this.ensureActor();
+    if (!actor) return false;
+    this.root = actor.root;
+    this.visual = actor.visual;
+
     this.snapshot = {
       position: this.camera.position.clone(),
       quaternion: this.camera.quaternion.clone(),
       fov: this.camera.fov,
     };
     this.seatId = pose.seatId;
-    this.root = new THREE.Group();
     this.root.name = `SeatedPlayer_${pose.seatId}`;
     this.root.position.set(...pose.position);
     this.root.rotation.y = pose.rotationY;
-    this.visual = cloneDisposableSkinnedModel(this.character.scene);
-    this.root.add(this.visual);
+
+    this.animator?.dispose();
     this.animator = new NpcAnimator(this.visual, this.character.animations);
     this.mixer = this.animator.mixer;
     this.animator.update(0);
-    this.fitCharacter(this.visual);
     const loop =
       !animationName ||
       /Idle|Pose|Dancing|Headbanging|Walking|DrunkWalk|Talking|TextingWhileStanding|Cheering|Clapping/.test(
@@ -120,8 +138,13 @@ export class SeatController {
     this.exitRequested = !loop;
     this.scene.add(this.root);
 
-    const target = this.root.position.clone().add(new THREE.Vector3(0, 1.15, 0));
-    this.camera.position.copy(seatCameraPosition(this.root.position, pose.rotationY));
+    const charFacing = pose.rotationY + Math.PI;
+    const charOffset = new THREE.Vector3(0, 0.95, -0.5).applyAxisAngle(
+      new THREE.Vector3(0, 1, 0),
+      pose.rotationY,
+    );
+    const target = this.root.position.clone().add(charOffset);
+    this.camera.position.copy(seatCameraPosition(this.root.position, charFacing));
     this.camera.lookAt(target);
     this.camera.fov = 54;
     this.camera.updateProjectionMatrix();
@@ -133,7 +156,7 @@ export class SeatController {
     this.animator?.update(deltaSeconds);
   }
 
-  /** Przywraca kamerę FPS i usuwa tymczasowy klon postaci. */
+  /** Przywraca kamerę FPS i odłącza postać od sceny bez usuwania współdzielonego aktora. */
   stop() {
     if (!this.active) return false;
     if (this.snapshot) {
@@ -144,10 +167,9 @@ export class SeatController {
     }
     this.mixer?.stopAllAction();
     this.animator?.dispose();
-    if (this.visual) this.mixer?.uncacheRoot(this.visual);
+    if (this.visual && this.mixer) this.mixer.uncacheRoot(this.visual);
     if (this.root) {
       this.scene.remove(this.root);
-      disposeObjectTree(this.root);
     }
     this.root = undefined;
     this.visual = undefined;
@@ -165,7 +187,12 @@ export class SeatController {
     const bounds = new THREE.Box3().setFromObject(model);
     model.scale.setScalar(2.45 / Math.max(0.01, bounds.max.y - bounds.min.y));
     bounds.setFromObject(model);
-    model.position.y = -bounds.min.y;
+    // Krzesło kempingowe (camping_chair.glb) ma oparcie z tyłu i przód siedziska w -Z.
+    // Postacie Mixamo domyślnie stoją przodem do +Z, więc obracamy model o 180 stopni.
+    // Obniżamy również biodra na poziom płótna krzesła (~0.50m) oraz przesuwamy w głąb siedziska.
+    model.rotation.y = Math.PI;
+    model.position.y = -bounds.min.y - 0.38;
+    model.position.z = -0.52;
     model.traverse((object) => {
       const mesh = object as THREE.Mesh;
       if (!mesh.isMesh) return;
@@ -174,8 +201,14 @@ export class SeatController {
     });
   }
 
-  /** Kończy ewentualne siedzenie podczas wyłączania gry. */
+  /** Kończy ewentualne siedzenie oraz bezpiecznie i deterministycznie zwalnia zasoby GPU aktora. */
   dispose() {
     this.stop();
+    if (this.pooledRoot) {
+      this.scene.remove(this.pooledRoot);
+      disposeObjectTree(this.pooledRoot);
+      this.pooledRoot = undefined;
+      this.pooledVisual = undefined;
+    }
   }
 }

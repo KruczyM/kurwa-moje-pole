@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { enableInteractionLayer, INTERACTION_LAYER, InteractionManager } from './InteractionManager';
 
 /** Buduje niewidoczny cel ustawiony przed kamerą, tak jak hitbox postaci w grze. */
@@ -91,6 +91,43 @@ describe('InteractionManager', () => {
     camera.rotation.y = Math.PI / 2;
     camera.updateMatrixWorld(true);
     expect(interactions.update()).toBeNull();
+    interactions.dispose();
+  });
+
+  it('reuses static Vector2, Vector3, and Quaternion instances during update', () => {
+    const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
+    const entrance = target('item', -2);
+    entrance.userData.interactionFacing = [0, 0, 1];
+    entrance.updateMatrixWorld(true);
+    const interactions = new InteractionManager(camera, () => [entrance]);
+
+    const imAny = InteractionManager as unknown as {
+      _screenCenter: THREE.Vector2;
+      _faceNormal: THREE.Vector3;
+      _faceQuat: THREE.Quaternion;
+      _faceTarget: THREE.Vector3;
+      _faceCam: THREE.Vector3;
+    };
+
+    expect(imAny._screenCenter).toBeInstanceOf(THREE.Vector2);
+    expect(imAny._faceNormal).toBeInstanceOf(THREE.Vector3);
+    expect(imAny._faceQuat).toBeInstanceOf(THREE.Quaternion);
+    expect(imAny._faceTarget).toBeInstanceOf(THREE.Vector3);
+    expect(imAny._faceCam).toBeInstanceOf(THREE.Vector3);
+
+    const raycaster = (interactions as unknown as { raycaster: THREE.Raycaster }).raycaster;
+    const raycasterSpy = vi.spyOn(raycaster, 'setFromCamera');
+    const posSpy = vi.spyOn(entrance, 'getWorldPosition');
+    const quatSpy = vi.spyOn(entrance, 'getWorldQuaternion');
+    const camPosSpy = vi.spyOn(camera, 'getWorldPosition');
+
+    interactions.update();
+
+    expect(raycasterSpy).toHaveBeenCalledWith(imAny._screenCenter, camera);
+    expect(posSpy).toHaveBeenCalledWith(imAny._faceTarget);
+    expect(quatSpy).toHaveBeenCalledWith(imAny._faceQuat);
+    expect(camPosSpy).toHaveBeenCalledWith(imAny._faceCam);
+
     interactions.dispose();
   });
 });

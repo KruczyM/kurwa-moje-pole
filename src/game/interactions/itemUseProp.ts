@@ -46,6 +46,13 @@ export function createUsePropFallback(effect: EffectId) {
     case 'LSD':
       add(new THREE.BoxGeometry(1, 0.06, 1), 0xdcc5f2);
       break;
+    case 'Woda':
+      add(new THREE.CylinderGeometry(0.2, 0.22, 0.85, 16), 0x3a88c8);
+      add(new THREE.CylinderGeometry(0.08, 0.08, 0.12, 12), 0x1a5288, 0.46);
+      break;
+    case 'Okulary':
+      add(new THREE.BoxGeometry(0.7, 0.25, 0.04), 0x151515);
+      break;
   }
   return root;
 }

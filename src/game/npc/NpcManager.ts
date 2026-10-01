@@ -12,11 +12,35 @@ import { NPC_BEHAVIOR_PROFILES, NpcBehaviorAction, NpcBehaviorScheduler } from '
 import { NpcStuckWatchdog, NpcWatchdogConfig, WatchdogRecoveryAction } from './NpcStuckWatchdog';
 import { terrainHeight } from '../world/CampWorld';
 import { MAIN_ASPHALT_ROAD, isInsidePrimaryCamp, PRIMARY_CAMP_PLOT } from '../world/festivalLayout';
+import { MAD_DOG_CONFIG, seatLayout, type SeatConfig } from '../world/campLandmarks';
+
+export function getSeatWorldPose(seat: SeatConfig): { position: THREE.Vector3; rotationY: number } {
+  const offsetDistance = 1;
+  const x = seat.position[0];
+  const z = seat.position[2];
+  const length = Math.hypot(x, z);
+  const offsetX = length > 0 ? (x / length) * offsetDistance : 0;
+  const offsetZ = length > 0 ? (z / length) * offsetDistance : 0;
+  const [madX, , madZ] = MAD_DOG_CONFIG.position;
+  const worldX = madX + x + offsetX;
+  const worldZ = madZ + z + offsetZ;
+  const worldY = terrainHeight(worldX, worldZ);
+  return {
+    position: new THREE.Vector3(worldX, worldY, worldZ),
+    rotationY: seat.rotationY,
+  };
+}
+
 export type Npc = {
   root: THREE.Group;
   name: string;
   line: string[];
   animator?: NpcAnimator;
+  visual?: THREE.Object3D;
+  visualBaseY?: number;
+  assignedSeatId?: string;
+  isSitting?: boolean;
+  isDancingAtSpeaker?: boolean;
   phase: number;
   target: THREE.Vector3;
   wait: number;
@@ -58,9 +82,51 @@ function addNpcInteractionHitbox(root: THREE.Group) {
 export class NpcManager {
   readonly npcs: Npc[] = [];
   speakerAnchor: THREE.Object3D | null = null;
+  speakerPlaying = false;
+  readonly occupiedSeats = new Map<string, Npc>();
   private disposed = false;
   private readonly ids = new Set<string>();
   private updateFrameIndex = 0;
+
+  setSpeakerPlaying(playing: boolean): void {
+    this.speakerPlaying = playing;
+  }
+
+  isSeatOccupied(seatId: string): boolean {
+    return this.occupiedSeats.has(seatId);
+  }
+
+  vacateSeat(seatId: string): boolean {
+    const occupant = this.occupiedSeats.get(seatId);
+    if (!occupant) return false;
+    this.standUpNpc(occupant);
+    return true;
+  }
+
+  standUpNpc(npc: Npc): void {
+    if (npc.assignedSeatId) {
+      this.occupiedSeats.delete(npc.assignedSeatId);
+      npc.assignedSeatId = undefined;
+    }
+    if (npc.isSitting) {
+      npc.isSitting = false;
+      if (npc.visual) {
+        npc.visual.rotation.y = 0;
+        npc.visual.position.y = npc.visualBaseY ?? 0;
+        npc.visual.position.z = 0;
+      }
+    }
+    npc.isDancingAtSpeaker = false;
+    npc.animator?.cancelActivity();
+    npc.stationary = false;
+    npc.speed = 0;
+    npc.velocity.set(0, 0, 0);
+    npc.target.copy(npc.root.position);
+    npc.watchdog.resetPosition(npc.root.position);
+    npc.behavior.forceWander();
+    this.applyBehaviorAction(npc, 'wander');
+  }
+
   constructor(
     private readonly scene: THREE.Scene,
     models: Map<string, GLTF>,
@@ -141,8 +207,9 @@ export class NpcManager {
       spawn = this.navigation.randomWalkablePoint(() => behavior.random(), {}) ?? new THREE.Vector3(0, 0, 0);
     }
     let animator: NpcAnimator | undefined;
+    let visual: THREE.Object3D | undefined;
     if (model) {
-      const visual = clone(model.scene);
+      visual = clone(model.scene);
       animator = model.animations.length
         ? new NpcAnimator(visual, model.animations, { initialPhase: behavior.random() })
         : undefined;
@@ -191,11 +258,13 @@ export class NpcManager {
     root.traverse((o) => (o.userData.interactionRoot = root));
     enableInteractionLayer(root);
     scene.add(root);
-    const npc = {
+    const npc: Npc = {
       root,
       name: asset.name,
       line: npcLines[asset.name] || ['Cześć!'],
       animator,
+      visual,
+      visualBaseY: visual?.position.y ?? 0,
       phase: index,
       target: new THREE.Vector3(),
       wait: 0,
@@ -367,8 +436,66 @@ export class NpcManager {
     return this.navigation.canStandAt(candidate.x, candidate.z) && this.routeTo(npc, candidate);
   }
 
+  /** Kieruje NPC na wolne miejsce pod głośnikiem kempingowym do tańca. */
+  private pickDanceTarget(npc: Npc) {
+    if (!npc.isCampMember) return false;
+    for (let attempt = 0; attempt < 16; attempt++) {
+      const angle = npc.behavior.random() * Math.PI * 2;
+      const radius = 1.4 + npc.behavior.random() * 1.8;
+      const candidate = new THREE.Vector3(
+        SPEAKER_POSITION.x + Math.cos(angle) * radius,
+        0,
+        SPEAKER_POSITION.z + Math.sin(angle) * radius,
+      );
+      candidate.y = terrainHeight(candidate.x, candidate.z);
+      if (this.navigation.canStandAt(candidate.x, candidate.z) && this.routeTo(npc, candidate)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Kieruje NPC do najbliższego wolnego krzesła w obozie. */
+  private pickSitTarget(npc: Npc) {
+    if (!npc.isCampMember) return false;
+    const availableSeats = seatLayout.filter((seat) => !this.occupiedSeats.has(seat.id));
+    if (availableSeats.length === 0) return false;
+
+    const sorted = [...availableSeats].sort((a, b) => {
+      const poseA = getSeatWorldPose(a);
+      const poseB = getSeatWorldPose(b);
+      const distA = npc.root.position.distanceToSquared(poseA.position);
+      const distB = npc.root.position.distanceToSquared(poseB.position);
+      return distA - distB;
+    });
+
+    for (const chosen of sorted) {
+      const pose = getSeatWorldPose(chosen);
+      if (this.routeTo(npc, pose.position)) {
+        this.occupiedSeats.set(chosen.id, npc);
+        npc.assignedSeatId = chosen.id;
+        return true;
+      }
+    }
+    return false;
+  }
+
   /** Stosuje decyzję schedulera i przygotowuje odpowiedni cel nawigacji. */
   private applyBehaviorAction(npc: Npc, action: NpcBehaviorAction) {
+    if (action !== 'sit' && (npc.isSitting || npc.assignedSeatId)) {
+      if (npc.assignedSeatId) {
+        this.occupiedSeats.delete(npc.assignedSeatId);
+        npc.assignedSeatId = undefined;
+      }
+      if (npc.isSitting) {
+        npc.isSitting = false;
+        if (npc.visual) {
+          npc.visual.rotation.y = 0;
+          npc.visual.position.y = npc.visualBaseY ?? 0;
+          npc.visual.position.z = 0;
+        }
+      }
+    }
     npc.returning = action === 'run-home';
     if (action === 'idle') {
       npc.waypoints.length = 0;
@@ -380,7 +507,11 @@ export class NpcManager {
         ? this.pickWanderTarget(npc)
         : action === 'social'
           ? this.pickSocialTarget(npc)
-          : this.pickRunHomeTarget(npc);
+          : action === 'dance'
+            ? this.pickDanceTarget(npc)
+            : action === 'sit'
+              ? this.pickSitTarget(npc)
+              : this.pickRunHomeTarget(npc);
     if (!routed) {
       npc.behavior.routeFailed();
       npc.returning = false;
@@ -405,6 +536,24 @@ export class NpcManager {
 
   /** Wykonuje stopniowane odzyskiwanie zalecone przez watchdog bez resetowania animacji. */
   private applyWatchdogRecovery(npc: Npc, action: WatchdogRecoveryAction) {
+    if (npc.isSitting || npc.assignedSeatId) {
+      if (npc.assignedSeatId) {
+        this.occupiedSeats.delete(npc.assignedSeatId);
+        npc.assignedSeatId = undefined;
+      }
+      if (npc.isSitting) {
+        npc.isSitting = false;
+        if (npc.visual) {
+          npc.visual.rotation.y = 0;
+          npc.visual.position.y = npc.visualBaseY ?? 0;
+          npc.visual.position.z = 0;
+        }
+      }
+    }
+    if (npc.isDancingAtSpeaker) {
+      npc.isDancingAtSpeaker = false;
+      npc.animator?.cancelActivity();
+    }
     switch (action) {
       case 'steer_nudge': {
         const lateral = new THREE.Vector3(-npc.steeringDirection.z, 0, npc.steeringDirection.x).normalize();
@@ -504,17 +653,60 @@ export class NpcManager {
   }
 
   /** Aktualizuje decyzje ruchu, obrót, powroty od granicy i płynne animacje NPC. */
-  update(dt: number, _time: number, playerPosition?: THREE.Vector3) {
+  update(dt: number, _time: number, playerPosition?: THREE.Vector3, isSpeakerPlaying?: boolean) {
     if (!Number.isFinite(dt) || dt <= 0) return;
+    if (isSpeakerPlaying !== undefined) {
+      this.speakerPlaying = isSpeakerPlaying;
+    }
     this.updateFrameIndex++;
+
+    if (playerPosition) {
+      for (const [seatId, occupant] of Array.from(this.occupiedSeats.entries())) {
+        const seat = seatLayout.find((s) => s.id === seatId);
+        if (!seat) continue;
+        const pose = getSeatWorldPose(seat);
+        if (playerPosition.distanceTo(pose.position) < 2.5) {
+          this.standUpNpc(occupant);
+        }
+      }
+    }
+
     const snapshots = this.npcs.map((npc) => ({
       npc,
       position: npc.root.position.clone(),
       velocity: npc.velocity.clone(),
     }));
     let socialCount = this.npcs.filter((npc) => npc.behavior.state === 'social').length;
+    const dancingCampCount = this.npcs.filter(
+      (npc) => npc.isCampMember && (npc.behavior.state === 'dance' || npc.isDancingAtSpeaker),
+    ).length;
+    const sittingCampCount = this.npcs.filter(
+      (npc) => npc.isCampMember && (npc.behavior.state === 'sit' || npc.isSitting || npc.assignedSeatId),
+    ).length;
+
     for (let index = 0; index < this.npcs.length; index++) {
       const npc = this.npcs[index];
+
+      // Jeśli głośnik przestał grać, zakończ taniec pod głośnikiem
+      if (!this.speakerPlaying && npc.isDancingAtSpeaker) {
+        npc.isDancingAtSpeaker = false;
+        npc.animator?.cancelActivity();
+        npc.behavior.forceWander();
+        this.applyBehaviorAction(npc, 'wander');
+      }
+
+      // Jeśli siedzenie wygasło w animatorze, postać wstaje
+      if (npc.isSitting && !npc.animator?.activityActive) {
+        this.standUpNpc(npc);
+      }
+
+      // Jeśli taniec wygasł, wracaj do wander
+      if (npc.isDancingAtSpeaker && !npc.animator?.activityActive) {
+        npc.isDancingAtSpeaker = false;
+        npc.behavior.forceWander();
+        this.applyBehaviorAction(npc, 'wander');
+      }
+
       npc.activityCooldown = Math.max(0, npc.activityCooldown - dt);
       if (npc.animator?.activityActive) {
         npc.speed = 0;
@@ -536,18 +728,82 @@ export class NpcManager {
         npc.waypoints.length <= 1 &&
         (npc.target.x - npc.root.position.x) ** 2 + (npc.target.z - npc.root.position.z) ** 2 <=
           NPC_MOTION.arrivalRadius ** 2;
+
+      let playerNearSeat = false;
+      if (playerPosition && npc.assignedSeatId) {
+        const seat = seatLayout.find((s) => s.id === npc.assignedSeatId);
+        if (seat) {
+          const pose = getSeatWorldPose(seat);
+          playerNearSeat = playerPosition.distanceTo(pose.position) < 2.5;
+        }
+      }
+
       const previousState = npc.behavior.state;
       const action = npc.behavior.update(dt, {
         nearEdge,
         insideSafeZone,
         arrived,
         socialAvailable: !npc.passageWalker && socialCount < 2 && this.npcs.length > 1,
+        speakerPlaying: this.speakerPlaying,
+        canDance:
+          npc.isCampMember &&
+          Boolean(npc.animator) &&
+          this.speakerPlaying &&
+          dancingCampCount < 3,
+        seatAvailable:
+          npc.isCampMember &&
+          Boolean(npc.animator) &&
+          this.occupiedSeats.size < seatLayout.length &&
+          sittingCampCount < 3,
+        playerNearSeat,
       });
       if (action) this.applyBehaviorAction(npc, action);
       if (previousState !== 'social' && npc.behavior.state === 'social') socialCount += 1;
       if (previousState === 'social' && npc.behavior.state !== 'social') socialCount -= 1;
       npc.returning = npc.behavior.state === 'run-home';
       npc.stationary = !npc.behavior.travelling;
+
+      // Obsługa dotarcia na krzesło i rozpoczęcie animacji siedzenia
+      if (npc.behavior.state === 'sit' && !npc.isSitting && !npc.behavior.travelling) {
+        const seat = seatLayout.find((s) => s.id === npc.assignedSeatId);
+        if (seat) {
+          const pose = getSeatWorldPose(seat);
+          npc.root.position.copy(pose.position);
+          npc.root.rotation.y = pose.rotationY;
+        }
+        npc.isSitting = true;
+        if (npc.visual) {
+          npc.visual.rotation.y = Math.PI;
+          npc.visual.position.y = (npc.visualBaseY ?? 0) - 0.38;
+          npc.visual.position.z = -0.52;
+        }
+        const sitClips = ['SittingIdle', 'SittingLaughing', 'SittingTalking'];
+        const available = sitClips.filter((c) => npc.animator?.hasClip(c));
+        const sitClip =
+          available.length > 0
+            ? available[Math.floor(npc.behavior.random() * available.length)]
+            : 'SittingIdle';
+        if (npc.animator?.hasClip(sitClip)) {
+          npc.animator.startActivity([{ name: sitClip, seconds: 12 + npc.behavior.random() * 16 }]);
+        }
+      }
+
+      // Obsługa dotarcia pod głośnik i rozpoczęcie tańca
+      if (npc.behavior.state === 'dance' && !npc.isDancingAtSpeaker && !npc.behavior.travelling) {
+        npc.isDancingAtSpeaker = true;
+        const dx = SPEAKER_POSITION.x - npc.root.position.x;
+        const dz = SPEAKER_POSITION.z - npc.root.position.z;
+        if (dx * dx + dz * dz > 0.001) {
+          npc.root.rotation.y = Math.atan2(dx, dz);
+          npc.steeringDirection.set(dx, 0, dz).normalize();
+        }
+        const danceClips = ['Headbanging', 'HipHopDancing', 'HipHopDancingVariant1', 'SillyDancing'];
+        const available = danceClips.filter((c) => npc.animator?.hasClip(c));
+        if (available.length > 0) {
+          const clip = available[Math.floor(npc.behavior.random() * available.length)];
+          npc.animator?.startActivity([{ name: clip, seconds: 8 + npc.behavior.random() * 10 }]);
+        }
+      }
 
       if (npc.inConversation) {
         npc.speed = 0;
@@ -582,7 +838,9 @@ export class NpcManager {
       }
 
       if (npc.stationary) {
-        this.tryActivity(npc, playerPosition);
+        if (!npc.isSitting && !npc.isDancingAtSpeaker) {
+          this.tryActivity(npc, playerPosition);
+        }
         npc.root.position.y = terrainHeight(npc.root.position.x, npc.root.position.z);
         npc.speed = approachSpeed(npc.speed, 0, dt);
         npc.velocity.set(0, 0, 0);
@@ -844,6 +1102,24 @@ export class NpcManager {
   pauseNpcForConversation(name: string, facePosition?: THREE.Vector3): Npc | undefined {
     const npc = this.npcs.find((n) => n.name === name);
     if (!npc) return undefined;
+    if (npc.isSitting || npc.assignedSeatId) {
+      if (npc.assignedSeatId) {
+        this.occupiedSeats.delete(npc.assignedSeatId);
+        npc.assignedSeatId = undefined;
+      }
+      if (npc.isSitting) {
+        npc.isSitting = false;
+        if (npc.visual) {
+          npc.visual.rotation.y = 0;
+          npc.visual.position.y = npc.visualBaseY ?? 0;
+          npc.visual.position.z = 0;
+        }
+      }
+    }
+    if (npc.isDancingAtSpeaker) {
+      npc.isDancingAtSpeaker = false;
+      npc.animator?.cancelActivity();
+    }
     npc.inConversation = true;
     npc.stationary = true;
     npc.speed = 0;
@@ -876,6 +1152,7 @@ export class NpcManager {
   /** Zatrzymuje miksery animacji wszystkich NPC. */
   dispose() {
     this.disposed = true;
+    this.occupiedSeats.clear();
     this.npcs.forEach((n) => n.animator?.dispose());
   }
 }

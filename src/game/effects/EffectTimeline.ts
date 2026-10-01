@@ -31,6 +31,20 @@ export class EffectTimeline {
     this.remaining = durations.fadeOut - this.elapsed;
   }
 
+  /** Skraca czas trwania aktywnego tripu/efektu o wskazany ułamek (domyślnie 40%). */
+  shorten(fraction = 0.4) {
+    if (!this.active || this.phase === 'inactive') return false;
+    const clampedFraction = Math.max(0, Math.min(1, fraction));
+    const reduction = this.remaining * clampedFraction;
+    this.elapsed += reduction;
+    this.remaining = Math.max(0, this.remaining - reduction);
+    if (this.phase === 'active' && this.remaining <= 0) {
+      this.phase = 'fadeOut';
+      this.elapsed = 0;
+    }
+    return true;
+  }
+
   /** Aktualizuje licznik i zwraca true dokładnie w klatce pełnego zakończenia efektu. */
   update(dt: number, durations: EffectDurations | null) {
     if (!this.active || !durations) return false;

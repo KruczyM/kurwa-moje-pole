@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   computeVoiceSpatialGain,
   computeVoiceStereoPan,
+  computeVoiceRms,
   SpatialVoiceManager,
   VOICE_INNER_RADIUS,
   VOICE_OUTER_RADIUS,
@@ -85,5 +86,80 @@ describe('SpatialVoiceManager - State and Lifecycle', () => {
     expect(() => manager.dispose()).not.toThrow();
     // multiple dispose calls should be safe:
     expect(() => manager.dispose()).not.toThrow();
+  });
+});
+
+describe('SpatialVoiceManager - Speaking Detection', () => {
+  it('computes RMS correctly from Float32Array audio buffer', () => {
+    expect(computeVoiceRms(new Float32Array([]))).toBe(0);
+    expect(computeVoiceRms(new Float32Array([0, 0, 0, 0]))).toBe(0);
+    expect(computeVoiceRms(new Float32Array([0.1, -0.1, 0.1, -0.1]))).toBeCloseTo(0.1, 5);
+    const data = new Float32Array([0, 0.5, 1.0, 0.5, 0, -0.5, -1.0, -0.5]);
+    expect(computeVoiceRms(data)).toBeCloseTo(Math.sqrt(3 / 8), 4);
+  });
+
+  it('reports speaking status and triggers callbacks on peer speaking change', () => {
+    const onSpeakingChange = vi.fn();
+    const onSpeakingPeersChange = vi.fn();
+    const manager = new SpatialVoiceManager(undefined, {
+      onSpeakingChange,
+      onSpeakingPeersChange,
+    });
+
+    const listener = vi.fn();
+    const unsub = manager.onSpeakingPeersChange(listener);
+
+    expect(manager.isPeerSpeaking('peer-1')).toBe(false);
+    expect(manager.getSpeakingPeers().size).toBe(0);
+
+    // Peer 1 starts speaking:
+    manager.setPeerSpeaking('peer-1', true);
+    expect(manager.isPeerSpeaking('peer-1')).toBe(true);
+    expect(manager.getSpeakingPeers().has('peer-1')).toBe(true);
+    expect(onSpeakingChange).toHaveBeenCalledWith('peer-1', true);
+    expect(onSpeakingPeersChange).toHaveBeenCalled();
+    expect(listener).toHaveBeenCalledWith(expect.any(Set));
+
+    // Peer 1 stops speaking:
+    manager.setPeerSpeaking('peer-1', false);
+    expect(manager.isPeerSpeaking('peer-1')).toBe(false);
+    expect(manager.getSpeakingPeers().has('peer-1')).toBe(false);
+    expect(onSpeakingChange).toHaveBeenCalledWith('peer-1', false);
+
+    unsub();
+    manager.dispose();
+  });
+
+  it('detects speaking in update loop based on AnalyserNode RMS', () => {
+    const manager = new SpatialVoiceManager(undefined, { speakingThreshold: 0.02 });
+
+    const peer: any = (manager as any).getOrCreatePeer('peer-test', false);
+
+    let mockBufferValues = new Float32Array(256).fill(0);
+    peer.analyserNode = {
+      fftSize: 256,
+      getFloatTimeDomainData: (arr: Float32Array) => {
+        arr.set(mockBufferValues);
+      },
+      disconnect: vi.fn(),
+    };
+
+    const remotePositions = new Map([['peer-test', { x: 5, y: 0, z: 0 }]]);
+
+    // Update with silence:
+    manager.update({ x: 0, y: 0, z: 0 }, 0, remotePositions);
+    expect(manager.isPeerSpeaking('peer-test')).toBe(false);
+
+    // Update with speech (RMS = 0.05 > 0.02):
+    mockBufferValues = new Float32Array(256).fill(0.05);
+    manager.update({ x: 0, y: 0, z: 0 }, 0, remotePositions);
+    expect(manager.isPeerSpeaking('peer-test')).toBe(true);
+
+    // Update with silence again:
+    mockBufferValues = new Float32Array(256).fill(0.005);
+    manager.update({ x: 0, y: 0, z: 0 }, 0, remotePositions);
+    expect(manager.isPeerSpeaking('peer-test')).toBe(false);
+
+    manager.dispose();
   });
 });

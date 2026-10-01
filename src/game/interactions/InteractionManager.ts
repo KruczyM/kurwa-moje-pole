@@ -11,8 +11,16 @@ export function enableInteractionLayer(root: THREE.Object3D) {
 }
 
 export class InteractionManager {
+  private static readonly _screenCenter = new THREE.Vector2(0, 0);
+  private static readonly _faceNormal = new THREE.Vector3();
+  private static readonly _faceQuat = new THREE.Quaternion();
+  private static readonly _faceTarget = new THREE.Vector3();
+  private static readonly _faceCam = new THREE.Vector3();
+
   private raycaster = new THREE.Raycaster();
   private target: THREE.Object3D | null = null;
+  private readonly hits: THREE.Intersection[] = [];
+
   constructor(
     private readonly camera: THREE.Camera,
     private readonly roots: () => THREE.Object3D[],
@@ -21,9 +29,11 @@ export class InteractionManager {
   }
   /** Wykonuje raycast ze środka ekranu i aktualizuje najbliższy cel interakcji. */
   update() {
-    this.raycaster.setFromCamera(new THREE.Vector2(), this.camera);
+    this.raycaster.setFromCamera(InteractionManager._screenCenter, this.camera);
     let next: THREE.Object3D | null = null;
-    for (const hit of this.raycaster.intersectObjects(this.roots(), true)) {
+    this.hits.length = 0;
+    this.raycaster.intersectObjects(this.roots(), true, this.hits);
+    for (const hit of this.hits) {
       const root = this.findRoot(hit.object);
       if (!root) continue;
       if (!root.visible) continue;
@@ -56,11 +66,11 @@ export class InteractionManager {
   private facesCamera(root: THREE.Object3D) {
     const facing = root.userData.interactionFacing as number[] | undefined;
     if (!facing) return true;
-    const normal = new THREE.Vector3()
+    const normal = InteractionManager._faceNormal
       .fromArray(facing)
-      .applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion()));
-    const target = root.getWorldPosition(new THREE.Vector3());
-    const camera = this.camera.getWorldPosition(new THREE.Vector3());
+      .applyQuaternion(root.getWorldQuaternion(InteractionManager._faceQuat));
+    const target = root.getWorldPosition(InteractionManager._faceTarget);
+    const camera = this.camera.getWorldPosition(InteractionManager._faceCam);
     return normal.dot(camera.sub(target).normalize()) >= MINIMUM_FACING_DOT;
   }
   /** Włącza lub wyłącza delikatne podświetlenie materiałów celu. */
@@ -77,6 +87,7 @@ export class InteractionManager {
   clear() {
     if (this.target) this.highlight(this.target, false);
     this.target = null;
+    this.hits.length = 0;
   }
   /** Czyści stan menedżera przed usunięciem sceny. */
   dispose() {

@@ -1,6 +1,14 @@
 import type { EffectId } from '../effects/EffectManager';
 import type { InspectableItemId } from './itemConfig';
 
+export type ItemUseSfxId = 'beer_open' | 'lighter_flick' | 'sniff' | 'swallow';
+
+export type ItemUseSfxConfig = {
+  sound: ItemUseSfxId;
+  delay?: number;
+  volume?: number;
+};
+
 export type ItemUseSequenceConfig = {
   gesture: 'smoke' | 'sniff' | 'eat' | 'drink';
   duration: number;
@@ -11,6 +19,7 @@ export type ItemUseSequenceConfig = {
   propRotation: readonly [number, number, number];
   consumeProp: boolean;
   label: string;
+  sfx?: ItemUseSfxConfig;
 };
 
 /**
@@ -27,6 +36,7 @@ export const itemUseSequenceConfig: Record<EffectId, ItemUseSequenceConfig> = {
     propRotation: [0, 0, 0],
     consumeProp: false,
     label: 'Picie',
+    sfx: { sound: 'beer_open', delay: 0.2, volume: 0.9 },
   },
   Papieros: {
     gesture: 'smoke',
@@ -38,6 +48,7 @@ export const itemUseSequenceConfig: Record<EffectId, ItemUseSequenceConfig> = {
     propRotation: [0, 0, 0],
     consumeProp: false,
     label: 'Palenie',
+    sfx: { sound: 'lighter_flick', delay: 0.25, volume: 0.8 },
   },
   Joint: {
     gesture: 'smoke',
@@ -49,6 +60,7 @@ export const itemUseSequenceConfig: Record<EffectId, ItemUseSequenceConfig> = {
     propRotation: [0, 0, 0],
     consumeProp: false,
     label: 'Odpalanie blanta',
+    sfx: { sound: 'lighter_flick', delay: 0.25, volume: 0.8 },
   },
   Kreska: {
     gesture: 'sniff',
@@ -60,6 +72,7 @@ export const itemUseSequenceConfig: Record<EffectId, ItemUseSequenceConfig> = {
     propRotation: [0, Math.PI / 2, 0],
     consumeProp: false,
     label: 'Wciąganie kreski',
+    sfx: { sound: 'sniff', delay: 0.35, volume: 0.85 },
   },
   Grzyb: {
     gesture: 'eat',
@@ -71,6 +84,7 @@ export const itemUseSequenceConfig: Record<EffectId, ItemUseSequenceConfig> = {
     propRotation: [0, 0, 0],
     consumeProp: true,
     label: 'Jedzenie grzybów',
+    sfx: { sound: 'swallow', delay: 0.25, volume: 0.75 },
   },
   MDMA: {
     gesture: 'eat',
@@ -82,6 +96,7 @@ export const itemUseSequenceConfig: Record<EffectId, ItemUseSequenceConfig> = {
     propRotation: [0, 0, 0],
     consumeProp: true,
     label: 'Użycie MDMA',
+    sfx: { sound: 'swallow', delay: 0.25, volume: 0.75 },
   },
   LSD: {
     gesture: 'eat',
@@ -93,6 +108,30 @@ export const itemUseSequenceConfig: Record<EffectId, ItemUseSequenceConfig> = {
     propRotation: [0, Math.PI / 2, 0],
     consumeProp: true,
     label: 'Użycie LSD',
+    sfx: { sound: 'swallow', delay: 0.25, volume: 0.75 },
+  },
+  Woda: {
+    gesture: 'drink',
+    duration: 2.1,
+    effectMarker: 1.0,
+    propId: 'water',
+    propSize: 0.28,
+    propPosition: [0, 0, 0],
+    propRotation: [0, 0, 0],
+    consumeProp: false,
+    label: 'Picie wody',
+    sfx: { sound: 'swallow', delay: 0.25, volume: 0.75 },
+  },
+  Okulary: {
+    gesture: 'pill',
+    duration: 1.8,
+    effectMarker: 0.9,
+    propId: 'sunglasses',
+    propSize: 0.2,
+    propPosition: [0, 0, 0],
+    propRotation: [0, 0, 0],
+    consumeProp: false,
+    label: 'Zakładanie okularów',
   },
 };
 

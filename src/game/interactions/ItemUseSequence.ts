@@ -18,7 +18,7 @@ const RIGHT_ARM = 'mixamorig:RightArm';
 const RIGHT_FOREARM = 'mixamorig:RightForeArm';
 const RIGHT_HAND = 'mixamorig:RightHand';
 
-export type UseSequenceEvent = { activateEffect: boolean; complete: boolean };
+export type UseSequenceEvent = { activateEffect: boolean; complete: boolean; sfx?: string };
 export type CameraPathValidator = (x: number, z: number) => boolean;
 
 type CameraSnapshot = {
@@ -120,6 +120,7 @@ export function canAnimateUseSequence(character: GLTF | undefined) {
 export class ItemUseSequence {
   private elapsed = 0;
   private markerPassed = false;
+  private sfxPlayed = false;
   private root?: THREE.Group;
   private visual?: THREE.Object3D;
   private prop?: THREE.Object3D;
@@ -128,6 +129,12 @@ export class ItemUseSequence {
   private targetPosition = new THREE.Vector3();
   private targetQuaternion = new THREE.Quaternion();
   private currentEffect?: EffectId;
+
+  private pooledRoot?: THREE.Group;
+  private pooledVisual?: THREE.Object3D;
+  private pooledMixer?: THREE.AnimationMixer;
+  private basePoseAction?: THREE.AnimationAction;
+  private currentClipAction?: THREE.AnimationAction;
 
   constructor(
     private scene: THREE.Scene,
@@ -142,6 +149,35 @@ export class ItemUseSequence {
     return this.currentEffect !== undefined;
   }
 
+  /** Zapewnia pojedynczą prealokowaną instancję aktora sekwencji bez klonowania w każdej sekwencji. */
+  private ensureActor() {
+    if (!this.pooledRoot || !this.pooledVisual) {
+      this.pooledRoot = new THREE.Group();
+      this.pooledRoot.name = 'PlayerUseSequence';
+      this.pooledVisual = this.character
+        ? cloneDisposableSkinnedModel(this.character.scene)
+        : fallbackCharacter();
+      this.pooledRoot.add(this.pooledVisual);
+
+      if (this.character) {
+        this.pooledMixer = new THREE.AnimationMixer(this.pooledVisual);
+        const idle = this.character.animations.find(
+          (clip) => resolveCanonicalAnimationName(clip.name) === 'Idle',
+        );
+        if (idle) {
+          this.basePoseAction = this.pooledMixer.clipAction(
+            stabilizeLocomotionRoot(this.pooledVisual, idle),
+          );
+          this.basePoseAction.play();
+          this.basePoseAction.paused = true;
+        }
+        this.pooledMixer.update(0);
+      }
+      fitCharacter(this.pooledVisual);
+    }
+    return { root: this.pooledRoot, visual: this.pooledVisual, mixer: this.pooledMixer };
+  }
+
   /** Buduje postać, animację i bezpieczny kadr dla nowej sekwencji. */
   start(effect: EffectId, yaw: number) {
     if (this.active) return false;
@@ -149,32 +185,26 @@ export class ItemUseSequence {
     this.currentEffect = effect;
     this.elapsed = 0;
     this.markerPassed = false;
+    this.sfxPlayed = false;
     this.snapshot = {
       position: this.camera.position.clone(),
       quaternion: this.camera.quaternion.clone(),
       fov: this.camera.fov,
     };
-    this.root = new THREE.Group();
-    this.root.name = 'PlayerUseSequence';
-    const animatedCharacter = canAnimateUseSequence(this.character) ? this.character : undefined;
-    this.visual = this.character ? cloneDisposableSkinnedModel(this.character.scene) : fallbackCharacter();
-    this.root.add(this.visual);
 
-    if (this.character) {
-      this.mixer = new THREE.AnimationMixer(this.visual);
-      const idle = this.character.animations.find(
-        (clip) => resolveCanonicalAnimationName(clip.name) === 'Idle',
-      );
-      if (idle) {
-        const basePose = this.mixer.clipAction(stabilizeLocomotionRoot(this.visual, idle));
-        basePose.play();
-        // Keep the reference pose steady while the authored gesture makes contact with the face.
-        basePose.paused = true;
-      }
+    const actor = this.ensureActor();
+    this.root = actor.root;
+    this.visual = actor.visual;
+    this.mixer = actor.mixer;
+
+    if (this.basePoseAction && this.mixer) {
+      this.basePoseAction.reset();
+      this.basePoseAction.play();
+      this.basePoseAction.paused = true;
       this.mixer.update(0);
     }
-    fitCharacter(this.visual);
-    // Bake before attaching a prop so bounds and reach depend only on the character.
+
+    const animatedCharacter = canAnimateUseSequence(this.character) ? this.character : undefined;
     const clip = animatedCharacter ? createProceduralUseClip(this.visual, effect) : undefined;
     this.prop = attachUseProp(
       this.visual,
@@ -183,10 +213,11 @@ export class ItemUseSequence {
     );
 
     if (clip && this.mixer) {
-      const action = this.mixer.clipAction(clip);
-      action.setLoop(THREE.LoopOnce, 1);
-      action.clampWhenFinished = true;
-      action.play();
+      this.currentClipAction = this.mixer.clipAction(clip);
+      this.currentClipAction.reset();
+      this.currentClipAction.setLoop(THREE.LoopOnce, 1);
+      this.currentClipAction.clampWhenFinished = true;
+      this.currentClipAction.play();
     }
 
     const groundY = this.snapshot.position.y - 1.9;
@@ -229,9 +260,18 @@ export class ItemUseSequence {
 
     const activateEffect = !this.markerPassed && this.elapsed >= config.effectMarker;
     if (activateEffect) this.markerPassed = true;
+
+    const sfxDelay = config.sfx?.delay ?? 0.2;
+    const triggerSfx = !this.sfxPlayed && config.sfx !== undefined && this.elapsed >= sfxDelay;
+    let sfx: string | undefined;
+    if (triggerSfx) {
+      this.sfxPlayed = true;
+      sfx = config.sfx?.sound;
+    }
+
     const complete = this.elapsed >= config.duration;
     if (complete) this.finish();
-    return { activateEffect, complete };
+    return { activateEffect, complete, sfx };
   }
 
   /** Przerywa sekwencję i zawsze przywraca dokładny poprzedni kadr. */
@@ -241,7 +281,7 @@ export class ItemUseSequence {
     return true;
   }
 
-  /** Zatrzymuje mikser, usuwa klony i odtwarza parametry kamery FPS. */
+  /** Zatrzymuje mikser, odłącza rekwizyt i odtwarza parametry kamery FPS. */
   private finish() {
     if (this.snapshot) {
       this.camera.position.copy(this.snapshot.position);
@@ -249,14 +289,28 @@ export class ItemUseSequence {
       this.camera.fov = this.snapshot.fov;
       this.camera.updateProjectionMatrix();
     }
+    if (this.currentClipAction) {
+      this.currentClipAction.stop();
+      this.currentClipAction = undefined;
+    }
     this.mixer?.stopAllAction();
-    if (this.visual) this.mixer?.uncacheRoot(this.visual);
+    if (this.basePoseAction && this.mixer) {
+      this.basePoseAction.reset();
+      this.basePoseAction.play();
+      this.basePoseAction.paused = true;
+      this.mixer.update(0);
+    }
+    if (this.prop) {
+      this.prop.removeFromParent();
+      disposeObjectTree(this.prop);
+      this.prop = undefined;
+    }
     if (this.root) {
       this.scene.remove(this.root);
-      disposeObjectTree(this.root);
     }
     this.elapsed = 0;
     this.markerPassed = false;
+    this.sfxPlayed = false;
     this.root = undefined;
     this.visual = undefined;
     this.prop = undefined;
@@ -265,8 +319,18 @@ export class ItemUseSequence {
     this.currentEffect = undefined;
   }
 
-  /** Zwalnia aktywną sekwencję podczas zamykania całej gry. */
+  /** Zwalnia aktywną sekwencję oraz prealokowane zasoby modelu podczas zamykania gry. */
   dispose() {
     this.finish();
+    if (this.pooledRoot) {
+      this.scene.remove(this.pooledRoot);
+      this.pooledMixer?.stopAllAction();
+      if (this.pooledVisual && this.pooledMixer) this.pooledMixer.uncacheRoot(this.pooledVisual);
+      disposeObjectTree(this.pooledRoot);
+      this.pooledRoot = undefined;
+      this.pooledVisual = undefined;
+      this.pooledMixer = undefined;
+      this.basePoseAction = undefined;
+    }
   }
 }

@@ -309,4 +309,120 @@ describe('NpcManager', () => {
     expect(npc.animator?.getDiagnostics().currentClip).toBe('Idle');
     manager.dispose();
   });
+
+  it('handles camp NPC sitting geometry and vacating when vacateSeat is called', () => {
+    const scene = new THREE.Scene();
+    const charMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
+    charMesh.name = 'actor-mesh';
+    const charScene = new THREE.Group();
+    charScene.add(charMesh);
+    const idle = new THREE.AnimationClip('Idle', 1, []);
+    const sittingIdle = new THREE.AnimationClip('SittingIdle', 1, []);
+    const models = new Map([['amper', { scene: charScene, animations: [idle, sittingIdle] } as GLTF]]);
+
+    const manager = new NpcManager(scene, models, null, openNavigation());
+    const npc = manager.npcs[0];
+    const initialVisualY = npc.visualBaseY ?? 0;
+
+    // Trigger sitting action
+    npc.behavior.state = 'sit';
+    npc.behavior.travelling = true;
+    manager['applyBehaviorAction'](npc, 'sit');
+    expect(npc.assignedSeatId).toBeDefined();
+    const seatId = npc.assignedSeatId!;
+    expect(manager.isSeatOccupied(seatId)).toBe(true);
+
+    // Simulate arrival at seat
+    npc.root.position.copy(npc.target);
+    npc.waypoints = [npc.target.clone()];
+    manager.update(0.05, 0.05);
+
+    expect(npc.isSitting).toBe(true);
+    expect(npc.visual?.rotation.y).toBeCloseTo(Math.PI, 4);
+    expect(npc.visual?.position.y).toBeCloseTo(initialVisualY - 0.38, 4);
+    expect(npc.visual?.position.z).toBeCloseTo(-0.52, 4);
+
+    // Vacate seat
+    const vacated = manager.vacateSeat(seatId);
+    expect(vacated).toBe(true);
+    expect(manager.isSeatOccupied(seatId)).toBe(false);
+    expect(npc.isSitting).toBe(false);
+    expect(npc.assignedSeatId).toBeUndefined();
+    expect(npc.visual?.rotation.y).toBeCloseTo(0, 4);
+    expect(npc.visual?.position.y).toBeCloseTo(initialVisualY, 4);
+    expect(npc.visual?.position.z).toBeCloseTo(0, 4);
+
+    manager.dispose();
+  });
+
+  it('vacates occupied chair when player approaches closer than 2.5m', () => {
+    const scene = new THREE.Scene();
+    const charScene = new THREE.Group();
+    charScene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial()));
+    const idle = new THREE.AnimationClip('Idle', 1, []);
+    const sittingIdle = new THREE.AnimationClip('SittingIdle', 1, []);
+    const models = new Map([['amper', { scene: charScene, animations: [idle, sittingIdle] } as GLTF]]);
+
+    const manager = new NpcManager(scene, models, null, openNavigation());
+    const npc = manager.npcs[0];
+
+    npc.behavior.state = 'sit';
+    npc.behavior.travelling = true;
+    manager['applyBehaviorAction'](npc, 'sit');
+    const seatId = npc.assignedSeatId!;
+    expect(manager.isSeatOccupied(seatId)).toBe(true);
+
+    // Arrived and sitting
+    npc.root.position.copy(npc.target);
+    npc.waypoints = [npc.target.clone()];
+    manager.update(0.05, 0.05);
+    expect(npc.isSitting).toBe(true);
+
+    // Player far away - still sitting
+    manager.update(0.05, 0.1, new THREE.Vector3(100, 0, 100));
+    expect(npc.isSitting).toBe(true);
+
+    // Player walks up close (< 2.5m from seated NPC)
+    const closePlayerPos = npc.root.position.clone().add(new THREE.Vector3(1.2, 0, 0));
+    manager.update(0.05, 0.15, closePlayerPos);
+    expect(npc.isSitting).toBe(false);
+    expect(manager.isSeatOccupied(seatId)).toBe(false);
+
+    manager.dispose();
+  });
+
+  it('manages dancing near speaker when music is playing and stops when music ends', () => {
+    const scene = new THREE.Scene();
+    const charScene = new THREE.Group();
+    charScene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial()));
+    const idle = new THREE.AnimationClip('Idle', 1, []);
+    const headbanging = new THREE.AnimationClip('Headbanging', 1, []);
+    const models = new Map([['amper', { scene: charScene, animations: [idle, headbanging] } as GLTF]]);
+
+    const manager = new NpcManager(scene, models, null, openNavigation());
+    const npc = manager.npcs[0];
+
+    manager.setSpeakerPlaying(true);
+    npc.behavior.state = 'dance';
+    npc.behavior.travelling = true;
+    manager['applyBehaviorAction'](npc, 'dance');
+
+    expect(npc.target).toBeDefined();
+    // Distance from speaker anchor (-1.45, 0.65) should be between 1.0 and 3.5m
+    const distToSpeaker = Math.hypot(npc.target.x - (-1.45), npc.target.z - 0.65);
+    expect(distToSpeaker).toBeGreaterThanOrEqual(1.0);
+    expect(distToSpeaker).toBeLessThanOrEqual(3.5);
+
+    // Arrived at dance spot
+    npc.root.position.copy(npc.target);
+    npc.waypoints = [npc.target.clone()];
+    manager.update(0.05, 0.05, undefined, true);
+    expect(npc.isDancingAtSpeaker).toBe(true);
+
+    // Speaker turns off -> dance ends
+    manager.update(0.05, 0.1, undefined, false);
+    expect(npc.isDancingAtSpeaker).toBe(false);
+
+    manager.dispose();
+  });
 });

@@ -109,4 +109,43 @@ describe('ItemUseSequence', () => {
     expect(camera.position.distanceTo(original)).toBeLessThan(1e-7);
     expect(scene.getObjectByName('PlayerUseSequence')).toBeUndefined();
   });
+
+  it('emits contextual sfx sound event at the configured timestamp', () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
+    const sequence = new ItemUseSequence(scene, camera, undefined, new Map(), () => true);
+
+    sequence.start('Piwo', 0);
+    // At t=0.1s (before sfx delay 0.2s)
+    const eventBefore = sequence.update(0.1);
+    expect(eventBefore.sfx).toBeUndefined();
+
+    // At t=0.25s (after sfx delay 0.2s)
+    const eventAt = sequence.update(0.15);
+    expect(eventAt.sfx).toBe('beer_open');
+
+    // Subsequent updates should not repeat the one-shot sfx
+    const eventAfter = sequence.update(0.15);
+    expect(eventAfter.sfx).toBeUndefined();
+    sequence.cancel();
+  });
+
+  it('reuses the pooled character model across multiple starts without re-cloning', () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
+    const character = characterFixture();
+    const sequence = new ItemUseSequence(scene, camera, character, new Map(), () => true);
+
+    expect(sequence.start('Piwo', 0)).toBe(true);
+    const firstVisual = scene.getObjectByName('PlayerUseSequence')?.children[0];
+    expect(firstVisual).toBeDefined();
+    sequence.cancel();
+
+    expect(sequence.start('Joint', 0)).toBe(true);
+    const secondVisual = scene.getObjectByName('PlayerUseSequence')?.children[0];
+    expect(secondVisual).toBe(firstVisual);
+    sequence.cancel();
+
+    sequence.dispose();
+  });
 });

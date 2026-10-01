@@ -19,6 +19,8 @@ export const CANONICAL_CHARACTERS = [
   'Szerszeń',
 ] as const;
 
+export const MAX_PLAYERS_PER_ROOM = CANONICAL_CHARACTERS.length; // 16
+
 export type CharacterName = (typeof CANONICAL_CHARACTERS)[number];
 
 export function isCharacterName(value: unknown): value is CharacterName {

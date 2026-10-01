@@ -29,6 +29,7 @@ import { controlHintForState, interactionControlHint, resolveGameInput } from '.
 import { ConsumableInventory, DEFAULT_STARTER_INVENTORY, inventoryEffects } from './inventory/ConsumableInventory';
 import { ItemUseSequence } from './interactions/ItemUseSequence';
 import { itemUseSequenceConfig } from './interactions/itemUseSequenceConfig';
+import { ItemUseSfxPlayer } from './audio/ItemUseSfx';
 import { SeatController, type SeatPose } from './interactions/SeatController';
 import { configureColorPipeline } from './rendering/colorPipeline';
 import { RemotePlayersManager } from './network/RemotePlayersManager';
@@ -124,6 +125,7 @@ export class Game {
   private mobileControls?: MobileControls;
   private readonly inventory = new ConsumableInventory(DEFAULT_STARTER_INVENTORY);
   private useSequence?: ItemUseSequence;
+  private itemUseSfx?: ItemUseSfxPlayer;
   private seatController?: SeatController;
   private pendingItemUse?: PendingItemUse;
   private pendingWarningItem?: PendingWarningItem;
@@ -255,6 +257,7 @@ export class Game {
         (x, z) => this.world!.canMove(x, z),
       );
       this.seatController = new SeatController(this.scene, this.camera, selectedCharacter);
+      this.itemUseSfx = new ItemUseSfxPlayer();
       this.ui.populateMotionSelect(this.seatController.animationNames);
       this.campAmbient.start();
       this.grzybekAudio.init();
@@ -512,6 +515,7 @@ export class Game {
       return;
     }
     if (interaction.kind === 'seat' && this.seatController) {
+      this.npcs?.vacateSeat(interaction.seatId);
       const pose: SeatPose = {
         seatId: interaction.seatId,
         position: interaction.position,
@@ -831,7 +835,7 @@ export class Game {
         this.updateInteractionPrompt();
       }
       if (state === 'playing' || state === 'seated') {
-        this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position);
+        this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position, this.speakerAudio.isPlaying);
       }
       if ((state === 'playing' || state === 'seated') && this.networkClient?.isOnline()) {
         this.networkSyncTimer += dt;
@@ -871,6 +875,7 @@ export class Game {
       }
       if (state === 'using-item') {
         const event = this.useSequence?.update(dt);
+        if (event?.sfx) this.itemUseSfx?.play(event.sfx);
         if (event?.activateEffect) this.commitItemUse();
         if (event?.complete) {
           this.pendingItemUse = undefined;
@@ -983,6 +988,8 @@ export class Game {
     this.inspectController.dispose();
     this.useSequence?.dispose();
     this.useSequence = undefined;
+    this.itemUseSfx?.dispose();
+    this.itemUseSfx = undefined;
     this.seatController?.dispose();
     this.seatController = undefined;
     this.pendingItemUse = undefined;

@@ -56,6 +56,21 @@ export function computeVoiceStereoPan(
   return THREE.MathUtils.clamp(dot, -1, 1);
 }
 
+/**
+ * Oblicza wartość skuteczną (RMS) dla bufora próbek audio Float32Array (-1.0..1.0).
+ */
+export function computeVoiceRms(buffer: Float32Array): number {
+  if (buffer.length === 0) return 0;
+  let sum = 0;
+  for (let i = 0; i < buffer.length; i++) {
+    const val = buffer[i];
+    sum += val * val;
+  }
+  return Math.sqrt(sum / buffer.length);
+}
+
+export const DEFAULT_SPEAKING_RMS_THRESHOLD = 0.015;
+
 export type MicState = 'off' | 'requesting' | 'active' | 'muted' | 'denied' | 'unsupported';
 
 interface RemotePeerAudio {
@@ -65,8 +80,10 @@ interface RemotePeerAudio {
   sourceNode?: MediaStreamAudioSourceNode;
   gainNode?: GainNode;
   pannerNode?: StereoPannerNode;
+  analyserNode?: AnalyserNode;
   audioElement?: HTMLAudioElement;
   isMuted: boolean;
+  isSpeaking: boolean;
   distance: number;
 }
 
@@ -75,6 +92,9 @@ export interface SpatialVoiceManagerOptions {
   autoRequestMic?: boolean;
   userVolume?: number;
   onMicStateChange?: (state: MicState) => void;
+  onSpeakingChange?: (peerId: string, isSpeaking: boolean) => void;
+  onSpeakingPeersChange?: (speakingPeerIds: Set<string>) => void;
+  speakingThreshold?: number;
 }
 
 export class SpatialVoiceManager {
@@ -88,6 +108,12 @@ export class SpatialVoiceManager {
   private disposed = false;
 
   private readonly onMicStateChange?: (state: MicState) => void;
+  private readonly onSpeakingChange?: (peerId: string, isSpeaking: boolean) => void;
+  private readonly onSpeakingPeersChangeOption?: (speakingPeerIds: Set<string>) => void;
+  private speakingThreshold: number;
+  private speakingCallbacks = new Set<(speakingPeers: Set<string>) => void>();
+  private peerSpeakingCallbacks = new Set<(peerId: string, isSpeaking: boolean) => void>();
+  private rmsBuffer?: Float32Array;
 
   constructor(
     private readonly networkClient?: NetworkClient,
@@ -95,6 +121,9 @@ export class SpatialVoiceManager {
   ) {
     this.userVolume = options.userVolume ?? 1.0;
     this.onMicStateChange = options.onMicStateChange;
+    this.onSpeakingChange = options.onSpeakingChange;
+    this.onSpeakingPeersChangeOption = options.onSpeakingPeersChange;
+    this.speakingThreshold = options.speakingThreshold ?? DEFAULT_SPEAKING_RMS_THRESHOLD;
 
     if (this.networkClient) {
       this.setupNetworkHandlers(this.networkClient);
@@ -252,6 +281,11 @@ export class SpatialVoiceManager {
           this.userVolume,
         );
       }
+      if (peer.isMuted && peer.isSpeaking) {
+        peer.isSpeaking = false;
+        this.notifyPeerSpeaking(payload.peerId, false);
+        this.notifySpeakingPeers();
+      }
     }
   }
 
@@ -259,17 +293,31 @@ export class SpatialVoiceManager {
     let peer = this.peers.get(peerId);
     if (peer) return peer;
 
-    const connection = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-      ],
-    });
+    let connection: RTCPeerConnection;
+    if (typeof RTCPeerConnection !== 'undefined') {
+      connection = new RTCPeerConnection({
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+        ],
+      });
+    } else {
+      connection = {
+        close: () => {},
+        addTrack: () => {},
+        createOffer: async () => ({}),
+        setLocalDescription: async () => {},
+        setRemoteDescription: async () => {},
+        createAnswer: async () => ({}),
+        addIceCandidate: async () => {},
+      } as unknown as RTCPeerConnection;
+    }
 
     peer = {
       peerId,
       connection,
       isMuted: false,
+      isSpeaking: false,
       distance: 100,
     };
     this.peers.set(peerId, peer);
@@ -345,6 +393,14 @@ export class SpatialVoiceManager {
         const gainNode = ctx.createGain();
         gainNode.gain.value = 0; // Początkowo wyciszony do czasu pierwszego pomiaru odległości
 
+        let analyserNode: AnalyserNode | undefined;
+        if (typeof ctx.createAnalyser === 'function') {
+          analyserNode = ctx.createAnalyser();
+          analyserNode.fftSize = 256;
+          analyserNode.smoothingTimeConstant = 0.2;
+          sourceNode.connect(analyserNode);
+        }
+
         let pannerNode: StereoPannerNode | undefined;
         if (typeof ctx.createStereoPanner === 'function') {
           pannerNode = ctx.createStereoPanner();
@@ -359,6 +415,7 @@ export class SpatialVoiceManager {
         peer.sourceNode = sourceNode;
         peer.gainNode = gainNode;
         peer.pannerNode = pannerNode;
+        peer.analyserNode = analyserNode;
       } catch {
         // Fallback jeśli Web Audio nie może podłączyć strumienia
       }
@@ -378,7 +435,80 @@ export class SpatialVoiceManager {
   }
 
   /**
-   * Aktualizuje pozycje przestrzenne i głośność zdalnych graczy w pętli renderowania gry.
+   * Zwraca informację, czy dany zdalny peer obecnie mówi.
+   */
+  isPeerSpeaking(peerId: string): boolean {
+    return this.peers.get(peerId)?.isSpeaking ?? false;
+  }
+
+  /**
+   * Zwraca zbiór identyfikatorów peerów, którzy obecnie mówią.
+   */
+  getSpeakingPeers(): Set<string> {
+    const result = new Set<string>();
+    for (const [id, peer] of this.peers) {
+      if (peer.isSpeaking) result.add(id);
+    }
+    return result;
+  }
+
+  /**
+   * Ustawia jawnie stan mówienia dla peera (używane w testach lub zdarzeniach sieciowych).
+   */
+  setPeerSpeaking(peerId: string, isSpeaking: boolean): void {
+    let peer = this.peers.get(peerId);
+    if (!peer) {
+      peer = this.getOrCreatePeer(peerId, false);
+    }
+    const val = Boolean(isSpeaking);
+    if (peer.isSpeaking !== val) {
+      peer.isSpeaking = val;
+      this.notifyPeerSpeaking(peerId, val);
+      this.notifySpeakingPeers();
+    }
+  }
+
+  /**
+   * Rejestruje callback informujący o zmianie zbioru mówiących peerów.
+   */
+  onSpeakingPeersChange(callback: (speakingPeers: Set<string>) => void): () => void {
+    this.speakingCallbacks.add(callback);
+    return () => this.speakingCallbacks.delete(callback);
+  }
+
+  /**
+   * Rejestruje callback informujący o zmianie stanu mówienia konkretnego peera.
+   */
+  onPeerSpeakingChange(callback: (peerId: string, isSpeaking: boolean) => void): () => void {
+    this.peerSpeakingCallbacks.add(callback);
+    return () => this.peerSpeakingCallbacks.delete(callback);
+  }
+
+  private notifyPeerSpeaking(peerId: string, isSpeaking: boolean): void {
+    this.onSpeakingChange?.(peerId, isSpeaking);
+    for (const cb of this.peerSpeakingCallbacks) {
+      try {
+        cb(peerId, isSpeaking);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  private notifySpeakingPeers(): void {
+    const speaking = this.getSpeakingPeers();
+    this.onSpeakingPeersChangeOption?.(speaking);
+    for (const cb of this.speakingCallbacks) {
+      try {
+        cb(speaking);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  /**
+   * Aktualizuje pozycje przestrzenne, głośność oraz stan mówienia zdalnych graczy w pętli renderowania gry.
    */
   update(
     listenerPos: Vector3Like,
@@ -387,7 +517,30 @@ export class SpatialVoiceManager {
   ): void {
     if (this.disposed) return;
 
+    let speakingPeersChanged = false;
+
     for (const [peerId, peer] of this.peers.entries()) {
+      // Detekcja mówienia RMS ze strumienia mikrofonowego:
+      if (peer.analyserNode && !peer.isMuted) {
+        if (!this.rmsBuffer || this.rmsBuffer.length !== peer.analyserNode.fftSize) {
+          this.rmsBuffer = new Float32Array(peer.analyserNode.fftSize);
+        }
+        if (typeof peer.analyserNode.getFloatTimeDomainData === 'function') {
+          peer.analyserNode.getFloatTimeDomainData(this.rmsBuffer as any);
+          const rms = computeVoiceRms(this.rmsBuffer);
+          const isSpeakingNow = rms > this.speakingThreshold;
+          if (peer.isSpeaking !== isSpeakingNow) {
+            peer.isSpeaking = isSpeakingNow;
+            speakingPeersChanged = true;
+            this.notifyPeerSpeaking(peerId, isSpeakingNow);
+          }
+        }
+      } else if (peer.isSpeaking && peer.isMuted) {
+        peer.isSpeaking = false;
+        speakingPeersChanged = true;
+        this.notifyPeerSpeaking(peerId, false);
+      }
+
       const pos = remotePositions.get(peerId);
       if (!pos) {
         // Gracz poza zasięgiem snapshotu lub brak danych o pozycji:
@@ -411,16 +564,23 @@ export class SpatialVoiceManager {
         peer.pannerNode.pan.value = pan;
       }
     }
+
+    if (speakingPeersChanged) {
+      this.notifySpeakingPeers();
+    }
   }
 
   private removePeer(peerId: string): void {
     const peer = this.peers.get(peerId);
     if (!peer) return;
 
+    const wasSpeaking = peer.isSpeaking;
+
     peer.connection.close();
     peer.sourceNode?.disconnect();
     peer.gainNode?.disconnect();
     peer.pannerNode?.disconnect();
+    peer.analyserNode?.disconnect();
 
     if (peer.audioElement) {
       peer.audioElement.srcObject = null;
@@ -428,6 +588,11 @@ export class SpatialVoiceManager {
     }
 
     this.peers.delete(peerId);
+
+    if (wasSpeaking) {
+      this.notifyPeerSpeaking(peerId, false);
+      this.notifySpeakingPeers();
+    }
   }
 
   dispose(): void {
@@ -440,6 +605,9 @@ export class SpatialVoiceManager {
     for (const peerId of Array.from(this.peers.keys())) {
       this.removePeer(peerId);
     }
+
+    this.speakingCallbacks.clear();
+    this.peerSpeakingCallbacks.clear();
 
     if (this.localStream) {
       for (const track of this.localStream.getTracks()) track.stop();
