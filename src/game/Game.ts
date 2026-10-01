@@ -26,7 +26,7 @@ import { MatrixPhaseController } from './effects/MatrixPhaseController';
 import { VoiceReactionManager } from './audio/VoiceReactionManager';
 import { POINTER_LOCK_ESCAPE_SUPPRESSION_MS, PointerLockPauseGate } from './lifecycle/PointerLockPauseGate';
 import { controlHintForState, interactionControlHint, resolveGameInput } from './lifecycle/InputBindings';
-import { ConsumableInventory } from './inventory/ConsumableInventory';
+import { ConsumableInventory, DEFAULT_STARTER_INVENTORY, inventoryEffects } from './inventory/ConsumableInventory';
 import { ItemUseSequence } from './interactions/ItemUseSequence';
 import { itemUseSequenceConfig } from './interactions/itemUseSequenceConfig';
 import { SeatController, type SeatPose } from './interactions/SeatController';
@@ -122,7 +122,7 @@ export class Game {
   private pointerLockPause = new PointerLockPauseGate();
   private readonly mobileInput = isMobileInputDevice();
   private mobileControls?: MobileControls;
-  private readonly inventory = new ConsumableInventory();
+  private readonly inventory = new ConsumableInventory(DEFAULT_STARTER_INVENTORY);
   private useSequence?: ItemUseSequence;
   private seatController?: SeatController;
   private pendingItemUse?: PendingItemUse;
@@ -399,6 +399,14 @@ export class Game {
       this.toggleInventory();
       return;
     }
+    if (this.state.current === 'inventory') {
+      const effectKeys = ['1', '2', '3', '4', '5', '6', '7'];
+      const effectIndex = effectKeys.indexOf(event.key);
+      if (effectIndex >= 0 && effectIndex < inventoryEffects.length) {
+        this.useInventoryEffect(inventoryEffects[effectIndex]);
+        return;
+      }
+    }
     if (this.state.current === 'seated') this.leaveSeat();
     else if (this.state.current === 'inspecting') this.acceptInspect();
     else if (this.state.current === 'playing') this.interact();
@@ -602,13 +610,21 @@ export class Game {
 
   /** Uruchamia efekt wyłącznie wtedy, gdy plecak zawiera jego egzemplarz. */
   useInventoryEffect(id: EffectId) {
-    if (this.state.current !== 'inventory' || this.inventory.quantity(id) < 1) return false;
+    if (this.state.current !== 'inventory') return false;
+    if (this.inventory.quantity(id) < 1) {
+      this.toast(`Brak w plecaku: ${id}`);
+      return false;
+    }
     return this.beginItemUse(id, 'inventory');
   }
   /** Przełącza pomiędzy rozgrywką i ekranem ekwipunku. */
   toggleInventory() {
-    if (this.state.current === 'playing') this.state.transition('inventory');
-    else if (this.state.current === 'inventory') this.state.transition('playing');
+    if (this.state.current === 'playing') {
+      this.syncInventoryUi();
+      this.state.transition('inventory');
+    } else if (this.state.current === 'inventory') {
+      this.state.transition('playing');
+    }
   }
   /** Rozpoczyna transakcyjne użycie przedmiotu bez usuwania go przed markerem animacji. */
   private beginItemUse(id: EffectId, source: PendingItemUse['source'], itemId?: InspectableItemId) {
@@ -625,7 +641,27 @@ export class Game {
   /** Inicjalizuje sekwencję animacji użycia przedmiotu. */
   private executeItemUse(id: EffectId, source: PendingItemUse['source'], itemId?: InspectableItemId) {
     if (!this.effects || !this.player || !this.useSequence) return false;
-    if (!this.useSequence.start(id, this.player.yaw)) return false;
+    if (this.useSequence.active) {
+      this.useSequence.cancel();
+    }
+    const started = this.useSequence.start(id, this.player.yaw);
+    if (!started) {
+      if (source === 'inventory') {
+        if (!this.inventory.consume(id)) return false;
+        this.syncInventoryUi();
+      } else if (itemId) {
+        this.world?.removeItem(itemId);
+        this.interactions?.clear();
+      }
+      this.pendingItemUse = undefined;
+      this.effects.use(id);
+      this.voiceReactions.effectStarted(id);
+      this.toast(`${id}: efekt uruchomiony`);
+      if (this.state.current !== 'playing') {
+        this.state.transition('playing');
+      }
+      return true;
+    }
     this.pendingItemUse = { effect: id, source, itemId, committed: false };
     this.ui.setUseSequenceLabel(itemUseSequenceConfig[id].label);
     if (this.state.current !== 'using-item') {

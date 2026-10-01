@@ -10,9 +10,25 @@ export const inventoryEffects: readonly EffectId[] = [
   'LSD',
 ];
 
+export const DEFAULT_STARTER_INVENTORY: Partial<Record<EffectId, number>> = {
+  Piwo: 2,
+  Papieros: 2,
+  Joint: 2,
+  Kreska: 1,
+  Grzyb: 1,
+  MDMA: 1,
+  LSD: 1,
+};
+
 /** Przechowuje ilości używek bez powiązania z HTML-em ani sceną Three.js. */
 export class ConsumableInventory {
-  private readonly quantities = new Map<EffectId, number>(inventoryEffects.map((effect) => [effect, 0]));
+  private readonly quantities = new Map<EffectId, number>();
+
+  constructor(initialQuantities?: Partial<Record<EffectId, number>>) {
+    inventoryEffects.forEach((effect) => {
+      this.quantities.set(effect, initialQuantities?.[effect] ?? 0);
+    });
+  }
 
   /** Zwraca aktualną, zawsze nieujemną ilość danego przedmiotu. */
   quantity(effect: EffectId) {

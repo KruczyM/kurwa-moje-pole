@@ -81,5 +81,33 @@ describe('RoomServer (Integracja Socket.IO)', () => {
     const err = await errorPromise;
     expect(err.code).toBe('CHARACTER_OCCUPIED');
   });
+
+  it('przekazuje sygnały WebRTC (voice:signal) oraz stan wyciszenia (voice:mute) między graczami', async () => {
+    // Test przekazywania sygnału WebRTC:
+    const signalPromise = new Promise<{ senderPeerId: string; signal: any }>((resolve) => {
+      clientB.once('voice:signal', (payload) => resolve(payload));
+    });
+
+    clientA.emit('voice:signal', {
+      targetPeerId: clientB.id,
+      signal: { type: 'offer', sdp: 'v=0\r\ntest' },
+    });
+
+    const signalRelayed = await signalPromise;
+    expect(signalRelayed.senderPeerId).toBe(clientA.id);
+    expect(signalRelayed.signal.type).toBe('offer');
+    expect(signalRelayed.signal.sdp).toBe('v=0\r\ntest');
+
+    // Test rozgłaszania wyciszenia mikrofonu:
+    const mutePromise = new Promise<{ peerId: string; isMuted: boolean }>((resolve) => {
+      clientB.once('voice:peer-mute', (payload) => resolve(payload));
+    });
+
+    clientA.emit('voice:mute', { isMuted: true });
+
+    const muteRelayed = await mutePromise;
+    expect(muteRelayed.peerId).toBe(clientA.id);
+    expect(muteRelayed.isMuted).toBe(true);
+  });
 });
 

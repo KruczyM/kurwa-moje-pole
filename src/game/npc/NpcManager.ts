@@ -11,7 +11,7 @@ import { computeNpcSteering, NPC_STEERING, turnDirectionTowards } from './NpcSte
 import { NPC_BEHAVIOR_PROFILES, NpcBehaviorAction, NpcBehaviorScheduler } from './NpcBehaviorScheduler';
 import { NpcStuckWatchdog, NpcWatchdogConfig, WatchdogRecoveryAction } from './NpcStuckWatchdog';
 import { terrainHeight } from '../world/CampWorld';
-import { MAIN_ASPHALT_ROAD, isInsidePrimaryCamp } from '../world/festivalLayout';
+import { MAIN_ASPHALT_ROAD, isInsidePrimaryCamp, PRIMARY_CAMP_PLOT } from '../world/festivalLayout';
 export type Npc = {
   root: THREE.Group;
   name: string;
@@ -137,7 +137,9 @@ export class NpcManager {
         }
       }
     }
-    if (!spawn) return false;
+    if (!spawn) {
+      spawn = this.navigation.randomWalkablePoint(() => behavior.random(), {}) ?? new THREE.Vector3(0, 0, 0);
+    }
     let animator: NpcAnimator | undefined;
     if (model) {
       const visual = clone(model.scene);
@@ -554,6 +556,31 @@ export class NpcManager {
         continue;
       }
 
+      if (!npc.isCampMember && isInsidePrimaryCamp(npc.root.position.x, npc.root.position.z, 0.5)) {
+        const px = npc.root.position.x;
+        const pz = npc.root.position.z;
+        const distLeft = Math.abs(px - PRIMARY_CAMP_PLOT.minX);
+        const distRight = Math.abs(px - PRIMARY_CAMP_PLOT.maxX);
+        const distBottom = Math.abs(pz - PRIMARY_CAMP_PLOT.minZ);
+        const distTop = Math.abs(pz - PRIMARY_CAMP_PLOT.maxZ);
+        const minDist = Math.min(distLeft, distRight, distBottom, distTop);
+        if (minDist === distLeft) {
+          npc.root.position.x = PRIMARY_CAMP_PLOT.minX - 2.5;
+        } else if (minDist === distRight) {
+          npc.root.position.x = PRIMARY_CAMP_PLOT.maxX + 2.5;
+        } else if (minDist === distBottom) {
+          npc.root.position.z = PRIMARY_CAMP_PLOT.minZ - 2.5;
+        } else {
+          npc.root.position.z = PRIMARY_CAMP_PLOT.maxZ + 2.5;
+        }
+        npc.root.position.y = terrainHeight(npc.root.position.x, npc.root.position.z);
+        npc.waypoints.length = 0;
+        npc.velocity.set(0, 0, 0);
+        npc.speed = 0;
+        npc.wait = 0;
+        this.applyBehaviorAction(npc, 'wander');
+      }
+
       if (npc.stationary) {
         this.tryActivity(npc, playerPosition);
         npc.root.position.y = terrainHeight(npc.root.position.x, npc.root.position.z);
@@ -649,16 +676,6 @@ export class NpcManager {
           .setY(0)
           .multiplyScalar(dt > 0 ? 1 / dt : 0);
         npc.root.rotation.y = Math.atan2(npc.steeringDirection.x, npc.steeringDirection.z);
-      }
-      if (!npc.isCampMember && isInsidePrimaryCamp(npc.root.position.x, npc.root.position.z, 0)) {
-        const center = new THREE.Vector3(0, 0, 0);
-        const dirOut = npc.root.position.clone().sub(center).setY(0).normalize();
-        if (dirOut.lengthSq() < 1e-4) dirOut.set(0, 0, 1);
-        npc.root.position.addScaledVector(dirOut, 2.0);
-        npc.root.position.y = terrainHeight(npc.root.position.x, npc.root.position.z);
-        npc.waypoints.length = 0;
-        npc.speed = 0;
-        this.applyBehaviorAction(npc, 'wander');
       }
       const recoveryAction = npc.watchdog.update(
         dt,

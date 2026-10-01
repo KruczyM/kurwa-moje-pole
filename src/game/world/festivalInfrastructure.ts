@@ -544,12 +544,12 @@ export function placeFestivalInfrastructure(
     barrierRoot.add(barrier);
   };
 
-  // 1. Front West Fence: x = 110, z in [-14, 14]
-  for (let z = -13; z <= 13; z += 2.5) {
+  // 1. Front West Fence: x = 110, z in [-13, 15.5]
+  for (let z = -13; z <= 15.5; z += 2.5) {
     placeBarrierSegment(110, z, Math.PI / 2);
   }
-  // 2. Front West Fence: x = 110, z in [22, 50]
-  for (let z = 23; z <= 49; z += 2.5) {
+  // 2. Front West Fence: x = 110, z in [20.5, 49]
+  for (let z = 20.5; z <= 49; z += 2.5) {
     placeBarrierSegment(110, z, Math.PI / 2);
   }
   // 3. North Side Fence: z = -14, x in [110, 194]
@@ -560,14 +560,25 @@ export function placeFestivalInfrastructure(
   for (let x = 111.5; x <= 193; x += 2.5) {
     placeBarrierSegment(x, 50, 0);
   }
+  // 5. East Back Fence: x = 194, z in [-14, 50]
+  for (let z = -13; z <= 49; z += 2.5) {
+    placeBarrierSegment(194, z, Math.PI / 2);
+  }
 
-  // Barrier Colliders: 4 wall sections (leaving gate at x = 110, z: [14, 22] open)
+  // Barrier Colliders: 5 solid wall sections forming an enclosed perimeter around Duża Scena,
+  // leaving only a 3m entrance gate at x = 110, z: [16.5, 19.5] monitored by Pokojowy Patrol.
   const baseFloor = heightAt(110, 18);
   instance.colliders.push(
-    new THREE.Box3(new THREE.Vector3(109.2, baseFloor - 1, -14), new THREE.Vector3(110.8, baseFloor + 2.5, 14)),
-    new THREE.Box3(new THREE.Vector3(109.2, baseFloor - 1, 22), new THREE.Vector3(110.8, baseFloor + 2.5, 50)),
-    new THREE.Box3(new THREE.Vector3(110, baseFloor - 1, -14.8), new THREE.Vector3(194, baseFloor + 2.5, -13.2)),
-    new THREE.Box3(new THREE.Vector3(110, baseFloor - 1, 49.2), new THREE.Vector3(194, baseFloor + 2.5, 50.8)),
+    // 1. Front West Fence - Left Wing
+    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, -15.5), new THREE.Vector3(111.5, baseFloor + 6, 16.5)),
+    // 2. Front West Fence - Right Wing
+    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, 19.5), new THREE.Vector3(111.5, baseFloor + 6, 51.5)),
+    // 3. North Side Fence
+    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, -15.5), new THREE.Vector3(195.5, baseFloor + 6, -12.5)),
+    // 4. South Side Fence
+    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, 48.5), new THREE.Vector3(195.5, baseFloor + 6, 51.5)),
+    // 5. East Back Fence
+    new THREE.Box3(new THREE.Vector3(192.5, baseFloor - 3, -15.5), new THREE.Vector3(195.5, baseFloor + 6, 51.5)),
   );
 
   // Pokojowy Patrol checkpoint trigger at central gate entrance (x: 109.5, z: 18)

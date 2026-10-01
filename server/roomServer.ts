@@ -85,8 +85,9 @@ export class RoomServer {
           reconnectedCharacter: reconnectedChar,
         });
 
-        // Poinformuj pozostałych o aktualnym stanie:
+        // Poinformuj pozostałych o aktualnym stanie oraz nowym peerze czatu głosowego:
         this.io.to(roomId).emit('room:state', room.getPublicState());
+        socket.to(roomId).emit('voice:peer-joined', { peerId: socket.id });
       });
 
       socket.on('character:reserve', (payload: ReserveCharacterPayload) => {
@@ -145,8 +146,26 @@ export class RoomServer {
         }
       });
 
+      // Sygnalizacja WebRTC dla przestrzennego czatu głosowego:
+      socket.on('voice:signal', (payload: { targetPeerId: string; signal: unknown }) => {
+        if (!currentRoomId || !payload || !payload.targetPeerId || !payload.signal) return;
+        this.io.to(payload.targetPeerId).emit('voice:signal', {
+          senderPeerId: socket.id,
+          signal: payload.signal,
+        });
+      });
+
+      socket.on('voice:mute', (payload: { isMuted: boolean }) => {
+        if (!currentRoomId) return;
+        socket.to(currentRoomId).emit('voice:peer-mute', {
+          peerId: socket.id,
+          isMuted: Boolean(payload?.isMuted),
+        });
+      });
+
       socket.on('disconnect', () => {
         if (currentRoomId) {
+          socket.to(currentRoomId).emit('voice:peer-left', { peerId: socket.id });
           const room = this.rooms.get(currentRoomId);
           if (room) {
             room.handleDisconnect(socket.id);

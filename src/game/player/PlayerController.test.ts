@@ -192,4 +192,38 @@ describe('PlayerController mouse look', () => {
 
     controller.dispose();
   });
+
+  it('umożliwia ślizganie się wzdłuż przeszkody (axis-separated sliding), gdy ruch po przekątnej jest zablokowany', () => {
+    const windowTarget = new EventTarget();
+    const documentTarget = Object.assign(new EventTarget(), { pointerLockElement: null });
+    const canvas = Object.assign(new EventTarget(), {
+      tabIndex: 0,
+      focus: vi.fn(),
+      requestPointerLock: vi.fn(() => Promise.resolve()),
+    }) as unknown as HTMLCanvasElement;
+    vi.stubGlobal('window', windowTarget);
+    vi.stubGlobal('document', documentTarget);
+
+    const camera = new THREE.PerspectiveCamera();
+    // Ściana blokująca Z >= 5, ale X jest wolne
+    const controller = new PlayerController(
+      camera,
+      canvas,
+      (x, z) => z < 5,
+      false,
+      { position: [0, 4.9], yaw: 0 },
+      () => 0,
+    );
+    controller.enabled = true;
+
+    // Próba ruchu w tył (w kierunku dodatniego Z) i w prawo (w kierunku dodatniego X)
+    controller.setMobileMove(-1, 1, false); // ruch w stronę Z >= 5 (zablokowany) i X > 0 (wolny)
+    controller.update(0.1, { speed: 1, sway: 0, shake: 0, bob: 0 });
+
+    // Pozycja X powinna przesunąć się w prawo (ślizg), a Z nie powinno przekroczyć 5
+    expect(camera.position.x).toBeGreaterThan(0);
+    expect(camera.position.z).toBeLessThan(5);
+
+    controller.dispose();
+  });
 });

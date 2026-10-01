@@ -307,6 +307,20 @@ qs<HTMLButtonElement>('#warning-cancel').onclick = () => game?.cancelWarning();
 document.querySelectorAll<HTMLButtonElement>('[data-effect]').forEach((button) => {
   button.onclick = () => game?.useInventoryEffect(button.dataset.effect as EffectId);
 });
+const inventoryContainer = document.querySelector('#inventory .items');
+if (inventoryContainer) {
+  inventoryContainer.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement | null;
+    const button = target?.closest<HTMLButtonElement>('[data-effect]');
+    if (button && button.dataset.effect) {
+      game?.useInventoryEffect(button.dataset.effect as EffectId);
+    }
+  });
+}
+const inventoryCloseBtn = document.querySelector<HTMLButtonElement>('#inventory-close');
+if (inventoryCloseBtn) {
+  inventoryCloseBtn.onclick = () => game?.toggleInventory();
+}
 
 qs<HTMLInputElement>('#setting-intensity').oninput = (event) => {
   game?.updateSettings({ intensity: Number((event.target as HTMLInputElement).value) / 100 });

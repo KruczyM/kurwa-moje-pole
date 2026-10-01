@@ -84,7 +84,8 @@ const paths =
 mkdirSync(report, { recursive: true });
 const results = [];
 for (const path of paths) {
-  if (selectedIds && !selectedIds.some((id) => path.split('/').includes(id))) continue;
+  const assetId = path.split('/')[1].replace(/\.glb$/, '');
+  if (selectedIds && !selectedIds.some((id) => id === assetId || path.split('/').includes(id))) continue;
   const target = resolve(root, path),
     backup = resolve(report, 'originals', path),
     output = resolve(report, 'corrected', path);
@@ -133,7 +134,7 @@ for (const path of paths) {
     const raised = legacyShoulders || raisedShoulderAssets.some((asset) => asset.path === path);
     refitDraftShoulders(
       model,
-      legacyShoulders ? 0.02 : shoulderLiftForAsset(path.split('/')[1]),
+      legacyShoulders ? 0.02 : shoulderLiftForAsset(assetId),
       legacyShoulders,
     );
     repairDraftArmSkin(
@@ -144,8 +145,8 @@ for (const path of paths) {
     );
   }
   // Final pass, after diffusion: beard tips must not regain torso influences.
-  if (refitted) repairDraftHeadSkin(model.scene, path.split('/')[1]);
-  if (!caps && !cloth) repairBeardSkin(model.scene, path.split('/')[1]);
+  if (refitted) repairDraftHeadSkin(model.scene, assetId);
+  if (!caps && !cloth) repairBeardSkin(model.scene, assetId);
   if (caps && !repairZaworShoulderCaps(model.scene)) throw new Error('Empty shoulder cap selection');
   if (poncho) repairZaworPoncho(model.scene);
   if (cloth) repairZaworClothWeights(model.scene);

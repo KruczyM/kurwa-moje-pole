@@ -93,6 +93,11 @@ def process_character(name: str):
     shutil.copy2(anim_glb, public_anim_dst)
     print(f"Installed animations: {public_anim_dst} ({public_anim_dst.stat().st_size} bytes)")
 
+    # Also for zawor, keep source-assets/characters/zawor/t-pose.glb updated
+    if name == "zawor":
+        legacy_source = ROOT / "source-assets/characters/zawor"
+        legacy_source.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(t_pose_output, legacy_source / "t-pose.glb")
 
     print(f"Successfully rigged and installed {name}!")
     return True

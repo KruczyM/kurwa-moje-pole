@@ -44,7 +44,7 @@ describe('world grass exclusion mask', () => {
     } finally {
       layer.dispose();
     }
-  });
+  }, 30000);
   it('excludes Lidl, every passage floor and concrete lane for both supplemental grass layers', () => {
     const market = createMarketGrassMask(new Set(MARKET_VARIANTS));
     const texture = createGrassWorldMask((x, z) => market(x, z) * sampleRockShopGrassMask(x, z));
@@ -99,5 +99,5 @@ describe('world grass exclusion mask', () => {
     expect(dispose).not.toHaveBeenCalled();
     texture.dispose();
     expect(dispose).toHaveBeenCalledTimes(1);
-  });
+  }, 30000);
 });

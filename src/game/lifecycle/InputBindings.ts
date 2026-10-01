@@ -30,7 +30,10 @@ export function resolveGameInput(state: AppState, key: string, repeat = false): 
   ) {
     return 'escape';
   }
-  if (key === 'Tab' && (state === 'playing' || state === 'inventory')) {
+  if (
+    (key === 'Tab' || key.toLowerCase() === 'i' || key.toLowerCase() === 'b') &&
+    (state === 'playing' || state === 'inventory')
+  ) {
     return 'toggle-inventory';
   }
   if (key.toLowerCase() === 'e' && (state === 'playing' || state === 'seated' || state === 'inspecting')) {

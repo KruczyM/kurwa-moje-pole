@@ -64,6 +64,29 @@ export interface ReleaseCharacterPayload {
   sessionToken?: string;
 }
 
+export interface VoiceSignalPayload {
+  targetPeerId: string;
+  signal: unknown;
+}
+
+export interface VoiceRelayPayload {
+  senderPeerId: string;
+  signal: unknown;
+}
+
+export interface VoiceMutePayload {
+  isMuted: boolean;
+}
+
+export interface VoicePeerMutePayload {
+  peerId: string;
+  isMuted: boolean;
+}
+
+export interface VoicePeerNotificationPayload {
+  peerId: string;
+}
+
 export interface NetworkErrorPayload {
   code:
     | 'INVALID_PROTOCOL'

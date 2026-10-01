@@ -5,6 +5,11 @@ import {
   type NetworkErrorPayload,
   type PlayerTransform,
   type WorldSnapshotPayload,
+  type VoiceSignalPayload,
+  type VoiceRelayPayload,
+  type VoiceMutePayload,
+  type VoicePeerMutePayload,
+  type VoicePeerNotificationPayload,
   validateAndSanitizeNickname,
 } from './networkProtocol';
 
@@ -34,7 +39,8 @@ export function resolveServerUrl(customUrl?: string): string | undefined {
     const param = new URLSearchParams(location.search).get('server');
     if (param && param.trim().length > 0) return param.trim();
 
-    const envUrl = typeof import.meta !== 'undefined' && import.meta.env.VITE_SERVER_URL;
+    const envUrl =
+      typeof import.meta !== 'undefined' && import.meta.env ? (import.meta.env.VITE_SERVER_URL as string | undefined) : undefined;
     if (envUrl && typeof envUrl === 'string' && envUrl.trim().length > 0) {
       return envUrl.trim();
     }
@@ -62,6 +68,10 @@ export class NetworkClient {
   private snapshotListeners = new Set<(snapshot: WorldSnapshotPayload) => void>();
   private errorListeners = new Set<(error: NetworkErrorPayload) => void>();
   private statusListeners = new Set<(status: NetworkConnectionStatus) => void>();
+  private voiceSignalListeners = new Set<(payload: VoiceRelayPayload) => void>();
+  private voiceMuteListeners = new Set<(payload: VoicePeerMutePayload) => void>();
+  private voicePeerJoinedListeners = new Set<(payload: VoicePeerNotificationPayload) => void>();
+  private voicePeerLeftListeners = new Set<(payload: VoicePeerNotificationPayload) => void>();
 
   constructor(options: NetworkClientOptions = {}) {
     this.serverUrl = options.serverUrl ?? DEFAULT_SERVER_URL;
@@ -181,6 +191,22 @@ export class NetworkClient {
         this.notifyErrorListeners(err);
       });
 
+      this.socket.on('voice:signal', (payload: VoiceRelayPayload) => {
+        for (const listener of this.voiceSignalListeners) listener(payload);
+      });
+
+      this.socket.on('voice:peer-mute', (payload: VoicePeerMutePayload) => {
+        for (const listener of this.voiceMuteListeners) listener(payload);
+      });
+
+      this.socket.on('voice:peer-joined', (payload: VoicePeerNotificationPayload) => {
+        for (const listener of this.voicePeerJoinedListeners) listener(payload);
+      });
+
+      this.socket.on('voice:peer-left', (payload: VoicePeerNotificationPayload) => {
+        for (const listener of this.voicePeerLeftListeners) listener(payload);
+      });
+
       this.socket.on('disconnect', () => {
         this.setStatus('disconnected');
       });
@@ -270,6 +296,36 @@ export class NetworkClient {
     this.statusListeners.add(listener);
     listener(this.status);
     return () => this.statusListeners.delete(listener);
+  }
+
+  sendVoiceSignal(targetPeerId: string, signal: unknown): void {
+    if (!this.socket || this.status !== 'connected') return;
+    this.socket.emit('voice:signal', { targetPeerId, signal } as VoiceSignalPayload);
+  }
+
+  sendVoiceMute(isMuted: boolean): void {
+    if (!this.socket || this.status !== 'connected') return;
+    this.socket.emit('voice:mute', { isMuted } as VoiceMutePayload);
+  }
+
+  onVoiceSignal(listener: (payload: VoiceRelayPayload) => void): () => void {
+    this.voiceSignalListeners.add(listener);
+    return () => this.voiceSignalListeners.delete(listener);
+  }
+
+  onVoicePeerMute(listener: (payload: VoicePeerMutePayload) => void): () => void {
+    this.voiceMuteListeners.add(listener);
+    return () => this.voiceMuteListeners.delete(listener);
+  }
+
+  onVoicePeerJoined(listener: (payload: VoicePeerNotificationPayload) => void): () => void {
+    this.voicePeerJoinedListeners.add(listener);
+    return () => this.voicePeerJoinedListeners.delete(listener);
+  }
+
+  onVoicePeerLeft(listener: (payload: VoicePeerNotificationPayload) => void): () => void {
+    this.voicePeerLeftListeners.add(listener);
+    return () => this.voicePeerLeftListeners.delete(listener);
   }
 
   private setStatus(status: NetworkConnectionStatus): void {

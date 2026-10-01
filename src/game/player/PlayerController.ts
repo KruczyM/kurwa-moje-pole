@@ -185,11 +185,20 @@ export class PlayerController {
     const response = direction.x || direction.z ? 12 : 16;
     this.velocity.x = THREE.MathUtils.damp(this.velocity.x, direction.x * targetSpeed, response, dt);
     this.velocity.y = THREE.MathUtils.damp(this.velocity.y, direction.z * targetSpeed, response, dt);
-    const nx = this.camera.position.x + this.velocity.x * dt,
-      nz = this.camera.position.z + this.velocity.y * dt;
+    const cx = this.camera.position.x;
+    const cz = this.camera.position.z;
+    const nx = cx + this.velocity.x * dt;
+    const nz = cz + this.velocity.y * dt;
+
     if (this.canMove(nx, nz)) {
       this.camera.position.x = nx;
       this.camera.position.z = nz;
+    } else if (this.canMove(nx, cz)) {
+      this.camera.position.x = nx;
+      this.velocity.y *= 0.2;
+    } else if (this.canMove(cx, nz)) {
+      this.camera.position.z = nz;
+      this.velocity.x *= 0.2;
     } else {
       this.velocity.multiplyScalar(0.15);
     }

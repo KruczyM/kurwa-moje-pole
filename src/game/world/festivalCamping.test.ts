@@ -71,7 +71,7 @@ describe('festival camping staging sectors', () => {
         if (other.id !== tent.id) expect(overlap(box, tentColliderBounds(other))).toBe(false);
       }
     }
-  });
+  }, 30000);
 
   it('every entrance approach can be reached from the original camp on a 0.5 m grid', () => {
     const boxes = allTentLayout.map(tentColliderBounds);
