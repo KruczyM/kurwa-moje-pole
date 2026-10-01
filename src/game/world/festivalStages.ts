@@ -141,10 +141,15 @@ export function placeFestivalStages(
         ),
       );
     } else {
+      const stageBox = new THREE.Box3().setFromObject(root);
+      const minX = stageBox.isEmpty() ? b.minX : stageBox.min.x;
+      const maxX = stageBox.isEmpty() ? b.maxX : stageBox.max.x;
+      const minZ = stageBox.isEmpty() ? b.minZ : stageBox.min.z;
+      const maxZ = stageBox.isEmpty() ? b.maxZ : stageBox.max.z;
       colliders.push(
         new THREE.Box3(
-          new THREE.Vector3(b.minX, -2, b.minZ),
-          new THREE.Vector3(b.maxX, floor + site.height, b.maxZ),
+          new THREE.Vector3(minX, -2, minZ),
+          new THREE.Vector3(maxX, floor + site.height, maxZ),
         ),
       );
     }

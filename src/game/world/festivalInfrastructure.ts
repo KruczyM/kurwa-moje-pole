@@ -544,41 +544,78 @@ export function placeFestivalInfrastructure(
     barrierRoot.add(barrier);
   };
 
-  // 1. Front West Fence: x = 110, z in [-13, 15.5]
-  for (let z = -13; z <= 15.5; z += 2.5) {
+  // 1. Front West Fence: x = 110, with 3 open passages (North-West, Central Gate, South-West)
+  // 1a. Far North Wing (z in [-13, -10.5])
+  for (let z = -13; z <= -10.5; z += 2.5) {
     placeBarrierSegment(110, z, Math.PI / 2);
   }
-  // 2. Front West Fence: x = 110, z in [20.5, 49]
-  for (let z = 20.5; z <= 49; z += 2.5) {
+  // 1b. Middle North Wing (z in [0, 15])
+  for (let z = 0; z <= 15; z += 2.5) {
     placeBarrierSegment(110, z, Math.PI / 2);
   }
-  // 3. North Side Fence: z = -14, x in [110, 194]
+  // 1c. Middle South Wing (z in [22, 37])
+  for (let z = 22; z <= 37; z += 2.5) {
+    placeBarrierSegment(110, z, Math.PI / 2);
+  }
+  // 1d. Far South Wing (z in [47, 49.5])
+  for (let z = 47; z <= 49.5; z += 2.5) {
+    placeBarrierSegment(110, z, Math.PI / 2);
+  }
+
+  // 2. North Side Fence: z = -14, x in [110, 194]
   for (let x = 111.5; x <= 193; x += 2.5) {
     placeBarrierSegment(x, -14, 0);
   }
-  // 4. South Side Fence: z = 50, x in [110, 194]
+
+  // 3. South Side Fence: z = 50, x in [110, 194]
   for (let x = 111.5; x <= 193; x += 2.5) {
     placeBarrierSegment(x, 50, 0);
   }
-  // 5. East Back Fence: x = 194, z in [-14, 50]
-  for (let z = -13; z <= 49; z += 2.5) {
+
+  // 4. East Back Fence: x = 194, with 3 open passages matching the West side
+  // 4a. Far North Wing (z in [-13, -10.5])
+  for (let z = -13; z <= -10.5; z += 2.5) {
+    placeBarrierSegment(194, z, Math.PI / 2);
+  }
+  // 4b. Middle North Wing (z in [0, 15])
+  for (let z = 0; z <= 15; z += 2.5) {
+    placeBarrierSegment(194, z, Math.PI / 2);
+  }
+  // 4c. Middle South Wing (z in [22, 37])
+  for (let z = 22; z <= 37; z += 2.5) {
+    placeBarrierSegment(194, z, Math.PI / 2);
+  }
+  // 4d. Far South Wing (z in [47, 49.5])
+  for (let z = 47; z <= 49.5; z += 2.5) {
     placeBarrierSegment(194, z, Math.PI / 2);
   }
 
-  // Barrier Colliders: 5 solid wall sections forming an enclosed perimeter around Duża Scena,
-  // leaving only a 3m entrance gate at x = 110, z: [16.5, 19.5] monitored by Pokojowy Patrol.
+  // Barrier Colliders: Solid wall sections forming an enclosed perimeter around Duża Scena,
+  // with accessible passages on both the West and East sides (North, Center, South).
   const baseFloor = heightAt(110, 18);
   instance.colliders.push(
-    // 1. Front West Fence - Left Wing
-    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, -15.5), new THREE.Vector3(111.5, baseFloor + 6, 16.5)),
-    // 2. Front West Fence - Right Wing
-    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, 19.5), new THREE.Vector3(111.5, baseFloor + 6, 51.5)),
-    // 3. North Side Fence
+    // 1. Front West Fence - Far North Wing
+    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, -15.5), new THREE.Vector3(111.5, baseFloor + 6, -9.25)),
+    // 2. Front West Fence - Middle North Wing (leaving North-West passage at z: [-9.25, -1.25])
+    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, -1.25), new THREE.Vector3(111.5, baseFloor + 6, 16.25)),
+    // 3. Front West Fence - Middle South Wing (leaving Central Gate at z: [16.25, 20.75])
+    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, 20.75), new THREE.Vector3(111.5, baseFloor + 6, 38.25)),
+    // 4. Front West Fence - Far South Wing (leaving South-West passage at z: [38.25, 45.75])
+    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, 45.75), new THREE.Vector3(111.5, baseFloor + 6, 51.5)),
+
+    // 5. East Fence - Far North Wing
+    new THREE.Box3(new THREE.Vector3(192.5, baseFloor - 3, -15.5), new THREE.Vector3(195.5, baseFloor + 6, -9.25)),
+    // 6. East Fence - Middle North Wing (leaving North-East passage at z: [-9.25, -1.25])
+    new THREE.Box3(new THREE.Vector3(192.5, baseFloor - 3, -1.25), new THREE.Vector3(195.5, baseFloor + 6, 16.25)),
+    // 7. East Fence - Middle South Wing (leaving Central East passage at z: [16.25, 20.75])
+    new THREE.Box3(new THREE.Vector3(192.5, baseFloor - 3, 20.75), new THREE.Vector3(195.5, baseFloor + 6, 38.25)),
+    // 8. East Fence - Far South Wing (leaving South-East passage at z: [38.25, 45.75])
+    new THREE.Box3(new THREE.Vector3(192.5, baseFloor - 3, 45.75), new THREE.Vector3(195.5, baseFloor + 6, 51.5)),
+
+    // 9. North Side Fence
     new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, -15.5), new THREE.Vector3(195.5, baseFloor + 6, -12.5)),
-    // 4. South Side Fence
+    // 10. South Side Fence
     new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, 48.5), new THREE.Vector3(195.5, baseFloor + 6, 51.5)),
-    // 5. East Back Fence
-    new THREE.Box3(new THREE.Vector3(192.5, baseFloor - 3, -15.5), new THREE.Vector3(195.5, baseFloor + 6, 51.5)),
   );
 
   // Pokojowy Patrol checkpoint trigger at central gate entrance (x: 109.5, z: 18)

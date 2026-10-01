@@ -95,7 +95,7 @@ describe('festivalInfrastructure', () => {
     instance.dispose();
   });
 
-  it('places crowd barrier perimeter fence around Duża Scena with Pokojowy Patrol central checkpoint gate', () => {
+  it('places crowd barrier perimeter fence around Duża Scena with Pokojowy Patrol central checkpoint gate and passages on west and east sides', () => {
     const parent = new THREE.Group();
     const fakeGltf: any = { scene: new THREE.Group() };
     const instance = placeFestivalInfrastructure(parent, { crowdBarrier: fakeGltf }, () => 0.0);
@@ -104,13 +104,26 @@ describe('festivalInfrastructure', () => {
     const gatePoint = new THREE.Vector3(110, 1.0, 18);
     expect(instance.colliders.some((box) => box.containsPoint(gatePoint))).toBe(false);
 
-    // North barrier wing at x = 110, z = 0 is blocked
-    const northFencePoint = new THREE.Vector3(110, 1.0, 0);
-    expect(instance.colliders.some((box) => box.containsPoint(northFencePoint))).toBe(true);
+    // West Fence: North passage (z = -5) and South passage (z = 42) are open
+    expect(instance.colliders.some((box) => box.containsPoint(new THREE.Vector3(110, 1.0, -5)))).toBe(false);
+    expect(instance.colliders.some((box) => box.containsPoint(new THREE.Vector3(110, 1.0, 42)))).toBe(false);
 
-    // South barrier wing at x = 110, z = 30 is blocked
-    const southFencePoint = new THREE.Vector3(110, 1.0, 30);
-    expect(instance.colliders.some((box) => box.containsPoint(southFencePoint))).toBe(true);
+    // West barrier wings: Far North (z = -12), Middle North (z = 5), Middle South (z = 30), Far South (z = 48) are blocked
+    expect(instance.colliders.some((box) => box.containsPoint(new THREE.Vector3(110, 1.0, -12)))).toBe(true);
+    expect(instance.colliders.some((box) => box.containsPoint(new THREE.Vector3(110, 1.0, 5)))).toBe(true);
+    expect(instance.colliders.some((box) => box.containsPoint(new THREE.Vector3(110, 1.0, 30)))).toBe(true);
+    expect(instance.colliders.some((box) => box.containsPoint(new THREE.Vector3(110, 1.0, 48)))).toBe(true);
+
+    // East Fence: North passage (z = -5), Central passage (z = 18), South passage (z = 42) are open
+    expect(instance.colliders.some((box) => box.containsPoint(new THREE.Vector3(194, 1.0, -5)))).toBe(false);
+    expect(instance.colliders.some((box) => box.containsPoint(new THREE.Vector3(194, 1.0, 18)))).toBe(false);
+    expect(instance.colliders.some((box) => box.containsPoint(new THREE.Vector3(194, 1.0, 42)))).toBe(false);
+
+    // East barrier wings: Far North (z = -12), Middle North (z = 5), Middle South (z = 30), Far South (z = 48) are blocked
+    expect(instance.colliders.some((box) => box.containsPoint(new THREE.Vector3(194, 1.0, -12)))).toBe(true);
+    expect(instance.colliders.some((box) => box.containsPoint(new THREE.Vector3(194, 1.0, 5)))).toBe(true);
+    expect(instance.colliders.some((box) => box.containsPoint(new THREE.Vector3(194, 1.0, 30)))).toBe(true);
+    expect(instance.colliders.some((box) => box.containsPoint(new THREE.Vector3(194, 1.0, 48)))).toBe(true);
 
     // Checkpoint interaction exists at gate
     expect(instance.patrolCheckpoints.length).toBe(1);
