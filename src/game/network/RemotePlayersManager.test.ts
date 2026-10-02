@@ -365,4 +365,54 @@ describe('RemotePlayersManager', () => {
     expect(markers[0].x).toBe(15);
     expect(markers[0].z).toBe(-25);
   });
+
+  it('obsługuje akcje zdalnego gracza przez handleRemoteAction i animuje postać', () => {
+    const mockScene = new THREE.Group();
+    mockScene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1)));
+    const mockGltf: GLTF = {
+      scene: mockScene,
+      scenes: [mockScene],
+      animations: [
+        new THREE.AnimationClip('Idle', 1, []),
+        new THREE.AnimationClip('Walk', 1, []),
+        new THREE.AnimationClip('Run', 1, []),
+        new THREE.AnimationClip('Drinking', 2, []),
+      ],
+      cameras: [],
+      asset: {},
+      parser: {} as any,
+      userData: {},
+    };
+    characterModels.set('amper', mockGltf);
+
+    const snapshot: WorldSnapshotPayload = {
+      timestamp: Date.now(),
+      players: [
+        {
+          playerId: 'remote-drinker',
+          character: 'Amper',
+          nickname: 'Piwosz',
+          transform: {
+            position: [2, 0, 2],
+            yaw: 0,
+            locomotion: 'Idle',
+            speed: 0,
+            timestamp: Date.now(),
+          },
+        },
+      ],
+    };
+    manager.handleWorldSnapshot(snapshot);
+    const entity = manager.remotePlayers.get('remote-drinker')!;
+    expect(entity.animator).toBeDefined();
+
+    manager.handleRemoteAction({
+      playerId: 'remote-drinker',
+      character: 'Amper',
+      action: 'drink',
+      timestamp: Date.now(),
+    });
+
+    expect(entity.animator?.getDiagnostics().currentClip).toBe('Drinking');
+  });
 });

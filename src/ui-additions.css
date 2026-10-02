@@ -447,7 +447,44 @@
   display: flex;
   gap: 6px;
 }
-#dialog-gemini-key-input {
+.dialog-voice-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+}
+.dialog-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dialog-section-label {
+  font-size: 11.5px;
+  color: #f1edfa;
+}
+.dialog-badge-prio {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #142010;
+  background: #9dff4e;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+.dialog-badge-fallback {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #1a1726;
+  background: #ffe34d;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+#dialog-gemini-key-input,
+#dialog-elevenlabs-key-input {
   flex: 1;
   background: #090710;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -458,30 +495,36 @@
   font-size: 12px;
   outline: none;
 }
-#dialog-gemini-key-input:focus {
-  border-color: #ffe34d;
+#dialog-gemini-key-input:focus,
+#dialog-elevenlabs-key-input:focus {
+  border-color: #9dff4e;
 }
-#dialog-gemini-save-btn, #dialog-gemini-clear-btn {
+#dialog-gemini-save-btn, #dialog-gemini-clear-btn,
+#dialog-elevenlabs-save-btn, #dialog-elevenlabs-clear-btn {
   padding: 6px 12px;
   font-size: 11px;
   font-weight: 700;
   border-radius: 4px;
   cursor: pointer;
 }
-#dialog-gemini-save-btn {
-  background: #ffe34d;
-  border: 1px solid #ffe34d;
-  color: #1a1726;
+#dialog-gemini-save-btn,
+#dialog-elevenlabs-save-btn {
+  background: #9dff4e;
+  border: 1px solid #9dff4e;
+  color: #142010;
 }
-#dialog-gemini-save-btn:hover {
-  background: #fff;
+#dialog-gemini-save-btn:hover,
+#dialog-elevenlabs-save-btn:hover {
+  background: #bbf888;
 }
-#dialog-gemini-clear-btn {
+#dialog-gemini-clear-btn,
+#dialog-elevenlabs-clear-btn {
   background: rgba(255, 80, 80, 0.15);
   border: 1px solid #ff5050;
   color: #ff8585;
 }
-#dialog-gemini-clear-btn:hover {
+#dialog-gemini-clear-btn:hover,
+#dialog-elevenlabs-clear-btn:hover {
   background: rgba(255, 80, 80, 0.3);
 }
 .dialog-gemini-status {
@@ -500,4 +543,118 @@
   margin-left: 6px;
   vertical-align: middle;
 }
+
+/* ==========================================================================
+   FESTIVAL 2D MAP HUD OVERLAY
+   ========================================================================== */
+#festival-map {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 12, 16, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  padding: 16px;
+}
+
+#festival-map[hidden] {
+  display: none !important;
+}
+
+.festival-map-container {
+  display: flex;
+  flex-direction: column;
+  background: #181d26;
+  border: 2px solid rgba(255, 215, 0, 0.4);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.15);
+  border-radius: 12px;
+  max-width: 900px;
+  width: 95vw;
+  max-height: 95vh;
+  overflow: hidden;
+}
+
+.festival-map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #14171f;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.festival-map-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #ffd700;
+  letter-spacing: 0.5px;
+}
+
+#map-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+#map-close:hover {
+  background: rgba(255, 80, 80, 0.3);
+  border-color: #ff5050;
+  color: #ff8585;
+}
+
+.festival-map-canvas-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0f1217;
+  padding: 12px;
+  overflow: auto;
+}
+
+#festival-map-canvas {
+  max-width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
+}
+
+.festival-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  padding: 10px 20px;
+  background: #14171f;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.82rem;
+  color: #cbd5e1;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-badge {
+  font-size: 1rem;
+}
+
+#map-help {
+  padding: 6px 20px 10px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  background: #14171f;
+  text-align: right;
+}
+
 

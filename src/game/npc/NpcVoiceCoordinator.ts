@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { NpcManager } from './NpcManager';
 import { NpcAiAgent, type NpcDialogueResponse, type NpcVoiceSettings } from './NpcAiAgent';
 import { geminiNpcService } from './GeminiNpcService';
+import { elevenLabsNpcService } from './ElevenLabsNpcService';
 
 export function cleanTextForSpeech(text: string): string {
   return text
@@ -86,6 +87,10 @@ export interface NpcVoiceCoordinatorOptions {
   geminiClearButton?: HTMLButtonElement;
   geminiCloseButton?: HTMLButtonElement;
   geminiStatusElement?: HTMLElement;
+  elevenLabsInputElement?: HTMLInputElement;
+  elevenLabsSaveButton?: HTMLButtonElement;
+  elevenLabsClearButton?: HTMLButtonElement;
+  elevenLabsStatusElement?: HTMLElement;
   onStatusChange?: (status: VoiceCoordinatorStatus, message?: string) => void;
 }
 
@@ -119,6 +124,10 @@ export class NpcVoiceCoordinator {
   private readonly geminiClearButton?: HTMLButtonElement;
   private readonly geminiCloseButton?: HTMLButtonElement;
   private readonly geminiStatusElement?: HTMLElement;
+  private readonly elevenLabsInputElement?: HTMLInputElement;
+  private readonly elevenLabsSaveButton?: HTMLButtonElement;
+  private readonly elevenLabsClearButton?: HTMLButtonElement;
+  private readonly elevenLabsStatusElement?: HTMLElement;
   private readonly onStatusChange?: (status: VoiceCoordinatorStatus, message?: string) => void;
 
   constructor(
@@ -140,6 +149,10 @@ export class NpcVoiceCoordinator {
     this.geminiClearButton = options.geminiClearButton;
     this.geminiCloseButton = options.geminiCloseButton;
     this.geminiStatusElement = options.geminiStatusElement;
+    this.elevenLabsInputElement = options.elevenLabsInputElement;
+    this.elevenLabsSaveButton = options.elevenLabsSaveButton;
+    this.elevenLabsClearButton = options.elevenLabsClearButton;
+    this.elevenLabsStatusElement = options.elevenLabsStatusElement;
     this.onStatusChange = options.onStatusChange;
 
     this.initSpeechSynthesis();
@@ -318,6 +331,33 @@ export class NpcVoiceCoordinator {
       };
     }
 
+    if (this.elevenLabsSaveButton && this.elevenLabsInputElement) {
+      this.elevenLabsSaveButton.onclick = () => {
+        const val = this.elevenLabsInputElement!.value.trim();
+        if (val) {
+          if (val.includes('...')) {
+            this.setElevenLabsStatus('Klucz jest już zapisany.');
+            return;
+          }
+          elevenLabsNpcService.setApiKey(val);
+          this.elevenLabsInputElement!.value = elevenLabsNpcService.getMaskedApiKey();
+          this.setElevenLabsStatus('✓ Klucz zapisany. ElevenLabs aktywne jako główny głos.');
+          this.updateGeminiIndicator();
+        } else {
+          this.setElevenLabsStatus('Wprowadź poprawny klucz ElevenLabs.');
+        }
+      };
+    }
+
+    if (this.elevenLabsClearButton) {
+      this.elevenLabsClearButton.onclick = () => {
+        elevenLabsNpcService.setApiKey('');
+        if (this.elevenLabsInputElement) this.elevenLabsInputElement.value = '';
+        this.setElevenLabsStatus('Klucz usunięty. Aktywny fallback: Gemini / Web Speech.');
+        this.updateGeminiIndicator();
+      };
+    }
+
     this.updateGeminiIndicator();
   }
 
@@ -325,6 +365,8 @@ export class NpcVoiceCoordinator {
     if (!this.geminiConfigElement) return;
     this.geminiConfigElement.removeAttribute('hidden');
     this.geminiConfigElement.style.display = 'block';
+
+    // Konfiguracja Gemini:
     if (this.geminiInputElement) {
       this.geminiInputElement.value = geminiNpcService.getApiKey()
         ? geminiNpcService.getMaskedApiKey()
@@ -334,6 +376,22 @@ export class NpcVoiceCoordinator {
       this.setGeminiStatus('✓ Klucz aktywny (zapisany lokalnie)');
     } else {
       this.setGeminiStatus('Brak klucza (używany jest wbudowany model lokalny)');
+    }
+
+    // Konfiguracja ElevenLabs:
+    if (this.elevenLabsInputElement) {
+      this.elevenLabsInputElement.value = elevenLabsNpcService.getApiKey()
+        ? elevenLabsNpcService.getMaskedApiKey()
+        : '';
+    }
+    if (elevenLabsNpcService.hasApiKey()) {
+      if (elevenLabsNpcService.isQuotaExceeded()) {
+        this.setElevenLabsStatus('⚠️ Darmowy limit 10k znaków wyczerpany (aktywny fallback: Gemini / Web Speech)');
+      } else {
+        this.setElevenLabsStatus('✓ Klucz aktywny (ElevenLabs - główny dubbing)');
+      }
+    } else {
+      this.setElevenLabsStatus('Brak klucza (działa fallback do Gemini i Web Speech)');
     }
   }
 
@@ -349,14 +407,26 @@ export class NpcVoiceCoordinator {
     }
   }
 
+  private setElevenLabsStatus(msg: string): void {
+    if (this.elevenLabsStatusElement) {
+      this.elevenLabsStatusElement.textContent = msg;
+    }
+  }
+
   private updateGeminiIndicator(): void {
     if (this.geminiButton) {
-      if (geminiNpcService.hasApiKey()) {
+      const hasGemini = geminiNpcService.hasApiKey();
+      const hasEleven = elevenLabsNpcService.hasApiKey() && !elevenLabsNpcService.isQuotaExceeded();
+
+      if (hasEleven || hasGemini) {
         this.geminiButton.classList.add('has-gemini');
-        this.geminiButton.title = 'Gemini AI aktywny (kliknij, aby zmienić klucz)';
+        const providers = [];
+        if (hasEleven) providers.push('ElevenLabs');
+        if (hasGemini) providers.push('Gemini AI');
+        this.geminiButton.title = `Aktywne: ${providers.join(' + ')} (kliknij, aby skonfigurować)`;
       } else {
         this.geminiButton.classList.remove('has-gemini');
-        this.geminiButton.title = 'Konfiguracja klucza Gemini AI';
+        this.geminiButton.title = 'Konfiguracja głosów ElevenLabs i Gemini AI';
       }
     }
   }
@@ -500,18 +570,14 @@ export class NpcVoiceCoordinator {
   }
 
   /**
-   * Odtwarza tekst za pomocą syntezatora głosu (Web SpeechSynthesis) z dopasowaną barwą głosu postaci.
+   * Odtwarza tekst za pomocą hierarchicznego potoku głosowego:
+   * 1. ElevenLabs (Opcja 2 - realistyczny dubbing, aż do limitu)
+   * 2. Gemini Audio (Opcja 1 - ekspresyjne audio AI, gdy ElevenLabs wyczerpie darmowy limit lub wystąpi błąd)
+   * 3. Web Speech API (Wbudowany darmowy silnik przeglądarki z modulacją barwy głosu jako bezpiecznik)
    */
   speakText(text: string, voiceSettings: NpcVoiceSettings, onComplete?: () => void): void {
     this.lastSpokenText = text;
     this.lastSpokenVoiceSettings = voiceSettings;
-
-    const synth = this.getSpeechSynthesis();
-    const UtteranceConstructor = this.getSpeechSynthesisUtterance();
-    if (!synth || !UtteranceConstructor) {
-      onComplete?.();
-      return;
-    }
 
     const cleanedText = cleanTextForSpeech(text);
     if (!cleanedText) {
@@ -520,6 +586,80 @@ export class NpcVoiceCoordinator {
     }
 
     this.cancelSpeaking();
+
+    // Jeśli ElevenLabs jest skonfigurowane i ma limit, lub Gemini ma klucz -> uruchamiamy potok asynchroniczny:
+    if (
+      (elevenLabsNpcService.hasApiKey() && !elevenLabsNpcService.isQuotaExceeded()) ||
+      geminiNpcService.hasApiKey()
+    ) {
+      void this.speakWithFallbackPipeline(cleanedText, voiceSettings, onComplete);
+      return;
+    }
+
+    // Bezpośredni fallback do lokalnego Web Speech API (np. brak zewnętrznych kluczy lub środowisko testowe):
+    this.speakWebSpeech(cleanedText, voiceSettings, onComplete);
+  }
+
+  /**
+   * Asynchroniczny potok próbujący kolejno ElevenLabs, następnie Gemini Audio, a ostatecznie Web Speech.
+   */
+  private async speakWithFallbackPipeline(
+    cleanedText: string,
+    voiceSettings: NpcVoiceSettings,
+    onComplete?: () => void,
+  ): Promise<void> {
+    const npcName = this.currentNpcName || 'Festiwalowicz';
+
+    // 1. Próba ElevenLabs (Opcja 2 - priorytet aż do wyczerpania darmowego limitu):
+    if (elevenLabsNpcService.hasApiKey() && !elevenLabsNpcService.isQuotaExceeded()) {
+      const voiceId = elevenLabsNpcService.getVoiceIdForPersona(npcName, voiceSettings.gender);
+      this.setStatus('speaking', `🗣️ ${npcName} mówi...`);
+      const audioBuffer = await elevenLabsNpcService.synthesizeSpeech(cleanedText, voiceId);
+
+      if (audioBuffer && !this.disposed) {
+        const audio = elevenLabsNpcService.playAudioBuffer(
+          audioBuffer,
+          () => this.setStatus('speaking', `🗣️ ${npcName} mówi...`),
+          () => {
+            this.setStatus('idle', '🎤 Dotknij "Mów" lub wpisz tekst');
+            onComplete?.();
+          },
+        );
+        if (audio) return;
+      }
+    }
+
+    // 2. Próba Gemini Audio (Opcja 1 - fallback przy wyczerpaniu limitu ElevenLabs):
+    if (geminiNpcService.hasApiKey()) {
+      const geminiAudio = await geminiNpcService.synthesizeSpeechAudio(cleanedText, npcName, voiceSettings.gender);
+      if (geminiAudio && !this.disposed) {
+        const played = await geminiNpcService.playAudioData(
+          geminiAudio.audioData,
+          geminiAudio.mimeType,
+          () => this.setStatus('speaking', `🗣️ ${npcName} mówi...`),
+          () => {
+            this.setStatus('idle', '🎤 Dotknij "Mów" lub wpisz tekst');
+            onComplete?.();
+          },
+        );
+        if (played) return;
+      }
+    }
+
+    // 3. Bezpiecznik ostateczny: wbudowany Web Speech API przeglądarki
+    this.speakWebSpeech(cleanedText, voiceSettings, onComplete);
+  }
+
+  /**
+   * Odtwarza tekst za pomocą wbudowanego syntezatora przeglądarki (Web SpeechSynthesis) z dopasowaną barwą głosu postaci.
+   */
+  speakWebSpeech(cleanedText: string, voiceSettings: NpcVoiceSettings, onComplete?: () => void): void {
+    const synth = this.getSpeechSynthesis();
+    const UtteranceConstructor = this.getSpeechSynthesisUtterance();
+    if (!synth || !UtteranceConstructor) {
+      onComplete?.();
+      return;
+    }
 
     try {
       synth.resume();
@@ -606,9 +746,12 @@ export class NpcVoiceCoordinator {
   }
 
   /**
-   * Natychmiast przerywa trwające wypowiedzi syntezatora.
+   * Natychmiast przerywa trwające wypowiedzi syntezatora i odtwarzaczy audio.
    */
   cancelSpeaking(): void {
+    elevenLabsNpcService.cancelPlayback();
+    geminiNpcService.cancelAudioPlayback();
+
     const synth = this.getSpeechSynthesis();
     if (synth) {
       try {

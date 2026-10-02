@@ -20,6 +20,7 @@ describe('NpcVoiceCoordinator', () => {
       },
     });
     vi.stubEnv('VITE_GEMINI_API_KEY', '');
+    vi.stubEnv('VITE_ELEVENLABS_API_KEY', '');
 
     testNpc = {
       root: new THREE.Group(),
@@ -230,6 +231,61 @@ describe('NpcVoiceCoordinator', () => {
     coordinator.speakText('Siemanko!', { pitch: 0.85, rate: 0.95, volume: 1.0, gender: 'male' });
     expect(capturedUtterance.voice?.name).toBe('Microsoft Adam - Polish');
     expect(capturedUtterance.pitch).toBeLessThanOrEqual(1.05);
+
+    coordinator.dispose();
+  });
+
+  it('allows saving and clearing ElevenLabs API key via UI elements', () => {
+    const inputElement = { value: 'sk_test_elevenlabs_123456789' } as HTMLInputElement;
+    const saveButton = { onclick: null } as unknown as HTMLButtonElement;
+    const clearButton = { onclick: null } as unknown as HTMLButtonElement;
+    const statusElement = { textContent: '' } as HTMLElement;
+    const geminiButton = {
+      classList: { add: vi.fn(), remove: vi.fn() },
+      title: '',
+    } as unknown as HTMLButtonElement;
+
+    const coordinator = new NpcVoiceCoordinator(npcManagerMock, {
+      elevenLabsInputElement: inputElement,
+      elevenLabsSaveButton: saveButton,
+      elevenLabsClearButton: clearButton,
+      elevenLabsStatusElement: statusElement,
+      geminiButton,
+    });
+
+    // Test save:
+    expect(typeof saveButton.onclick).toBe('function');
+    saveButton.onclick!({} as any);
+    expect(statusElement.textContent).toContain('Klucz zapisany');
+    expect(inputElement.value).toContain('...'); // Masked
+
+    // Test clear:
+    expect(typeof clearButton.onclick).toBe('function');
+    clearButton.onclick!({} as any);
+    expect(statusElement.textContent).toContain('Klucz usunięty');
+    expect(inputElement.value).toBe('');
+
+    coordinator.dispose();
+  });
+
+  it('falls back to Web Speech when ElevenLabs synthesis fails or quota is exceeded', async () => {
+    vi.stubEnv('VITE_ELEVENLABS_API_KEY', 'sk_test_mock');
+    const coordinator = new NpcVoiceCoordinator(npcManagerMock);
+    const webSpeechSpy = vi.spyOn(coordinator, 'speakWebSpeech');
+
+    // Mock ElevenLabs to return 429 quota exceeded:
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      text: () => Promise.resolve('{"detail": {"status": "quota_exceeded"}}'),
+    }));
+
+    coordinator.speakText('Siemanko!', { pitch: 1.0, rate: 1.0, volume: 1.0, gender: 'male' });
+
+    // Oczekiwanie na przejście przez asynchroniczny potok fallbacku:
+    await new Promise((r) => setTimeout(r, 20));
+
+    expect(webSpeechSpy).toHaveBeenCalledWith('Siemanko!', expect.any(Object), undefined);
 
     coordinator.dispose();
   });

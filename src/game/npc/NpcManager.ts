@@ -1215,6 +1215,66 @@ export class NpcManager {
     npc.watchdog.resetPosition(npc.root.position);
   }
 
+  /** Reaguje na poczęstowanie używką (piwem lub jointem) przez gracza. */
+  shareItemWithNpc(name: string, effect: 'Piwo' | 'Joint', facePosition?: THREE.Vector3): { success: boolean; message?: string } {
+    const key = name.toLowerCase().trim();
+    const npc = this.npcs.find(
+      (n) =>
+        n.name.toLowerCase() === key ||
+        (n.root.userData?.npcId && String(n.root.userData.npcId).toLowerCase() === key) ||
+        n.root.name.toLowerCase() === `npc_${key}`,
+    );
+    if (!npc || npc.isHidden) return { success: false };
+
+    npc.stationary = true;
+    npc.speed = 0;
+    npc.velocity.set(0, 0, 0);
+    npc.waypoints.length = 0;
+    npc.wait = 4.0;
+
+    if (facePosition) {
+      const dx = facePosition.x - npc.root.position.x;
+      const dz = facePosition.z - npc.root.position.z;
+      if (dx * dx + dz * dz > 0.0001) {
+        npc.root.rotation.y = Math.atan2(dx, dz);
+        npc.steeringDirection.set(dx, 0, dz).normalize();
+      }
+    }
+
+    if (effect === 'Piwo') {
+      const drinkClips = ['Drinking', 'HappyHandGesture', 'Laughing'];
+      const available = drinkClips.filter((c) => npc.animator?.hasClip(c));
+      const clip = available[0] ?? 'HappyHandGesture';
+      if (npc.animator?.hasClip(clip)) {
+        npc.animator.startActivity([{ name: clip, seconds: 3.5 }]);
+      }
+    } else {
+      const smokeClips = ['RelievedSigh', 'HappyHandGesture', 'Laughing'];
+      const available = smokeClips.filter((c) => npc.animator?.hasClip(c));
+      const clip = available[0] ?? 'HappyHandGesture';
+      if (npc.animator?.hasClip(clip)) {
+        npc.animator.startActivity([{ name: clip, seconds: 3.5 }]);
+      }
+    }
+
+    const responses =
+      effect === 'Piwo'
+        ? [
+            'Dzięki mordeczko! Zimne piwko to skarb!',
+            'Za festiwal! Twoje zdrowie!',
+            'Ooo, z nieba mi spadłeś, dzięki!',
+            'Masz złote serce, brachu!',
+          ]
+        : [
+            'Dzięki stary, idealny moment na dymka!',
+            'Ale dobry sort, dzięki wielkie!',
+            'Peace and love, dzięki za jointa!',
+            'Szacuneczek, mordeczko!',
+          ];
+    const message = responses[Math.floor(npc.behavior.random() * responses.length)];
+    return { success: true, message };
+  }
+
   /** Zatrzymuje miksery animacji wszystkich NPC. */
   dispose() {
     this.disposed = true;

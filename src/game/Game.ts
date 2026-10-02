@@ -296,6 +296,10 @@ export class Game {
         geminiClearButton: document.querySelector('#dialog-gemini-clear-btn') as HTMLButtonElement | undefined,
         geminiCloseButton: document.querySelector('#dialog-gemini-close-btn') as HTMLButtonElement | undefined,
         geminiStatusElement: document.querySelector('#dialog-gemini-status') as HTMLElement | undefined,
+        elevenLabsInputElement: document.querySelector('#dialog-elevenlabs-key-input') as HTMLInputElement | undefined,
+        elevenLabsSaveButton: document.querySelector('#dialog-elevenlabs-save-btn') as HTMLButtonElement | undefined,
+        elevenLabsClearButton: document.querySelector('#dialog-elevenlabs-clear-btn') as HTMLButtonElement | undefined,
+        elevenLabsStatusElement: document.querySelector('#dialog-elevenlabs-status') as HTMLElement | undefined,
       });
 
       this.startLoop();

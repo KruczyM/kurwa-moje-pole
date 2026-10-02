@@ -454,4 +454,26 @@ describe('NpcManager', () => {
 
     manager.dispose();
   });
+
+  it('obsługuje poczęstowanie NPC piwem lub jointem i zwraca klimatyczną kwestię', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    const npc = manager.npcs[0];
+
+    const resultBeer = manager.shareItemWithNpc(npc.name, 'Piwo');
+    expect(resultBeer.success).toBe(true);
+    expect(typeof resultBeer.message).toBe('string');
+    expect(resultBeer.message!.length).toBeGreaterThan(5);
+    expect(npc.wait).toBeGreaterThan(0);
+
+    const resultJoint = manager.shareItemWithNpc(npc.name, 'Joint');
+    expect(resultJoint.success).toBe(true);
+    expect(typeof resultJoint.message).toBe('string');
+
+    // Nieistniejący NPC
+    const resultNone = manager.shareItemWithNpc('NieznanyBot', 'Piwo');
+    expect(resultNone.success).toBe(false);
+
+    manager.dispose();
+  });
 });
+
