@@ -338,4 +338,31 @@ describe('RemotePlayersManager', () => {
     voiceManager.dispose();
     spatialVoice.dispose();
   });
+
+  it('zwraca prawidłowe markery graczy zdalnych dla HUD mapy przez getPlayerMarkers()', () => {
+    const snapshot: WorldSnapshotPayload = {
+      timestamp: Date.now(),
+      players: [
+        {
+          playerId: 'remote-map-1',
+          character: 'Kobra',
+          nickname: 'Kobra',
+          transform: {
+            position: [15, 0, -25],
+            yaw: 0,
+            locomotion: 'Idle',
+            speed: 0,
+            timestamp: Date.now(),
+          },
+        },
+      ],
+    };
+    manager.handleWorldSnapshot(snapshot);
+    const markers = manager.getPlayerMarkers();
+    expect(markers).toHaveLength(1);
+    expect(markers[0].id).toBe('remote-map-1');
+    expect(markers[0].name).toBe('Kobra');
+    expect(markers[0].x).toBe(15);
+    expect(markers[0].z).toBe(-25);
+  });
 });

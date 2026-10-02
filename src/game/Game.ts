@@ -37,7 +37,6 @@ import type { NetworkClient } from './network/NetworkClient';
 import { UIManager } from './ui/UIManager';
 import { SpatialVoiceManager, type MicState } from './audio/SpatialVoiceManager';
 import { NpcVoiceCoordinator } from './npc/NpcVoiceCoordinator';
-import { FestivalMap } from './ui/FestivalMap';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -109,7 +108,6 @@ export class Game {
     getPropModel: (id) => this.propModels.get(id),
   });
   readonly ui = new UIManager();
-  readonly festivalMap = new FestivalMap();
   private events = new EventScope();
   private unsubscribeState: () => void;
   private started = false;
@@ -131,8 +129,6 @@ export class Game {
   private seatController?: SeatController;
   private pendingItemUse?: PendingItemUse;
   private pendingWarningItem?: PendingWarningItem;
-  private activeHumanCharacters = new Set<string>();
-  private unsubscribeNpcSwap?: () => void;
   constructor(
     readonly state: AppStateMachine,
     readonly networkClient?: NetworkClient,
@@ -166,22 +162,6 @@ export class Game {
     this.syncSettingsUi();
     this.syncInventoryUi();
     this.ui.initLsdOverlays(effectAssets.lsdOverlays[0], effectAssets.lsdOverlays[1]);
-    const mapCanvas = this.ui.getFestivalMapCanvas();
-    if (mapCanvas) {
-      this.festivalMap.attachCanvas(mapCanvas);
-    }
-    const mapCloseBtn = document.querySelector<HTMLButtonElement>('#map-close');
-    if (mapCloseBtn) {
-      this.events.listen(mapCloseBtn, 'click', () => {
-        if (this.state.current === 'map') {
-          this.closeCurrentState('playing');
-        }
-      });
-    }
-    const mobileMapBtn = document.querySelector<HTMLButtonElement>('#mobile-map');
-    if (mobileMapBtn) {
-      this.events.listen(mobileMapBtn, 'click', () => this.toggleMap());
-    }
     this.syncState(this.state.current);
   }
 
@@ -316,10 +296,6 @@ export class Game {
         geminiClearButton: document.querySelector('#dialog-gemini-clear-btn') as HTMLButtonElement | undefined,
         geminiCloseButton: document.querySelector('#dialog-gemini-close-btn') as HTMLButtonElement | undefined,
         geminiStatusElement: document.querySelector('#dialog-gemini-status') as HTMLElement | undefined,
-        elevenLabsInputElement: document.querySelector('#dialog-elevenlabs-key-input') as HTMLInputElement | undefined,
-        elevenLabsSaveButton: document.querySelector('#dialog-elevenlabs-save-btn') as HTMLButtonElement | undefined,
-        elevenLabsClearButton: document.querySelector('#dialog-elevenlabs-clear-btn') as HTMLButtonElement | undefined,
-        elevenLabsStatusElement: document.querySelector('#dialog-elevenlabs-status') as HTMLElement | undefined,
       });
 
       this.startLoop();
@@ -392,7 +368,7 @@ export class Game {
   private key(event: KeyboardEvent) {
     if (this.disposed) return;
     if (
-      (event.key === 'v' || event.key === 'V') &&
+      (event.key === 'm' || event.key === 'M') &&
       (this.state.current === 'playing' || this.state.current === 'seated')
     ) {
       this.spatialVoice?.toggleMute();
@@ -414,7 +390,7 @@ export class Game {
       const target = escapeTarget(source);
       if (target) {
         // To samo Escape nie może zamknąć preview i chwilę później otworzyć pauzy.
-        if (source === 'inspecting' || source === 'map') {
+        if (source === 'inspecting') {
           this.pointerLockPause.suppressLossesUntil(performance.now() + POINTER_LOCK_ESCAPE_SUPPRESSION_MS);
         }
         if (menuEscape) this.voiceReactions.playMenuEscape();
@@ -426,12 +402,8 @@ export class Game {
       this.toggleInventory();
       return;
     }
-    if (action === 'toggle-map') {
-      this.toggleMap();
-      return;
-    }
     if (this.state.current === 'inventory') {
-      const effectKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+      const effectKeys = ['1', '2', '3', '4', '5', '6', '7'];
       const effectIndex = effectKeys.indexOf(event.key);
       if (effectIndex >= 0 && effectIndex < inventoryEffects.length) {
         this.useInventoryEffect(inventoryEffects[effectIndex]);
@@ -443,39 +415,8 @@ export class Game {
     else if (this.state.current === 'playing') this.interact();
   }
 
-  /** Przełącza widoczność interaktywnej 2D mapy terenu festiwalu. */
-  private toggleMap() {
-    if (this.state.current === 'playing') {
-      this.pointerLockPause.suppressLossesUntil(performance.now() + 300);
-      document.exitPointerLock?.();
-      this.state.transition('map');
-      this.renderMap();
-    } else if (this.state.current === 'map') {
-      this.closeCurrentState('playing');
-    }
-  }
-
-  /** Odrysowuje pozycję gracza i znajomych na mapie festiwalowej. */
-  private renderMap() {
-    const euler = new THREE.Euler().setFromQuaternion(this.camera.quaternion, 'YXZ');
-    this.festivalMap.render(
-      {
-        x: this.camera.position.x,
-        z: this.camera.position.z,
-        yaw: euler.y,
-      },
-      this.remotePlayersManager?.getPlayerMarkers() ?? [],
-    );
-  }
-
   /** Sprząta bieżący modal i przechodzi do wskazanego stanu. */
   private closeCurrentState(target: AppState) {
-    if (this.state.current === 'map' && target === 'playing') {
-      this.pointerLockPause.suppressLossesUntil(performance.now() + 300);
-      this.state.transition(target);
-      this.canvas.requestPointerLock?.();
-      return;
-    }
     if (this.state.current === 'seated' && target === 'playing') {
       this.leaveSeat();
       return;
@@ -964,9 +905,6 @@ export class Game {
       if (state === 'inspecting') {
         this.inspectController.update(dt);
       }
-      if (state === 'map') {
-        this.renderMap();
-      }
     }
     if (state === 'paused' || state === 'error') {
       this.mushroomWireframe.update(false, 0, 0, false);
@@ -1047,8 +985,6 @@ export class Game {
     this.ui.dispose();
     this.events.dispose();
     this.unsubscribeState();
-    this.unsubscribeNpcSwap?.();
-    this.unsubscribeNpcSwap = undefined;
     this.inspectController.dispose();
     this.useSequence?.dispose();
     this.useSequence = undefined;

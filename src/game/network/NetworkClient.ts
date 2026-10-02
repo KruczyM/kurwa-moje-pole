@@ -72,6 +72,9 @@ export class NetworkClient {
   private voiceMuteListeners = new Set<(payload: VoicePeerMutePayload) => void>();
   private voicePeerJoinedListeners = new Set<(payload: VoicePeerNotificationPayload) => void>();
   private voicePeerLeftListeners = new Set<(payload: VoicePeerNotificationPayload) => void>();
+  private actionTriggerListeners = new Set<
+    (payload: { playerId: string; character: CharacterName; action: string; timestamp: number }) => void
+  >();
 
   constructor(options: NetworkClientOptions = {}) {
     this.serverUrl = options.serverUrl ?? DEFAULT_SERVER_URL;
@@ -207,6 +210,13 @@ export class NetworkClient {
         for (const listener of this.voicePeerLeftListeners) listener(payload);
       });
 
+      this.socket.on(
+        'action:trigger',
+        (payload: { playerId: string; character: CharacterName; action: string; timestamp: number }) => {
+          for (const listener of this.actionTriggerListeners) listener(payload);
+        },
+      );
+
       this.socket.on('disconnect', () => {
         this.setStatus('disconnected');
       });
@@ -326,6 +336,18 @@ export class NetworkClient {
   onVoicePeerLeft(listener: (payload: VoicePeerNotificationPayload) => void): () => void {
     this.voicePeerLeftListeners.add(listener);
     return () => this.voicePeerLeftListeners.delete(listener);
+  }
+
+  sendAction(action: string): void {
+    if (!this.socket || this.status !== 'connected') return;
+    this.socket.emit('action:trigger', { action, timestamp: Date.now() });
+  }
+
+  onActionTrigger(
+    listener: (payload: { playerId: string; character: CharacterName; action: string; timestamp: number }) => void,
+  ): () => void {
+    this.actionTriggerListeners.add(listener);
+    return () => this.actionTriggerListeners.delete(listener);
   }
 
   private setStatus(status: NetworkConnectionStatus): void {

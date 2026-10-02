@@ -59,6 +59,7 @@ export type Npc = {
   festivalRole?: 'stage_dancer' | 'asp_listener' | 'food_queue' | 'chiller' | 'walker';
   animLodAccumulator: number;
   inConversation?: boolean;
+  isHidden?: boolean;
 };
 const CAMP_RADIUS = 13;
 const SPEAKER_POSITION = { x: -1.45, z: 0.65 };
@@ -125,6 +126,68 @@ export class NpcManager {
     npc.watchdog.resetPosition(npc.root.position);
     npc.behavior.forceWander();
     this.applyBehaviorAction(npc, 'wander');
+  }
+
+  /**
+   * Ukrywa bota NPC o podanej nazwie lub ID (używane gdy człowiek dołącza do pokoju multiplayer na tym slocie).
+   */
+  hideNpc(nameOrId: string): boolean {
+    const key = nameOrId.toLowerCase().trim();
+    const npc = this.npcs.find(
+      (n) =>
+        n.name.toLowerCase() === key ||
+        (n.root.userData?.npcId && String(n.root.userData.npcId).toLowerCase() === key) ||
+        n.root.name.toLowerCase() === `npc_${key}`,
+    );
+    if (!npc) return false;
+    if (npc.isHidden) return true;
+
+    if (npc.isSitting || npc.assignedSeatId) {
+      this.standUpNpc(npc);
+    }
+    npc.isHidden = true;
+    npc.root.visible = false;
+    // Odsuń poza zasięg raycastera interakcji i kolizji
+    npc.root.position.y = -200;
+    return true;
+  }
+
+  /**
+   * Przywraca bota NPC do obozu (używane gdy gracz opuszcza pokój).
+   */
+  showNpc(nameOrId: string): boolean {
+    const key = nameOrId.toLowerCase().trim();
+    const npc = this.npcs.find(
+      (n) =>
+        n.name.toLowerCase() === key ||
+        (n.root.userData?.npcId && String(n.root.userData.npcId).toLowerCase() === key) ||
+        n.root.name.toLowerCase() === `npc_${key}`,
+    );
+    if (!npc) return false;
+    if (!npc.isHidden) return true;
+
+    npc.isHidden = false;
+    npc.root.visible = true;
+    const ground = terrainHeight(npc.target.x, npc.target.z);
+    npc.root.position.set(npc.target.x, ground, npc.target.z);
+    npc.watchdog.resetPosition(npc.root.position);
+    npc.behavior.forceWander();
+    this.applyBehaviorAction(npc, 'wander');
+    return true;
+  }
+
+  /**
+   * Sprawdza, czy bot o danej nazwie lub ID jest obecnie ukryty.
+   */
+  isNpcHidden(nameOrId: string): boolean {
+    const key = nameOrId.toLowerCase().trim();
+    const npc = this.npcs.find(
+      (n) =>
+        n.name.toLowerCase() === key ||
+        (n.root.userData?.npcId && String(n.root.userData.npcId).toLowerCase() === key) ||
+        n.root.name.toLowerCase() === `npc_${key}`,
+    );
+    return npc?.isHidden ?? false;
   }
 
   constructor(
@@ -671,21 +734,24 @@ export class NpcManager {
       }
     }
 
-    const snapshots = this.npcs.map((npc) => ({
-      npc,
-      position: npc.root.position.clone(),
-      velocity: npc.velocity.clone(),
-    }));
-    let socialCount = this.npcs.filter((npc) => npc.behavior.state === 'social').length;
+    const snapshots = this.npcs
+      .filter((npc) => !npc.isHidden)
+      .map((npc) => ({
+        npc,
+        position: npc.root.position.clone(),
+        velocity: npc.velocity.clone(),
+      }));
+    let socialCount = this.npcs.filter((npc) => !npc.isHidden && npc.behavior.state === 'social').length;
     const dancingCampCount = this.npcs.filter(
-      (npc) => npc.isCampMember && (npc.behavior.state === 'dance' || npc.isDancingAtSpeaker),
+      (npc) => !npc.isHidden && npc.isCampMember && (npc.behavior.state === 'dance' || npc.isDancingAtSpeaker),
     ).length;
     const sittingCampCount = this.npcs.filter(
-      (npc) => npc.isCampMember && (npc.behavior.state === 'sit' || npc.isSitting || npc.assignedSeatId),
+      (npc) => !npc.isHidden && npc.isCampMember && (npc.behavior.state === 'sit' || npc.isSitting || npc.assignedSeatId),
     ).length;
 
     for (let index = 0; index < this.npcs.length; index++) {
       const npc = this.npcs[index];
+      if (npc.isHidden) continue;
 
       // Jeśli głośnik przestał grać, zakończ taniec pod głośnikiem
       if (!this.speakerPlaying && npc.isDancingAtSpeaker) {

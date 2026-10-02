@@ -1,0 +1,15 @@
+{
+  "input": "E:\\kodowanie\\gra\\Hunyuan3D-2GP\\output\\characters_mv\\078_girl_with_guitar\\variant_7be3ecc1ff5d0abb211004566e0d7a1f2ebb3500a7e490ec84568208c73e3abc\\textured.glb",
+  "output": "E:\\kodowanie\\gra\\.ai\\worktrees\\festival-2026-tent-upgrades\\source-assets\\rigged-festival\\078_girl_with_guitar\\t-pose.glb",
+  "bones": 22,
+  "clips": [
+    "Idle",
+    "Run",
+    "Walk"
+  ],
+  "firstViewExtracted": false,
+  "quality": "automatic-draft-needs-visual-review",
+  "vertices": 25861,
+  "fallbackVertices": 25861,
+  "heatWarning": "Bone heat left unweighted vertices; geometric fallback used"
+}

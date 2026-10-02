@@ -142,7 +142,8 @@ export class VoiceReactionManager {
   effectStarted(id: EffectId, now = Date.now()) {
     this.trackedEffect = id;
     this.rareTripChecked = false;
-    const pool = [...catalog.effectStart.common, ...catalog.effectStart[id]];
+    const specific = (id in catalog.effectStart ? (catalog.effectStart as Record<string, string[]>)[id] : undefined) ?? [];
+    const pool = [...catalog.effectStart.common, ...specific];
     if (nonLightEffects.includes(id)) pool.push(...catalog.effectStart.nonLight);
     this.play(pool);
     this.recentUses = this.recentUses.filter((time) => now - time <= 60_000);

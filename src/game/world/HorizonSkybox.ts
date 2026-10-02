@@ -45,6 +45,13 @@ export class TimeOfDaySkybox {
     this.load(period);
   }
 
+  /** Ustawia jawną porę dnia i ładuje odpowiadający skybox. */
+  setPeriod(period: SkyboxPeriod): void {
+    if (this.disposed || period === this.period) return;
+    this.period = period;
+    this.load(period);
+  }
+
   /** Podmienia tło dopiero po pełnym wczytaniu cubemapy, aby uniknąć czarnej klatki. */
   private load(period: SkyboxPeriod) {
     const token = ++this.requestToken;

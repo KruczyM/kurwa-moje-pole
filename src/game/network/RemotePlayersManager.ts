@@ -29,12 +29,14 @@ export interface RemotePlayerEntity {
   locomotion: LocomotionState;
   speed: number;
   lastUpdateTime: number;
+  isSpeaking?: boolean;
 }
 
 export class RemotePlayersManager {
   readonly remotePlayers = new Map<string, RemotePlayerEntity>();
   private unsubscribeSnapshot?: () => void;
   private unsubscribeSpeaking?: () => void;
+  private unsubscribeAction?: () => void;
 
   constructor(
     private readonly scene: THREE.Scene,
@@ -45,6 +47,9 @@ export class RemotePlayersManager {
     if (this.networkClient) {
       this.unsubscribeSnapshot = this.networkClient.onWorldSnapshot((snapshot) => {
         this.handleWorldSnapshot(snapshot);
+      });
+      this.unsubscribeAction = this.networkClient.onActionTrigger((payload) => {
+        this.handleRemoteAction(payload);
       });
     }
 
@@ -264,16 +269,58 @@ export class RemotePlayersManager {
 
       // 4. Aktualizacja pozycji nametaga na ekranie oraz wskaźnika mówienia:
       if (this.spatialVoice) {
-        entity.nametag.setSpeaking(this.spatialVoice.isPeerSpeaking(entity.playerId));
+        const speaking = this.spatialVoice.isPeerSpeaking(entity.playerId);
+        entity.isSpeaking = speaking;
+        entity.nametag.setSpeaking(speaking);
       }
       entity.nametag.update(entity.root.position, camera);
     }
+  }
+
+  /** Obsługuje jednorazowe akcje animacyjne graczy (picie, palenie, taniec, siadanie). */
+  handleRemoteAction(payload: {
+    playerId: string;
+    character: CharacterName;
+    action: string;
+    timestamp: number;
+  }): void {
+    const entity = this.remotePlayers.get(payload.playerId);
+    if (!entity || !entity.animator) return;
+    const actionClipMap: Record<string, import('../animation/animationContract').CanonicalAnimationClip> = {
+      drink: 'Drinking',
+      drinking: 'Drinking',
+      smoke: 'Smoking',
+      smoking: 'Smoking',
+      dance: 'Dance',
+      sit: 'SittingIdle',
+    };
+    const clip = actionClipMap[payload.action.toLowerCase()];
+    if (clip && entity.animator.hasClip(clip)) {
+      entity.animator.queueOneShot(clip);
+    }
+  }
+
+  /** Zwraca listę pozycji i stanów mówienia zdalnych graczy dla HUD mapy. */
+  getPlayerMarkers(): { id: string; name: string; x: number; z: number; isSpeaking?: boolean }[] {
+    const markers: { id: string; name: string; x: number; z: number; isSpeaking?: boolean }[] = [];
+    for (const [id, entity] of this.remotePlayers.entries()) {
+      markers.push({
+        id,
+        name: entity.characterName,
+        x: entity.currentPosition.x,
+        z: entity.currentPosition.z,
+        isSpeaking: entity.isSpeaking,
+      });
+    }
+    return markers;
   }
 
   /** Zwalnia wszystkie modele zdalnych graczy, nametagi i odłącza subskrypcję snapshotów. */
   dispose(): void {
     this.unsubscribeSnapshot?.();
     this.unsubscribeSnapshot = undefined;
+    this.unsubscribeAction?.();
+    this.unsubscribeAction = undefined;
     this.unsubscribeSpeaking?.();
     this.unsubscribeSpeaking = undefined;
 

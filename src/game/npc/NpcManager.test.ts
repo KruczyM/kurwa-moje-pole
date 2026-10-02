@@ -425,4 +425,33 @@ describe('NpcManager', () => {
 
     manager.dispose();
   });
+
+  it('obsługuje dynamiczny swap bota: hideNpc ukrywa model i pozycję, showNpc przywraca go do życia', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    const npc = manager.npcs[0];
+    const characterName = npc.name;
+
+    expect(manager.isNpcHidden(characterName)).toBe(false);
+    expect(npc.root.visible).toBe(true);
+
+    // Człowiek wchodzi na ten slot -> ukryj bota
+    const hidden = manager.hideNpc(characterName);
+    expect(hidden).toBe(true);
+    expect(manager.isNpcHidden(characterName)).toBe(true);
+    expect(npc.root.visible).toBe(false);
+    expect(npc.root.position.y).toBeLessThan(-50);
+
+    // Klatka update pomija ukrytego bota
+    manager.update(0.05, 0.1);
+    expect(npc.root.position.y).toBeLessThan(-50);
+
+    // Człowiek wychodzi z pokoju -> przywróć bota
+    const restored = manager.showNpc(characterName);
+    expect(restored).toBe(true);
+    expect(manager.isNpcHidden(characterName)).toBe(false);
+    expect(npc.root.visible).toBe(true);
+    expect(npc.root.position.y).toBeGreaterThanOrEqual(0);
+
+    manager.dispose();
+  });
 });

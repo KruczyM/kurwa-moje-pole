@@ -99,4 +99,11 @@ describe('VoiceReactionManager', () => {
     expect(triggered.length).toBeGreaterThanOrEqual(1);
     manager.dispose();
   });
+
+  it('safely handles non-substance items like Woda and Okulary in effectStarted', () => {
+    const manager = new VoiceReactionManager();
+    expect(() => manager.effectStarted('Woda')).not.toThrow();
+    expect(() => manager.effectStarted('Okulary')).not.toThrow();
+    manager.dispose();
+  });
 });

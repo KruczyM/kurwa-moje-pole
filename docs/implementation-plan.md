@@ -47,25 +47,26 @@
 | ---------- | ----------------------------------------------------------------------- | :-----------------: | :-----------: |
 | **Faza 1** | 1.1 Refaktor `Game.ts` (UIManager, ItemInspectController)               | ✅ **ZREALIZOWANE** |       —       |
 |            | 1.2 Bezpieczeństwo XSS i silnik dialogowy AI z głosem                   | ✅ **ZREALIZOWANE** |       —       |
-|            | 1.3 Fix podwójnego obrotu graczy sieciowych (`RemotePlayersManager.ts`) | 🔴 **DO ZROBIENIA** | **KRYTYCZNY** |
-|            | 1.4 Cache raycastera w `InteractionManager.ts`                          | 🔴 **DO ZROBIENIA** |  **WYSOKI**   |
-|            | 1.5 Limit graczy w pokoju = 16 (`Room.ts`, `roomServer.ts`)             | 🔴 **DO ZROBIENIA** |  **WYSOKI**   |
+|            | 1.3 Fix podwójnego obrotu graczy sieciowych (`RemotePlayersManager.ts`) | ✅ **ZREALIZOWANE** | `d6cb1ca`     |
+|            | 1.4 Cache raycastera w `InteractionManager.ts`                          | ✅ **ZREALIZOWANE** | `d6cb1ca`     |
+|            | 1.5 Limit graczy w pokoju = 16 (`Room.ts`, `roomServer.ts`)             | ✅ **ZREALIZOWANE** | `d6cb1ca`     |
 |            | 1.6 Bypass EffectComposer gdy brak efektu                               | ✅ **ZREALIZOWANE** |       —       |
-|            | 1.7 Object pooling dla `ItemUseSequence` & `SeatController`             | 🟡 **DO ZROBIENIA** |    ŚREDNI     |
-| **Faza 2** | 2.1 NPC tańczą przy głośniku obozowym i siadają na krzesłach            | 🟢 **DO ZROBIENIA** |  **WYSOKI**   |
-|            | 2.2 Dźwięki kontekstowe SFX + Festiwalowe okrzyki obozowe               | 🟢 **DO ZROBIENIA** |  **WYSOKI**   |
-|            | 2.3 Audio-reactive bas dla mocnych tripów (MDMA, LSD)                   | 🟢 **DO ZROBIENIA** |    ŚREDNI     |
-|            | 2.4 Użytkowy ekwipunek: Woda (antidotum) i Okulary przeciwsłoneczne     | 🟢 **DO ZROBIENIA** |    ŚREDNI     |
-|            | 2.5 Współdzielenie używek (poczęstuj piwem / jointem)                   | 🟢 **DO ZROBIENIA** |    ŚREDNI     |
-| **Faza 3** | 3.1 Płynny cykl dobowy zintegrowany ze skyboxem i Dużą Sceną            | 🟢 **DO ZROBIENIA** |  **WYSOKI**   |
-|            | 3.2 Oświetlenie nocne: Fairy lights nad namiotami i latarka gracza      | 🟢 **DO ZROBIENIA** |  **WYSOKI**   |
-|            | 3.3 Mini-gra w Flanki (Bierball) w centrum obozu                        | 🟢 **DO ZROBIENIA** |  **WYSOKI**   |
-|            | 3.4 Ogniskowy Jam Session z gitarą przy namiotach                       | 🟢 **DO ZROBIENIA** |    ŚREDNI     |
-|            | 3.5 Pełna mapa festiwalowa 2D (klawisz M)                               | 🟢 **DO ZROBIENIA** |  **WYSOKI**   |
-| **Faza 4** | 4.1 Dynamiczny swap NPC ↔ Gracz (dla 16 postaci w obozie)               | 🟢 **DO ZROBIENIA** |  **WYSOKI**   |
-|            | 4.2 Synchronizacja animacji akcji w sieci (`action:trigger`)            | 🟢 **DO ZROBIENIA** |  **WYSOKI**   |
-|            | 4.3 Wskaźnik mówiącego gracza nad nametagiem w WebRTC                   | 🟢 **DO ZROBIENIA** |  **WYSOKI**   |
-|            | 4.4 Rate-limiting na serwerze Socket.io                                 | 🟢 **DO ZROBIENIA** |    ŚREDNI     |
+|            | 1.7 Object pooling dla `ItemUseSequence` & `SeatController`             | ✅ **ZREALIZOWANE** | `d6cb1ca`     |
+| **Faza 2** | 2.1 NPC tańczą przy głośniku obozowym i siadają na krzesłach            | ✅ **ZREALIZOWANE** |       —       |
+|            | 2.2 Dźwięki kontekstowe SFX + Festiwalowe okrzyki obozowe               | ✅ **ZREALIZOWANE** |       —       |
+|            | 2.3 Audio-reactive bas dla mocnych tripów (MDMA, LSD)                   | ✅ **ZREALIZOWANE** |       —       |
+|            | 2.4 Użytkowy ekwipunek: Woda (antidotum) i Okulary przeciwsłoneczne     | ✅ **ZREALIZOWANE** | `d6cb1ca`     |
+|            | 2.5 Współdzielenie używek (poczęstuj piwem / jointem)                   | ✅ **ZREALIZOWANE** |       —       |
+| **Faza 3** | 3.1 Płynny cykl dobowy zintegrowany ze skyboxem i Dużą Sceną            | ✅ **ZREALIZOWANE** |       —       |
+|            | 3.2 Oświetlenie nocne: Fairy lights nad namiotami i latarka gracza      | ✅ **ZREALIZOWANE** |       —       |
+|            | 3.3 Mini-gra w Flanki (Bierball) w centrum obozu                        | ✅ **ZREALIZOWANE** |       —       |
+|            | 3.4 Ogniskowy Jam Session z gitarą przy namiotach                       | ✅ **ZREALIZOWANE** |       —       |
+|            | 3.5 Pełna mapa festiwalowa 2D (klawisz M)                               | ✅ **ZREALIZOWANE** |       —       |
+|            | 3.6 Festiwalowa pogoda: Deszcz, błoto i zjeżdżalnia błotna              | ✅ **ZREALIZOWANE** |       —       |
+| **Faza 4** | 4.1 Dynamiczny swap NPC ↔ Gracz (dla 16 postaci w obozie)               | ✅ **ZREALIZOWANE** |       —       |
+|            | 4.2 Synchronizacja animacji akcji w sieci (`action:trigger`)            | ✅ **ZREALIZOWANE** |       —       |
+|            | 4.3 Wskaźnik mówiącego gracza nad nametagiem w WebRTC                   | ✅ **ZREALIZOWANE** | `d6cb1ca`     |
+|            | 4.4 Rate-limiting na serwerze Socket.io                                 | ✅ **ZREALIZOWANE** |       —       |
 |            | 4.5 Reconnect ze stanem i tokenem sesyjnym                              | ✅ **ZREALIZOWANE** |       —       |
 |            | 4.6 Deployment HTTPS/WSS i konfiguracja TURN                            | 🟢 **DO ZROBIENIA** |   PRODUKCJA   |
 
@@ -210,6 +211,15 @@
     - Duża Scena z FOH i 6 przejściami w barierkach.
     - Grzybek Wodny, wóz strażacki OSP, pole słoneczników i strefa ASP.
   - Pulsująca kropka wskazuje pozycję i kierunek patrzenia gracza, a małe punkty pokazują innych graczy online.
+- **Czas:** ~3h.
+
+#### 3.6 Festiwalowa pogoda: Deszcz, błoto i zjeżdżalnia błotna
+
+- **Pliki:** `src/game/world/FestivalWeather.ts`, `src/game/rendering/pbrMaterials.ts`
+- **Działanie:**
+  - Dynamiczny lub przełączany klawiszem dev `K` deszcz festiwalowy (cząsteczki deszczu, przyciemnienie nieba, dźwięk kropel na namiotach).
+  - Nawierzchnia alejek staje się błotnista (zwiększony roughness/specular i kałuże).
+  - Pod Dużą Sceną boty w kostiumach/kąpielówkach zbiegają się na kultową zjeżdżalnię błotną (mud slide) z chlapiącym błotem.
 - **Czas:** ~3h.
 
 ---

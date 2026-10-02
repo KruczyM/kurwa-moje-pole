@@ -153,6 +153,21 @@ export class RoomServer {
         }
       });
 
+      socket.on('action:trigger', (payload: { action: string }) => {
+        if (!currentRoomId || !payload || !payload.action) return;
+        if (!this.rateLimiter.consume(socket.id, 'action')) return;
+        const room = this.rooms.get(currentRoomId);
+        if (!room) return;
+        const slot = room.findSlotByPlayerId(socket.id);
+        if (!slot) return;
+        this.io.to(currentRoomId).emit('action:trigger', {
+          playerId: socket.id,
+          character: slot.character,
+          action: payload.action,
+          timestamp: Date.now(),
+        });
+      });
+
       socket.on('character:release', (payload: ReleaseCharacterPayload) => {
         if (!currentRoomId) return;
 

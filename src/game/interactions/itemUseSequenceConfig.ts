@@ -10,7 +10,7 @@ export type ItemUseSfxConfig = {
 };
 
 export type ItemUseSequenceConfig = {
-  gesture: 'smoke' | 'sniff' | 'eat' | 'drink';
+  gesture: 'smoke' | 'sniff' | 'eat' | 'drink' | 'wear';
   duration: number;
   effectMarker: number;
   propId?: InspectableItemId;
@@ -123,7 +123,7 @@ export const itemUseSequenceConfig: Record<EffectId, ItemUseSequenceConfig> = {
     sfx: { sound: 'swallow', delay: 0.25, volume: 0.75 },
   },
   Okulary: {
-    gesture: 'pill',
+    gesture: 'wear',
     duration: 1.8,
     effectMarker: 0.9,
     propId: 'sunglasses',

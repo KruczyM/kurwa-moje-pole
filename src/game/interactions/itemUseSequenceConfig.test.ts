@@ -31,5 +31,16 @@ describe('itemUseSequenceConfig', () => {
     expect(itemUseSequenceConfig.Kreska.sfx?.sound).toBe('sniff');
     expect(itemUseSequenceConfig.MDMA.sfx?.sound).toBe('swallow');
     expect(itemUseSequenceConfig.LSD.sfx?.sound).toBe('swallow');
+    expect(itemUseSequenceConfig.Woda.sfx?.sound).toBe('swallow');
+  });
+
+  it('configures utility items Woda and Okulary properly', () => {
+    expect(itemUseSequenceConfig.Woda.gesture).toBe('drink');
+    expect(itemUseSequenceConfig.Woda.propId).toBe('water');
+    expect(validUseSequenceTiming(itemUseSequenceConfig.Woda)).toBe(true);
+
+    expect(itemUseSequenceConfig.Okulary.gesture).toBe('wear');
+    expect(itemUseSequenceConfig.Okulary.propId).toBe('sunglasses');
+    expect(validUseSequenceTiming(itemUseSequenceConfig.Okulary)).toBe(true);
   });
 });

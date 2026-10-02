@@ -1,0 +1,15 @@
+{
+  "input": "E:\\kodowanie\\gra\\Hunyuan3D-2GP\\output\\characters_mv\\087_neon_raver\\variant_5e2f091cc2c67120404fcdd84707bef9c3e765c46d41ec827f9b6af6be2bef0d\\textured.glb",
+  "output": "E:\\kodowanie\\gra\\.ai\\worktrees\\festival-2026-tent-upgrades\\source-assets\\rigged-festival\\087_neon_raver\\t-pose.glb",
+  "bones": 22,
+  "clips": [
+    "Idle",
+    "Run",
+    "Walk"
+  ],
+  "firstViewExtracted": false,
+  "quality": "automatic-draft-needs-visual-review",
+  "vertices": 25948,
+  "fallbackVertices": 25948,
+  "heatWarning": "Bone heat left unweighted vertices; geometric fallback used"
+}
