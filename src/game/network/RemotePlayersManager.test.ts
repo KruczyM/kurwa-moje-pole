@@ -377,6 +377,8 @@ describe('RemotePlayersManager', () => {
         new THREE.AnimationClip('Walk', 1, []),
         new THREE.AnimationClip('Run', 1, []),
         new THREE.AnimationClip('Drinking', 2, []),
+        new THREE.AnimationClip('HipHopDancing', 2, []),
+        new THREE.AnimationClip('RelievedSigh', 2, []),
       ],
       cameras: [],
       asset: {},
@@ -414,5 +416,28 @@ describe('RemotePlayersManager', () => {
     });
 
     expect(entity.animator?.getDiagnostics().currentClip).toBe('Drinking');
+
+    // Kolejna akcja wchodzi do kolejki FIFO
+    manager.handleRemoteAction({
+      playerId: 'remote-drinker',
+      character: 'Amper',
+      action: 'dance',
+      timestamp: Date.now(),
+    });
+    expect(entity.animator?.getDiagnostics().queuedOneShots).toBe(1);
+
+    // Po zakończeniu picia rozpoczyna się taniec:
+    entity.animator?.update(2.1);
+    expect(entity.animator?.getDiagnostics().currentClip).toBe('HipHopDancing');
+
+    // Po zakończeniu tańca kolejna akcja (palenie -> RelievedSigh)
+    manager.handleRemoteAction({
+      playerId: 'remote-drinker',
+      character: 'Amper',
+      action: 'smoke',
+      timestamp: Date.now(),
+    });
+    entity.animator?.update(2.1);
+    expect(entity.animator?.getDiagnostics().currentClip).toBe('RelievedSigh');
   });
 });

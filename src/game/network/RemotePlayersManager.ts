@@ -277,7 +277,7 @@ export class RemotePlayersManager {
     }
   }
 
-  /** Obsługuje jednorazowe akcje animacyjne graczy (picie, palenie, taniec, siadanie). */
+  /** Obsługuje jednorazowe akcje animacyjne graczy (picie, palenie, taniec, siadanie, gesty). */
   handleRemoteAction(payload: {
     playerId: string;
     character: CharacterName;
@@ -286,17 +286,26 @@ export class RemotePlayersManager {
   }): void {
     const entity = this.remotePlayers.get(payload.playerId);
     if (!entity || !entity.animator) return;
-    const actionClipMap: Record<string, import('../animation/animationContract').CanonicalAnimationClip> = {
-      drink: 'Drinking',
-      drinking: 'Drinking',
-      smoke: 'Smoking',
-      smoking: 'Smoking',
-      dance: 'Dance',
-      sit: 'SittingIdle',
+    const actionClipMap: Record<string, import('../animation/animationContract').CanonicalAnimationClip[]> = {
+      drink: ['Drinking'],
+      drinking: ['Drinking'],
+      smoke: ['RelievedSigh', 'HappyHandGesture'],
+      smoking: ['RelievedSigh', 'HappyHandGesture'],
+      dance: ['HipHopDancing', 'SillyDancing'],
+      dancing: ['HipHopDancing', 'SillyDancing'],
+      sit: ['SittingIdle', 'Sitting'],
+      cheer: ['Cheering', 'HappyHandGesture'],
+      clap: ['Clapping'],
+      wave: ['Waving'],
     };
-    const clip = actionClipMap[payload.action.toLowerCase()];
-    if (clip && entity.animator.hasClip(clip)) {
-      entity.animator.queueOneShot(clip);
+    const candidates = actionClipMap[payload.action.toLowerCase()] ?? [
+      payload.action as import('../animation/animationContract').CanonicalAnimationClip,
+    ];
+    for (const clip of candidates) {
+      if (entity.animator.hasClip(clip)) {
+        entity.animator.queueOneShot(clip);
+        break;
+      }
     }
   }
 
