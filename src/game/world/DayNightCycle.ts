@@ -67,7 +67,7 @@ export class DayNightCycle {
     this.autoAdvance = options.autoAdvance ?? true;
 
     this.initFairyLights();
-    this.applyLighting(0);
+    this.applyLighting();
   }
 
   /**
@@ -179,7 +179,7 @@ export class DayNightCycle {
     } else {
       this.timeOfDay = 0.95; // Noc
     }
-    this.applyLighting(0);
+    this.applyLighting();
     return this.period;
   }
 
@@ -188,7 +188,7 @@ export class DayNightCycle {
    */
   setTimeOfDay(time: number): void {
     this.timeOfDay = ((time % 1) + 1) % 1;
-    this.applyLighting(0);
+    this.applyLighting();
   }
 
   getPeriod(): SkyboxPeriod {
@@ -206,24 +206,18 @@ export class DayNightCycle {
     if (this.autoAdvance && this.cycleDurationSec > 0) {
       this.timeOfDay = (this.timeOfDay + dt / this.cycleDurationSec) % 1.0;
     }
-    this.applyLighting(dt);
+    this.applyLighting();
   }
 
   /**
    * Przelicza parametry oświetlenia i mgły dla bieżącej wartości `timeOfDay`.
    */
-  private applyLighting(_dt: number): void {
+  private applyLighting(): void {
     const t = this.timeOfDay;
 
     // Wyznaczamy okres skyboxa
-    let newPeriod: SkyboxPeriod = 'day';
-    if (t >= 0.22 && t < 0.70) {
-      newPeriod = 'day';
-    } else if (t >= 0.70 && t < 0.85) {
-      newPeriod = 'evening';
-    } else {
-      newPeriod = 'night';
-    }
+    const newPeriod: SkyboxPeriod =
+      t >= 0.22 && t < 0.70 ? 'day' : t >= 0.70 && t < 0.85 ? 'evening' : 'night';
 
     if (newPeriod !== this.period) {
       this.period = newPeriod;

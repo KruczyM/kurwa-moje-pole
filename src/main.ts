@@ -63,16 +63,18 @@ if (nicknameInput) {
   };
 }
 
+let hasInitialReservation = false;
+
 // UI Statusu sieci:
 networkClient.onStatusChange((status) => {
   if (!networkBadge || !networkStatusText) return;
   networkBadge.className = `network-status-badge ${status}`;
   if (status === 'connected') {
     networkStatusText.textContent = 'Online (Pokój: główny obóz)';
-    networkClient.reserveCharacter(selected, nicknameInput?.value);
   } else if (status === 'connecting') {
     networkStatusText.textContent = 'Łączenie z serwerem...';
   } else {
+    hasInitialReservation = false;
     networkStatusText.textContent = 'Tryb lokalny (Offline)';
   }
 });
@@ -104,6 +106,11 @@ names.forEach((name) => {
 
 // Synchronizacja stanu slotów z serwera:
 networkClient.onStateChange((roomState) => {
+  if (!hasInitialReservation && networkClient.isOnline()) {
+    hasInitialReservation = true;
+    networkClient.reserveCharacter(selected, nicknameInput?.value);
+  }
+
   const myId = networkClient.getMyPlayerId();
   const myToken = networkClient.getSessionToken();
   for (const name of names) {
@@ -156,7 +163,7 @@ networkClient.onStateChange((roomState) => {
 });
 
 networkClient.onError((err) => {
-  if (nicknameError) {
+  if (nicknameError && err.code !== 'UNAUTHORIZED') {
     nicknameError.textContent = err.message;
     nicknameError.hidden = false;
   }

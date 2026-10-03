@@ -101,8 +101,8 @@ export class RoomServer {
 
       socket.on('character:reserve', (payload: ReserveCharacterPayload) => {
         if (!currentRoomId) {
-          socket.emit('error', { code: 'UNAUTHORIZED', message: 'Nie dołączono do pokoju.' });
-          return;
+          currentRoomId = 'glowny-oboz';
+          void socket.join(currentRoomId);
         }
 
         const room = this.getOrCreateRoom(currentRoomId);
@@ -129,8 +129,8 @@ export class RoomServer {
 
       socket.on('character:confirm', (payload: ConfirmCharacterPayload) => {
         if (!currentRoomId) {
-          socket.emit('error', { code: 'UNAUTHORIZED', message: 'Nie dołączono do pokoju.' });
-          return;
+          currentRoomId = 'glowny-oboz';
+          void socket.join(currentRoomId);
         }
 
         const room = this.getOrCreateRoom(currentRoomId);
