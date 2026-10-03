@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  NpcAiAgent,
-  NPC_PERSONAS,
-  EXTENDED_HERO_PERSONAS,
-  SIGNATURE_MODEL_PERSONAS,
-  analyzeModelPersonality,
-} from './NpcAiAgent';
+import { NpcAiAgent, analyzeModelPersonality } from './NpcAiAgent';
 
 describe('NpcAiAgent', () => {
   describe('Canonical Characters', () => {
@@ -196,7 +190,10 @@ describe('NpcAiAgent', () => {
     });
 
     it('returns a safe in-character contextual fallback for arbitrary unknown questions', () => {
-      const response = NpcAiAgent.generateResponse('Antena', 'Czy fizyka kwantowa tłumaczy rezonans akustyczny?');
+      const response = NpcAiAgent.generateResponse(
+        'Antena',
+        'Czy fizyka kwantowa tłumaczy rezonans akustyczny?',
+      );
       expect(response.topic).toBe('ogolne');
       expect(response.text).toContain('fizyka kwantowa');
       expect(response.voiceSettings.pitch).toBeGreaterThan(1.0); // Antena's pitch
@@ -206,6 +203,65 @@ describe('NpcAiAgent', () => {
       const response = NpcAiAgent.generateResponse('Pień', '');
       expect(response.topic).toBe('powitanie');
       expect(response.text.length).toBeGreaterThan(3);
+    });
+
+    it('seamlessly handles dialogue continuation when responding to sector 3 night rumor', () => {
+      const response = NpcAiAgent.generateResponse('Szerszeń', 'nie słyszałem, a co się tam działo ?', {
+        lastNpcMessage: 'Słyszałeś co się działo w nocy w sektorze trzecim?!',
+      });
+      expect(response.topic).toBe('plotki');
+      expect(response.text.toLowerCase()).toContain('traktorkiem');
+      expect(response.text).not.toContain('Pytasz o');
+    });
+
+    it('acknowledges in-character when player complains about missing the answer', () => {
+      const response = NpcAiAgent.generateResponse('Szerszeń', 'nie odpowiedziałeś mi na pytanie');
+      expect(response.text.toLowerCase()).toContain('nie unoś się');
+      expect(response.text).not.toContain('Pytasz o');
+      expect(response.text).not.toContain('"');
+    });
+
+    it('handles Chlebak food inquiry continuation', () => {
+      const hungry = NpcAiAgent.generateResponse('Chlebak', 'tak, daj kabanosa', {
+        lastNpcMessage: 'Głodny? W moim chlebaku zawsze znajdzie się kabanos albo pasztet!',
+      });
+      expect(hungry.text.toLowerCase()).toContain('kabanosa');
+
+      const full = NpcAiAgent.generateResponse('Chlebak', 'nie dzięki, najadłem się', {
+        lastNpcMessage: 'Głodny? W moim chlebaku zawsze znajdzie się kabanos albo pasztet!',
+      });
+      expect(full.text.toLowerCase()).toContain('szanuję');
+    });
+
+    it('handles Dziąsło Jarocin 88 lore continuation', () => {
+      const response = NpcAiAgent.generateResponse('Dziąsło', 'opowiedz mi jak to było', {
+        lastNpcMessage: 'Siema młody! Zęby może straciłem w Jarocinie, ale serce do punka bije!',
+      });
+      expect(response.text).toContain("'88");
+      expect(response.text.toLowerCase()).toContain('glanem');
+    });
+
+    it('answers festival navigation queries accurately without quoting', () => {
+      const stage = NpcAiAgent.generateResponse('Pień', 'Gdzie jest Duża Scena?');
+      expect(stage.topic).toBe('koncert');
+      expect(stage.text.toLowerCase()).toContain('duża scena');
+
+      const asp = NpcAiAgent.generateResponse('Pień', 'Gdzie jest ASP?');
+      expect(asp.text.toLowerCase()).toContain('akademia sztuk przepięknych');
+    });
+
+    it('never produces the rigid quotation echo pattern', () => {
+      const testInputs = [
+        'nie słyszałem, a co się tam działo ?',
+        'nie odpowiedziałeś mi na pytanie',
+        'jaka jest dzisiaj pogoda na polu?',
+        'czy to jest kosmos?',
+        'totalnie losowy ciag slow festiwalowych',
+      ];
+      for (const input of testInputs) {
+        const res = NpcAiAgent.generateResponse('Szerszeń', input);
+        expect(res.text).not.toContain('Pytasz o "');
+      }
     });
   });
 });

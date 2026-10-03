@@ -1,4 +1,4 @@
-import { NpcAiAgent, type NpcPersona } from './NpcAiAgent';
+import { NpcAiAgent, type NpcPersona, type NpcDialogueContext } from './NpcAiAgent';
 
 export interface ChatMessage {
   role: 'user' | 'model';
@@ -14,11 +14,7 @@ export interface GeminiResponseResult {
 
 export class GeminiNpcService {
   private static readonly STORAGE_KEY = 'gemini_api_key';
-  private static readonly DEFAULT_MODELS = [
-    'gemini-2.5-flash',
-    'gemini-1.5-flash',
-    'gemini-2.0-flash',
-  ];
+  private static readonly DEFAULT_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash'];
 
   // Historia rozmów z poszczególnymi NPC-ami (do 6 ostatnich wypowiedzi)
   private conversationHistory: Map<string, ChatMessage[]> = new Map();
@@ -96,7 +92,9 @@ export class GeminiNpcService {
     const persona: NpcPersona = NpcAiAgent.getPersona(npcName);
     const greetingsSample = persona.greetings.slice(0, 2).join(' / ');
     const identityDesc = persona.identity.join(' ');
-    const loreKeys = Object.keys(persona.festivalLore || {}).slice(0, 4).join(', ');
+    const loreKeys = Object.keys(persona.festivalLore || {})
+      .slice(0, 4)
+      .join(', ');
 
     const isFemale = persona.voiceSettings?.gender === 'female';
     const genderInstruction = isFemale
@@ -129,17 +127,38 @@ Tematy, na których się znasz: ${loreKeys}.
       .replace(/\*\*([^*]+)\*\*/g, '$1') // Zachowaj treść pogrubień: **tekst** -> tekst
       .replace(/\*[^*]+\*/g, '') // Usuń didaskalia w gwiazdkach np. *uśmiecha się*
       .replace(/[_~`#]/g, '') // Usuń pozostałe znaczniki markdown
-      .replace(/\([^\)]*\)/g, '') // Usuń didaskalia w nawiasach okrągłych np. (śmieje się)
+      .replace(/\([^)]*\)/g, '') // Usuń didaskalia w nawiasach okrągłych np. (śmieje się)
       .replace(/\[[^\]]*\]/g, '') // Usuń didaskalia w nawiasach kwadratowych
-      .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '') // Usuń emotikony
+      .replace(
+        /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu,
+        '',
+      ) // Usuń emotikony
       .replace(/\s+/g, ' ')
       .trim();
   }
 
   /**
+   * Zapisuje powitanie początkowe wypowiedziane przez NPC do historii rozmowy,
+   * aby model Gemini oraz fallback miały pełen kontekst od samego początku.
+   */
+  recordInitialGreeting(npcName: string, greetingText: string): void {
+    const trimmed = greetingText?.trim();
+    if (!trimmed) return;
+    const history = this.conversationHistory.get(npcName) || [];
+    if (history.length === 0) {
+      history.push({ role: 'model', text: trimmed });
+      this.conversationHistory.set(npcName, history);
+    }
+  }
+
+  /**
    * Generuje odpowiedź NPC na pytanie gracza z użyciem Gemini API lub lokalnego fallbacku.
    */
-  async generateResponse(npcName: string, userMessage: string): Promise<GeminiResponseResult> {
+  async generateResponse(
+    npcName: string,
+    userMessage: string,
+    context?: NpcDialogueContext,
+  ): Promise<GeminiResponseResult> {
     const trimmedInput = userMessage.trim();
     if (!trimmedInput) {
       const persona = NpcAiAgent.getPersona(npcName);
@@ -153,7 +172,7 @@ Tematy, na których się znasz: ${loreKeys}.
     const apiKey = this.getApiKey();
     if (!apiKey) {
       // Brak klucza – natychmiastowy, deterministyczny fallback lokalny
-      const localResponse = NpcAiAgent.generateResponse(npcName, trimmedInput);
+      const localResponse = NpcAiAgent.generateResponse(npcName, trimmedInput, context);
       return {
         text: localResponse.text,
         source: 'local_fallback',
@@ -162,6 +181,10 @@ Tematy, na których się znasz: ${loreKeys}.
 
     // Pobranie lub utworzenie historii dialogu z danym NPC
     const history = this.conversationHistory.get(npcName) || [];
+    // Jeśli historia była pusta, a przekazano poprzednią kwestię NPC, zainicjuj historię:
+    if (history.length === 0 && context?.lastNpcMessage?.trim()) {
+      history.push({ role: 'model', text: context.lastNpcMessage.trim() });
+    }
     const systemPrompt = this.buildSystemPrompt(npcName);
 
     // Próba wywołania Gemini z mechanizmem fallbacku modeli
@@ -233,7 +256,7 @@ Tematy, na których się znasz: ${loreKeys}.
     }
 
     // Jeśli wywołania API się nie powiodły, bezpieczny fallback:
-    const localResponse = NpcAiAgent.generateResponse(npcName, trimmedInput);
+    const localResponse = NpcAiAgent.generateResponse(npcName, trimmedInput, context);
     return {
       text: localResponse.text,
       source: 'local_fallback',
@@ -343,7 +366,12 @@ Tematy, na których się znasz: ${loreKeys}.
     this.cancelAudioPlayback();
 
     // Jeśli mimeType to format obsługiwany przez HTMLAudioElement:
-    if (mimeType.includes('mp3') || mimeType.includes('mpeg') || mimeType.includes('wav') || mimeType.includes('ogg')) {
+    if (
+      mimeType.includes('mp3') ||
+      mimeType.includes('mpeg') ||
+      mimeType.includes('wav') ||
+      mimeType.includes('ogg')
+    ) {
       try {
         const audio = new Audio(`data:${mimeType};base64,${audioData}`);
         this.currentAudioElement = audio;

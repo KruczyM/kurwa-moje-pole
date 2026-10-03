@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { NpcManager } from './NpcManager';
-import { NpcAiAgent, type NpcDialogueResponse, type NpcVoiceSettings } from './NpcAiAgent';
+import { NpcAiAgent, type NpcVoiceSettings, type NpcDialogueContext } from './NpcAiAgent';
 import { geminiNpcService } from './GeminiNpcService';
 import { elevenLabsNpcService } from './ElevenLabsNpcService';
 
@@ -9,9 +9,12 @@ export function cleanTextForSpeech(text: string): string {
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*[^*]+\*/g, '')
     .replace(/[_~`#]/g, '')
-    .replace(/\([^\)]*\)/g, '')
+    .replace(/\([^)]*\)/g, '')
     .replace(/\[[^\]]*\]/g, '')
-    .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+    .replace(
+      /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu,
+      '',
+    )
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -64,12 +67,7 @@ declare global {
 }
 
 export type VoiceCoordinatorStatus =
-  | 'idle'
-  | 'listening'
-  | 'processing'
-  | 'speaking'
-  | 'unsupported'
-  | 'error';
+  'idle' | 'listening' | 'processing' | 'speaking' | 'unsupported' | 'error';
 
 export interface NpcVoiceCoordinatorOptions {
   dialogRoot?: HTMLElement;
@@ -368,9 +366,7 @@ export class NpcVoiceCoordinator {
 
     // Konfiguracja Gemini:
     if (this.geminiInputElement) {
-      this.geminiInputElement.value = geminiNpcService.getApiKey()
-        ? geminiNpcService.getMaskedApiKey()
-        : '';
+      this.geminiInputElement.value = geminiNpcService.getApiKey() ? geminiNpcService.getMaskedApiKey() : '';
     }
     if (geminiNpcService.hasApiKey()) {
       this.setGeminiStatus('✓ Klucz aktywny (zapisany lokalnie)');
@@ -386,7 +382,9 @@ export class NpcVoiceCoordinator {
     }
     if (elevenLabsNpcService.hasApiKey()) {
       if (elevenLabsNpcService.isQuotaExceeded()) {
-        this.setElevenLabsStatus('⚠️ Darmowy limit 10k znaków wyczerpany (aktywny fallback: Gemini / Web Speech)');
+        this.setElevenLabsStatus(
+          '⚠️ Darmowy limit 10k znaków wyczerpany (aktywny fallback: Gemini / Web Speech)',
+        );
       } else {
         this.setElevenLabsStatus('✓ Klucz aktywny (ElevenLabs - główny dubbing)');
       }
@@ -450,11 +448,12 @@ export class NpcVoiceCoordinator {
     const initialLine =
       npc?.line && npc.line.length > 0
         ? npc.line[Math.floor(Math.random() * npc.line.length)]
-        : (persona.greetings && persona.greetings.length > 0
-            ? persona.greetings[Math.floor(Math.random() * persona.greetings.length)]
-            : 'Siemanko! Czym mogę służyć na naszym polu?');
+        : persona.greetings && persona.greetings.length > 0
+          ? persona.greetings[Math.floor(Math.random() * persona.greetings.length)]
+          : 'Siemanko! Czym mogę służyć na naszym polu?';
 
     this.history = [{ sender: this.currentNpcName, text: initialLine, isPlayer: false }];
+    geminiNpcService.recordInitialGreeting(npcName, initialLine);
     this.renderHistory();
 
     // 3. Wypowiedzenie linii powitalnej przez syntezator mowy:
@@ -527,7 +526,12 @@ export class NpcVoiceCoordinator {
     this.renderHistory();
 
     // 2. Wygenerowanie odpowiedzi przez GeminiNpcService (z fallbackiem do NpcAiAgent):
-    const response = await geminiNpcService.generateResponse(this.currentNpcName, input);
+    const lastNpcEntry = [...this.history].reverse().find((entry) => !entry.isPlayer);
+    const context: NpcDialogueContext = {
+      lastNpcMessage: lastNpcEntry?.text,
+      history: [...this.history],
+    };
+    const response = await geminiNpcService.generateResponse(this.currentNpcName, input, context);
     const persona = NpcAiAgent.getPersona(this.currentNpcName);
 
     // 3. Dodanie odpowiedzi NPC do historii (bez technicznych etykiet i badge'y AI):
@@ -558,9 +562,7 @@ export class NpcVoiceCoordinator {
     // Wsparcie dla uproszczonych obiektów mock w testach jednostkowych (gdzie innerHTML nie aktualizuje textContent):
     const target = this.textElement as any;
     if (!target.tagName) {
-      target.textContent = this.history
-        .map((entry) => `${entry.sender}: ${entry.text}`)
-        .join(' ');
+      target.textContent = this.history.map((entry) => `${entry.sender}: ${entry.text}`).join(' ');
     }
 
     const scrollContainer = this.textElement.parentElement ?? this.textElement;
@@ -631,7 +633,11 @@ export class NpcVoiceCoordinator {
 
     // 2. Próba Gemini Audio (Opcja 1 - fallback przy wyczerpaniu limitu ElevenLabs):
     if (geminiNpcService.hasApiKey()) {
-      const geminiAudio = await geminiNpcService.synthesizeSpeechAudio(cleanedText, npcName, voiceSettings.gender);
+      const geminiAudio = await geminiNpcService.synthesizeSpeechAudio(
+        cleanedText,
+        npcName,
+        voiceSettings.gender,
+      );
       if (geminiAudio && !this.disposed) {
         const played = await geminiNpcService.playAudioData(
           geminiAudio.audioData,
@@ -674,9 +680,7 @@ export class NpcVoiceCoordinator {
 
     // Wyszukanie głosów zainstalowanych w przeglądarce (z preferencją języka polskiego i płci postaci):
     const voices = this.voices.length > 0 ? this.voices : synth.getVoices();
-    const polishVoices = voices.filter(
-      (v) => v.lang.startsWith('pl') || v.lang.toLowerCase().includes('pl')
-    );
+    const polishVoices = voices.filter((v) => v.lang.startsWith('pl') || v.lang.toLowerCase().includes('pl'));
 
     const isFemale = voiceSettings.gender === 'female';
     const femaleVoiceRegex =
@@ -690,13 +694,13 @@ export class NpcVoiceCoordinator {
         polishVoices.find((v) => femaleVoiceRegex.test(v.name) || femaleVoiceRegex.test(v.voiceURI)) ||
         polishVoices[0];
       // Kobieca modulacja tonu (pitch): gwarantuje kobiece brzmienie nawet na pojedynczym zainstalowanym głosie:
-      const basePitch = voiceSettings.pitch ?? 1.30;
+      const basePitch = voiceSettings.pitch ?? 1.3;
       utterance.pitch = Math.max(1.24, Math.min(1.85, basePitch < 1.15 ? basePitch * 1.32 : basePitch));
     } else {
       selectedVoice =
         polishVoices.find((v) => maleVoiceRegex.test(v.name) || maleVoiceRegex.test(v.voiceURI)) ||
         polishVoices[0];
-      const basePitch = voiceSettings.pitch ?? 0.90;
+      const basePitch = voiceSettings.pitch ?? 0.9;
       utterance.pitch = Math.max(0.65, Math.min(1.05, basePitch > 1.15 ? basePitch * 0.85 : basePitch));
     }
 

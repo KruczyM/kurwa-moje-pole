@@ -196,21 +196,25 @@ describe('NpcVoiceCoordinator', () => {
       { name: 'Microsoft Paulina - Polish', lang: 'pl-PL', voiceURI: 'paulina' },
     ];
 
-    vi.stubGlobal('SpeechSynthesisUtterance', class MockUtterance {
-      text: string;
-      lang = '';
-      pitch = 1.0;
-      rate = 1.0;
-      volume = 1.0;
-      voice: any;
-      onstart: any;
-      onend: any;
-      onerror: any;
-      constructor(text: string) {
-        this.text = text;
-        capturedUtterance = this;
-      }
-    });
+    vi.stubGlobal(
+      'SpeechSynthesisUtterance',
+      class MockUtterance {
+        text: string;
+        lang = '';
+        pitch = 1.0;
+        rate = 1.0;
+        volume = 1.0;
+        voice: any;
+        onstart: any;
+        onend: any;
+        onerror: any;
+        constructor(text: string) {
+          this.text = text;
+          // eslint-disable-next-line @typescript-eslint/no-this-alias
+          capturedUtterance = this;
+        }
+      },
+    );
 
     vi.stubGlobal('speechSynthesis', {
       speak: vi.fn(),
@@ -274,11 +278,14 @@ describe('NpcVoiceCoordinator', () => {
     const webSpeechSpy = vi.spyOn(coordinator, 'speakWebSpeech');
 
     // Mock ElevenLabs to return 429 quota exceeded:
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: false,
-      status: 429,
-      text: () => Promise.resolve('{"detail": {"status": "quota_exceeded"}}'),
-    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 429,
+        text: () => Promise.resolve('{"detail": {"status": "quota_exceeded"}}'),
+      }),
+    );
 
     coordinator.speakText('Siemanko!', { pitch: 1.0, rate: 1.0, volume: 1.0, gender: 'male' });
 

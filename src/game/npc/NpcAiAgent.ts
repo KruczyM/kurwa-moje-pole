@@ -20,6 +20,11 @@ export interface NpcDialogueResponse {
   voiceSettings: NpcVoiceSettings;
 }
 
+export interface NpcDialogueContext {
+  lastNpcMessage?: string;
+  history?: Array<{ sender: string; text: string; isPlayer: boolean }>;
+}
+
 export interface NpcPersona {
   name: string;
   title: string;
@@ -34,7 +39,7 @@ export interface NpcPersona {
  * Kanoniczne 8 postaci głównych obozu "Kurwa Moje Pole".
  */
 export const NPC_PERSONAS: Record<string, NpcPersona> = {
-  'Pień': {
+  Pień: {
     name: 'Pień aka Peposz',
     title: 'Gospodarz Pola',
     voiceSettings: { pitch: 0.85, rate: 0.95, volume: 1.0 },
@@ -74,7 +79,7 @@ export const NPC_PERSONAS: Record<string, NpcPersona> = {
       ],
       deszcz: [
         'Plandeka jest naciągnięta na mur-beton. Nawet jak lunie oberwanie chmury, siedzimy na suchym.',
-        'Deszcz na Pol\'and\'Rocku to tylko darmowy prysznic przed pogo!',
+        "Deszcz na Pol'and'Rocku to tylko darmowy prysznic przed pogo!",
       ],
     },
     genericCatchphrases: [
@@ -84,7 +89,7 @@ export const NPC_PERSONAS: Record<string, NpcPersona> = {
     ],
   },
 
-  'Amper': {
+  Amper: {
     name: 'Amper',
     title: 'Elektryk Obozowy',
     voiceSettings: { pitch: 1.05, rate: 1.1, volume: 1.0 },
@@ -111,7 +116,7 @@ export const NPC_PERSONAS: Record<string, NpcPersona> = {
     ],
   },
 
-  'Antena': {
+  Antena: {
     name: 'Antena',
     title: 'Nawigator i Hipis',
     voiceSettings: { pitch: 1.18, rate: 1.05, volume: 1.0 },
@@ -138,7 +143,7 @@ export const NPC_PERSONAS: Record<string, NpcPersona> = {
     ],
   },
 
-  'Gruczoł': {
+  Gruczoł: {
     name: 'Gruczoł',
     title: 'Weteran i Filozof',
     voiceSettings: { pitch: 0.88, rate: 0.88, volume: 1.0 },
@@ -165,7 +170,7 @@ export const NPC_PERSONAS: Record<string, NpcPersona> = {
     ],
   },
 
-  'Klątwa': {
+  Klątwa: {
     name: 'Klątwa',
     title: 'Pogodyn i Szef Plandeki',
     voiceSettings: { pitch: 1.02, rate: 1.02, volume: 1.0 },
@@ -181,8 +186,12 @@ export const NPC_PERSONAS: Record<string, NpcPersona> = {
       ciemno: ['ZAMKNIJ SIĘ! Bo jak zawieje, to nam linki zerwie!'],
       pole: ['Nasze pole jest dobrze zabezpieczone. Dodatkowe odciągi zamontowałem rano.'],
       piwo: ['Piwo spoko, byle puszki nie latały przy podmuchach wiatru.'],
-      bloto: ['Jak ziemia nasiąknie, śledzie namiotowe łatwiej wychodzą. Wbijajcie je pod kątem czterdziestu pięciu stopni!'],
-      koncert: ['Na koncert idę w kurtce przeciwdeszczowej. Pogoda na lotnisku potrafi zmienić się w kwadrans.'],
+      bloto: [
+        'Jak ziemia nasiąknie, śledzie namiotowe łatwiej wychodzą. Wbijajcie je pod kątem czterdziestu pięciu stopni!',
+      ],
+      koncert: [
+        'Na koncert idę w kurtce przeciwdeszczowej. Pogoda na lotnisku potrafi zmienić się w kwadrans.',
+      ],
       kibel: ['Zawór pilnuje sanitariatów, a ja pilnuję, żeby wiatr nie przewrócił kabiny.'],
       deszcz: ['Wszyscy pod plandekę! Miejsca starczy dla każdego, kto nie panikuje.'],
     },
@@ -192,7 +201,7 @@ export const NPC_PERSONAS: Record<string, NpcPersona> = {
     ],
   },
 
-  'Krwiak': {
+  Krwiak: {
     name: 'Krwiak',
     title: 'Punk i Pogowicz',
     voiceSettings: { pitch: 0.95, rate: 1.22, volume: 1.0 },
@@ -219,7 +228,7 @@ export const NPC_PERSONAS: Record<string, NpcPersona> = {
     ],
   },
 
-  'Pierścień': {
+  Pierścień: {
     name: 'Pierścień',
     title: 'Strażnik Obozu',
     voiceSettings: { pitch: 0.92, rate: 0.98, volume: 1.0 },
@@ -246,7 +255,7 @@ export const NPC_PERSONAS: Record<string, NpcPersona> = {
     ],
   },
 
-  'Zawór': {
+  Zawór: {
     name: 'Zawór',
     title: 'Hydraulik i Zaopatrzeniowiec',
     voiceSettings: { pitch: 0.98, rate: 0.96, volume: 1.0 },
@@ -263,9 +272,13 @@ export const NPC_PERSONAS: Record<string, NpcPersona> = {
       pole: ['Mamy najczystszy kącik sanitarny w promieniu kilometra lotniska.'],
       piwo: ['Złota reguła Zaworu: na każde jedno piwo przypada szklanka czystej wody.'],
       bloto: ['Błoto jest fajne, ale wieczorem warto obmyć stopy w zimnej wodzie pod kranikiem.'],
-      koncert: ['Na koncert weź ze sobą małą butelkę wody, pod sceną temperatura sięga pięćdziesięciu stopni!'],
+      koncert: [
+        'Na koncert weź ze sobą małą butelkę wody, pod sceną temperatura sięga pięćdziesięciu stopni!',
+      ],
       kibel: ['Toi-toi jest w rogu. Serwis jeździ regularnie, więc pachnie względną świeżością.'],
-      deszcz: ['Deszczówka to dobra woda techniczna, ale do picia bierzemy tylko ze sprawdzonych ujęć kranowych!'],
+      deszcz: [
+        'Deszczówka to dobra woda techniczna, ale do picia bierzemy tylko ze sprawdzonych ujęć kranowych!',
+      ],
     },
     genericCatchphrases: [
       'Nawodnienie to klucz do przeżycia trzydniowego festiwalu w pełnym zdrowiu.',
@@ -278,17 +291,17 @@ export const NPC_PERSONAS: Record<string, NpcPersona> = {
  * 8 Rozszerzonych Bohaterów Obozu i Festiwalu.
  */
 export const EXTENDED_HERO_PERSONAS: Record<string, NpcPersona> = {
-  'Ambona': {
+  Ambona: {
     name: 'Ambona',
     title: 'Kaznodzieja Rocka i Wolności',
-    voiceSettings: { pitch: 0.90, rate: 1.05, volume: 1.0 },
+    voiceSettings: { pitch: 0.9, rate: 1.05, volume: 1.0 },
     greetings: [
       'Błogosławieni, którzy skaczą pod barierkami!',
       'Bracia i siostry w rocku, zbierzcie się wokół słowa wolności!',
       'Pokój temu obozowi i każdemu, kto niesie dobrego ducha muzyki!',
     ],
     identity: [
-      'Jam jest Ambona! Ze skrzynki po browarze niczym z kazalnicy głoszę wieczną ewangelię rock\'n\'rolla, miłości i braterstwa!',
+      "Jam jest Ambona! Ze skrzynki po browarze niczym z kazalnicy głoszę wieczną ewangelię rock'n'rolla, miłości i braterstwa!",
       'Mówią na mnie Ambona. Zamiast kazań o karach głoszę pochwałę wolności, tolerancji i potężnego przesteru gitarowego.',
     ],
     festivalLore: {
@@ -306,7 +319,7 @@ export const EXTENDED_HERO_PERSONAS: Record<string, NpcPersona> = {
     ],
   },
 
-  'Chlebak': {
+  Chlebak: {
     name: 'Chlebak',
     title: 'Zaopatrzeniowiec Obozowy',
     voiceSettings: { pitch: 0.95, rate: 1.0, volume: 1.0 },
@@ -334,9 +347,9 @@ export const EXTENDED_HERO_PERSONAS: Record<string, NpcPersona> = {
     ],
   },
 
-  'Dziąsło': {
+  Dziąsło: {
     name: 'Dziąsło',
-    title: 'Weteran Jarocina \'88',
+    title: "Weteran Jarocina '88",
     voiceSettings: { pitch: 0.82, rate: 0.92, volume: 1.0 },
     greetings: [
       'Siema młody! Zęby może straciłem w Jarocinie, ale serce do punka bije mocniej niż kiedykolwiek!',
@@ -344,13 +357,17 @@ export const EXTENDED_HERO_PERSONAS: Record<string, NpcPersona> = {
       'Siemanko. Trzymaj fason, szanuj starszych punków i nigdy się nie poddawaj.',
     ],
     identity: [
-      'Dziąsło jestem. W \'88 na Jarocinie dostałem glanem w szczękę i tak już zostało. Za to w pogo nikt mi już zęba nie wybije!',
+      "Dziąsło jestem. W '88 na Jarocinie dostałem glanem w szczękę i tak już zostało. Za to w pogo nikt mi już zęba nie wybije!",
       'Stary punk ze mnie, pamiętam Jarocin i czasy kaset magnetofonowych przegrywanych na jamniku. Piękny festiwal mamy teraz!',
     ],
     festivalLore: {
-      ciemno: ['ZARAZ BĘDZIE CIEMNO? ZAMKNIJ SIĘ! Za komuny milicja wyłączała nam prąd i śpiewaliśmy a cappella!'],
+      ciemno: [
+        'ZARAZ BĘDZIE CIEMNO? ZAMKNIJ SIĘ! Za komuny milicja wyłączała nam prąd i śpiewaliśmy a cappella!',
+      ],
       pole: ['Dobre pole to skarb. Kiedyś spało się na dworcu na betonie i też było pięknie.'],
-      piwo: ['Piwko z puszki dobre, byle zimne. Kiedyś piło się z butelek z kapslem na ząb – dopóki były zęby!'],
+      piwo: [
+        'Piwko z puszki dobre, byle zimne. Kiedyś piło się z butelek z kapslem na ząb – dopóki były zęby!',
+      ],
       bloto: ['Błoto leczy rany po pogo lepiej niż maść z apteki, wiem co mówię.'],
       koncert: ['Kiedyś to grał Dezerter i Siekiera... ale dzisiejsza młoda krew też ma niezłego kopa!'],
       kibel: ['Toi-toie to luksus! W latach osiemdziesiątych był tylko las i szpadel!'],
@@ -362,10 +379,10 @@ export const EXTENDED_HERO_PERSONAS: Record<string, NpcPersona> = {
     ],
   },
 
-  'Hemoroid': {
+  Hemoroid: {
     name: 'Hemoroid',
     title: 'Miłośnik Wygody i Leżaków',
-    voiceSettings: { pitch: 0.87, rate: 0.90, volume: 1.0 },
+    voiceSettings: { pitch: 0.87, rate: 0.9, volume: 1.0 },
     greetings: [
       'Uch... cześć. Masz może wolny leżak z miękkim obiciem?',
       'Siemanko. Piękny festiwal, tylko ziemia twarda jak beton...',
@@ -380,7 +397,9 @@ export const EXTENDED_HERO_PERSONAS: Record<string, NpcPersona> = {
       pole: ['Nasze pole jest równe, dzięki Bogu. Na kretowisku bym w ogóle nie zmrużył oka.'],
       piwo: ['Piwko pomaga zapomnieć o twardym podłożu, polej jedno na ukojenie lędźwi.'],
       bloto: ['W błocie jest miękko, to fakt, ale potem tyłek zmarznie na wietrze!'],
-      koncert: ['Na koncert biorę małe rozkładane krzesełko. Stanie pięć godzin przy barierkach to katorga dla kręgosłupa.'],
+      koncert: [
+        'Na koncert biorę małe rozkładane krzesełko. Stanie pięć godzin przy barierkach to katorga dla kręgosłupa.',
+      ],
       kibel: ['Toi-toie mogłyby mieć miękką deskę, ale nie bądźmy przesadnie roszczeniowi.'],
       deszcz: ['Deszcz oznacza wilgoć, a wilgoć to ból w kościach. Siadam tylko na suchym!'],
     },
@@ -390,7 +409,7 @@ export const EXTENDED_HERO_PERSONAS: Record<string, NpcPersona> = {
     ],
   },
 
-  'Jęczmień': {
+  Jęczmień: {
     name: 'Jęczmień',
     title: 'Piwowar i Koneser Chmielu',
     voiceSettings: { pitch: 0.92, rate: 0.98, volume: 1.0 },
@@ -405,7 +424,9 @@ export const EXTENDED_HERO_PERSONAS: Record<string, NpcPersona> = {
     ],
     festivalLore: {
       ciemno: ['ZAMKNIJ SIĘ! Ciemność jest dobra tylko dla porteru bałtyckiego!'],
-      pole: ['Wykopaliśmy dół w ziemi pod namiotem – to najlepsza naturalna lodówka na puszki na całym pasie lotniska.'],
+      pole: [
+        'Wykopaliśmy dół w ziemi pod namiotem – to najlepsza naturalna lodówka na puszki na całym pasie lotniska.',
+      ],
       piwo: ['Chmiel, woda, słód jęczmienny i festiwalowy klimat – to cztery żywioły prawdziwego szczęścia!'],
       bloto: ['Błoto pod sceną ma kolor dobrego stoutu, ale pić go nie polecam!'],
       koncert: ['Zimny trunek w dłoni, potężny riff z Dużej Sceny – tak smakuje lato życia.'],
@@ -418,7 +439,7 @@ export const EXTENDED_HERO_PERSONAS: Record<string, NpcPersona> = {
     ],
   },
 
-  'Kobra': {
+  Kobra: {
     name: 'Kobra',
     title: 'Niewzruszony Mistrz Młyna',
     voiceSettings: { pitch: 1.04, rate: 1.15, volume: 1.0 },
@@ -446,10 +467,10 @@ export const EXTENDED_HERO_PERSONAS: Record<string, NpcPersona> = {
     ],
   },
 
-  'Korba': {
+  Korba: {
     name: 'Korba',
     title: 'Zakręcona Tancerka Festiwalowa',
-    voiceSettings: { pitch: 1.32, rate: 1.20, volume: 1.0, gender: 'female' },
+    voiceSettings: { pitch: 1.32, rate: 1.2, volume: 1.0, gender: 'female' },
     greetings: [
       'HEEEJ! Tańczysz ze mną?! Muzyka gra w naszych żyłach non stop!',
       'Siemanko! Nie ma spania, szkoda życia, zaraz zaczyna się kolejny gigantyczny set!',
@@ -474,10 +495,10 @@ export const EXTENDED_HERO_PERSONAS: Record<string, NpcPersona> = {
     ],
   },
 
-  'Szerszeń': {
+  Szerszeń: {
     name: 'Szerszeń',
     title: 'Głośny Komentator Obozowy',
-    voiceSettings: { pitch: 1.10, rate: 1.18, volume: 1.0 },
+    voiceSettings: { pitch: 1.1, rate: 1.18, volume: 1.0 },
     greetings: [
       'Bzzzt! Siema! Słyszałeś co się działo w nocy w sektorze trzecim?!',
       'Cześć! Mam najświeższe plotki z całego lotniska Czaplinek!',
@@ -514,10 +535,10 @@ export const SIGNATURE_MODEL_PERSONAS: Record<string, NpcPersona> = {
     greetings: [
       'Pozdrowienia z Mgławicy Andromedy, Ziemianinie!',
       'Wylądowałam na Czaplinku, bo wasze gitary słychać w całym kwadrancie kosmicznym!',
-      'Cześć istotko! Wasza atmosfera jest przesiąknięta falami rock\'n\'rolla!',
+      "Cześć istotko! Wasza atmosfera jest przesiąknięta falami rock'n'rolla!",
     ],
     identity: [
-      'Jestem podróżniczką z odległej galaktyki. Przechwyciliśmy sygnał Pol\'and\'Rocka przez radioteleskop i przyleciałam na najgłośniejsze święto wolności we wszechświecie!',
+      "Jestem podróżniczką z odległej galaktyki. Przechwyciliśmy sygnał Pol'and'Rocka przez radioteleskop i przyleciałam na najgłośniejsze święto wolności we wszechświecie!",
       'Niebieska skóra, kosmiczne okulary i ziemska miłość do gitarowego przesteru – oto cała ja.',
     ],
     festivalLore: {
@@ -585,10 +606,7 @@ export const SIGNATURE_MODEL_PERSONAS: Record<string, NpcPersona> = {
       kibel: ['Czystość to rzecz względna, ale kranik z zimną wodą bardzo szanuję.'],
       deszcz: ['Deszcz?! Hura! Nareszcie pogoda dla prawdziwych koneserów wilgoci!'],
     },
-    genericCatchphrases: [
-      'Kumaj bazę, człowieku! Pol\'and\'Rock to wolność!',
-      'Skacz ze mną pod same chmury!',
-    ],
+    genericCatchphrases: ["Kumaj bazę, człowieku! Pol'and'Rock to wolność!", 'Skacz ze mną pod same chmury!'],
   },
 
   '084_knight_cosplay': {
@@ -625,7 +643,7 @@ export const SIGNATURE_MODEL_PERSONAS: Record<string, NpcPersona> = {
     voiceSettings: { pitch: 0.65, rate: 0.82, volume: 1.0 },
     greetings: [
       'Bulgot... cześć! Masz ochotę na darmową maseczkę borowinową?',
-      'Witaj w królestwie mułu! Prawdziwe Pol\'and\'Rock to błoto od stóp do głów!',
+      "Witaj w królestwie mułu! Prawdziwe Pol'and'Rock to błoto od stóp do głów!",
       'Plask, plask... siemanko! Nie bój się, błoto nie gryzie, błoto kocha każdego!',
     ],
     identity: [
@@ -650,7 +668,7 @@ export const SIGNATURE_MODEL_PERSONAS: Record<string, NpcPersona> = {
   '001_pirate_parrot_girl': {
     name: 'Korsarka z Papugą',
     title: 'Korsarka Oceanu Namiotów',
-    voiceSettings: { pitch: 1.30, rate: 1.15, volume: 1.0, gender: 'female' },
+    voiceSettings: { pitch: 1.3, rate: 1.15, volume: 1.0, gender: 'female' },
     greetings: [
       'Ahoj załogo! Na horyzoncie widzę scenę pełną rockowych skarbów!',
       'Siemanko szczurze lądowy! Wstąp na pokład pod naszą plandekę!',
@@ -717,7 +735,9 @@ export const SIGNATURE_MODEL_PERSONAS: Record<string, NpcPersona> = {
       'Jestem festiwalową wróżką baniek. Magia prostych rzeczy ratuje ten świat od szarości.',
     ],
     festivalLore: {
-      ciemno: ['Gdy robi się ciemno, w bańkach odbijają się kolorowe reflektory sceny. ZAMKNIJ SIĘ i podziwiaj!'],
+      ciemno: [
+        'Gdy robi się ciemno, w bańkach odbijają się kolorowe reflektory sceny. ZAMKNIJ SIĘ i podziwiaj!',
+      ],
       pole: ['Nasz obóz jest pełen tęczowych refleksów, bańki płyną z wiatrem ku niebu.'],
       piwo: ['Płyn do baniek trzymam w osobnym kubku – nie pomyl go z lemoniadą!'],
       bloto: ['Bańki pękające na błocie tworzą śmieszne miniaturowe kraterki!'],
@@ -781,10 +801,7 @@ export const SIGNATURE_MODEL_PERSONAS: Record<string, NpcPersona> = {
       kibel: ['Świecący w ciemności brelok przy kluczach to jedyny sposób, by nie zgubić ich w toi-toiu!'],
       deszcz: ['Krople deszczu odbijające lasery wyglądają jak wodospad gwiazd!'],
     },
-    genericCatchphrases: [
-      'Niech żyje światło w środku nocy!',
-      'Rytm, taniec i niekończąca się euforia!',
-    ],
+    genericCatchphrases: ['Niech żyje światło w środku nocy!', 'Rytm, taniec i niekończąca się euforia!'],
   },
 
   '090_punk_mohawk': {
@@ -792,7 +809,7 @@ export const SIGNATURE_MODEL_PERSONAS: Record<string, NpcPersona> = {
     title: 'Irokez z Pierwszej Linii Barierek',
     voiceSettings: { pitch: 0.98, rate: 1.26, volume: 1.0 },
     greetings: [
-      'Punk\'s not dead! Siema załogo! Postawiłem irokeza na piwo z cukrem, trzyma się jak ze stali!',
+      "Punk's not dead! Siema załogo! Postawiłem irokeza na piwo z cukrem, trzyma się jak ze stali!",
       'OI! OI! Masz agrafkę? Bo mi naszywka odlatuje w młynie!',
       'Czołem załoganci! Kto nie skacze, ten z policji, ogień pod sceną!',
     ],
@@ -844,7 +861,7 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
 
   const isFemale =
     /\b(girl|woman|lady|female|dziewczyna|kobieta|tancerka|hipiska|kosmitka|korsarka|wojowniczka|bankarka|curly|boho|crown|poncho|braided|bun|shorts)\b/i.test(
-      normalizedKey + ' ' + cleanString
+      normalizedKey + ' ' + cleanString,
     ) ||
     normalizedKey.includes('girl') ||
     normalizedKey.includes('korba');
@@ -870,25 +887,32 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
       : `Jestem jednym z setek tysięcy uczestników Najpiękniejszego Festiwalu Świata. Każdy z nas tworzy ten klimat!`,
   ];
   let customDarkReply = 'ZAMKNIJ SIĘ! Klasyka gatunku, która łączy pokolenia!';
-  let customMudReply = 'Błoto na Pol\'and\'Rocku to nasza druga natura, wskakuj śmiało!';
-  let customBeerReply = 'Zimny napój w cieniu namiotu to najlepsze orzeźwienie po koncercie.';
+  let customMudReply = "Błoto na Pol'and'Rocku to nasza druga natura, wskakuj śmiało!";
+  const customBeerReply = 'Zimny napój w cieniu namiotu to najlepsze orzeźwienie po koncercie.';
 
   // Reguły analizy wizualno-semantycznej:
-  if (cleanString.includes('alien') || cleanString.includes('kosmit') || cleanString.includes('space') || cleanString.includes('ufo')) {
+  if (
+    cleanString.includes('alien') ||
+    cleanString.includes('kosmit') ||
+    cleanString.includes('space') ||
+    cleanString.includes('ufo')
+  ) {
     personaName = 'Kosmiczny Festiwalowicz';
     title = 'Przybysz z Gwiazd';
-    pitch = 1.30;
+    pitch = 1.3;
     rate = 1.08;
     greetings = [
       'Pozdrowienia z odległej galaktyki, Ziemianinie!',
       'Wasze fale dźwiękowe dotarły do naszych radarów kosmicznych!',
     ];
-    identity = [
-      'Przyleciałem z kosmosu zwabiony potęgą ziemskiego rocka i ideą miłości i tolerancji.',
-    ];
+    identity = ['Przyleciałem z kosmosu zwabiony potęgą ziemskiego rocka i ideą miłości i tolerancji.'];
     customDarkReply = 'W przestrzeni kosmicznej ciemność panuje wiecznie! ZAMKNIJ SIĘ!';
     customMudReply = 'Wasze ziemskie błoto to wspaniały materiał geologiczny do tańca!';
-  } else if (cleanString.includes('hotdog') || cleanString.includes('sausage') || cleanString.includes('parowk')) {
+  } else if (
+    cleanString.includes('hotdog') ||
+    cleanString.includes('sausage') ||
+    cleanString.includes('parowk')
+  ) {
     personaName = 'Festiwalowy Hotdog';
     title = 'Maskotka Gastronomii Polowej';
     pitch = 1.15;
@@ -904,17 +928,20 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
   } else if (cleanString.includes('frog') || cleanString.includes('zaba') || cleanString.includes('zabol')) {
     personaName = 'Żabol';
     title = 'Mistrz Żabich Skoków';
-    pitch = 0.80;
-    rate = 1.10;
+    pitch = 0.8;
+    rate = 1.1;
     greetings = [
       'Kum-kum! Siema! Gdzie jest najbliższa kałuża do skakania?',
       'Rechot na cały obóz! Skaczemy razem pod sceną!',
     ];
-    identity = [
-      'W zielonym kostiumie płaza czuję się wolny jak żaba w stawie!',
-    ];
+    identity = ['W zielonym kostiumie płaza czuję się wolny jak żaba w stawie!'];
     customMudReply = 'Błoto to mój żywioł, wskakuj ze mną na główkę!';
-  } else if (cleanString.includes('knight') || cleanString.includes('rycerz') || cleanString.includes('armor') || cleanString.includes('cosplay')) {
+  } else if (
+    cleanString.includes('knight') ||
+    cleanString.includes('rycerz') ||
+    cleanString.includes('armor') ||
+    cleanString.includes('cosplay')
+  ) {
     personaName = 'Festiwalowy Rycerz';
     title = 'Obrońca Złotej Wolności';
     pitch = 0.88;
@@ -927,20 +954,28 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
       'Rycerz na festiwalu rockowym? Owszem! Bronię barierki i niosę etos rycerskiego szacunku w młynie!',
     ];
     customDarkReply = 'ZAMKNIJ SIĘ, waszmość! Niechaj muzyka rozproszy wszelką trwogę!';
-  } else if (cleanString.includes('mud') || cleanString.includes('bloto') || cleanString.includes('monster') || cleanString.includes('slide') || cleanString.includes('bath')) {
+  } else if (
+    cleanString.includes('mud') ||
+    cleanString.includes('bloto') ||
+    cleanString.includes('monster') ||
+    cleanString.includes('slide') ||
+    cleanString.includes('bath')
+  ) {
     personaName = 'Błotny Pływak';
     title = 'Koneser Błotnych Ślizgów';
-    pitch = 0.70;
+    pitch = 0.7;
     rate = 0.85;
     greetings = [
       'Bulgot... cześć! Jak ci się podoba stan mojej festiwalowej powłoki?',
       'Siemanko! Jeśli twoje buty są jeszcze czyste, natychmiast chodź ze mną pod grzybek!',
     ];
-    identity = [
-      'Nie uznaję festiwalu bez porządnej kąpieli w błocie. To esencja woodstockowego szaleństwa!',
-    ];
+    identity = ['Nie uznaję festiwalu bez porządnej kąpieli w błocie. To esencja woodstockowego szaleństwa!'];
     customMudReply = 'Błoto to zbroja, błoto to tradycja, błoto to wieczna młodość!';
-  } else if (cleanString.includes('pirate') || cleanString.includes('parrot') || cleanString.includes('korsarz')) {
+  } else if (
+    cleanString.includes('pirate') ||
+    cleanString.includes('parrot') ||
+    cleanString.includes('korsarz')
+  ) {
     personaName = 'Pirat z Czaplinka';
     title = 'Korsarz Festiwalowych Mórz';
     pitch = 1.08;
@@ -949,9 +984,7 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
       'Ahoj kamracie! Jak tam wiatr w żaglach twojego namiotu?',
       'Arrr! Spójrz na tę rzekę ludzi płynącą ku scenie!',
     ];
-    identity = [
-      'Pływam po polach namiotowych szukając najgłośniejszych dźwięków i najweselszych załóg.',
-    ];
+    identity = ['Pływam po polach namiotowych szukając najgłośniejszych dźwięków i najweselszych załóg.'];
     customDarkReply = 'ZAMKNIJ SIĘ! Albo rzucę cię rekinom z Dużej Sceny na pożarcie!';
   } else if (cleanString.includes('kilt') || cleanString.includes('szkot')) {
     personaName = 'Załogant w Kilcie';
@@ -965,20 +998,30 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
     identity = [
       'Kilt to najlepszy festiwalowy ubiór – nic nie krępuje ruchów podczas skakania pod barierami.',
     ];
-  } else if (cleanString.includes('punk') || cleanString.includes('mohawk') || cleanString.includes('spikes') || cleanString.includes('combat') || cleanString.includes('choker')) {
+  } else if (
+    cleanString.includes('punk') ||
+    cleanString.includes('mohawk') ||
+    cleanString.includes('spikes') ||
+    cleanString.includes('combat') ||
+    cleanString.includes('choker')
+  ) {
     personaName = 'Punkowy Załogant';
     title = 'Bojownik o Wolność i Równość';
     pitch = 0.96;
     rate = 1.24;
     greetings = [
       'Oi! Oi! Gotowy na ścianę śmierci pod sceną?',
-      'Punk\'s not dead! Siema, trzymaj fason i skacz z nami!',
+      "Punk's not dead! Siema, trzymaj fason i skacz z nami!",
     ];
     identity = [
       'Dla mnie punk to nie tylko ostra muzyka, to braterstwo, sprzeciw wobec zła i wzajemna pomoc.',
     ];
     customDarkReply = 'ZARAZ BĘDZIE CIEMNO! ZAMKNIJ SIĘ! I OGIŃ W POGO!';
-  } else if (cleanString.includes('metal') || cleanString.includes('heavy') || cleanString.includes('banger')) {
+  } else if (
+    cleanString.includes('metal') ||
+    cleanString.includes('heavy') ||
+    cleanString.includes('banger')
+  ) {
     personaName = 'Prawdziwy Metalfan';
     title = 'Władca Headbangingu';
     pitch = 0.76;
@@ -988,14 +1031,19 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
       'Siemanko! Szykuj kark, wieczorem gitary urwą nam głowy!',
     ];
     identity = [
-      'Żyję ciężkim riffem, podwójną stopą i potężnym wokalem. Pol\'and\'Rock daje najlepszą dawkę czystej metalowej energii!',
+      "Żyję ciężkim riffem, podwójną stopą i potężnym wokalem. Pol'and'Rock daje najlepszą dawkę czystej metalowej energii!",
     ];
     customDarkReply = 'ZAMKNIJ SIĘ! W ciemności ognie pirotechniki na scenie wyglądają potężniej!';
-  } else if (cleanString.includes('biker') || cleanString.includes('leather') || cleanString.includes('beard') || cleanString.includes('motor')) {
+  } else if (
+    cleanString.includes('biker') ||
+    cleanString.includes('leather') ||
+    cleanString.includes('beard') ||
+    cleanString.includes('motor')
+  ) {
     personaName = 'Stary Motocyklista';
     title = 'Jeździec Polskich Szos';
     pitch = 0.74;
-    rate = 0.90;
+    rate = 0.9;
     greetings = [
       'Czołem na trasie. Silnik stygnie, czas na muzykę.',
       'Siemanko. Dwieście kilometrów na kołach i wreszcie w domu – na festiwalu.',
@@ -1003,10 +1051,16 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
     identity = [
       'Wiatr we włosach i rock w głośnikach. Przejechałem pół Europy, ale Czaplinek ma w sobie coś niepowtarzalnego.',
     ];
-  } else if (cleanString.includes('raver') || cleanString.includes('neon') || cleanString.includes('glowstick') || cleanString.includes('glitter') || cleanString.includes('mesh')) {
+  } else if (
+    cleanString.includes('raver') ||
+    cleanString.includes('neon') ||
+    cleanString.includes('glowstick') ||
+    cleanString.includes('glitter') ||
+    cleanString.includes('mesh')
+  ) {
     personaName = 'Świetlny Rejwer';
     title = 'Tancerz Festiwalowych Świateł';
-    pitch = 1.20;
+    pitch = 1.2;
     rate = 1.22;
     greetings = [
       'Hejka! Weź trochę brokatu i świećmy razem w nocy!',
@@ -1038,10 +1092,15 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
       'Kultywuję najwspanialszą tradycję Woodstocku z 1969 roku: miłość, przyjaźń, szacunek do natury i bezgraniczna wolność.',
     ];
     customDarkReply = 'ZAMKNIJ SIĘ! Ale spójrz w górę, gwiazdy nad lotniskiem świecą dla każdego z nas.';
-  } else if (cleanString.includes('guitar') || cleanString.includes('songster') || cleanString.includes('troubadour') || cleanString.includes('acoustic')) {
+  } else if (
+    cleanString.includes('guitar') ||
+    cleanString.includes('songster') ||
+    cleanString.includes('troubadour') ||
+    cleanString.includes('acoustic')
+  ) {
     personaName = isFemale ? 'Obozowa Bardka' : 'Obozowy Bard';
     title = isFemale ? 'Gitarzystka Ogniskowa' : 'Gitarzysta Ogniskowy';
-    pitch = isFemale ? 1.30 : 1.02;
+    pitch = isFemale ? 1.3 : 1.02;
     rate = 1.0;
     greetings = [
       'Siemanko! Znasz chwyty do Wehikułu Czasu? Zaraz możemy zagrać!',
@@ -1050,7 +1109,12 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
     identity = [
       'Chodzę z gitarą od namiotu do namiotu. D-dur, e-moll i cały obóz śpiewa jednym głosem do świtu!',
     ];
-  } else if (cleanString.includes('totem') || cleanString.includes('flag') || cleanString.includes('waver') || cleanString.includes('cape')) {
+  } else if (
+    cleanString.includes('totem') ||
+    cleanString.includes('flag') ||
+    cleanString.includes('waver') ||
+    cleanString.includes('cape')
+  ) {
     personaName = 'Chorąży Obozu';
     title = 'Strażnik Festiwalowego Totemu';
     pitch = 1.0;
@@ -1065,7 +1129,7 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
   } else if (cleanString.includes('bubble')) {
     personaName = 'Artysta Mydlanych Baniek';
     title = 'Kreator Radości';
-    pitch = 1.20;
+    pitch = 1.2;
     rate = 1.02;
     greetings = [
       'Złap bańkę! W każdej jest ukryty uśmiech!',
@@ -1076,9 +1140,7 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
     ];
   }
 
-  const finalPitch = isFemale
-    ? Math.max(1.26, Math.min(1.55, pitch < 1.15 ? pitch * 1.32 : pitch))
-    : pitch;
+  const finalPitch = isFemale ? Math.max(1.26, Math.min(1.55, pitch < 1.15 ? pitch * 1.32 : pitch)) : pitch;
 
   const dynamicPersona: NpcPersona = {
     name: personaName,
@@ -1100,15 +1162,11 @@ export function analyzeModelPersonality(modelIdOrName: string): NpcPersona {
       piwo: [customBeerReply],
       bloto: [customMudReply],
       koncert: [
-        'Muzyka na żywo na Pol\'and\'Rocku to coś, czego nie da się opisać słowami – to trzeba przeżyć!',
+        "Muzyka na żywo na Pol'and'Rocku to coś, czego nie da się opisać słowami – to trzeba przeżyć!",
         'Leć pod scenę, tam dzieje się prawdziwa magia tego festiwalu!',
       ],
-      kibel: [
-        'Toi-toie stoją w wyznaczonych sektorach, szanujmy pracę serwisu i kolejkę!',
-      ],
-      deszcz: [
-        'Niezależnie od pogody, duch tego festiwalu nigdy nie gaśnie!',
-      ],
+      kibel: ['Toi-toie stoją w wyznaczonych sektorach, szanujmy pracę serwisu i kolejkę!'],
+      deszcz: ['Niezależnie od pogody, duch tego festiwalu nigdy nie gaśnie!'],
     },
     genericCatchphrases: [
       'Miłość, przyjaźń, muzyka – to jedyne zasady, które tu obowiązują!',
@@ -1190,9 +1248,24 @@ export class NpcAiAgent {
   }
 
   /**
-   * Generuje odpowiedź dialogową AI na podstawie wypowiedzi gracza i charakteru NPC.
+   * Wyciąga rdzeń tematu / zapytania z tekstu gracza do naturalnej wypowiedzi.
    */
-  static generateResponse(npcName: string, playerInput: string): NpcDialogueResponse {
+  private static extractSubject(rawInput: string): string {
+    return rawInput
+      .trim()
+      .replace(/[?!.„”"']/g, '')
+      .replace(/^(czy|powiedz mi|jak myslisz|jak myślisz|co sadzisz|co sądzisz|powiedz|co to jest|a co z|a)\s+/i, '')
+      .trim();
+  }
+
+  /**
+   * Generuje odpowiedź dialogową AI na podstawie wypowiedzi gracza, charakteru NPC oraz kontekstu rozmowy.
+   */
+  static generateResponse(
+    npcName: string,
+    playerInput: string,
+    context?: NpcDialogueContext,
+  ): NpcDialogueResponse {
     const persona = this.getPersona(npcName);
     const text = this.sanitizeInput(playerInput);
 
@@ -1201,6 +1274,372 @@ export class NpcAiAgent {
       return {
         text: greeting,
         topic: 'powitanie',
+        voiceSettings: persona.voiceSettings,
+      };
+    }
+
+    const lastNpc = (context?.lastNpcMessage || '').toLowerCase();
+    const isSzerszen = persona.name.toLowerCase().includes('szerszeń');
+
+    // 0A. Obsługa pytań o sektor 3, nocne akcje i plotki (Szerszeń & kontynuacja haczyka):
+    const sectorHookActive =
+      lastNpc.includes('sektorze trzecim') ||
+      lastNpc.includes('sektorze 3') ||
+      lastNpc.includes('sektor 3') ||
+      lastNpc.includes('co się działo w nocy') ||
+      lastNpc.includes('co sie dzialo w nocy');
+
+    const asksAboutSectorOrNight =
+      (text.includes('sektor') || text.includes('w nocy')) &&
+      (text.includes('co') ||
+        text.includes('dzialo') ||
+        text.includes('stalo') ||
+        text.includes('nie slyszalem') ||
+        text.includes('nie słyszałem') ||
+        text.includes('opowiadaj'));
+
+    const szerszenGossipContinuation =
+      isSzerszen &&
+      (sectorHookActive ||
+        text.includes('co sie dzialo') ||
+        text.includes('co się działo') ||
+        text.includes('co tam sie dzialo') ||
+        text.includes('co tam się działo') ||
+        text.includes('nie slyszalem') ||
+        text.includes('nie słyszałem') ||
+        text.includes('opowiadaj') ||
+        text.includes('mow dalej') ||
+        text.includes('mów dalej') ||
+        text.includes('dawaj plotki') ||
+        text.includes('jakie plotki') ||
+        text.includes('a co sie tam') ||
+        text.includes('a co tam'));
+
+    if (sectorHookActive || asksAboutSectorOrNight || szerszenGossipContinuation) {
+      const knows =
+        (text.includes('slyszalem') ||
+          text.includes('słyszałem') ||
+          text.includes('wiem') ||
+          text.includes('widzialem') ||
+          text.includes('widziałem')) &&
+        !text.includes('nie slyszalem') &&
+        !text.includes('nie słyszałem') &&
+        !text.includes('nie wiem');
+
+      if (knows) {
+        return {
+          text: 'Wiedziałeś?! I nic nie mówiłeś?! Ja do teraz nie mogę uwierzyć, że ten traktorek ogrodowy w ogóle odpalił na rozcieńczonym bimbru z sokiem porzeczkowym!',
+          topic: 'plotki',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+
+      return {
+        text: 'Stary! O trzeciej nad ranem ktoś wjechał małym traktorkiem ogrodowym w pole namiotowe i zrobili tam nielegalne pogo na dwieście osób w kaskach budowlanych! Pokojowy Patrol do rana szukał tego traktorka, a okazało się, że zakamuflowali go pod plandeką jako stoisko z goframi!',
+        topic: 'plotki',
+        voiceSettings: persona.voiceSettings,
+      };
+    }
+
+    // 0B. Reakcja na meta-dialog i uwagi gracza ("nie odpowiedziałeś", "odpowiedz mi na pytanie"):
+    const isMetaComplaint =
+      text.includes('nie odpowiedz') ||
+      text.includes('nie odpowiedział') ||
+      text.includes('nie odpowiedzial') ||
+      text.includes('odpowiedz mi') ||
+      text.includes('odpowiedz na pytanie') ||
+      text.includes('nie odpowiadasz') ||
+      text.includes('sluchasz mnie') ||
+      text.includes('słuchasz mnie') ||
+      text.includes('mowisz nie na temat') ||
+      text.includes('mówisz nie na temat') ||
+      text.includes('zmieniasz temat');
+
+    if (isMetaComplaint) {
+      let metaReply =
+        'Wybacz, na tym festiwalu jest taki gwar i zamieszanie, że na chwilę uciekł mi wątek! Powtórz jeszcze raz, słucham cię uważnie!';
+      if (isSzerszen) {
+        metaReply =
+          'Dobra, dobra, nie unoś się! W tym hałasie z Dużej Sceny i przy tylu plotkach czasem mi myśli uciekają! Zadaj pytanie jeszcze raz prosto z mostu, teraz słucham cię w stu procentach!';
+      } else if (persona.name.includes('Dziąsło')) {
+        metaReply =
+          'Ej, młody, szacunku trochę dla starszych punków! Po czterdziestu latach stania przy głośnikach słuch już nie ten. Powtórz spokojnie, a weteran ci wszystko wyłoży!';
+      } else if (persona.name.includes('Pień')) {
+        metaReply =
+          'Spokojnie, na moim polu nikt nikogo nie pogania. Wokół jest taki raban, że człowiek na moment odpłynie. Mów konkretnie, o co chodzi, a pogadamy po ludzku.';
+      } else if (persona.name.includes('Chlebak')) {
+        metaReply =
+          'Sorki, zagapiłem się na pasztet turystyczny i zgubiłem wątek! Wal prosto z mostu, co chcesz wiedzieć?';
+      } else if (persona.name.includes('Korba')) {
+        metaReply =
+          'Oj tam, oj tam, rozkojarzyłam się, bo ten bas tak niesamowicie porywa do tańca! Już jestem skupiona, mów śmiało!';
+      } else if (persona.name.includes('Hemoroid')) {
+        metaReply =
+          'Nie krzycz tak na mnie, od stresu to mi się zaraz rwa kulszowa odezwie! Spokojnie, powtórz pytanie, nigdzie mi się na tym leżaku nie spieszy.';
+      } else if (persona.name.includes('Jęczmień')) {
+        metaReply =
+          'Wybacz, kontemplowałem akurat aromat świeżo otwartej puszki chmielu! Już nadstawiam ucha, pytaj śmiało!';
+      } else if (persona.name.includes('Kobra')) {
+        metaReply =
+          'Skupienie to podstawa, racja, zagapiłem się na kocioł pod sceną. Dawaj jeszcze raz, teraz pełna koncentracja!';
+      } else if (persona.name.includes('Ambona')) {
+        metaReply =
+          'Przebacz roztargnienie słudze rocka, w modlitewnym uniesieniu umknęły mi twe słowa! Rzecz jeszcze raz, a odpowiem godnie!';
+      }
+
+      return {
+        text: metaReply,
+        topic: 'ogolne',
+        voiceSettings: persona.voiceSettings,
+      };
+    }
+
+    // 0C. Kontekstowe kontynuacje powitań innych bohaterów:
+    if (
+      persona.name.includes('Chlebak') &&
+      (lastNpc.includes('chlebak') ||
+        lastNpc.includes('kabanos') ||
+        lastNpc.includes('pasztet') ||
+        lastNpc.includes('głodny') ||
+        lastNpc.includes('glodny') ||
+        lastNpc.includes('prowiant'))
+    ) {
+      if (
+        text.includes('tak') ||
+        text.includes('daj') ||
+        text.includes('poprosze') ||
+        text.includes('poproszę') ||
+        text.includes('chce') ||
+        text.includes('chcę') ||
+        text.includes('glodny') ||
+        text.includes('głodny') ||
+        text.includes('kabanos')
+      ) {
+        return {
+          text: 'Trzymaj kabanosa i suchara wojskowego! Gryź powoli, bo twardy jak podeszwa glana, ale energii da ci do samego rana pod sceną!',
+          topic: 'piwo',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (
+        text.includes('nie') ||
+        text.includes('dzieki') ||
+        text.includes('dzięki') ||
+        text.includes('najadlem') ||
+        text.includes('najadłem')
+      ) {
+        return {
+          text: 'Szanuję, ale jak o północy pod sceną zacznie ci burczeć w brzuchu, to wiesz pod którą plandeką stacjonuje Chlebak ze swoją spiżarnią!',
+          topic: 'piwo',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+    }
+
+    if (
+      persona.name.includes('Dziąsło') &&
+      (lastNpc.includes('jarocin') ||
+        lastNpc.includes('zęby') ||
+        lastNpc.includes('zeby') ||
+        lastNpc.includes('szczerbatym'))
+    ) {
+      if (
+        text.includes('jak') ||
+        text.includes('opowiedz') ||
+        text.includes('jarocin') ||
+        text.includes('zeb') ||
+        text.includes('zęb') ||
+        text.includes('co sie stalo') ||
+        text.includes('co się stało') ||
+        text.includes('pogo')
+      ) {
+        return {
+          text: "W '88 na małej scenie grali z taką energią, że barierki gięły się jak z plasteliny! Wpadłem w pogo w pożyczonej ramonesce, ktoś machnął glanem i cyk – dwa siekacze poszły w trawę! Ale koncert dokończyłem pod samymi głośnikami!",
+          topic: 'koncert',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+    }
+
+    // 0D. Pytania o nawigację i punkty festiwalu ("Gdzie jest..."):
+    if (
+      text.includes('gdzie') ||
+      text.includes('jak dojsc') ||
+      text.includes('jak dojść') ||
+      text.includes('ktoredy') ||
+      text.includes('którędy')
+    ) {
+      if (text.includes('scen') || text.includes('koncert')) {
+        return {
+          text: 'Duża Scena jest prosto wzdłuż głównego pasa startowego na wschód! Idź po prostu za potężnym basem i tłumem, nie da się jej minąć!',
+          topic: 'koncert',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (
+        text.includes('asp') ||
+        text.includes('sztuk') ||
+        text.includes('wzgorz') ||
+        text.includes('wzgórz')
+      ) {
+        return {
+          text: 'Akademia Sztuk Przepięknych jest na wzgórzu! Od rana trwają tam świetne debaty, warsztaty i spotkania z gośćmi, niesamowity klimat!',
+          topic: 'ogolne',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (
+        text.includes('sklep') ||
+        text.includes('market') ||
+        text.includes('biedronk') ||
+        text.includes('zakup')
+      ) {
+        return {
+          text: 'Polowy market jest przy północnym wejściu na pas startowy. Tylko weź ze sobą cierpliwość, bo kolejki bywają legendarne!',
+          topic: 'ogolne',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (
+        text.includes('medyk') ||
+        text.includes('pomoc') ||
+        text.includes('patrol') ||
+        text.includes('lekarz')
+      ) {
+        return {
+          text: 'Namioty Pokojowego Patrolu i ratowników medycznych stoją co kawałek wzdłuż pasa – szukaj czerwonych i żółtych oznaczeń, zawsze pomogą!',
+          topic: 'ogolne',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+    }
+
+    // 0E. Plotki, ciekawostki, "co słychać", "co nowego":
+    const hasSpecificTopic =
+      text.includes('bloto') ||
+      text.includes('błoto') ||
+      text.includes('piw') ||
+      text.includes('kibel') ||
+      text.includes('toi') ||
+      text.includes('ciemno') ||
+      text.includes('scena');
+
+    if (
+      !hasSpecificTopic &&
+      (text.includes('co slychac') ||
+        text.includes('co słychać') ||
+        text.includes('co tam') ||
+        text.includes('co nowego') ||
+        text.includes('jak leci') ||
+        text.includes('jak tam') ||
+        text.includes('plotk'))
+    ) {
+      if (isSzerszen) {
+        return {
+          text: 'Szerszeń na posterunku! Krążę po obozie, podsłuchuję i łapię najświeższe plotki. Dzieje się tyle, że głowa mała, a wieczorem ma być tajny gość na Dużej Scenie!',
+          topic: 'plotki',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (persona.name.includes('Pień')) {
+        return {
+          text: 'Na moim polu wszystko pod kontrolą! Namioty stoją stabilnie, ludzie się bawią, a pogoda dopisuje. Żyć nie umierać!',
+          topic: 'pole',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (persona.name.includes('Korba')) {
+        return {
+          text: 'Energia na tysiąc procent! Zaraz lecę kręcić piruety pod scenę, dołączasz ze mną do zabawy?!',
+          topic: 'koncert',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      return {
+        text: 'Klimat jest niesamowity! Muzyka gra, ludzie uśmiechnięci i życzliwi – to są najpiękniejsze dni w całym roku!',
+        topic: 'ogolne',
+        voiceSettings: persona.voiceSettings,
+      };
+    }
+
+    // 0F. Krótkie odpowiedzi konwersacyjne (tak / nie / nie wiem):
+    const isAffirmation =
+      text === 'tak' ||
+      text === 'jasne' ||
+      text === 'pewnie' ||
+      text === 'dokladnie' ||
+      text === 'dokładnie' ||
+      text === 'no' ||
+      text === 'racja' ||
+      text === 'no jasne' ||
+      text === 'no pewnie';
+
+    if (isAffirmation) {
+      const affirmReply = isSzerszen
+        ? 'Wiedziałem, że nadajemy na tych samych falach! Na tym festiwalu od razu poznasz swój obóz!'
+        : persona.name.includes('Pień')
+          ? 'I to mi się podoba, krótko i na temat! Trzymajmy się razem na naszym polu!'
+          : 'Jasna sprawa! Na tym festiwalu wszyscy jedziemy na jednym wózku i trzymamy wspólny front!';
+      return { text: affirmReply, topic: 'ogolne', voiceSettings: persona.voiceSettings };
+    }
+
+    const isNegation =
+      text === 'nie' ||
+      text === 'nigdy' ||
+      text === 'nie ma mowy' ||
+      text === 'bzdura' ||
+      text === 'nie zgadzam sie' ||
+      text === 'nie zgadzam się';
+
+    if (isNegation) {
+      const negationReply = isSzerszen
+        ? 'Eee tam, nie znasz się albo za krótko tu jesteś! Zobaczysz jeszcze do niedzieli, jak to wygląda!'
+        : "Nie to nie, przymusu nie ma – na Pol'and'Rocku wolność i własne zdanie to podstawa!";
+      return { text: negationReply, topic: 'ogolne', voiceSettings: persona.voiceSettings };
+    }
+
+    if (
+      text.includes('nie wiem') ||
+      text.includes('nie mam pojecia') ||
+      text.includes('nie mam pojęcia') ||
+      text.includes('ciezko powiedziec') ||
+      text.includes('ciężko powiedzieć')
+    ) {
+      return {
+        text: 'Na tym polega magia tego festiwalu – nikt nic nie wie na pewno, a i tak wszystko wychodzi niesamowicie!',
+        topic: 'ogolne',
+        voiceSettings: persona.voiceSettings,
+      };
+    }
+
+    // 0G. Podziękowania i pożegnania:
+    if (
+      text.includes('dzieki') ||
+      text.includes('dzięki') ||
+      text.includes('dziekuje') ||
+      text.includes('dziękuję') ||
+      text === 'thx'
+    ) {
+      return {
+        text: 'Nie ma za co, na tym polu wszyscy jesteśmy jedną wielką rodziną!',
+        topic: 'ogolne',
+        voiceSettings: persona.voiceSettings,
+      };
+    }
+
+    if (
+      text.includes('nara') ||
+      text.includes('na razie') ||
+      text.includes('pa') ||
+      text.includes('do zobaczenia') ||
+      text.includes('trzymaj sie') ||
+      text.includes('trzymaj się') ||
+      text.includes('lece') ||
+      text.includes('lecę')
+    ) {
+      return {
+        text: 'Trzymaj się i do zobaczenia pod sceną! Zaraz będzie ciemno!',
+        topic: 'ogolne',
         voiceSettings: persona.voiceSettings,
       };
     }
@@ -1263,11 +1702,16 @@ export class NpcAiAgent {
     }
 
     // 5. Błoto, kąpiele błotne, kałuża:
-    if (text.includes('bloto') || text.includes('błoto') || text.includes('brudny') || text.includes('kapiel')) {
+    if (
+      text.includes('bloto') ||
+      text.includes('błoto') ||
+      text.includes('brudny') ||
+      text.includes('kapiel')
+    ) {
       const lore = persona.festivalLore.bloto;
       const reply = lore
         ? lore[Math.floor(Math.random() * lore.length)]
-        : 'Błoto na Pol\'and\'Rocku to tradycja, wskakuj śmiało!';
+        : "Błoto na Pol'and'Rocku to tradycja, wskakuj śmiało!";
       return { text: reply, topic: 'bloto', voiceSettings: persona.voiceSettings };
     }
 
@@ -1338,11 +1782,93 @@ export class NpcAiAgent {
       return { text: reply, topic: 'powitanie', voiceSettings: persona.voiceSettings };
     }
 
-    // 10. Fallback kontekstowy w charakterze bota:
-    const fallback =
+    // 10. Kontekstowy, klimatyczny fallback w charakterze postaci (bez cytowania w cudzysłowach):
+    const cleanSubject = this.extractSubject(playerInput);
+    if (cleanSubject.length > 0) {
+      const topicSnippet = cleanSubject.length > 50 ? `${cleanSubject.slice(0, 48)}...` : cleanSubject;
+
+      if (persona.name.includes('Antena')) {
+        return {
+          text: `Wiesz co, jeśli chodzi o ${topicSnippet}... na tym polu każda fala i rezonans łączy się z kosmiczną muzyką! Spójrz w niebo i poczuj te wibracje!`,
+          topic: 'ogolne',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (isSzerszen) {
+        return {
+          text: `Słuchaj, jeśli chodzi o ${topicSnippet}, to powiem ci w sekrecie: na tym festiwalu działy się już dziwniejsze rzeczy! Krążą o tym różne plotki, brachu!`,
+          topic: 'ogolne',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (persona.name.includes('Pień')) {
+        return {
+          text: `Rozkminiasz ${topicSnippet}? Na moim polu najważniejsze jest to, żeby namiot stał stabilnie, a ludzie wokół byli dla siebie życzliwi!`,
+          topic: 'ogolne',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (persona.name.includes('Dziąsło')) {
+        return {
+          text: `Młody, za moich czasów nikt nie zaprzątał sobie głowy sprawami takimi jak ${topicSnippet} – braliśmy gitary, skakaliśmy w pogo i życie było piękne!`,
+          topic: 'ogolne',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (persona.name.includes('Chlebak')) {
+        return {
+          text: `Ciekawe to z tym ${topicSnippet}, ale na pusty żołądek to żadna filozofia nie wejdzie. Zjedz kabanosa i dopiero rozkminiaj!`,
+          topic: 'ogolne',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (persona.name.includes('Hemoroid')) {
+        return {
+          text: `Może i ${topicSnippet} to ważna sprawa, ale jak człowieka lędźwie bolą od twardej ziemi, to jedyne o czym myśli, to porządny leżak!`,
+          topic: 'ogolne',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (persona.name.includes('Jęczmień')) {
+        return {
+          text: `Może i ${topicSnippet} to głęboki temat, ale najlepszy rezonans i tak daje chłodna puszka otwierana w cieniu plandeki!`,
+          topic: 'ogolne',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (persona.name.includes('Korba')) {
+        return {
+          text: `Nie wiem jak tam ${topicSnippet}, ale ten bas ze sceny tak niesamowicie porywa, że szkoda czasu na gadanie – skaczemy i tańczymy!`,
+          topic: 'ogolne',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (persona.name.includes('Kobra')) {
+        return {
+          text: `W młynie pod sceną nikt cię nie zapyta o ${topicSnippet}! Tam liczy się tylko balans ciała, refleks i wzajemna pomoc!`,
+          topic: 'ogolne',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+      if (persona.name.includes('Ambona')) {
+        return {
+          text: `Głębokie to twe rozważania o ${topicSnippet}, lecz powiadam ci: największą prawdą tego festiwalu jest muzyka i braterska miłość!`,
+          topic: 'ogolne',
+          voiceSettings: persona.voiceSettings,
+        };
+      }
+
+      return {
+        text: `Ciekawe to z tym ${topicSnippet}! Na tym festiwalu wszystko jest możliwe, ale najważniejsze to cieszyć się chwilą i dobrą muzyką!`,
+        topic: 'ogolne',
+        voiceSettings: persona.voiceSettings,
+      };
+    }
+
+    const fallbackCatchphrase =
       persona.genericCatchphrases[Math.floor(Math.random() * persona.genericCatchphrases.length)];
     return {
-      text: `${fallback} Pytasz o "${playerInput.slice(0, 40)}"? Na tym festiwalu wszystko jest możliwe, brachu!`,
+      text: fallbackCatchphrase,
       topic: 'ogolne',
       voiceSettings: persona.voiceSettings,
     };
