@@ -20,7 +20,7 @@ export const characterAssets: CharacterAsset[] = catalog.characters.map(({ id, n
   name,
   url: gameAsset(`characters/${id}/npc-animations.glb`),
   previewUrl: gameAsset(
-    `characters/${id}/${id === 'klatwa' ? 'new-preview-animations.glb' : id === 'amper' ? 'preview.glb' : 'npc-animations.glb'}`,
+    `characters/${id}/${id === 'klatwa' ? 'new-preview-animations.glb' : id === 'amper' || id === 'zawor' ? 'preview.glb' : 'npc-animations.glb'}`,
   ),
 }));
 

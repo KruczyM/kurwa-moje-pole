@@ -18,21 +18,15 @@ it.each(characterAssets)(
       bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
       '',
     );
-    const mixer = startPreviewIdle(model.scene, model.animations);
     if (asset.id === 'zawor') {
-      const idle = model.animations.find((clip) => clip.name === 'Idle')!;
-      expect(idle.duration).toBeGreaterThan(1);
-      expect(mixer.clipAction(idle).loop).toBe(THREE.LoopRepeat);
-      const pose = () => model.scene.getObjectsByProperty('isBone', true).flatMap((b) => b.quaternion.toArray());
-      const initial = pose();
-      mixer.setTime(0.7);
-      expect(pose().some((v, i) => Math.abs(v - initial[i]) > 1e-4)).toBe(true);
-      mixer.setTime(idle.duration + 0.7);
-      const wrapped = pose();
-      mixer.setTime(0.7);
-      expect(pose().every((v, i) => Math.abs(v - wrapped[i]) < 1e-5)).toBe(true);
-      mixer.setTime(0);
+      expect(path).toBe('characters/zawor/preview.glb');
+      expect(model.animations).toHaveLength(0);
+      expect(model.scene.getObjectsByProperty('isSkinnedMesh', true)).toHaveLength(0);
+      expect(new THREE.Box3().setFromObject(model.scene).isEmpty()).toBe(false);
+      disposeObjectTree(model.scene);
+      return;
     }
+    const mixer = startPreviewIdle(model.scene, model.animations);
     const bones = model.scene.getObjectsByProperty('isBone', true);
     const bounds = new THREE.Box3().setFromObject(model.scene);
     const height = bounds.max.y - bounds.min.y;

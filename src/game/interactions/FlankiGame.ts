@@ -2,13 +2,7 @@ import * as THREE from 'three';
 import { terrainHeight } from '../world/CampWorld';
 
 export type FlankiPhase =
-  | 'idle'
-  | 'aiming'
-  | 'projectile_flying'
-  | 'player_drinking'
-  | 'bot_turn'
-  | 'bot_drinking'
-  | 'game_over';
+  'idle' | 'aiming' | 'projectile_flying' | 'player_drinking' | 'bot_turn' | 'bot_drinking' | 'game_over';
 
 export interface FlankiGameConfig {
   canPosition?: [number, number, number];
@@ -76,11 +70,7 @@ export class FlankiGame {
     this.onDrinkSfx = callbacks?.onDrinkSfx;
 
     const canY = config.canPosition ? config.canPosition[1] : terrainHeight(0, 5);
-    this.canPosition = new THREE.Vector3(
-      config.canPosition?.[0] ?? 0,
-      canY,
-      config.canPosition?.[2] ?? 5,
-    );
+    this.canPosition = new THREE.Vector3(config.canPosition?.[0] ?? 0, canY, config.canPosition?.[2] ?? 5);
     this.playerLineZ = config.playerLineZ ?? 9.0;
     this.botLineZ = config.botLineZ ?? 1.0;
     this.drinkRate = config.drinkRate ?? 0.22;
@@ -260,7 +250,7 @@ export class FlankiGame {
   }
 
   /** Główna pętla symulacji flanków */
-  update(dt: number, playerPos?: THREE.Vector3): void {
+  update(dt: number): void {
     if (this.phase === 'idle' || this.phase === 'game_over') return;
 
     // 1. Ładowanie siły rzutu

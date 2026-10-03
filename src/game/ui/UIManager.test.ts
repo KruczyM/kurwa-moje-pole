@@ -92,6 +92,8 @@ describe('UIManager', () => {
       '#setting-grass-quality',
       '#setting-matrix-mode',
       '#setting-matrix-quality',
+      '#festival-guide',
+      '#festival-map',
     ];
 
     selectors.forEach((sel) => {
@@ -208,6 +210,36 @@ describe('UIManager', () => {
     const lsd = elements.get('#lsd-overlay')!;
     expect(lsd.style.getPropertyValue('--lsd-image-a')).toBe('url("imgA.png")');
     expect(lsd.style.getPropertyValue('--lsd-image-b')).toBe('url("imgB.png")');
+  });
+
+  it('toggles and queries festival guide visibility', () => {
+    const ui = new UIManager();
+    const guide = elements.get('#festival-guide')!;
+    guide.hidden = true;
+
+    expect(ui.isGuideOpen()).toBe(false);
+    expect(ui.toggleGuide()).toBe(true);
+    expect(guide.hidden).toBe(false);
+    expect(ui.isGuideOpen()).toBe(true);
+
+    expect(ui.toggleGuide(false)).toBe(false);
+    expect(guide.hidden).toBe(true);
+    expect(ui.isGuideOpen()).toBe(false);
+  });
+
+  it('toggles and queries festival map visibility', () => {
+    const ui = new UIManager();
+    const map = elements.get('#festival-map')!;
+    map.hidden = true;
+
+    expect(ui.isMapOpen()).toBe(false);
+    expect(ui.toggleMap()).toBe(true);
+    expect(map.hidden).toBe(false);
+    expect(ui.isMapOpen()).toBe(true);
+
+    expect(ui.toggleMap(false)).toBe(false);
+    expect(map.hidden).toBe(true);
+    expect(ui.isMapOpen()).toBe(false);
   });
 
   it('gracefully handles disposal', () => {

@@ -1,3 +1,4 @@
+import { FestivalMap } from './ui/FestivalMap';
 import * as THREE from 'three';
 import { AssetLoader } from './assets/AssetLoader';
 import { characterAssets, effectAssets, musicAsset } from './assets/assetManifest';
@@ -26,7 +27,11 @@ import { MatrixPhaseController } from './effects/MatrixPhaseController';
 import { VoiceReactionManager } from './audio/VoiceReactionManager';
 import { POINTER_LOCK_ESCAPE_SUPPRESSION_MS, PointerLockPauseGate } from './lifecycle/PointerLockPauseGate';
 import { controlHintForState, interactionControlHint, resolveGameInput } from './lifecycle/InputBindings';
-import { ConsumableInventory, DEFAULT_STARTER_INVENTORY, inventoryEffects } from './inventory/ConsumableInventory';
+import {
+  ConsumableInventory,
+  DEFAULT_STARTER_INVENTORY,
+  inventoryEffects,
+} from './inventory/ConsumableInventory';
 import { ItemUseSequence } from './interactions/ItemUseSequence';
 import { itemUseSequenceConfig } from './interactions/itemUseSequenceConfig';
 import { ItemUseSfxPlayer } from './audio/ItemUseSfx';
@@ -108,6 +113,7 @@ export class Game {
     getPropModel: (id) => this.propModels.get(id),
   });
   readonly ui = new UIManager();
+  private festivalMap: FestivalMap | null = null;
   private events = new EventScope();
   private unsubscribeState: () => void;
   private started = false;
@@ -291,15 +297,22 @@ export class Game {
         replayButton: document.querySelector('#dialog-replay-btn') as HTMLButtonElement | undefined,
         geminiButton: document.querySelector('#dialog-gemini-btn') as HTMLButtonElement | undefined,
         geminiConfigElement: document.querySelector('#dialog-gemini-config') as HTMLElement | undefined,
-        geminiInputElement: document.querySelector('#dialog-gemini-key-input') as HTMLInputElement | undefined,
+        geminiInputElement: document.querySelector('#dialog-gemini-key-input') as
+          HTMLInputElement | undefined,
         geminiSaveButton: document.querySelector('#dialog-gemini-save-btn') as HTMLButtonElement | undefined,
-        geminiClearButton: document.querySelector('#dialog-gemini-clear-btn') as HTMLButtonElement | undefined,
-        geminiCloseButton: document.querySelector('#dialog-gemini-close-btn') as HTMLButtonElement | undefined,
+        geminiClearButton: document.querySelector('#dialog-gemini-clear-btn') as
+          HTMLButtonElement | undefined,
+        geminiCloseButton: document.querySelector('#dialog-gemini-close-btn') as
+          HTMLButtonElement | undefined,
         geminiStatusElement: document.querySelector('#dialog-gemini-status') as HTMLElement | undefined,
-        elevenLabsInputElement: document.querySelector('#dialog-elevenlabs-key-input') as HTMLInputElement | undefined,
-        elevenLabsSaveButton: document.querySelector('#dialog-elevenlabs-save-btn') as HTMLButtonElement | undefined,
-        elevenLabsClearButton: document.querySelector('#dialog-elevenlabs-clear-btn') as HTMLButtonElement | undefined,
-        elevenLabsStatusElement: document.querySelector('#dialog-elevenlabs-status') as HTMLElement | undefined,
+        elevenLabsInputElement: document.querySelector('#dialog-elevenlabs-key-input') as
+          HTMLInputElement | undefined,
+        elevenLabsSaveButton: document.querySelector('#dialog-elevenlabs-save-btn') as
+          HTMLButtonElement | undefined,
+        elevenLabsClearButton: document.querySelector('#dialog-elevenlabs-clear-btn') as
+          HTMLButtonElement | undefined,
+        elevenLabsStatusElement: document.querySelector('#dialog-elevenlabs-status') as
+          HTMLElement | undefined,
       });
 
       this.startLoop();
@@ -372,10 +385,26 @@ export class Game {
   private key(event: KeyboardEvent) {
     if (this.disposed) return;
     if (
-      (event.key === 'm' || event.key === 'M') &&
+      (event.key === 'v' || event.key === 'V') &&
       (this.state.current === 'playing' || this.state.current === 'seated')
     ) {
       this.spatialVoice?.toggleMute();
+      return;
+    }
+    if (
+      (event.key === 'h' || event.key === 'H' || event.key === 'F1') &&
+      (this.state.current === 'playing' || this.state.current === 'seated' || this.ui.isGuideOpen())
+    ) {
+      event.preventDefault();
+      this.toggleGuide();
+      return;
+    }
+    if (
+      (event.key === 'm' || event.key === 'M') &&
+      (this.state.current === 'playing' || this.state.current === 'seated' || this.ui.isMapOpen())
+    ) {
+      event.preventDefault();
+      this.toggleMap();
       return;
     }
     if (event.ctrlKey && event.key.toLowerCase() === 'k') {
@@ -407,7 +436,7 @@ export class Game {
       return;
     }
     if (this.state.current === 'inventory') {
-      const effectKeys = ['1', '2', '3', '4', '5', '6', '7'];
+      const effectKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
       const effectIndex = effectKeys.indexOf(event.key);
       if (effectIndex >= 0 && effectIndex < inventoryEffects.length) {
         this.useInventoryEffect(inventoryEffects[effectIndex]);
@@ -936,7 +965,8 @@ export class Game {
             : interaction.kind === 'seat'
               ? 'Usiądź na krześle'
               : interaction.kind === 'toitoi_door'
-                ? this.world?.infrastructure?.toiToiDoors?.getDoor(interaction.doorId)?.label || 'Otwórz / zamknij toi-toi'
+                ? this.world?.infrastructure?.toiToiDoors?.getDoor(interaction.doorId)?.label ||
+                  'Otwórz / zamknij toi-toi'
                 : interaction.kind === 'field_shower'
                   ? 'Umyj się pod prysznicem'
                   : 'Wejdź do toi-toia';
@@ -982,6 +1012,41 @@ export class Game {
   }
 
   /** Deterministycznie zatrzymuje grę i zwalnia wszystkie zasoby oraz listenery. */
+  /** Przełącza widoczność modala Przewodnika Festiwalowicza */
+  toggleGuide(open?: boolean): boolean {
+    const isOpen = this.ui.toggleGuide(open);
+    if (isOpen && document.pointerLockElement) {
+      document.exitPointerLock?.();
+    }
+    return isOpen;
+  }
+
+  /** Przełącza widoczność Mapy Festiwalu */
+  toggleMap(open?: boolean): boolean {
+    const isOpen = this.ui.toggleMap(open);
+    if (isOpen) {
+      if (document.pointerLockElement) {
+        document.exitPointerLock?.();
+      }
+      if (this.player) {
+        this.festivalMap?.render({
+          x: this.player.camera.position.x,
+          z: this.player.camera.position.z,
+          yaw: this.player.yaw,
+        });
+      }
+    }
+    return isOpen;
+  }
+
+  isGuideOpen(): boolean {
+    return this.ui.isGuideOpen();
+  }
+
+  isMapOpen(): boolean {
+    return this.ui.isMapOpen();
+  }
+
   dispose() {
     if (this.disposed) return;
     this.disposed = true;

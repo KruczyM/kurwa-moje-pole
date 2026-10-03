@@ -21,6 +21,7 @@ describe('Campfire', () => {
     const campfire = new Campfire();
     const light = campfire.root.getObjectByName('Campfire_PointLight') as THREE.PointLight;
     const initialIntensity = light.intensity;
+    expect(initialIntensity).toBeGreaterThan(0);
 
     campfire.update(0.1);
     expect(light.intensity).toBeGreaterThan(0);

@@ -29,6 +29,7 @@ export class TimeOfDaySkybox {
     private readonly scene: THREE.Scene,
     private readonly now: () => Date = () => new Date(),
     private readonly random: () => number = Math.random,
+    private readonly fixedPeriod?: SkyboxPeriod,
   ) {
     this.update(true);
   }
@@ -39,15 +40,8 @@ export class TimeOfDaySkybox {
     const now = this.now();
     if (!force && now.getTime() < this.nextCheckAt) return;
     this.nextCheckAt = now.getTime() + 60_000;
-    const period = skyboxPeriodForHour(now.getHours());
+    const period = this.fixedPeriod ?? skyboxPeriodForHour(now.getHours());
     if (period === this.period) return;
-    this.period = period;
-    this.load(period);
-  }
-
-  /** Ustawia jawną porę dnia i ładuje odpowiadający skybox. */
-  setPeriod(period: SkyboxPeriod): void {
-    if (this.disposed || period === this.period) return;
     this.period = period;
     this.load(period);
   }

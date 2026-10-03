@@ -38,6 +38,7 @@
         <div class="start-actions">
           <button id="play">WEJDŹ NA POLE</button>
           <button id="play-freecam" type="button" class="freecam-btn">SWOBODNA KAMERA (Ctrl+K)</button>
+          <button id="start-guide-btn" type="button" class="guide-btn">📖 PRZEWODNIK I SKRÓTY (H)</button>
         </div>
         <small id="start-controls"></small>
       </section>
@@ -51,11 +52,19 @@
       </section>
       <section id="hud" hidden>
         <div id="brand">#KURWAMOJEPOLE</div>
+        <div id="hud-quick-bar" class="hud-quick-bar" aria-label="Szybkie skróty HUD">
+          <button id="hud-guide-btn" type="button" title="Przewodnik i pomoc [H / F1]">📖 Pomoc [H]</button>
+          <button id="hud-map-btn" type="button" title="Mapa festiwalu [M]">🗺️ Mapa [M]</button>
+          <button id="hud-inventory-btn" type="button" title="Ekwipunek [Tab / I]">🎒 Plecak [I]</button>
+          <button id="hud-menu-btn" type="button" title="Menu i opcje [Esc]">⚙️ Menu [Esc]</button>
+        </div>
         <div id="mobile-controls" aria-label="Sterowanie dotykowe" hidden>
           <div class="mobile-look-zone" aria-label="Przeciągnij, aby obrócić kamerę"></div>
           <div class="mobile-top-actions">
             <button id="mobile-menu" type="button" aria-label="Otwórz menu pauzy">MENU</button>
-            <button id="mobile-inventory" type="button" aria-label="Otwórz ekwipunek">EKWIPUNEK</button>
+            <button id="mobile-inventory" type="button" aria-label="Otwórz ekwipunek">PLECAK</button>
+            <button id="mobile-guide" type="button" aria-label="Otwórz przewodnik">POMOC</button>
+            <button id="mobile-map" type="button" aria-label="Otwórz mapę">MAPA</button>
           </div>
           <div class="mobile-movement">
             <div class="mobile-joystick" aria-label="Joystick ruchu">
@@ -73,16 +82,18 @@
         <div id="crosshair">+</div>
         <div id="smoke" hidden></div>
         <div id="lsd-overlay" aria-hidden="true" hidden></div>
-        <button id="cancel-effect">Anuluj efekt</button>
         <div id="use-sequence" role="status" hidden>
           <strong id="use-sequence-label"></strong>
           <button id="cancel-use-sequence" type="button">ANULUJ</button>
         </div>
-        <div id="voice-hud" class="voice-hud">
-          <button id="voice-mic-toggle" type="button" aria-label="Przełącz mikrofon" title="Kliknij lub naciśnij [V], aby włączyć/wyciszyć mikrofon">
-            <span id="voice-mic-icon">🎤</span>
-            <span id="voice-mic-text">Mikrofon: Wyłączony</span>
-          </button>
+        <div id="hud-bottom-right" class="hud-bottom-right">
+          <button id="cancel-effect">Anuluj efekt</button>
+          <div id="voice-hud" class="voice-hud">
+            <button id="voice-mic-toggle" type="button" aria-label="Przełącz mikrofon" title="Kliknij lub naciśnij [V], aby włączyć/wyciszyć mikrofon">
+              <span id="voice-mic-icon">🎤</span>
+              <span id="voice-mic-text">Mikrofon: Wyłączony</span>
+            </button>
+          </div>
         </div>
       </section>
       <section id="inventory" role="dialog" aria-modal="true" aria-labelledby="inventory-title" hidden>
@@ -133,52 +144,373 @@
           <small id="map-help"></small>
         </div>
       </section>
+      <section id="festival-guide" role="dialog" aria-modal="true" aria-labelledby="guide-title" hidden>
+        <div class="festival-guide-container">
+          <div class="festival-guide-header">
+            <div class="guide-header-title-wrap">
+              <span class="guide-badge">KOMPENDIUM FESTIWALOWE</span>
+              <h2 id="guide-title">📖 Przewodnik Festiwalowicza — Czaplinek-Broczyno</h2>
+            </div>
+            <button id="guide-close" type="button" aria-label="Zamknij przewodnik">✕ [H / Esc]</button>
+          </div>
+
+          <nav class="guide-tabs" role="tablist" aria-label="Kategorie przewodnika">
+            <button class="guide-tab-btn active" type="button" role="tab" aria-selected="true" data-tab="controls">
+              🎮 Sterowanie i klawisze
+            </button>
+            <button class="guide-tab-btn" type="button" role="tab" aria-selected="false" data-tab="activities">
+              ⛺ Co można robić?
+            </button>
+            <button class="guide-tab-btn" type="button" role="tab" aria-selected="false" data-tab="interactions">
+              🔍 Interakcje w świecie
+            </button>
+            <button class="guide-tab-btn" type="button" role="tab" aria-selected="false" data-tab="items">
+              🎒 Przedmioty i efekty
+            </button>
+            <button class="guide-tab-btn" type="button" role="tab" aria-selected="false" data-tab="dialogue">
+              🗣️ Rozmowy z NPC i głos
+            </button>
+          </nav>
+
+          <div class="guide-content-area">
+            <!-- TAB 1: Klawisze i sterowanie -->
+            <div class="guide-panel active" id="guide-panel-controls" role="tabpanel">
+              <h3>Pełna klawiszologia i skróty</h3>
+              <p class="guide-intro">Wszystkie akcje dostępne w grze z klawiatury oraz z interfejsu ekranowego:</p>
+
+              <div class="guide-grid-two">
+                <div class="guide-card">
+                  <h4>🏃 Poruszanie się i eksploracja</h4>
+                  <ul class="guide-key-list">
+                    <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Poruszanie się postacią (przód, lewo, tył, prawo)</span></li>
+                    <li><kbd>Myszka</kbd><span>Rozglądanie się w 360° (first-person)</span></li>
+                    <li><kbd>Shift</kbd><span>Sprint / szybszy bieg po pasażu i polu</span></li>
+                    <li><kbd>Spacja</kbd><span>Skok (przeskakiwanie przez przeszkody, kałuże i błoto)</span></li>
+                    <li><kbd>Ctrl</kbd> + <kbd>K</kbd><span>Swobodna kamera (tryb drona / inspekcji pola)</span></li>
+                  </ul>
+                </div>
+
+                <div class="guide-card">
+                  <h4>⚡ Akcje, ekwipunek i menu</h4>
+                  <ul class="guide-key-list">
+                    <li><kbd>E</kbd><span><strong>Główny klawisz interakcji</strong>: rozmowa z NPC, siadanie, Toi-Toi, przedmioty</span></li>
+                    <li><kbd>Tab</kbd> / <kbd>I</kbd><span>Otwarcie i zamknięcie plecaka (Ekwipunek)</span></li>
+                    <li><kbd>1</kbd> – <kbd>9</kbd><span>Szybkie użycie przedmiotu z plecaka (Piwo, Woda, Joint...)</span></li>
+                    <li><kbd>M</kbd><span>Otwarcie / zamknięcie Mapy Festiwalu</span></li>
+                    <li><kbd>H</kbd> / <kbd>F1</kbd><span>Otwarcie / zamknięcie tego Przewodnika</span></li>
+                    <li><kbd>V</kbd><span>Przełączenie mikrofonu (włącz / wycisz czat głosowy)</span></li>
+                    <li><kbd>Esc</kbd><span>Menu pauzy / ustawienia grafiki, trawy i dźwięku / wstawanie</span></li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="guide-hint-box">
+                💡 <strong>Wskazówka:</strong> Kliknij prawym przyciskiem myszy lub naciśnij [Esc], aby zwolnić kursor i kliknąć przyciski w menu lub HUD!
+              </div>
+            </div>
+
+            <!-- TAB 2: Co można robić? -->
+            <div class="guide-panel" id="guide-panel-activities" role="tabpanel" hidden>
+              <h3>Co można robić na festiwalu?</h3>
+              <p class="guide-intro">Lotnisko Czaplinek-Broczyno tętni życiem! Oto główne atrakcje i aktywności:</p>
+
+              <div class="guide-activities-list">
+                <div class="activity-entry">
+                  <div class="activity-icon">⛺</div>
+                  <div class="activity-info">
+                    <h4>Obóz #KurwaMojePole i życie obozowe</h4>
+                    <p>Twój macierzysty obóz w centrum mapy. Możesz tu usiąść na leżaku, wypić piwo z ekipą przy stole Mad Doga, porozmawiać z sąsiadami z 200 namiotów, zagrać we flanki, posłuchać klimatycznej muzyki z głośnika i podziwiać powiewającą flagę obozową.</p>
+                  </div>
+                </div>
+
+                <div class="activity-entry">
+                  <div class="activity-icon">🎸</div>
+                  <div class="activity-info">
+                    <h4>Duża Scena i Mała Scena — Koncerty Rockowe</h4>
+                    <p>Monumentalne sceny z potężnym oświetleniem, nagłośnieniem i telebimami. Podejdź pod barierki i zobacz skaczący pod sceną tłum festiwalowiczów. Z obu stron Dużej Sceny znajdują się korytarze bezpieczeństwa umożliwiające szybkie przejście.</p>
+                  </div>
+                </div>
+
+                <div class="activity-entry">
+                  <div class="activity-icon">🎪</div>
+                  <div class="activity-info">
+                    <h4>Akademia Sztuk Przepięknych (ASP)</h4>
+                    <p>Ogromny namiot cyrkowy w barwach żółto-niebieskich na południowej alei. Miejsce spotkań, warsztatów, inspirujących rozmów i nocnych koncertów alternatywnych.</p>
+                  </div>
+                </div>
+
+                <div class="activity-entry">
+                  <div class="activity-icon">💧</div>
+                  <div class="activity-info">
+                    <h4>Grzybek Wodny, kurtyny OSP i strefa sanitarna</h4>
+                    <p>Kultowy Grzybek festiwalowy z orzeźwiającym natryskiem, kurtyny wodne strażaków OSP, wielostanowiskowe punkty czerpania darmowej wody pitnej oraz rzędy kabin Toi-Toi.</p>
+                  </div>
+                </div>
+
+                <div class="activity-entry">
+                  <div class="activity-icon">🤎</div>
+                  <div class="activity-info">
+                    <h4>Kąpiel w błocie pod Dużą Sceną</h4>
+                    <p>Legendarne woodstockowe błoto! Wejdź do strefy błotnej, potaplaj się i spotkaj ubłoconych festiwalowiczów i "potwory błotne".</p>
+                  </div>
+                </div>
+
+                <div class="activity-entry">
+                  <div class="activity-icon">🛒</div>
+                  <div class="activity-info">
+                    <h4>Pasaż Handlowy (18 kramów), Gastro i Lidl Rock Shop</h4>
+                    <p>Dwie betonowe aleje (Północna i Południowa) pełne kramów z rękodziełem, koszulkami festiwalowymi, strefą Pomorza Zachodniego, foodtruckami oraz słynnym festiwalowym marketem Lidl Rock Shop.</p>
+                  </div>
+                </div>
+
+                <div class="activity-entry">
+                  <div class="activity-icon">🎡</div>
+                  <div class="activity-info">
+                    <h4>Diabelski Młyn Allegro i Pole Słoneczników</h4>
+                    <p>Podziwiaj obracające się wielkie koło widokowe na tle nieba oraz przespaceruj się pośród tysięcy kwitnących słoneczników na wschodnim krańcu terenu.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 3: Interakcje w świecie -->
+            <div class="guide-panel" id="guide-panel-interactions" role="tabpanel" hidden>
+              <h3>Z czym można wchodzić w interakcje?</h3>
+              <p class="guide-intro">Świat gry reaguje na klawisz interakcji <kbd>E</kbd> oraz kliknięcia myszą:</p>
+
+              <div class="guide-grid-two">
+                <div class="interaction-card">
+                  <div class="interaction-head"><span class="int-badge">STÓŁ OBOZOWY</span> <strong>Inspekcja i zbieranie [E]</strong></div>
+                  <p>Podejdź do stołu w obozie, nakieruj celownik i naciśnij <kbd>E</kbd>. Otworzy się trójwymiarowy podgląd przedmiotu. Możesz obracać go myszą, użyć na miejscu lub schować do plecaka (przycisk <em>WEŹ DO EKWIPUNKU</em>).</p>
+                </div>
+
+                <div class="interaction-card">
+                  <div class="interaction-head"><span class="int-badge">LEŻAKI I KRZESŁA</span> <strong>Siadanie i odpoczynek [E]</strong></div>
+                  <p>Podejdź do dowolnego leżaka lub krzesła turystycznego i wciśnij <kbd>E</kbd>. Kamera przełączy się w tryb odpoczynku z widokiem na otoczenie. Ponowne naciśnięcie <kbd>E</kbd> lub <kbd>Esc</kbd> powoduje wstanie.</p>
+                </div>
+
+                <div class="interaction-card">
+                  <div class="interaction-head"><span class="int-badge">KABINY TOI-TOI</span> <strong>Animowane drzwi [E]</strong></div>
+                  <p>Podejdź do kabiny Toi-Toi. Naciśnięcie <kbd>E</kbd> otwiera skrzydło drzwi z realistycznym odgłosem zawiasów i pozwala wejść do środka kabiny.</p>
+                </div>
+
+                <div class="interaction-card">
+                  <div class="interaction-head"><span class="int-badge">PUNKTY WODNE</span> <strong>Czerpanie wody i antidotum [E]</strong></div>
+                  <p>Podejdź do kranów wielostanowiskowych lub Grzybka, aby ugasić pragnienie i uzupełnić zapasy wody. Woda jest kluczem do neutralizowania mocnych efektów!</p>
+                </div>
+
+                <div class="interaction-card">
+                  <div class="interaction-head"><span class="int-badge">POSTACIE NPC</span> <strong>Rozmowa na żywo [E]</strong></div>
+                  <p>Podejdź do dowolnego z 90+ festiwalowiczów. Naciśnięcie <kbd>E</kbd> zatrzymuje postać i otwiera okno dialogu z historią wypowiedzi, zasilane sztuczną inteligencją Gemini i głosami syntezy mowy.</p>
+                </div>
+
+                <div class="interaction-card">
+                  <div class="interaction-head"><span class="int-badge">MENU PAUZY [Esc]</span> <strong>Animacje i gesty</strong></div>
+                  <p>W menu pauzy możesz wybrać animację z listy (np. picie piwa, taniec, machanie, granie na gitarze) i wcisnąć <em>Wykonaj animację</em>, aby obejrzeć swoją postać z kamery trzeciej osoby.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 4: Przedmioty i efekty -->
+            <div class="guide-panel" id="guide-panel-items" role="tabpanel" hidden>
+              <h3>Przedmioty, tripy i antidota</h3>
+              <p class="guide-intro">Wszystkie przedmioty możesz nosić w plecaku <kbd>Tab</kbd> / <kbd>I</kbd> lub aktywować klawiszami numerycznymi <kbd>1</kbd>–<kbd>9</kbd>:</p>
+
+              <div class="guide-items-table">
+                <div class="item-row">
+                  <div class="item-meta">
+                    <span class="item-badge-num">[1]</span>
+                    <span class="item-icon">🍺</span>
+                    <strong>Piwo</strong>
+                  </div>
+                  <div class="item-desc">Klasyczny festiwalowy browar. Powoduje łagodne, realistyczne kołysanie kamery, swobodę i relaks.</div>
+                  <div class="item-tag sway">Kołysanie</div>
+                </div>
+
+                <div class="item-row">
+                  <div class="item-meta">
+                    <span class="item-badge-num">[2]</span>
+                    <span class="item-icon">🚬</span>
+                    <strong>Papieros</strong>
+                  </div>
+                  <div class="item-desc">Gęsty, klimatyczny dym unoszący się przed oczami postaci. Idealny towarzysz wieczornych pogawędek przy namiocie.</div>
+                  <div class="item-tag smoke">Dym</div>
+                </div>
+
+                <div class="item-row">
+                  <div class="item-meta">
+                    <span class="item-badge-num">[3]</span>
+                    <span class="item-icon">🌿</span>
+                    <strong>Joint</strong>
+                  </div>
+                  <div class="item-desc">Ociepla całą paletę kolorów świata do miękkich, złotych odcieni lata, dodając subtelne rozmycie krawędzi.</div>
+                  <div class="item-tag warm">Ciepłe barwy</div>
+                </div>
+
+                <div class="item-row">
+                  <div class="item-meta">
+                    <span class="item-badge-num">[4]</span>
+                    <span class="item-icon">⚡</span>
+                    <strong>Kreska</strong>
+                  </div>
+                  <div class="item-desc">Potężny zastrzyk energii: drastycznie przyspiesza tempo biegu i wyostrza pole widzenia kamery (FOV zoom).</div>
+                  <div class="item-tag speed">Tempo + Bieg</div>
+                </div>
+
+                <div class="item-row">
+                  <div class="item-meta">
+                    <span class="item-badge-num">[5]</span>
+                    <span class="item-icon">🍄</span>
+                    <strong>Grzyb</strong>
+                  </div>
+                  <div class="item-desc">Falowanie geometrii terenu! Grunt pod stopami zaczyna płynnie falować, a obiekty w oddali delikatnie pulsują.</div>
+                  <div class="item-tag wave">Falowanie terenu</div>
+                </div>
+
+                <div class="item-row">
+                  <div class="item-meta">
+                    <span class="item-badge-num">[6]</span>
+                    <span class="item-icon">💗</span>
+                    <strong>MDMA</strong>
+                  </div>
+                  <div class="item-desc">Błogi festiwalowy bloom, rozświetlone kontury scen i namiotów oraz delikatne tęczowe aberracje na światłach.</div>
+                  <div class="item-tag bloom">Bloom & Światło</div>
+                </div>
+
+                <div class="item-row">
+                  <div class="item-meta">
+                    <span class="item-badge-num">[7]</span>
+                    <span class="item-icon">🌈</span>
+                    <strong>LSD</strong>
+                  </div>
+                  <div class="item-desc">Maksymalne nasycenie barw, fraktalne nakładki wizualne oraz dostęp do zielonego deszczu kodu Matrixa!</div>
+                  <div class="item-tag matrix">Nasycenie & Matrix</div>
+                </div>
+
+                <div class="item-row highlight-row">
+                  <div class="item-meta">
+                    <span class="item-badge-num">[8]</span>
+                    <span class="item-icon">💧</span>
+                    <strong>Woda (Antidotum)</strong>
+                  </div>
+                  <div class="item-desc"><strong>Najważniejszy napój festiwalu!</strong> Natychmiast redukuje intensywność każdego trwającego tripu o 40%. Wypicie 2-3 butelek całkowicie przywraca trzeźwość!</div>
+                  <div class="item-tag antidote">Antidotum -40%</div>
+                </div>
+
+                <div class="item-row">
+                  <div class="item-meta">
+                    <span class="item-badge-num">[9]</span>
+                    <span class="item-icon">🕶️</span>
+                    <strong>Okulary przeciwsłoneczne</strong>
+                  </div>
+                  <div class="item-desc">Stylowe przyciemnienie obrazu redukujące ostre słońce i zmniejszające odczuwalną intensywność tripu o 50%.</div>
+                  <div class="item-tag tint">Przyciemnienie -50%</div>
+                </div>
+              </div>
+
+              <div class="guide-hint-box">
+                🛑 <strong>Szybkie anulowanie:</strong> Jeśli efekt jest zbyt intensywny, w każdej chwili możesz kliknąć czerwony przycisk <em>Anuluj efekt</em> w prawym dolnym rogu ekranu lub włączyć opcję <em>Ogranicz ruch obrazu</em> w Menu Pauzy!
+              </div>
+            </div>
+
+            <!-- TAB 5: Rozmowy z NPC i głos -->
+            <div class="guide-panel" id="guide-panel-dialogue" role="tabpanel" hidden>
+              <h3>Rozmowy z ludźmi (NPC) i interakcja głosowa</h3>
+              <p class="guide-intro">Na festiwalu przebywa ponad 90 postaci o unikalnym wyglądzie, imionach i charakterach!</p>
+
+              <div class="guide-dialogue-steps">
+                <div class="dialogue-step-card">
+                  <span class="step-num">1</span>
+                  <h4>Podejdź i zagadaj</h4>
+                  <p>Skieruj wzrok na dowolnego festiwalowicza (np. Korbę, Zawora, Hemoroida, wolontariuszkę Pokojowego Patrolu, punkowca czy hippisa) i wciśnij <kbd>E</kbd>. Postać obróci się w Twoją stronę i przywita Cię unikalną kwestią.</p>
+                </div>
+
+                <div class="dialogue-step-card">
+                  <span class="step-num">2</span>
+                  <h4>Pisz lub Mów na żywo [V]</h4>
+                  <p>Możesz wpisać własną wiadomość w polu tekstowym i zatwierdzić klawiszem <kbd>Enter</kbd> ALBO kliknąć ikonę 🎤 w prawym dolnym rogu (skrót <kbd>V</kbd>) i mówić do mikrofonu — Twoja mowa zostanie przetłumaczona na tekst w locie!</p>
+                </div>
+
+                <div class="dialogue-step-card">
+                  <span class="step-num">3</span>
+                  <h4>Sztuczna inteligencja Gemini</h4>
+                  <p>NPC myślą w locie dzięki modelowi Gemini AI. Pamiętają kontekst rozmowy, odpowiadają po swojemu, opowiadają o kapelach, plotkują o obozach i reagują na Twoje słowa jak prawdziwi uczestnicy festiwalu.</p>
+                </div>
+
+                <div class="dialogue-step-card">
+                  <span class="step-num">4</span>
+                  <h4>Głosy i synteza mowy</h4>
+                  <p>Każda postać posiada przypisany tembr głosu (damski lub męski z różną wysokością tonu), odtwarzany przez system syntezy mowy ElevenLabs z płynnym fallbackiem do Web Speech API.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="festival-guide-footer">
+            <span class="guide-footer-tip">Naciśnij <kbd>H</kbd> lub <kbd>Esc</kbd>, aby powrócić do gry.</span>
+            <button id="guide-ok-btn" type="button" class="btn-primary">ROZUMIEM, WRACAM NA POLE</button>
+          </div>
+        </div>
+      </section>
       <section id="pause" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>
         <h2 id="pause-title">Pauza</h2>
         <p>Kursor jest zwolniony.</p>
-        <label for="player-motion">Gesty i odpoczynek</label>
-        <select id="player-motion" aria-label="Animacja postaci"></select>
-        <button id="perform-motion" type="button">Wykonaj animację</button>
-        <small>Widok postaci z zewnątrz. E — zakończ odpoczynek lub gest.</small>
-        <label
-          >Jakość trawy
-          <select id="setting-grass-quality">
-            <option value="low">Niska (low)</option>
-            <option value="medium">Średnia (medium)</option>
-            <option value="high">Wysoka (high)</option>
-            <option value="ultra">Ultra</option>
-          </select></label
-        ><label
-          >Intensywność efektów <input id="setting-intensity" type="range" min="0" max="100" step="1"
-        /></label>
-        <label
-          >Głośność głośnika <input id="setting-speaker-volume" type="range" min="0" max="100" step="1"
-        /></label>
-        <label
-          >Głośność ambientu
-          <input id="setting-ambient-volume" type="range" min="0" max="100" step="1" /></label
-        ><label><input id="setting-reduce-motion" type="checkbox" /> Ogranicz ruch obrazu</label
-        ><label><input id="setting-limit-sway" type="checkbox" /> Ogranicz kołysanie</label
-        ><label><input id="setting-disable-shake" type="checkbox" /> Wyłącz drżenie</label
-        ><label><input id="setting-disable-bloom" type="checkbox" /> Wyłącz bloom</label
-        ><label><input id="setting-disable-flashes" type="checkbox" /> Wyłącz błyski</label
-        ><label><input id="setting-disable-aberration" type="checkbox" /> Wyłącz aberrację chromatyczną</label
-        ><label
-          >Faza Matrix
-          <select id="setting-matrix-mode">
-            <option value="auto">Automatyczna w tripie</option>
-            <option value="always">Zawsze aktywna</option>
-            <option value="off">Wyłączona</option>
-          </select></label
-        ><label
-          >Jakość Matrix
-          <select id="setting-matrix-quality">
-            <option value="low">Niska (low)</option>
-            <option value="medium">Średnia (medium)</option>
-            <option value="high">Wysoka (high)</option>
-          </select></label
-        ><small id="pause-help"></small><button id="resume">Wróć do gry</button
-        ><button id="exit-to-start">Wyjdź do wyboru postaci</button>
+        <div class="pause-motion-section">
+          <label for="player-motion">Gesty i odpoczynek</label>
+          <div class="motion-controls">
+            <select id="player-motion" aria-label="Animacja postaci"></select>
+            <button id="perform-motion" type="button">Wykonaj animację</button>
+          </div>
+          <small>Widok postaci z zewnątrz. E — zakończ odpoczynek lub gest.</small>
+        </div>
+        <div class="pause-settings-grid">
+          <label
+            >Jakość trawy
+            <select id="setting-grass-quality">
+              <option value="low">Niska (low)</option>
+              <option value="medium">Średnia (medium)</option>
+              <option value="high">Wysoka (high)</option>
+              <option value="ultra">Ultra</option>
+            </select></label
+          ><label
+            >Intensywność efektów <input id="setting-intensity" type="range" min="0" max="100" step="1"
+          /></label>
+          <label
+            >Głośność głośnika <input id="setting-speaker-volume" type="range" min="0" max="100" step="1"
+          /></label>
+          <label
+            >Głośność ambientu
+            <input id="setting-ambient-volume" type="range" min="0" max="100" step="1" /></label
+          ><label><input id="setting-reduce-motion" type="checkbox" /> Ogranicz ruch obrazu</label
+          ><label><input id="setting-limit-sway" type="checkbox" /> Ogranicz kołysanie</label
+          ><label><input id="setting-disable-shake" type="checkbox" /> Wyłącz drżenie</label
+          ><label><input id="setting-disable-bloom" type="checkbox" /> Wyłącz bloom</label
+          ><label><input id="setting-disable-flashes" type="checkbox" /> Wyłącz błyski</label
+          ><label><input id="setting-disable-aberration" type="checkbox" /> Wyłącz aberrację chromatyczną</label
+          ><label
+            >Faza Matrix
+            <select id="setting-matrix-mode">
+              <option value="auto">Automatyczna w tripie</option>
+              <option value="always">Zawsze aktywna</option>
+              <option value="off">Wyłączona</option>
+            </select></label
+          ><label
+            >Jakość Matrix
+            <select id="setting-matrix-quality">
+              <option value="low">Niska (low)</option>
+              <option value="medium">Średnia (medium)</option>
+              <option value="high">Wysoka (high)</option>
+            </select></label
+          >
+        </div>
+        <small id="pause-help"></small>
+        <div class="pause-actions">
+          <button id="resume" class="btn-primary" type="button">Wróć do gry [Esc]</button>
+          <button id="open-guide-btn" class="btn-secondary" type="button">📖 Przewodnik i pomoc [H]</button>
+          <button id="open-map-btn" class="btn-secondary" type="button">🗺️ Otwórz mapę festiwalu [M]</button>
+          <button id="open-inventory-btn" class="btn-secondary" type="button">🎒 Otwórz plecak [I]</button>
+          <button id="exit-to-start" class="btn-danger" type="button">Wyjdź do wyboru postaci</button>
+        </div>
       </section>
       <section
         id="effect-warning"

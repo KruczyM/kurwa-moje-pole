@@ -163,15 +163,9 @@
 
 ### FAZA 3: Prawdziwy klimat festiwalowy i aktywności
 
-#### 3.1 Płynny cykl dobowy
+#### 3.1 Cykl dobowy [ODRZUCONY / USUNIĘTY]
 
-- **Pliki:** `src/game/world/DayNightCycle.ts`, integracja z `src/game/world/HorizonSkybox.ts`, `src/game/Game.ts`
-- **Działanie:**
-  - Cykl trwa 15 minut czasu rzeczywistego (z klawiszem dev `P` do szybkiego testowania).
-  - Płynnie przełącza cubemapy w `TimeOfDaySkybox` (`day` → `evening` → `night`).
-  - Steruje kątem i barwą słońca (`DirectionalLight`), światłem rozproszonym oraz mgłą.
-  - W nocy lasery i ruchome głowy na Dużej Scenie (`FestivalStageEffects`) stają się jaskrawe i przecinają niebo.
-- **Czas:** ~4h.
+- **Status:** Usunięty na życzenie użytkownika. Przywrócono pierwotne, stałe oświetlenie dzienne i domyślny skybox bez sztucznych zmian pór dnia.
 
 #### 3.2 Oświetlenie nocne: Fairy lights i latarka gracza
 

@@ -8,8 +8,6 @@ import { configureColorPipeline } from '../rendering/colorPipeline';
 import { repairSkinSeams } from '../animation/repairSkinSeams';
 import { startPreviewIdle } from './previewIdle';
 import { amperPreviewPose } from './amperPreviewPose';
-import { closeLocomotionLoop } from '../npc/locomotionLoop';
-import { stabilizeLocomotionRoot } from '../npc/NpcAnimator';
 
 type Cached = { scene: THREE.Object3D; animations: THREE.AnimationClip[] };
 type PreviewStatus = { state: 'ready' | 'error'; message?: string };
@@ -158,25 +156,11 @@ export class CharacterPreview {
     group.add(model);
     const assetId = characterAssets.find((asset) => asset.name === name)?.id;
     let clips = source.animations;
-    let preferredClip: string | undefined;
-    if (assetId === 'zawor') {
-      const walk = source.animations.find((c) => /^walk$/i.test(c.name));
-      if (walk) {
-        const inPlaceWalk = closeLocomotionLoop(stabilizeLocomotionRoot(model, walk));
-        clips = [inPlaceWalk];
-        preferredClip = inPlaceWalk.name;
-      }
-    } else if (reference) {
-      clips = [
-        amperPreviewPose(
-          model,
-          reference.scene,
-          reference.animations,
-          assetId,
-        ),
-      ];
+    if (reference) {
+      clips = [amperPreviewPose(model, reference.scene, reference.animations, assetId)];
     }
-    const mixer = startPreviewIdle(model, clips, preferredClip);
+    // Zawor's original preview is an unskinned mesh: no pose/weight deformation.
+    const mixer = assetId === 'zawor' ? new THREE.AnimationMixer(model) : startPreviewIdle(model, clips);
     const bounds = new THREE.Box3().setFromObject(model);
     if (bounds.isEmpty()) {
       mixer.stopAllAction();

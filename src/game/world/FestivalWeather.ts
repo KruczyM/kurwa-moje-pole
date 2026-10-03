@@ -123,12 +123,14 @@ export class FestivalWeather {
     const sampleRate = context.sampleRate || 44100;
     const buffer = context.createBuffer(1, sampleRate * 2, sampleRate);
     const channel = buffer.getChannelData(0);
-    let b0 = 0, b1 = 0, b2 = 0;
+    let b0 = 0,
+      b1 = 0,
+      b2 = 0;
     for (let i = 0; i < channel.length; i++) {
       const white = Math.random() * 2 - 1;
-      b0 = 0.99765 * b0 + white * 0.0990460;
-      b1 = 0.96300 * b1 + white * 0.2965164;
-      b2 = 0.57000 * b2 + white * 1.0526913;
+      b0 = 0.99765 * b0 + white * 0.099046;
+      b1 = 0.963 * b1 + white * 0.2965164;
+      b2 = 0.57 * b2 + white * 1.0526913;
       channel[i] = (b0 + b1 + b2 + white * 0.1848) * 0.06;
     }
 
@@ -220,8 +222,6 @@ export class FestivalWeather {
 
     const positions = this.rainPositions;
     const velocities = this.rainVelocities;
-    const halfWidth = this.boxSize.width / 2;
-    const halfDepth = this.boxSize.depth / 2;
     const bottomY = camY - 2.0;
     const topY = camY + this.boxSize.height - 2.0;
 

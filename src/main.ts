@@ -396,3 +396,90 @@ window.addEventListener(
   },
   { once: true },
 );
+
+// Przewodnik festiwalowy i Mapa
+const startGuideBtn = document.querySelector<HTMLButtonElement>('#start-guide-btn');
+if (startGuideBtn) {
+  startGuideBtn.onclick = () => {
+    const guideEl = document.querySelector<HTMLElement>('#festival-guide');
+    if (guideEl) guideEl.hidden = false;
+  };
+}
+const guideCloseBtn = document.querySelector<HTMLButtonElement>('#guide-close');
+if (guideCloseBtn) {
+  guideCloseBtn.onclick = () => {
+    if (game) game.toggleGuide(false);
+    else {
+      const guideEl = document.querySelector<HTMLElement>('#festival-guide');
+      if (guideEl) guideEl.hidden = true;
+    }
+  };
+}
+const guideOkBtn = document.querySelector<HTMLButtonElement>('#guide-ok-btn');
+if (guideOkBtn) {
+  guideOkBtn.onclick = () => {
+    if (game) game.toggleGuide(false);
+    else {
+      const guideEl = document.querySelector<HTMLElement>('#festival-guide');
+      if (guideEl) guideEl.hidden = true;
+    }
+  };
+}
+const mapCloseBtn = document.querySelector<HTMLButtonElement>('#map-close');
+if (mapCloseBtn) {
+  mapCloseBtn.onclick = () => game?.toggleMap(false);
+}
+const openGuideBtn = document.querySelector<HTMLButtonElement>('#open-guide-btn');
+if (openGuideBtn) {
+  openGuideBtn.onclick = () => game?.toggleGuide(true);
+}
+const openMapBtn = document.querySelector<HTMLButtonElement>('#open-map-btn');
+if (openMapBtn) {
+  openMapBtn.onclick = () => game?.toggleMap(true);
+}
+const openInventoryBtn = document.querySelector<HTMLButtonElement>('#open-inventory-btn');
+if (openInventoryBtn) {
+  openInventoryBtn.onclick = () => game?.toggleInventory();
+}
+const hudGuideBtn = document.querySelector<HTMLButtonElement>('#hud-guide-btn');
+if (hudGuideBtn) {
+  hudGuideBtn.onclick = () => game?.toggleGuide();
+}
+const hudMapBtn = document.querySelector<HTMLButtonElement>('#hud-map-btn');
+if (hudMapBtn) {
+  hudMapBtn.onclick = () => game?.toggleMap();
+}
+const hudInventoryBtn = document.querySelector<HTMLButtonElement>('#hud-inventory-btn');
+if (hudInventoryBtn) {
+  hudInventoryBtn.onclick = () => game?.toggleInventory();
+}
+const hudMenuBtn = document.querySelector<HTMLButtonElement>('#hud-menu-btn');
+if (hudMenuBtn) {
+  hudMenuBtn.onclick = () => game?.setPause(true);
+}
+const mobileGuideBtn = document.querySelector<HTMLButtonElement>('#mobile-guide');
+if (mobileGuideBtn) {
+  mobileGuideBtn.onclick = () => game?.toggleGuide();
+}
+const mobileMapBtn = document.querySelector<HTMLButtonElement>('#mobile-map');
+if (mobileMapBtn) {
+  mobileMapBtn.onclick = () => game?.toggleMap();
+}
+
+// Zakładki w przewodniku
+document.querySelectorAll<HTMLButtonElement>('.guide-tab-btn').forEach((btn) => {
+  btn.onclick = () => {
+    const tab = btn.dataset.tab;
+    if (!tab) return;
+    document.querySelectorAll<HTMLButtonElement>('.guide-tab-btn').forEach((b) => {
+      const active = b.dataset.tab === tab;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-selected', String(active));
+    });
+    document.querySelectorAll<HTMLElement>('.guide-panel').forEach((panel) => {
+      const match = panel.id === `guide-panel-${tab}`;
+      panel.hidden = !match;
+      panel.classList.toggle('active', match);
+    });
+  };
+});

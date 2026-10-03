@@ -42,7 +42,7 @@ import {
   type TentFit,
   type TentModelId,
 } from './campLayout';
-import { FLAG_CONFIG, MAD_DOG_CONFIG, seatLayout, TOILET_CONFIG } from './campLandmarks';
+import { FLAG_CONFIG, MAD_DOG_CONFIG, seatLayout } from './campLandmarks';
 import { Grass } from './vendor/three-stylized/index';
 import { bindGrassWorldMask, createGrassWorldMask } from './grassWorldMask';
 import { DEFAULT_GRASS_PRESET, grassDensityForSurface, type GrassQualityPreset } from './grassQuality';
@@ -551,45 +551,6 @@ export class CampWorld {
         seatId: seat.id,
       });
     });
-  }
-
-  /** Umieszcza docelowy wcTron, collider kabiny i kierunkową interakcję przed drzwiami. */
-  private toilet(scene: THREE.Object3D, source: GLTF | null) {
-    const [x, , z] = TOILET_CONFIG.position;
-    const toilet = new THREE.Group();
-    toilet.name = 'CampToilet_wcTron';
-    const cabin = source
-      ? this.prepare(source, TOILET_HEIGHT_METERS, 0x356ddb)
-      : new THREE.Mesh(new THREE.BoxGeometry(1.5, TOILET_HEIGHT_METERS, 1.5), simpleMaterial(0x356ddb));
-    if (!source) cabin.position.y = TOILET_HEIGHT_METERS / 2;
-    cabin.name = 'ToiletCabin';
-    toilet.add(cabin);
-
-    const localBounds = new THREE.Box3().setFromObject(cabin);
-    const size = localBounds.getSize(new THREE.Vector3());
-    const center = localBounds.getCenter(new THREE.Vector3());
-    const entrance = new THREE.Mesh(
-      new THREE.BoxGeometry(Math.max(0.72, size.x * 0.72), size.y * 0.72, 0.16),
-      new THREE.MeshBasicMaterial({
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        colorWrite: false,
-      }),
-    );
-    entrance.name = 'ToiletEntranceInteraction';
-    entrance.position.set(center.x, localBounds.min.y + size.y * 0.48, localBounds.max.z + 0.14);
-    entrance.userData.interaction = { kind: 'toilet' };
-    entrance.userData.interactionFacing = [0, 0, 1];
-    entrance.userData.interactionRoot = entrance;
-    enableInteractionLayer(entrance);
-    toilet.add(entrance);
-
-    toilet.position.set(x, terrainHeight(x, z), z);
-    scene.add(toilet);
-    toilet.updateMatrixWorld(true);
-    this.addCollider({ box: new THREE.Box3().setFromObject(cabin) });
-    this.interactables.push({ object: entrance, label: 'Wejdź do toi-toia', action: 'toilet' });
   }
 
   /** Umieszcza kompletny model flaga2, który zawiera już poprawną flagę i konstrukcję. */

@@ -60,15 +60,14 @@ describe('FestivalWeather', () => {
 
   it('toggles rain and updates opacity and audio gain', () => {
     const scene = new THREE.Scene();
-    const { ctx, gainNode } = createMockAudioContext();
+    const { ctx } = createMockAudioContext();
     const weather = new FestivalWeather(scene, { particleCount: 100, audioContext: ctx });
 
     const next = weather.toggleRain();
     expect(next).toBe('rain');
     expect(weather.isRaining).toBe(true);
 
-    const rainPoints = scene.getObjectByName('FestivalWeather_Rain')
-      ?.children[0] as THREE.Points;
+    const rainPoints = scene.getObjectByName('FestivalWeather_Rain')?.children[0] as THREE.Points;
     const mat = rainPoints.material as THREE.PointsMaterial;
     expect(mat.opacity).toBeGreaterThan(0);
 

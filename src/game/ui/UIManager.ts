@@ -134,6 +134,10 @@ export class UIManager {
     setHidden('#effect-warning', state !== 'effect-warning');
     setHidden('#use-sequence', state !== 'using-item');
     setHidden('#crosshair', state !== 'playing');
+    if (!gameVisible) {
+      setHidden('#festival-guide', true);
+      setHidden('#festival-map', true);
+    }
 
     const inputMode = mobileInput ? 'mobile' : 'desktop';
     const setText = (selector: string, text: string) => {
@@ -220,6 +224,79 @@ export class UIManager {
     );
   }
 
+  /** Przełącza widoczność modala Przewodnika Festiwalowicza */
+  toggleGuide(open?: boolean): boolean {
+    const guide = this.qs<HTMLElement>('#festival-guide');
+    if (!guide) return false;
+    const shouldOpen = open !== undefined ? open : guide.hidden;
+    guide.hidden = !shouldOpen;
+    if (shouldOpen) {
+      const activeTab = document?.querySelector?.('.guide-tab-btn.active');
+      if (!activeTab) {
+        this.switchGuideTab('controls');
+      }
+    }
+    return !guide.hidden;
+  }
+
+  isGuideOpen(): boolean {
+    const guide = this.qs<HTMLElement>('#festival-guide');
+    return guide ? !guide.hidden : false;
+  }
+
+  /** Przełącza aktywną zakładkę w przewodniku */
+  switchGuideTab(tabId: string): void {
+    if (typeof document === 'undefined') return;
+    const tabButtons = document.querySelectorAll<HTMLButtonElement>('.guide-tab-btn');
+    tabButtons.forEach((btn) => {
+      const match = btn.dataset.tab === tabId;
+      btn.classList.toggle('active', match);
+      btn.setAttribute('aria-selected', String(match));
+    });
+
+    const panels = document.querySelectorAll<HTMLElement>('.guide-panel');
+    panels.forEach((panel) => {
+      const match = panel.id === `guide-panel-${tabId}`;
+      panel.hidden = !match;
+      panel.classList.toggle('active', match);
+    });
+  }
+
+  /** Inicjalizuje nasłuchiwacze kliknięć w zakładki przewodnika */
+  initGuideTabs(): void {
+    if (typeof document === 'undefined') return;
+    const tabButtons = document.querySelectorAll<HTMLButtonElement>('.guide-tab-btn');
+    tabButtons.forEach((btn) => {
+      btn.onclick = () => {
+        const tab = btn.dataset.tab;
+        if (tab) this.switchGuideTab(tab);
+      };
+    });
+
+    const closeBtn = this.qs<HTMLButtonElement>('#guide-close');
+    if (closeBtn) {
+      closeBtn.onclick = () => this.toggleGuide(false);
+    }
+    const okBtn = this.qs<HTMLButtonElement>('#guide-ok-btn');
+    if (okBtn) {
+      okBtn.onclick = () => this.toggleGuide(false);
+    }
+  }
+
+  /** Przełącza widoczność modala Mapy Festiwalu */
+  toggleMap(open?: boolean): boolean {
+    const map = this.qs<HTMLElement>('#festival-map');
+    if (!map) return false;
+    const shouldOpen = open !== undefined ? open : map.hidden;
+    map.hidden = !shouldOpen;
+    return !map.hidden;
+  }
+
+  isMapOpen(): boolean {
+    const map = this.qs<HTMLElement>('#festival-map');
+    return map ? !map.hidden : false;
+  }
+
   dispose(): void {
     clearTimeout(this.toastTimer);
     const prompt = this.qs<HTMLElement>('#prompt');
@@ -233,5 +310,9 @@ export class UIManager {
       lsdOverlay.hidden = true;
       lsdOverlay.style.removeProperty('--lsd-strength');
     }
+    const guide = this.qs<HTMLElement>('#festival-guide');
+    if (guide) guide.hidden = true;
+    const map = this.qs<HTMLElement>('#festival-map');
+    if (map) map.hidden = true;
   }
 }

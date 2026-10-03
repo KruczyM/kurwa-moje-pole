@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   FestivalMap,
-  FESTIVAL_MAP_BOUNDS,
   FESTIVAL_MAP_LANDMARKS,
   type PlayerMapState,
   type RemotePlayerMarker,
