@@ -36,6 +36,35 @@ export interface MapBounds {
   maxZ: number;
 }
 
+export interface TentMarker {
+  x: number;
+  z: number;
+  label: string;
+}
+
+/** Oblicza kierunek geograficzny w układzie współrzędnych gry (+X wschód, -X zachód, -Z północ, +Z południe) */
+export function calculateBearingText(
+  fromX: number,
+  fromZ: number,
+  toX: number,
+  toZ: number,
+): string {
+  const dx = toX - fromX;
+  const dz = toZ - fromZ;
+  // Kąt 0 = północ (-Z), Pi/2 = wschód (+X)
+  const angle = Math.atan2(dx, -dz);
+  const deg = ((angle * 180) / Math.PI + 360) % 360;
+
+  if (deg >= 337.5 || deg < 22.5) return 'północ (N)';
+  if (deg >= 22.5 && deg < 67.5) return 'północny-wschód (NE)';
+  if (deg >= 67.5 && deg < 112.5) return 'wschód (E)';
+  if (deg >= 112.5 && deg < 157.5) return 'południowy-wschód (SE)';
+  if (deg >= 157.5 && deg < 202.5) return 'południe (S)';
+  if (deg >= 202.5 && deg < 247.5) return 'południowy-zachód (SW)';
+  if (deg >= 247.5 && deg < 292.5) return 'zachód (W)';
+  return 'północny-zachód (NW)';
+}
+
 export const FESTIVAL_MAP_BOUNDS: MapBounds = {
   minX: -160,
   maxX: 280,
@@ -145,20 +174,93 @@ export const FESTIVAL_MAP_LANDMARKS: readonly MapLandmark[] = [
 ] as const;
 
 export class FestivalMap {
+  private static readonly STORAGE_KEY = 'festival_my_tent_marker';
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
   private padding = 40;
   private bounds = FESTIVAL_MAP_BOUNDS;
+  private tentMarker: TentMarker = { x: 0, z: 0, label: 'Mój Namiot' };
 
   constructor(canvas?: HTMLCanvasElement | null) {
+    this.loadTentMarker();
     if (canvas) {
       this.attachCanvas(canvas);
+    }
+  }
+
+  /** Zwraca aktualny znacznik namiotu */
+  getTentMarker(): TentMarker {
+    return { ...this.tentMarker };
+  }
+
+  /** Ustawia i zapisuje znacznik namiotu gracza */
+  setTentMarker(x: number, z: number, label = 'Mój Namiot'): void {
+    // Ograniczamy do granic mapy
+    const clampedX = Math.max(this.bounds.minX, Math.min(this.bounds.maxX, x));
+    const clampedZ = Math.max(this.bounds.minZ, Math.min(this.bounds.maxZ, z));
+    this.tentMarker = { x: clampedX, z: clampedZ, label };
+    this.saveTentMarker();
+  }
+
+  /** Resetuje znacznik namiotu do domyślnego głównego obozu (0, 0) */
+  resetTentMarker(): void {
+    this.tentMarker = { x: 0, z: 0, label: 'Główny Obóz' };
+    this.saveTentMarker();
+  }
+
+  private loadTentMarker(): void {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const stored = window.localStorage.getItem(FestivalMap.STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (
+            typeof parsed?.x === 'number' &&
+            typeof parsed?.z === 'number' &&
+            !Number.isNaN(parsed.x) &&
+            !Number.isNaN(parsed.z)
+          ) {
+            this.tentMarker = {
+              x: parsed.x,
+              z: parsed.z,
+              label: typeof parsed.label === 'string' ? parsed.label : 'Mój Namiot',
+            };
+          }
+        }
+      }
+    } catch {
+      // Ignorujemy błędy parsowania lub prywatnego trybu przeglądarki
+    }
+  }
+
+  private saveTentMarker(): void {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(
+          FestivalMap.STORAGE_KEY,
+          JSON.stringify(this.tentMarker),
+        );
+      }
+    } catch {
+      // Bezpieczny fallback w przypadku odmowy zapisu w localStorage
     }
   }
 
   attachCanvas(canvas: HTMLCanvasElement): void {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
+
+    // Obsługa kliknięcia lub dotknięcia na mapie do przestawienia znacznika własnego namiotu
+    canvas.onclick = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const canvasX = (e.clientX - rect.left) * scaleX;
+      const canvasY = (e.clientY - rect.top) * scaleY;
+      const world = this.canvasToWorld(canvasX, canvasY);
+      this.setTentMarker(world.x, world.z);
+    };
   }
 
   /**
@@ -237,13 +339,16 @@ export class FestivalMap {
     // 4. Punkty orientacyjne i etykiety
     this.drawLandmarks(ctx, w, h);
 
+    // 4.5. Znacznik własnego namiotu gracza („Gdzie jest mój namiot?” - B8)
+    this.drawTentMarker(ctx, player, w, h, timestamp);
+
     // 5. Zdalni gracze w sieci
     this.drawRemotePlayers(ctx, remotePlayers, w, h, timestamp);
 
     // 6. Gracz lokalny (pulsujący punkt + stożek patrzenia)
     this.drawPlayer(ctx, player, w, h, timestamp);
 
-    // 7. Mini skala i współrzędne w narożniku
+    // 7. Mini skala, kompas do namiotu i współrzędne w narożniku
     this.drawHudOverlay(ctx, player, w, h);
   }
 
@@ -457,24 +562,81 @@ export class FestivalMap {
     ctx.fillText('Ty', p.x, p.y - 12);
   }
 
+  private drawTentMarker(
+    ctx: CanvasRenderingContext2D,
+    player: PlayerMapState,
+    w: number,
+    h: number,
+    timestamp: number,
+  ): void {
+    const p = this.worldToCanvas(player.x, player.z, w, h);
+    const t = this.worldToCanvas(this.tentMarker.x, this.tentMarker.z, w, h);
+
+    // Linia prowadząca od gracza do namiotu (subtelna przerywana neonowo-żółta linia)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 230, 80, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(t.x, t.y);
+    ctx.stroke();
+    ctx.restore();
+
+    // Pulsujący okrąg wokół namiotu
+    const pulse = 10 + Math.sin(timestamp * 0.006) * 3;
+    ctx.strokeStyle = 'rgba(157, 255, 78, 0.85)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, pulse, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Centralny punkt namiotu
+    ctx.fillStyle = '#9dff4e';
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Ikona i etykieta namiotu z odległością
+    const dist = Math.hypot(this.tentMarker.x - player.x, this.tentMarker.z - player.z);
+    ctx.fillStyle = '#9dff4e';
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`⛺ ${this.tentMarker.label} (${dist.toFixed(0)}m)`, t.x, t.y - 12);
+  }
+
   private drawHudOverlay(
     ctx: CanvasRenderingContext2D,
     player: PlayerMapState,
     w: number,
     h: number,
   ): void {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.fillRect(10, h - 38, 220, 28);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.strokeRect(10, h - 38, 220, 28);
+    const dist = Math.hypot(this.tentMarker.x - player.x, this.tentMarker.z - player.z);
+    const bearing = calculateBearingText(player.x, player.z, this.tentMarker.x, this.tentMarker.z);
+
+    const hudW = Math.min(w - 20, 520);
+    const hudH = 46;
+    ctx.fillStyle = 'rgba(10, 10, 18, 0.85)';
+    ctx.fillRect(10, h - hudH - 10, hudW, hudH);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(10, h - hudH - 10, hudW, hudH);
+
+    ctx.fillStyle = '#9dff4e';
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(
+      `⛺ Cel: ${this.tentMarker.label} — ${dist.toFixed(0)} m na ${bearing}`,
+      20,
+      h - hudH + 8,
+    );
 
     ctx.fillStyle = '#cbd5e1';
     ctx.font = '10px monospace';
-    ctx.textAlign = 'left';
     ctx.fillText(
-      `X: ${player.x.toFixed(1)}m | Z: ${player.z.toFixed(1)}m | Broczyno 2026`,
-      18,
-      h - 20,
+      `Pozycja: X: ${player.x.toFixed(1)}m, Z: ${player.z.toFixed(1)}m | Kliknij na mapie, by zmienić cel`,
+      20,
+      h - 18,
     );
   }
 }

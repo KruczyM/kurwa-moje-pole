@@ -15,9 +15,17 @@ export function sampleWheelGrassMask(x: number, z: number) {
   return THREE.MathUtils.smoothstep(distance, 0, 0.3);
 }
 
+import {
+  sampleWheelSchedule,
+  type WheelScheduleSample,
+  WHEEL_CYCLE_SECONDS,
+} from './wheelSchedule';
+
 /** Only transforms an existing cached model; scene lifecycle owns its GPU resources. */
 export class FestivalWheel {
   private angle = 0;
+  private scheduleTime = 0;
+  private scheduleDirty = false;
   private disposed = false;
   private rotation = new THREE.Quaternion();
   private readonly baseRotation: THREE.Quaternion;
@@ -33,9 +41,31 @@ export class FestivalWheel {
     this.gondolas = gondolas.map((object) => ({ object, baseRotation: object.quaternion.clone() }));
   }
 
-  update(deltaSeconds: number, reduceMotion = false) {
-    if (this.disposed || reduceMotion || !Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
-    this.angle = (this.angle + (deltaSeconds / WHEEL_REVOLUTION_SECONDS) * Math.PI * 2) % (Math.PI * 2);
+  getAngle(): number {
+    return this.angle;
+  }
+
+  getScheduleTime(): number {
+    return this.scheduleTime;
+  }
+
+  getScheduleSample(): WheelScheduleSample {
+    return sampleWheelSchedule(this.scheduleTime);
+  }
+
+  /** Ustawia bezwzględny czas harmonogramu atrakcji (np. z serwera lub przy starcie przejażdżki) */
+  setScheduleTime(timeSeconds: number): void {
+    if (this.disposed || !Number.isFinite(timeSeconds) || timeSeconds < 0) return;
+    this.scheduleTime = timeSeconds;
+    this.scheduleDirty = true;
+    const sample = sampleWheelSchedule(this.scheduleTime);
+    this.applyAngle(sample.angle);
+  }
+
+  /** Zastosowuje kąt obrotu do rotora i przeciw-obrót do każdej gondoli */
+  applyAngle(angle: number): void {
+    if (this.disposed) return;
+    this.angle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
     this.rotation.setFromAxisAngle(AXIS, this.angle);
     this.rotor.quaternion.copy(this.baseRotation).multiply(this.rotation);
     this.rotation.invert();
@@ -44,8 +74,23 @@ export class FestivalWheel {
     }
   }
 
+  /**
+   * Aktualizuje pozycję koła w oparciu o harmonogram i upływ czasu deltaSeconds.
+   * Jeśli setScheduleTime zostało wywołane w tej klatce, pomija dodanie deltaSeconds.
+   */
+  update(deltaSeconds: number, reduceMotion = false): void {
+    if (this.disposed || reduceMotion || !Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
+    if (this.scheduleDirty) {
+      this.scheduleDirty = false;
+      return;
+    }
+    this.scheduleTime += deltaSeconds;
+    const sample = sampleWheelSchedule(this.scheduleTime);
+    this.applyAngle(sample.angle);
+  }
+
   /** Stop updates; shared meshes are released once by the existing scene disposer. */
-  dispose() {
+  dispose(): void {
     this.disposed = true;
     this.gondolas.length = 0;
   }

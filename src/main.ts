@@ -398,32 +398,100 @@ window.addEventListener(
 );
 
 // Przewodnik festiwalowy i Mapa
+const GUIDE_TABS = ['controls', 'activities', 'interactions', 'items', 'dialogue'] as const;
+
+function switchGuideTabGlobal(tabId: string): void {
+  const currentIndex = GUIDE_TABS.indexOf(tabId as any);
+  const validIndex = currentIndex >= 0 ? currentIndex : 0;
+  const activeTab = GUIDE_TABS[validIndex];
+
+  document.querySelectorAll<HTMLButtonElement>('.guide-tab-btn').forEach((btn) => {
+    const match = btn.dataset.tab === activeTab;
+    btn.classList.toggle('active', match);
+    btn.setAttribute('aria-selected', String(match));
+  });
+
+  document.querySelectorAll<HTMLElement>('.guide-panel').forEach((panel) => {
+    const match = panel.id === `guide-panel-${activeTab}`;
+    panel.hidden = !match;
+    panel.classList.toggle('active', match);
+  });
+
+  const stepIndicator = document.querySelector<HTMLElement>('#guide-step-indicator');
+  if (stepIndicator) {
+    stepIndicator.textContent = `Krok ${validIndex + 1} z ${GUIDE_TABS.length}`;
+  }
+
+  const prevBtn = document.querySelector<HTMLButtonElement>('#guide-prev-btn');
+  if (prevBtn) {
+    prevBtn.disabled = validIndex === 0;
+  }
+
+  const nextBtn = document.querySelector<HTMLButtonElement>('#guide-next-btn');
+  if (nextBtn) {
+    nextBtn.textContent = validIndex === GUIDE_TABS.length - 1 ? 'Gotowe ✓' : 'Dalej →';
+  }
+}
+
+function toggleGuideGlobal(open?: boolean): void {
+  if (game) {
+    game.toggleGuide(open);
+  } else {
+    const guideEl = document.querySelector<HTMLElement>('#festival-guide');
+    if (!guideEl) return;
+    const shouldOpen = open !== undefined ? open : guideEl.hidden;
+    guideEl.hidden = !shouldOpen;
+    if (shouldOpen) {
+      switchGuideTabGlobal('controls');
+    }
+  }
+}
+
+// Inicjalizacja zakładek i nawigacji przewodnika na poziomie dokumentu
+document.querySelectorAll<HTMLButtonElement>('.guide-tab-btn').forEach((btn) => {
+  btn.onclick = () => {
+    const tab = btn.dataset.tab;
+    if (tab) switchGuideTabGlobal(tab);
+  };
+});
+
+const guidePrevBtn = document.querySelector<HTMLButtonElement>('#guide-prev-btn');
+if (guidePrevBtn) {
+  guidePrevBtn.onclick = () => {
+    const activeBtn = document.querySelector<HTMLButtonElement>('.guide-tab-btn.active');
+    const currentTab = activeBtn?.dataset.tab;
+    const currentIndex = GUIDE_TABS.indexOf(currentTab as any);
+    if (currentIndex > 0) {
+      switchGuideTabGlobal(GUIDE_TABS[currentIndex - 1]);
+    }
+  };
+}
+
+const guideNextBtn = document.querySelector<HTMLButtonElement>('#guide-next-btn');
+if (guideNextBtn) {
+  guideNextBtn.onclick = () => {
+    const activeBtn = document.querySelector<HTMLButtonElement>('.guide-tab-btn.active');
+    const currentTab = activeBtn?.dataset.tab;
+    const currentIndex = GUIDE_TABS.indexOf(currentTab as any);
+    if (currentIndex >= 0 && currentIndex < GUIDE_TABS.length - 1) {
+      switchGuideTabGlobal(GUIDE_TABS[currentIndex + 1]);
+    } else {
+      toggleGuideGlobal(false);
+    }
+  };
+}
+
 const startGuideBtn = document.querySelector<HTMLButtonElement>('#start-guide-btn');
 if (startGuideBtn) {
-  startGuideBtn.onclick = () => {
-    const guideEl = document.querySelector<HTMLElement>('#festival-guide');
-    if (guideEl) guideEl.hidden = false;
-  };
+  startGuideBtn.onclick = () => toggleGuideGlobal(true);
 }
 const guideCloseBtn = document.querySelector<HTMLButtonElement>('#guide-close');
 if (guideCloseBtn) {
-  guideCloseBtn.onclick = () => {
-    if (game) game.toggleGuide(false);
-    else {
-      const guideEl = document.querySelector<HTMLElement>('#festival-guide');
-      if (guideEl) guideEl.hidden = true;
-    }
-  };
+  guideCloseBtn.onclick = () => toggleGuideGlobal(false);
 }
 const guideOkBtn = document.querySelector<HTMLButtonElement>('#guide-ok-btn');
 if (guideOkBtn) {
-  guideOkBtn.onclick = () => {
-    if (game) game.toggleGuide(false);
-    else {
-      const guideEl = document.querySelector<HTMLElement>('#festival-guide');
-      if (guideEl) guideEl.hidden = true;
-    }
-  };
+  guideOkBtn.onclick = () => toggleGuideGlobal(false);
 }
 const mapCloseBtn = document.querySelector<HTMLButtonElement>('#map-close');
 if (mapCloseBtn) {
@@ -431,8 +499,40 @@ if (mapCloseBtn) {
 }
 const openGuideBtn = document.querySelector<HTMLButtonElement>('#open-guide-btn');
 if (openGuideBtn) {
-  openGuideBtn.onclick = () => game?.toggleGuide(true);
+  openGuideBtn.onclick = () => toggleGuideGlobal(true);
 }
+
+// Globalny nasłuch klawiszy Escape / H na ekranie startowym oraz w UI
+window.addEventListener('keydown', (event) => {
+  const guideEl = document.querySelector<HTMLElement>('#festival-guide');
+  const isGuideOpen = guideEl ? !guideEl.hidden : false;
+  const isInputFocused =
+    document.activeElement instanceof HTMLInputElement ||
+    document.activeElement instanceof HTMLTextAreaElement;
+
+  if (event.key === 'Escape') {
+    if (isGuideOpen) {
+      toggleGuideGlobal(false);
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    const mapEl = document.querySelector<HTMLElement>('#festival-map');
+    if (mapEl && !mapEl.hidden) {
+      game?.toggleMap(false);
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+  }
+
+  if ((event.key === 'h' || event.key === 'H' || event.key === 'F1') && !isInputFocused) {
+    if (!game) {
+      toggleGuideGlobal();
+      event.preventDefault();
+    }
+  }
+});
 const openMapBtn = document.querySelector<HTMLButtonElement>('#open-map-btn');
 if (openMapBtn) {
   openMapBtn.onclick = () => game?.toggleMap(true);

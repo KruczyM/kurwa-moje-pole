@@ -80,12 +80,16 @@ describe('FestivalMap', () => {
       arc: vi.fn(),
       closePath: vi.fn(),
       fillText: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      setLineDash: vi.fn(),
     } as unknown as CanvasRenderingContext2D;
 
     const mockCanvas = {
       width: 800,
       height: 800,
       getContext: vi.fn().mockReturnValue(mockCtx),
+      getBoundingClientRect: vi.fn().mockReturnValue({ width: 800, height: 800, left: 0, top: 0 }),
     } as unknown as HTMLCanvasElement;
 
     map.attachCanvas(mockCanvas);
@@ -99,5 +103,42 @@ describe('FestivalMap', () => {
     expect(() => map.render(player, remote, 1234)).not.toThrow();
     expect(mockCtx.fillRect).toHaveBeenCalled();
     expect(mockCtx.fillText).toHaveBeenCalled();
+  });
+
+  it('correctly calculates cardinal directions (calculateBearingText)', async () => {
+    const { calculateBearingText } = await import('./FestivalMap');
+    // North is -Z
+    expect(calculateBearingText(0, 0, 0, -50)).toContain('N');
+    // East is +X
+    expect(calculateBearingText(0, 0, 50, 0)).toContain('E');
+    // South is +Z
+    expect(calculateBearingText(0, 0, 0, 50)).toContain('S');
+    // West is -X
+    expect(calculateBearingText(0, 0, -50, 0)).toContain('W');
+    // Northeast is +X, -Z
+    expect(calculateBearingText(0, 0, 50, -50)).toContain('NE');
+    // Southwest is -X, +Z
+    expect(calculateBearingText(0, 0, -50, 50)).toContain('SW');
+  });
+
+  it('manages personal tent marker position and bounds clamping', () => {
+    const map = new FestivalMap();
+    expect(map.getTentMarker().label).toBeTruthy();
+
+    map.setTentMarker(42, -15, 'Mój Zielony Namiot');
+    const marker = map.getTentMarker();
+    expect(marker.x).toBe(42);
+    expect(marker.z).toBe(-15);
+    expect(marker.label).toBe('Mój Zielony Namiot');
+
+    // Clamps out of bounds
+    map.setTentMarker(9999, -9999);
+    const clamped = map.getTentMarker();
+    expect(clamped.x).toBeLessThanOrEqual(280);
+    expect(clamped.z).toBeGreaterThanOrEqual(-100);
+
+    map.resetTentMarker();
+    expect(map.getTentMarker().x).toBe(0);
+    expect(map.getTentMarker().z).toBe(0);
   });
 });

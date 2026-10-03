@@ -1004,6 +1004,26 @@
   flex: 1;
   overflow-y: auto;
   padding: 24px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(157, 255, 78, 0.45) rgba(255, 255, 255, 0.05);
+}
+
+.guide-content-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.guide-content-area::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.guide-content-area::-webkit-scrollbar-thumb {
+  background: rgba(157, 255, 78, 0.35);
+  border-radius: 4px;
+}
+
+.guide-content-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(157, 255, 78, 0.65);
 }
 
 .guide-panel[hidden] {
@@ -1291,9 +1311,57 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 24px;
   background: #120f1c;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.guide-nav-steps {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.guide-nav-btn {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.guide-nav-btn:hover:not(:disabled) {
+  background: rgba(157, 255, 78, 0.15);
+  border-color: #9dff4e;
+  color: #9dff4e;
+}
+
+.guide-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.guide-step-indicator {
+  font-size: 11px;
+  font-family: 'Space Mono', monospace;
+  color: #94a3b8;
+  padding: 0 4px;
+}
+
+.guide-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .guide-footer-tip {
@@ -1310,6 +1378,7 @@
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  min-height: 40px;
   transition: all 0.2s ease;
 }
 

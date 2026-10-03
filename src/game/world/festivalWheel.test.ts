@@ -153,6 +153,38 @@ describe('festival wheel model and animation', () => {
     }
   });
 
+  it('supports schedule synchronization and avoids double advancement within the same frame', async () => {
+    const source = await load();
+    const parent = new THREE.Group();
+    const wheel = placeFestivalWheel(parent, source, terrainHeight)!;
+    try {
+      // Ustawienie harmonogramu na postój dolny (t = 6s)
+      wheel.setScheduleTime(6);
+      expect(wheel.getScheduleTime()).toBe(6);
+      expect(wheel.getScheduleSample().phase).toBe('bottom');
+      expect(wheel.getScheduleSample().stopped).toBe(true);
+      expect(wheel.getAngle()).toBe(0);
+
+      // Wywołanie update w tej samej klatce nie przesuwa czasu podwójnie
+      wheel.update(1.0);
+      expect(wheel.getScheduleTime()).toBe(6);
+
+      // W kolejnej klatce update normalnie postępuje
+      wheel.update(1.0);
+      expect(wheel.getScheduleTime()).toBe(7);
+
+      // Przeskoczenie na szczyt (t = 50s)
+      wheel.setScheduleTime(50);
+      expect(wheel.getScheduleSample().phase).toBe('top');
+      expect(wheel.getScheduleSample().stopped).toBe(true);
+      expect(wheel.getAngle()).toBeCloseTo(Math.PI, 4);
+    } finally {
+      wheel.dispose();
+      parent.add(source.scene);
+      disposeObjectTree(parent);
+    }
+  });
+
   it('keeps its footprint outside tents/shop, suppresses deck grass and never adds a missing-model collider', async () => {
     const source = await load();
     const parent = new THREE.Group();

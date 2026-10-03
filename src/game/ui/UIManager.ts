@@ -244,27 +244,56 @@ export class UIManager {
     return guide ? !guide.hidden : false;
   }
 
+  public static readonly GUIDE_TAB_ORDER = [
+    'controls',
+    'activities',
+    'interactions',
+    'items',
+    'dialogue',
+  ] as const;
+
   /** Przełącza aktywną zakładkę w przewodniku */
   switchGuideTab(tabId: string): void {
     if (typeof document === 'undefined') return;
+    const tabs = UIManager.GUIDE_TAB_ORDER;
+    const currentIndex = tabs.indexOf(tabId as any);
+    const validIndex = currentIndex >= 0 ? currentIndex : 0;
+    const activeTab = tabs[validIndex];
+
     const tabButtons = document.querySelectorAll<HTMLButtonElement>('.guide-tab-btn');
     tabButtons.forEach((btn) => {
-      const match = btn.dataset.tab === tabId;
+      const match = btn.dataset.tab === activeTab;
       btn.classList.toggle('active', match);
       btn.setAttribute('aria-selected', String(match));
     });
 
     const panels = document.querySelectorAll<HTMLElement>('.guide-panel');
     panels.forEach((panel) => {
-      const match = panel.id === `guide-panel-${tabId}`;
+      const match = panel.id === `guide-panel-${activeTab}`;
       panel.hidden = !match;
       panel.classList.toggle('active', match);
     });
+
+    const stepIndicator = this.qs<HTMLElement>('#guide-step-indicator');
+    if (stepIndicator) {
+      stepIndicator.textContent = `Krok ${validIndex + 1} z ${tabs.length}`;
+    }
+
+    const prevBtn = this.qs<HTMLButtonElement>('#guide-prev-btn');
+    if (prevBtn) {
+      prevBtn.disabled = validIndex === 0;
+    }
+
+    const nextBtn = this.qs<HTMLButtonElement>('#guide-next-btn');
+    if (nextBtn) {
+      nextBtn.textContent = validIndex === tabs.length - 1 ? 'Gotowe ✓' : 'Dalej →';
+    }
   }
 
-  /** Inicjalizuje nasłuchiwacze kliknięć w zakładki przewodnika */
+  /** Inicjalizuje nasłuchiwacze kliknięć w zakładki i nawigację przewodnika */
   initGuideTabs(): void {
     if (typeof document === 'undefined') return;
+    const tabs = UIManager.GUIDE_TAB_ORDER;
     const tabButtons = document.querySelectorAll<HTMLButtonElement>('.guide-tab-btn');
     tabButtons.forEach((btn) => {
       btn.onclick = () => {
@@ -272,6 +301,32 @@ export class UIManager {
         if (tab) this.switchGuideTab(tab);
       };
     });
+
+    const prevBtn = this.qs<HTMLButtonElement>('#guide-prev-btn');
+    if (prevBtn) {
+      prevBtn.onclick = () => {
+        const activeBtn = document.querySelector<HTMLButtonElement>('.guide-tab-btn.active');
+        const currentTab = activeBtn?.dataset.tab;
+        const currentIndex = tabs.indexOf(currentTab as any);
+        if (currentIndex > 0) {
+          this.switchGuideTab(tabs[currentIndex - 1]);
+        }
+      };
+    }
+
+    const nextBtn = this.qs<HTMLButtonElement>('#guide-next-btn');
+    if (nextBtn) {
+      nextBtn.onclick = () => {
+        const activeBtn = document.querySelector<HTMLButtonElement>('.guide-tab-btn.active');
+        const currentTab = activeBtn?.dataset.tab;
+        const currentIndex = tabs.indexOf(currentTab as any);
+        if (currentIndex >= 0 && currentIndex < tabs.length - 1) {
+          this.switchGuideTab(tabs[currentIndex + 1]);
+        } else {
+          this.toggleGuide(false);
+        }
+      };
+    }
 
     const closeBtn = this.qs<HTMLButtonElement>('#guide-close');
     if (closeBtn) {

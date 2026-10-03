@@ -447,8 +447,15 @@
           </div>
 
           <div class="festival-guide-footer">
-            <span class="guide-footer-tip">Naciśnij <kbd>H</kbd> lub <kbd>Esc</kbd>, aby powrócić do gry.</span>
-            <button id="guide-ok-btn" type="button" class="btn-primary">ROZUMIEM, WRACAM NA POLE</button>
+            <div class="guide-nav-steps">
+              <button id="guide-prev-btn" type="button" class="guide-nav-btn" disabled>← Wstecz</button>
+              <span id="guide-step-indicator" class="guide-step-indicator">Krok 1 z 5</span>
+              <button id="guide-next-btn" type="button" class="guide-nav-btn">Dalej →</button>
+            </div>
+            <div class="guide-footer-actions">
+              <span class="guide-footer-tip">Naciśnij <kbd>H</kbd> lub <kbd>Esc</kbd>, aby zamknąć.</span>
+              <button id="guide-ok-btn" type="button" class="btn-primary">ROZUMIEM, WRACAM NA POLE</button>
+            </div>
           </div>
         </div>
       </section>

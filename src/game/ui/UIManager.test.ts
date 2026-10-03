@@ -94,6 +94,11 @@ describe('UIManager', () => {
       '#setting-matrix-quality',
       '#festival-guide',
       '#festival-map',
+      '#guide-step-indicator',
+      '#guide-prev-btn',
+      '#guide-next-btn',
+      '#guide-close',
+      '#guide-ok-btn',
     ];
 
     selectors.forEach((sel) => {
@@ -225,6 +230,31 @@ describe('UIManager', () => {
     expect(ui.toggleGuide(false)).toBe(false);
     expect(guide.hidden).toBe(true);
     expect(ui.isGuideOpen()).toBe(false);
+  });
+
+  it('updates step navigation indicator and buttons when switching tabs', () => {
+    const ui = new UIManager();
+    const indicator = elements.get('#guide-step-indicator')!;
+    const prevBtn = elements.get('#guide-prev-btn')!;
+    const nextBtn = elements.get('#guide-next-btn')!;
+
+    // Step 1: controls
+    ui.switchGuideTab('controls');
+    expect(indicator.textContent).toBe('Krok 1 z 5');
+    expect(prevBtn.disabled).toBe(true);
+    expect(nextBtn.textContent).toBe('Dalej →');
+
+    // Step 2: activities
+    ui.switchGuideTab('activities');
+    expect(indicator.textContent).toBe('Krok 2 z 5');
+    expect(prevBtn.disabled).toBe(false);
+    expect(nextBtn.textContent).toBe('Dalej →');
+
+    // Step 5: dialogue (last step)
+    ui.switchGuideTab('dialogue');
+    expect(indicator.textContent).toBe('Krok 5 z 5');
+    expect(prevBtn.disabled).toBe(false);
+    expect(nextBtn.textContent).toBe('Gotowe ✓');
   });
 
   it('toggles and queries festival map visibility', () => {
