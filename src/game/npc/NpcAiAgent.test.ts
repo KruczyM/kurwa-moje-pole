@@ -35,18 +35,16 @@ describe('NpcAiAgent', () => {
       }
     });
 
-    it('generates lore-accurate responses for extended heroes', () => {
-      const ambona = NpcAiAgent.generateResponse('Ambona', 'Zaraz będzie ciemno!');
-      expect(ambona.topic).toBe('ciemno');
-      expect(ambona.text.toUpperCase()).toContain('ZAMKNIJ SIĘ');
+    it('provides lore and identity for extended heroes', () => {
+      const ambona = NpcAiAgent.getPersona('Ambona');
+      expect(ambona.identity.some((line) => line.toLowerCase().includes('ambona') || line.toLowerCase().includes('kazalnicy') || line.toLowerCase().includes('ogłoszeń'))).toBe(true);
+      expect(ambona.festivalLore).toHaveProperty('ciemno');
 
-      const dziaslo = NpcAiAgent.generateResponse('Dziąsło', 'Kim jesteś?');
-      expect(dziaslo.topic).toBe('tozsamosc');
-      expect(dziaslo.text.toLowerCase()).toContain('jarocin');
+      const dziaslo = NpcAiAgent.getPersona('Dziąsło');
+      expect(dziaslo.identity.some((line) => line.toLowerCase().includes('jarocin'))).toBe(true);
 
-      const jeczmien = NpcAiAgent.generateResponse('Jęczmień', 'Gdzie jest piwo?');
-      expect(jeczmien.topic).toBe('piwo');
-      expect(jeczmien.text.toLowerCase()).toContain('chmiel');
+      const jeczmien = NpcAiAgent.getPersona('Jęczmień');
+      expect(jeczmien.identity.some((line) => line.toLowerCase().includes('chmiel') || line.toLowerCase().includes('piw'))).toBe(true);
     });
   });
 
@@ -72,18 +70,18 @@ describe('NpcAiAgent', () => {
       expect(mudMonster.voiceSettings.pitch).toBeLessThan(0.7); // deep mud rumble
     });
 
-    it('generates thematic responses for signature models', () => {
-      const alienReply = NpcAiAgent.generateResponse('050_blue_alien_girl', 'Jak ci się podoba błoto?');
-      expect(alienReply.topic).toBe('bloto');
-      expect(alienReply.text.toLowerCase()).toContain('błoto');
+    it('provides thematic lore and identity for signature models', () => {
+      const alien = NpcAiAgent.getPersona('050_blue_alien_girl');
+      expect(alien.identity.some((line) => line.toLowerCase().includes('kosmic') || line.toLowerCase().includes('gwiazd'))).toBe(true);
+      expect(alien.festivalLore).toHaveProperty('bloto');
 
-      const hotdogReply = NpcAiAgent.generateResponse('082_hotdog_girl', 'Co z tym piwem?');
-      expect(hotdogReply.topic).toBe('piwo');
-      expect(hotdogReply.text.toLowerCase()).toContain('hotdog');
+      const hotdog = NpcAiAgent.getPersona('082_hotdog_girl');
+      expect(hotdog.identity.some((line) => line.toLowerCase().includes('parówk') || line.toLowerCase().includes('gastronomii') || line.toLowerCase().includes('hotdog'))).toBe(true);
+      expect(hotdog.festivalLore).toHaveProperty('piwo');
 
-      const knightReply = NpcAiAgent.generateResponse('084_knight_cosplay', 'Czyje to pole?');
-      expect(knightReply.topic).toBe('pole');
-      expect(knightReply.text.toLowerCase()).toContain('pole');
+      const knight = NpcAiAgent.getPersona('084_knight_cosplay');
+      expect(knight.identity.some((line) => line.toLowerCase().includes('rycerz') || line.toLowerCase().includes('zbroi'))).toBe(true);
+      expect(knight.festivalLore).toHaveProperty('pole');
     });
   });
 
@@ -152,116 +150,49 @@ describe('NpcAiAgent', () => {
     });
   });
 
-  describe('General Dialogue & Core Lore Responses', () => {
-    it('responds with iconic festival phrase to "zaraz będzie ciemno"', () => {
-      const response = NpcAiAgent.generateResponse('Pień', 'Zaraz będzie ciemno!');
-      expect(response.topic).toBe('ciemno');
-      expect(response.text.toUpperCase()).toContain('ZAMKNIJ SIĘ');
-    });
-
-    it('answers questions about camp territory and field ownership', () => {
-      const response = NpcAiAgent.generateResponse('Pień', 'Czyje to pole?');
-      expect(response.topic).toBe('pole');
-      expect(response.text.toLowerCase()).toContain('pole');
-    });
-
-    it('responds to inquiries about beer and drinks', () => {
-      const response = NpcAiAgent.generateResponse('Gruczoł', 'Gdzie dostanę zimne piwo?');
-      expect(response.topic).toBe('piwo');
-      expect(response.text.length).toBeGreaterThan(10);
-    });
-
-    it('responds to inquiries about mud and puddles', () => {
-      const response = NpcAiAgent.generateResponse('Krwiak', 'Jak tam błoto pod sceną?');
-      expect(response.topic).toBe('bloto');
-      expect(response.text.length).toBeGreaterThan(10);
-    });
-
-    it('responds to inquiries about toilets and sanitation', () => {
-      const response = NpcAiAgent.generateResponse('Zawór', 'Gdzie jest kibel albo toi toi?');
-      expect(response.topic).toBe('kibel');
-      expect(response.text.toLowerCase()).toContain('toi');
-    });
-
-    it('provides identity description when asked "kim jesteś"', () => {
-      const response = NpcAiAgent.generateResponse('Amper', 'Kim jesteś i czym się zajmujesz?');
-      expect(response.topic).toBe('tozsamosc');
-      expect(response.text.toLowerCase()).toContain('amper');
-    });
-
-    it('returns a safe in-character contextual fallback for arbitrary unknown questions', () => {
-      const response = NpcAiAgent.generateResponse(
-        'Antena',
-        'Czy fizyka kwantowa tłumaczy rezonans akustyczny?',
-      );
-      expect(response.topic).toBe('ogolne');
-      expect(response.text).toContain('fizyka kwantowa');
-      expect(response.voiceSettings.pitch).toBeGreaterThan(1.0); // Antena's pitch
-    });
-
-    it('handles empty input gracefully with a friendly greeting', () => {
-      const response = NpcAiAgent.generateResponse('Pień', '');
-      expect(response.topic).toBe('powitanie');
-      expect(response.text.length).toBeGreaterThan(3);
-    });
-
-    it('seamlessly handles dialogue continuation when responding to sector 3 night rumor', () => {
-      const response = NpcAiAgent.generateResponse('Szerszeń', 'nie słyszałem, a co się tam działo ?', {
-        lastNpcMessage: 'Słyszałeś co się działo w nocy w sektorze trzecim?!',
-      });
-      expect(response.topic).toBe('plotki');
-      expect(response.text.toLowerCase()).toContain('traktorkiem');
-      expect(response.text).not.toContain('Pytasz o');
-    });
-
-    it('acknowledges in-character when player complains about missing the answer', () => {
-      const response = NpcAiAgent.generateResponse('Szerszeń', 'nie odpowiedziałeś mi na pytanie');
-      expect(response.text.toLowerCase()).toContain('nie unoś się');
-      expect(response.text).not.toContain('Pytasz o');
-      expect(response.text).not.toContain('"');
-    });
-
-    it('handles Chlebak food inquiry continuation', () => {
-      const hungry = NpcAiAgent.generateResponse('Chlebak', 'tak, daj kabanosa', {
-        lastNpcMessage: 'Głodny? W moim chlebaku zawsze znajdzie się kabanos albo pasztet!',
-      });
-      expect(hungry.text.toLowerCase()).toContain('kabanosa');
-
-      const full = NpcAiAgent.generateResponse('Chlebak', 'nie dzięki, najadłem się', {
-        lastNpcMessage: 'Głodny? W moim chlebaku zawsze znajdzie się kabanos albo pasztet!',
-      });
-      expect(full.text.toLowerCase()).toContain('szanuję');
-    });
-
-    it('handles Dziąsło Jarocin 88 lore continuation', () => {
-      const response = NpcAiAgent.generateResponse('Dziąsło', 'opowiedz mi jak to było', {
-        lastNpcMessage: 'Siema młody! Zęby może straciłem w Jarocinie, ale serce do punka bije!',
-      });
-      expect(response.text).toContain("'88");
-      expect(response.text.toLowerCase()).toContain('glanem');
-    });
-
-    it('answers festival navigation queries accurately without quoting', () => {
-      const stage = NpcAiAgent.generateResponse('Pień', 'Gdzie jest Duża Scena?');
-      expect(stage.topic).toBe('koncert');
-      expect(stage.text.toLowerCase()).toContain('duża scena');
-
-      const asp = NpcAiAgent.generateResponse('Pień', 'Gdzie jest ASP?');
-      expect(asp.text.toLowerCase()).toContain('akademia sztuk przepięknych');
-    });
-
-    it('never produces the rigid quotation echo pattern', () => {
-      const testInputs = [
-        'nie słyszałem, a co się tam działo ?',
-        'nie odpowiedziałeś mi na pytanie',
-        'jaka jest dzisiaj pogoda na polu?',
-        'czy to jest kosmos?',
-        'totalnie losowy ciag slow festiwalowych',
-      ];
-      for (const input of testInputs) {
-        const res = NpcAiAgent.generateResponse('Szerszeń', input);
-        expect(res.text).not.toContain('Pytasz o "');
+  describe('Persona Knowledge & System Prompt Context for Gemini', () => {
+    it('provides rich festival lore mapping for canonical characters', () => {
+      const canonicals = ['Pień', 'Amper', 'Antena', 'Gruczoł', 'Klątwa', 'Krwiak', 'Pierścień', 'Zawór'];
+      for (const name of canonicals) {
+        const persona = NpcAiAgent.getPersona(name);
+        expect(persona.festivalLore).toBeDefined();
+        expect(Object.keys(persona.festivalLore || {}).length).toBeGreaterThanOrEqual(1);
+        expect(persona.greetings.length).toBeGreaterThan(0);
+        expect(persona.identity.length).toBeGreaterThan(0);
+        expect(persona.voiceSettings).toHaveProperty('pitch');
+        expect(persona.voiceSettings).toHaveProperty('rate');
       }
+    });
+
+    it('ensures Pień possesses camp lore and field ownership authority', () => {
+      const pien = NpcAiAgent.getPersona('Pień');
+      expect(pien.title).toContain('Gospodarz');
+      expect(pien.identity.some((line) => line.toLowerCase().includes('pole'))).toBe(true);
+      expect(pien.festivalLore?.ciemno?.[0].toUpperCase()).toContain('ZAMKNIJ SIĘ');
+    });
+
+    it('ensures Zawór maintains sanitation and toi-toi expertise', () => {
+      const zawor = NpcAiAgent.getPersona('Zawór');
+      expect(zawor.title).toContain('Hydraulik');
+      expect(zawor.identity.some((line) => line.toLowerCase().includes('toi') || line.toLowerCase().includes('sanit'))).toBe(true);
+    });
+
+    it('ensures Szerszeń maintains festival gossip persona and night hooks', () => {
+      const szerszen = NpcAiAgent.getPersona('Szerszeń');
+      expect(szerszen.title).toContain('Komentator');
+      expect(szerszen.greetings.some((g) => g.toLowerCase().includes('plotk') || g.toLowerCase().includes('sektor'))).toBe(true);
+    });
+
+    it('ensures Amper maintains camp electrical power lore', () => {
+      const amper = NpcAiAgent.getPersona('Amper');
+      expect(amper.title).toContain('Elektryk');
+      expect(amper.identity.some((id) => id.toLowerCase().includes('agregat') || id.toLowerCase().includes('prąd') || id.toLowerCase().includes('kable'))).toBe(true);
+    });
+
+    it('ensures Chlebak possesses camp provisions lore', () => {
+      const chlebak = NpcAiAgent.getPersona('Chlebak');
+      expect(chlebak.title).toContain('Zaopatrzeniowiec');
+      expect(chlebak.greetings.some((g) => g.toLowerCase().includes('kabanos') || g.toLowerCase().includes('pasztet'))).toBe(true);
     });
   });
 });

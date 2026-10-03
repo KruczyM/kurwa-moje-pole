@@ -324,7 +324,7 @@ export class NpcVoiceCoordinator {
       this.geminiClearButton.onclick = () => {
         geminiNpcService.setApiKey('');
         if (this.geminiInputElement) this.geminiInputElement.value = '';
-        this.setGeminiStatus('Klucz usunięty. Aktywny wbudowany fallback.');
+        this.setGeminiStatus('Klucz usunięty. Rozmowy wymagają klucza Gemini.');
         this.updateGeminiIndicator();
       };
     }
@@ -371,7 +371,7 @@ export class NpcVoiceCoordinator {
     if (geminiNpcService.hasApiKey()) {
       this.setGeminiStatus('✓ Klucz aktywny (zapisany lokalnie)');
     } else {
-      this.setGeminiStatus('Brak klucza (używany jest wbudowany model lokalny)');
+      this.setGeminiStatus('Brak klucza API Gemini (wymagany do rozmów z NPC)');
     }
 
     // Konfiguracja ElevenLabs:
@@ -525,7 +525,7 @@ export class NpcVoiceCoordinator {
     this.history.push({ sender: 'Ty', text: input.trim(), isPlayer: true });
     this.renderHistory();
 
-    // 2. Wygenerowanie odpowiedzi przez GeminiNpcService (z fallbackiem do NpcAiAgent):
+    // 2. Wygenerowanie odpowiedzi przez GeminiNpcService (wyłącznie Gemini API):
     const lastNpcEntry = [...this.history].reverse().find((entry) => !entry.isPlayer);
     const context: NpcDialogueContext = {
       lastNpcMessage: lastNpcEntry?.text,
@@ -538,9 +538,20 @@ export class NpcVoiceCoordinator {
     this.history.push({ sender: this.currentNpcName, text: response.text, isPlayer: false });
     this.renderHistory();
 
+    if (response.source === 'error') {
+      this.setStatus('error', response.error || 'Wymagany klucz Gemini API.');
+      if (!geminiNpcService.hasApiKey()) {
+        this.openGeminiConfig();
+      }
+    }
+
     // 4. Wypowiedzenie odpowiedzi przez syntezator mowy (TTS):
     this.speakText(response.text, persona.voiceSettings, () => {
-      this.setStatus('idle', '🎤 Gotowy na kolejne pytanie. Dotknij "Mów" lub wpisz tekst.');
+      if (response.source === 'error') {
+        this.setStatus('error', '⚠️ Skonfiguruj klucz Gemini API [⚙️ Gemini], aby kontynuować.');
+      } else {
+        this.setStatus('idle', '🎤 Gotowy na kolejne pytanie. Dotknij "Mów" lub wpisz tekst.');
+      }
     });
   }
 

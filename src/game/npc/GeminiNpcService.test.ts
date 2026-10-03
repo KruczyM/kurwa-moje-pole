@@ -71,10 +71,11 @@ describe('GeminiNpcService', () => {
     expect(cleaned).not.toContain('🎸');
   });
 
-  it('falls back to local NpcAiAgent when no API key is provided', async () => {
+  it('requires Gemini API key and informs user when API key is missing', async () => {
     const result = await service.generateResponse('Pień aka Peposz', 'Czyje to pole?');
-    expect(result.source).toBe('local_fallback');
-    expect(result.text).toContain('pole');
+    expect(result.source).toBe('error');
+    expect(result.error).toContain('Gemini');
+    expect(result.text).toContain('Gemini');
   });
 
   it('successfully queries Gemini API when valid key is set and caches conversation history', async () => {
@@ -108,13 +109,13 @@ describe('GeminiNpcService', () => {
     expect(secondCallBody.contents.length).toBe(3); // 2 history items + 1 current message
   });
 
-  it('falls back safely to local engine if fetch fails or throws an exception', async () => {
+  it('reports connection error when Gemini API call fails without offline fallback', async () => {
     service.setApiKey('SOME_KEY');
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
 
     const result = await service.generateResponse('Zawór', 'Gdzie jest woda?');
-    expect(result.source).toBe('local_fallback');
+    expect(result.source).toBe('error');
     expect(result.error).toBeDefined();
-    expect(result.text.length).toBeGreaterThan(0);
+    expect(result.text).toContain('Gemini');
   });
 });

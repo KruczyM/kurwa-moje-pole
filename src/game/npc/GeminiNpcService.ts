@@ -7,7 +7,7 @@ export interface ChatMessage {
 
 export interface GeminiResponseResult {
   text: string;
-  source: 'gemini' | 'local_fallback';
+  source: 'gemini' | 'error';
   modelUsed?: string;
   error?: string;
 }
@@ -152,7 +152,8 @@ Tematy, na których się znasz: ${loreKeys}.
   }
 
   /**
-   * Generuje odpowiedź NPC na pytanie gracza z użyciem Gemini API lub lokalnego fallbacku.
+   * Generuje odpowiedź NPC na pytanie gracza WYŁĄCZNIE z użyciem Gemini API.
+   * Silnik offline został trwale usunięty – dialogi wymagają aktywnego klucza Gemini.
    */
   async generateResponse(
     npcName: string,
@@ -162,20 +163,19 @@ Tematy, na których się znasz: ${loreKeys}.
     const trimmedInput = userMessage.trim();
     if (!trimmedInput) {
       const persona = NpcAiAgent.getPersona(npcName);
-      const fallbackLine = persona.greetings[0] || 'Siemanko!';
+      const fallbackLine = persona.greetings[0] || 'Siemanko! Czym mogę służyć na naszym polu?';
       return {
         text: fallbackLine,
-        source: 'local_fallback',
+        source: 'gemini',
       };
     }
 
     const apiKey = this.getApiKey();
     if (!apiKey) {
-      // Brak klucza – natychmiastowy, deterministyczny fallback lokalny
-      const localResponse = NpcAiAgent.generateResponse(npcName, trimmedInput, context);
       return {
-        text: localResponse.text,
-        source: 'local_fallback',
+        text: 'Do rozmowy z mieszkańcami obozu wymagany jest klucz Gemini API. Kliknij przycisk [⚙️ Gemini] i wprowadź bezpłatny klucz z Google AI Studio.',
+        source: 'error',
+        error: 'Brak klucza Gemini API. Wprowadź klucz w ustawieniach dialogu.',
       };
     }
 
@@ -186,6 +186,8 @@ Tematy, na których się znasz: ${loreKeys}.
       history.push({ role: 'model', text: context.lastNpcMessage.trim() });
     }
     const systemPrompt = this.buildSystemPrompt(npcName);
+
+    let lastError = '';
 
     // Próba wywołania Gemini z mechanizmem fallbacku modeli
     for (const model of GeminiNpcService.DEFAULT_MODELS) {
@@ -222,6 +224,7 @@ Tematy, na których się znasz: ${loreKeys}.
 
         if (!response.ok) {
           const errorText = await response.text().catch(() => '');
+          lastError = `Status ${response.status}: ${errorText}`;
           console.warn(`[GeminiNpcService] Model ${model} returned ${response.status}: ${errorText}`);
           // Jeśli to błąd 404 (model not found), próbuj kolejnego modelu
           if (response.status === 404) continue;
@@ -250,17 +253,16 @@ Tematy, na których się znasz: ${loreKeys}.
             };
           }
         }
-      } catch (err) {
+      } catch (err: any) {
+        lastError = err?.message || String(err);
         console.warn(`[GeminiNpcService] Failed connecting to Gemini with model ${model}:`, err);
       }
     }
 
-    // Jeśli wywołania API się nie powiodły, bezpieczny fallback:
-    const localResponse = NpcAiAgent.generateResponse(npcName, trimmedInput, context);
     return {
-      text: localResponse.text,
-      source: 'local_fallback',
-      error: 'Nie udało się połączyć z API Gemini; użyto wbudowanego silnika.',
+      text: 'Nie udało się połączyć z modelem Gemini AI. Sprawdź poprawność klucza i połączenie z siecią w panelu [⚙️ Gemini].',
+      source: 'error',
+      error: lastError || 'Nie udało się uzyskać odpowiedzi od Gemini API.',
     };
   }
 

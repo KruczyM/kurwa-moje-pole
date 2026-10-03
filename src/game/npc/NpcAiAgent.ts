@@ -257,7 +257,7 @@ export const NPC_PERSONAS: Record<string, NpcPersona> = {
 
   Zawór: {
     name: 'Zawór',
-    title: 'Hydraulik i Zaopatrzeniowiec',
+    title: 'Hydraulik i Zaopatrzeniowiec Sanitariatu',
     voiceSettings: { pitch: 0.98, rate: 0.96, volume: 1.0 },
     greetings: [
       'Cześć! Pijesz wystarczająco dużo wody w tym słońcu?',
@@ -497,7 +497,7 @@ export const EXTENDED_HERO_PERSONAS: Record<string, NpcPersona> = {
 
   Szerszeń: {
     name: 'Szerszeń',
-    title: 'Głośny Komentator Obozowy',
+    title: 'Głośny Komentator i Plotkarz Obozowy',
     voiceSettings: { pitch: 1.1, rate: 1.18, volume: 1.0 },
     greetings: [
       'Bzzzt! Siema! Słyszałeś co się działo w nocy w sektorze trzecim?!',

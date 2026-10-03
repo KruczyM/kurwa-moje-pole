@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as THREE from 'three';
 import { NpcVoiceCoordinator } from './NpcVoiceCoordinator';
 import { NpcManager, Npc } from './NpcManager';
+import { geminiNpcService } from './GeminiNpcService';
 
 describe('NpcVoiceCoordinator', () => {
   let npcManagerMock: NpcManager;
@@ -128,6 +129,10 @@ describe('NpcVoiceCoordinator', () => {
   });
 
   it('submits text input and generates an AI response in dialogue', async () => {
+    vi.spyOn(geminiNpcService, 'generateResponse').mockResolvedValueOnce({
+      text: 'ZAMKNIJ SIĘ!',
+      source: 'gemini',
+    });
     const dialogText = { textContent: '', innerHTML: '' } as unknown as HTMLElement;
     const coordinator = new NpcVoiceCoordinator(npcManagerMock, {
       textElement: dialogText,
@@ -139,6 +144,29 @@ describe('NpcVoiceCoordinator', () => {
     expect(dialogText.innerHTML).toContain('Ty:');
     expect(dialogText.innerHTML).toContain('Zaraz będzie ciemno!');
     expect(dialogText.innerHTML).toContain('ZAMKNIJ SIĘ');
+
+    coordinator.dispose();
+  });
+
+  it('displays guidance and prompts Gemini settings when speaking without an API key', async () => {
+    const dialogText = { textContent: '', innerHTML: '' } as unknown as HTMLElement;
+    const configPanel = {
+      removeAttribute: vi.fn(),
+      setAttribute: vi.fn(),
+      style: { display: 'none' },
+    } as unknown as HTMLElement;
+
+    const coordinator = new NpcVoiceCoordinator(npcManagerMock, {
+      textElement: dialogText,
+      geminiConfigElement: configPanel,
+    });
+
+    coordinator.startConversation('Pień aka Peposz');
+    await coordinator.submitSpeechInput('Siema Peposz!');
+
+    expect(dialogText.innerHTML).toContain('Do rozmowy z mieszkańcami obozu wymagany jest klucz Gemini API');
+    expect(configPanel.removeAttribute).toHaveBeenCalledWith('hidden');
+    expect(configPanel.style.display).toBe('block');
 
     coordinator.dispose();
   });
