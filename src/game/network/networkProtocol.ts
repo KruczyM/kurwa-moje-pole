@@ -1,3 +1,5 @@
+import { WORLD_LIMIT } from '../world/festivalLayout.js';
+
 export const PROTOCOL_VERSION = '1.0.0';
 
 export const CANONICAL_CHARACTERS = [
@@ -176,7 +178,7 @@ export interface WorldSnapshotPayload {
   players: PlayerSnapshot[];
 }
 
-export const MAP_POSITION_LIMIT = 60.0;
+export const MAP_POSITION_LIMIT = WORLD_LIMIT;
 export const MAX_ALLOWED_PLAYER_SPEED = 25.0; // m/s (sanity check limit)
 
 /**

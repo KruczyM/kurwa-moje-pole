@@ -186,5 +186,30 @@ describe('RoomServer (Integracja Socket.IO)', () => {
 
     client.disconnect();
   });
+
+  it('closes the old socket when the same session resumes on a new connection', async () => {
+    clientA = ClientSocket(`http://localhost:${PORT}`);
+    await new Promise<void>(resolve => clientA.once('connect', () => resolve()));
+    const token = 'replacement-session-test';
+    await new Promise<void>(resolve => {
+      clientA.once('room:joined', () => resolve());
+      clientA.emit('room:join', { roomId: 'socket-replacement', sessionToken: token });
+    });
+    const room = server.getOrCreateRoom('socket-replacement');
+    room.reserve(clientA.id!, 'Amper', 'Replacement', token);
+    room.confirm(clientA.id!, 'Amper', token);
+    const oldId = clientA.id!;
+    const disconnected = new Promise<void>(resolve => clientA.once('disconnect', () => resolve()));
+    clientB = ClientSocket(`http://localhost:${PORT}`);
+    await new Promise<void>(resolve => clientB.once('connect', () => resolve()));
+    await new Promise<void>(resolve => {
+      clientB.once('room:joined', () => resolve());
+      clientB.emit('room:join', { roomId: 'socket-replacement', sessionToken: token });
+    });
+    await disconnected;
+    expect(server.io.sockets.sockets.has(oldId)).toBe(false);
+    expect(room.getSlot('Amper')?.playerId).toBe(clientB.id);
+    clientB.disconnect();
+  });
 });
 

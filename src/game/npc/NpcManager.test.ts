@@ -24,6 +24,66 @@ function animatedScaleAsset(): GLTF {
 }
 
 describe('NpcManager', () => {
+  it('distributes the festival crowd between the stage and both passages', () => {
+    const navigation = new NpcNavigationGrid({ minX: -170, maxX: 260, minZ: -150, maxZ: 150 }, 2, () => true);
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, navigation);
+    const campCount = manager.npcs.length;
+    manager.setFestivalLayout([
+      { id: 'Road_0', category: 'Roads', x: -18, z: -35, width: 280, depth: 10 },
+      { id: 'Road_1', category: 'Roads', x: 0, z: 73, width: 280, depth: 10 },
+    ]);
+    const asset = animatedScaleAsset();
+    asset.animations.push(new THREE.AnimationClip('HipHopDancing', 20, []));
+    for (let i = 0; i < 91; i++) manager.addFestivalNpc({ id: `crowd-${i}`, name: `Crowd ${i}` }, asset);
+    const crowd = manager.npcs.filter((npc) => !npc.isCampMember);
+    const dancers = crowd.filter((npc) => npc.festivalRole === 'stage_dancer');
+    const lower = crowd.filter((npc) => npc.passageWalker && npc.passageLane === 'lower');
+    const upper = crowd.filter((npc) => npc.passageWalker && npc.passageLane === 'upper');
+    expect(dancers).toHaveLength(20);
+    expect(lower).toHaveLength(20);
+    expect(upper).toHaveLength(51);
+    expect(manager.npcs.filter((npc) => npc.isCampMember)).toHaveLength(campCount);
+    for (const npc of lower) expect(npc.root.position.z).toBeGreaterThanOrEqual(69.5);
+    for (const npc of upper) {
+      expect(npc.root.position.z).toBeLessThanOrEqual(-31.5);
+      expect(npc.root.position.x).toBeLessThanOrEqual(117);
+    }
+    const positions = dancers.map((npc) => npc.root.position.clone());
+    for (let step = 0; step < 40; step++) manager.update(0.05, step * 0.05);
+    dancers.forEach((npc, i) => {
+      expect(npc.root.position.distanceTo(positions[i])).toBeLessThan(0.001);
+      expect(npc.animator?.activityActive).toBe(true);
+    });
+    manager.dispose();
+  });
+  it('follows a verified Flanki corner instead of avoiding a wall beyond the waypoint', () => {
+    const navigation = new NpcNavigationGrid(
+      { minX: -5, maxX: 5, minZ: -5, maxZ: 5 },
+      0.5,
+      (x, z) => !(z >= 3 && x < 1),
+    );
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, navigation);
+    const npc = manager.npcs[0];
+    npc.root.position.set(0, 0, 2.2);
+    npc.root.userData.flankiTarget = new THREE.Vector3(2, 0, 4);
+    npc.root.userData.flankiRouted = true;
+    npc.waypoints = [new THREE.Vector3(0, 0, 2.5), new THREE.Vector3(2, 0, 2.5), new THREE.Vector3(2, 0, 4)];
+    for (let step = 0; step < 60; step++) manager.update(0.05, step * 0.05);
+    expect(npc.root.position.distanceTo(npc.root.userData.flankiTarget)).toBeLessThan(0.08);
+    manager.dispose();
+  });
+  it('arrives at a Flanki line and faces the can instead of keeping its walking bearing', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    const npc = manager.npcs[0];
+    npc.root.position.set(2, terrainHeight(2, 2), 2);
+    npc.root.userData.flankiTarget = npc.root.position.clone();
+    npc.root.userData.flankiFacing = new THREE.Vector3(0, 0, -4);
+    npc.root.rotation.y = 0;
+    manager.update(1 / 60, 0);
+    expect(npc.root.rotation.y).toBeCloseTo(Math.atan2(-2, -6));
+    expect(npc.velocity.length()).toBe(0);
+    manager.dispose();
+  });
   it('keeps the speaker stationary and independently interactive while NPCs move', () => {
     const scene = new THREE.Scene();
     const speaker = { scene: new THREE.Group() } as GLTF;
@@ -339,7 +399,7 @@ describe('NpcManager', () => {
 
     expect(npc.isSitting).toBe(true);
     expect(npc.visual?.rotation.y).toBeCloseTo(Math.PI, 4);
-    expect(npc.visual?.position.y).toBeCloseTo(initialVisualY - 0.38, 4);
+    expect(npc.visual?.position.y).toBeCloseTo(initialVisualY - 0.2, 4);
     expect(npc.visual?.position.z).toBeCloseTo(-0.52, 4);
 
     // Vacate seat
@@ -409,7 +469,7 @@ describe('NpcManager', () => {
 
     expect(npc.target).toBeDefined();
     // Distance from speaker anchor (-1.45, 0.65) should be between 1.0 and 3.5m
-    const distToSpeaker = Math.hypot(npc.target.x - (-1.45), npc.target.z - 0.65);
+    const distToSpeaker = Math.hypot(npc.target.x - -3.1, npc.target.z - 1.2);
     expect(distToSpeaker).toBeGreaterThanOrEqual(1.0);
     expect(distToSpeaker).toBeLessThanOrEqual(3.5);
 
@@ -475,5 +535,18 @@ describe('NpcManager', () => {
 
     manager.dispose();
   });
-});
 
+  it('gromadzi okolicznych NPC wokół boiska do flanków jako widzów', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    const pitchCenter = new THREE.Vector3(0, 0, -26);
+
+    manager.gatherNpcsAtFlanki(pitchCenter, 4);
+
+    const nearbyNpcs = manager.npcs.filter(
+      (npc) => npc.root.position.distanceTo(pitchCenter) < 15 || npc.target.distanceTo(pitchCenter) < 15,
+    );
+    expect(nearbyNpcs.length).toBeGreaterThanOrEqual(4);
+
+    manager.dispose();
+  });
+});

@@ -45,6 +45,22 @@ export class InteractionManager {
         break;
       }
     }
+    // Entry zones must also work while standing inside their invisible hitbox.
+    // Only explicitly marked attractions opt in; ordinary items still require aim.
+    if (!next) {
+      const cameraPosition = this.camera.getWorldPosition(new THREE.Vector3());
+      let nearest = Infinity;
+      for (const root of this.roots()) {
+        const radius = root.userData.entryRadius as number | undefined;
+        if (!radius || !root.visible || !root.userData.interaction) continue;
+        const position = root.getWorldPosition(new THREE.Vector3());
+        const distance = Math.hypot(position.x - cameraPosition.x, position.z - cameraPosition.z);
+        if (distance <= radius && Math.abs(cameraPosition.y - position.y) <= 3 && distance < nearest) {
+          next = root;
+          nearest = distance;
+        }
+      }
+    }
     if (next !== this.target) {
       if (this.target) this.highlight(this.target, false);
       this.target = next;

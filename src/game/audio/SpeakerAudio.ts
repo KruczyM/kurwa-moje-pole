@@ -1,4 +1,5 @@
 import type { AudioEffectState, EffectAudioTarget } from '../effects/EffectManager';
+import { AudioPerceptionGraph, type PerceptionParameters } from './AudioPerception';
 
 export type Vector3Like = {
   x: number;
@@ -39,6 +40,26 @@ export type SpeakerPlaybackState = 'off' | 'fading-in' | 'on' | 'fading-out';
  * płynne przejścia włączania/wyłączania (crossfade) oraz odporność na blokady autoplay.
  */
 export class SpeakerAudio implements EffectAudioTarget {
+  private context?: AudioContext;
+  private source?: MediaElementAudioSourceNode;
+  private perception?: AudioPerceptionGraph;
+  private perceptionParameters?: PerceptionParameters;
+  setPerception(parameters: PerceptionParameters): void {
+    this.perceptionParameters = parameters;
+    this.perception?.update(parameters);
+  }
+  private async ensurePerception(): Promise<void> {
+    if (typeof HTMLMediaElement === 'undefined' || !(this.audio instanceof HTMLMediaElement)) return;
+    if (!this.context && typeof AudioContext !== 'undefined') {
+      this.context = new AudioContext();
+      this.perception = new AudioPerceptionGraph(this.context);
+      this.source = this.context.createMediaElementSource(this.audio);
+      this.source.connect(this.perception.input);
+      this.perception.output.connect(this.context.destination);
+      if (this.perceptionParameters) this.perception.update(this.perceptionParameters);
+    }
+    if (this.context?.state === 'suspended') await this.context.resume();
+  }
   private audio: AudioLike;
   private state: SpeakerPlaybackState = 'off';
   private fadeFactor = 0;
@@ -198,6 +219,8 @@ export class SpeakerAudio implements EffectAudioTarget {
     this.recalculateVolume();
 
     try {
+      await this.ensurePerception();
+      if (this.disposed) return false;
       const playPromise = this.audio.play();
       if (playPromise && typeof playPromise.then === 'function') {
         await playPromise;
@@ -243,7 +266,11 @@ export class SpeakerAudio implements EffectAudioTarget {
     const resume = () => {
       this.clearAutoplayListener();
       if (this.state === 'fading-in' || this.state === 'on') {
-        void this.audio.play();
+        void this.ensurePerception()
+          .then(() => {
+            if (!this.disposed && this.isPlaying) return this.audio.play();
+          })
+          .catch(() => {});
       }
     };
 
@@ -266,5 +293,8 @@ export class SpeakerAudio implements EffectAudioTarget {
     this.clearAutoplayListener();
     this.stopImmediate();
     this.audio.src = '';
+    this.source?.disconnect();
+    this.perception?.dispose();
+    void this.context?.close();
   }
 }

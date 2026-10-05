@@ -15,11 +15,7 @@ export function sampleWheelGrassMask(x: number, z: number) {
   return THREE.MathUtils.smoothstep(distance, 0, 0.3);
 }
 
-import {
-  sampleWheelSchedule,
-  type WheelScheduleSample,
-  WHEEL_CYCLE_SECONDS,
-} from './wheelSchedule';
+import { sampleWheelSchedule, type WheelScheduleSample } from './wheelSchedule';
 
 /** Only transforms an existing cached model; scene lifecycle owns its GPU resources. */
 export class FestivalWheel {
@@ -30,6 +26,7 @@ export class FestivalWheel {
   private rotation = new THREE.Quaternion();
   private readonly baseRotation: THREE.Quaternion;
   private readonly gondolas: { object: THREE.Object3D; baseRotation: THREE.Quaternion }[];
+  private readonly eyeAnchors: THREE.Vector3[];
 
   constructor(
     readonly root: THREE.Object3D,
@@ -39,6 +36,15 @@ export class FestivalWheel {
   ) {
     this.baseRotation = rotor.quaternion.clone();
     this.gondolas = gondolas.map((object) => ({ object, baseRotation: object.quaternion.clone() }));
+    // The exported pivot is the hanger, not the cabin floor. Seat the passenger
+    // inside the basket; do not add a standing eye height above that pivot.
+    this.eyeAnchors = gondolas.map((object) => {
+      object.updateWorldMatrix(true, true);
+      const bounds = new THREE.Box3().setFromObject(object);
+      const point = bounds.getCenter(new THREE.Vector3());
+      point.y = bounds.min.y + Math.min(1.05, (bounds.max.y - bounds.min.y) * 0.55);
+      return object.worldToLocal(point);
+    });
   }
 
   getAngle(): number {
@@ -51,6 +57,23 @@ export class FestivalWheel {
 
   getScheduleSample(): WheelScheduleSample {
     return sampleWheelSchedule(this.scheduleTime);
+  }
+
+  /** Zwraca obiekt 3D gondoli o zadanym indeksie (0-23) */
+  getGondola(index: number): THREE.Object3D | undefined {
+    return this.gondolas[index]?.object;
+  }
+  getCabinEyePosition(index: number, target: THREE.Vector3): THREE.Vector3 | undefined {
+    const object = this.getGondola(index),
+      anchor = this.eyeAnchors[index];
+    if (!object || !anchor) return undefined;
+    object.updateWorldMatrix(true, false);
+    return object.localToWorld(target.copy(anchor));
+  }
+
+  /** Zwraca węzeł rotora młyna */
+  getRotor(): THREE.Object3D {
+    return this.rotor;
   }
 
   /** Ustawia bezwzględny czas harmonogramu atrakcji (np. z serwera lub przy starcie przejażdżki) */

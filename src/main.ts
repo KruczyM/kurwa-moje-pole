@@ -4,6 +4,7 @@ import './preview.css';
 import './lifecycle.css';
 import { Game } from './game/Game';
 import { CharacterPreview } from './game/ui/CharacterPreview';
+import { FestivalMap } from './game/ui/FestivalMap';
 import type { EffectId } from './game/effects/EffectManager';
 import { AppState, AppStateMachine } from './game/lifecycle/AppStateMachine';
 import { controlHintForState, inputBindings, startControlHint } from './game/lifecycle/InputBindings';
@@ -184,6 +185,10 @@ function syncShell(next: AppState) {
     qs('#load-error').hidden = true;
     qs('#load-error').textContent = '';
     qs('#load-text').textContent = 'Przygotowywanie sceny…';
+    const progressBar = document.querySelector<HTMLDivElement>('#load-progress-bar');
+    if (progressBar) progressBar.style.width = '0%';
+    const skipBtn = document.querySelector<HTMLButtonElement>('#skip-crowd-btn');
+    if (skipBtn) skipBtn.hidden = true;
   }
 }
 
@@ -393,12 +398,21 @@ window.addEventListener(
   () => {
     preview?.dispose();
     game?.dispose();
+    networkClient.disconnect(true);
   },
   { once: true },
 );
 
 // Przewodnik festiwalowy i Mapa
-const GUIDE_TABS = ['controls', 'activities', 'interactions', 'items', 'dialogue'] as const;
+const GUIDE_TABS = [
+  'controls',
+  'activities',
+  'interactions',
+  'items',
+  'dialogue',
+  'bingo',
+  'passport',
+] as const;
 
 function switchGuideTabGlobal(tabId: string): void {
   const currentIndex = GUIDE_TABS.indexOf(tabId as any);
@@ -481,9 +495,36 @@ if (guideNextBtn) {
   };
 }
 
+let globalFestivalMap: FestivalMap | undefined;
+
+function toggleMapGlobal(open?: boolean): void {
+  if (game) {
+    game.toggleMap(open);
+  } else {
+    const mapEl = document.querySelector<HTMLElement>('#festival-map');
+    if (!mapEl) return;
+    const shouldOpen = open !== undefined ? open : mapEl.hidden;
+    mapEl.hidden = !shouldOpen;
+    if (shouldOpen) {
+      if (!globalFestivalMap) {
+        const mapCanvas = document.querySelector<HTMLCanvasElement>('#festival-map-canvas');
+        globalFestivalMap = new FestivalMap(mapCanvas);
+        void globalFestivalMap
+          .loadBlenderReference()
+          .catch(() => console.warn('Nie udało się załadować rzutu mapy z Blendera.'));
+      }
+      globalFestivalMap.render({ x: 0, z: 0, yaw: 0 }, [], performance.now(), []);
+    }
+  }
+}
+
 const startGuideBtn = document.querySelector<HTMLButtonElement>('#start-guide-btn');
 if (startGuideBtn) {
   startGuideBtn.onclick = () => toggleGuideGlobal(true);
+}
+const startMapBtn = document.querySelector<HTMLButtonElement>('#start-map-btn');
+if (startMapBtn) {
+  startMapBtn.onclick = () => toggleMapGlobal(true);
 }
 const guideCloseBtn = document.querySelector<HTMLButtonElement>('#guide-close');
 if (guideCloseBtn) {
@@ -495,17 +536,19 @@ if (guideOkBtn) {
 }
 const mapCloseBtn = document.querySelector<HTMLButtonElement>('#map-close');
 if (mapCloseBtn) {
-  mapCloseBtn.onclick = () => game?.toggleMap(false);
+  mapCloseBtn.onclick = () => toggleMapGlobal(false);
 }
 const openGuideBtn = document.querySelector<HTMLButtonElement>('#open-guide-btn');
 if (openGuideBtn) {
   openGuideBtn.onclick = () => toggleGuideGlobal(true);
 }
 
-// Globalny nasłuch klawiszy Escape / H na ekranie startowym oraz w UI
+// Globalny nasłuch klawiszy Escape / H / M na ekranie startowym oraz w UI
 window.addEventListener('keydown', (event) => {
   const guideEl = document.querySelector<HTMLElement>('#festival-guide');
   const isGuideOpen = guideEl ? !guideEl.hidden : false;
+  const mapEl = document.querySelector<HTMLElement>('#festival-map');
+  const isMapOpen = mapEl ? !mapEl.hidden : false;
   const isInputFocused =
     document.activeElement instanceof HTMLInputElement ||
     document.activeElement instanceof HTMLTextAreaElement;
@@ -517,9 +560,8 @@ window.addEventListener('keydown', (event) => {
       event.stopPropagation();
       return;
     }
-    const mapEl = document.querySelector<HTMLElement>('#festival-map');
-    if (mapEl && !mapEl.hidden) {
-      game?.toggleMap(false);
+    if (isMapOpen) {
+      toggleMapGlobal(false);
       event.preventDefault();
       event.stopPropagation();
       return;
@@ -532,10 +574,18 @@ window.addEventListener('keydown', (event) => {
       event.preventDefault();
     }
   }
+
+  if ((event.key === 'm' || event.key === 'M') && !isInputFocused) {
+    if (!game) {
+      toggleMapGlobal();
+      event.preventDefault();
+    }
+  }
 });
+
 const openMapBtn = document.querySelector<HTMLButtonElement>('#open-map-btn');
 if (openMapBtn) {
-  openMapBtn.onclick = () => game?.toggleMap(true);
+  openMapBtn.onclick = () => toggleMapGlobal(true);
 }
 const openInventoryBtn = document.querySelector<HTMLButtonElement>('#open-inventory-btn');
 if (openInventoryBtn) {
@@ -547,7 +597,7 @@ if (hudGuideBtn) {
 }
 const hudMapBtn = document.querySelector<HTMLButtonElement>('#hud-map-btn');
 if (hudMapBtn) {
-  hudMapBtn.onclick = () => game?.toggleMap();
+  hudMapBtn.onclick = () => toggleMapGlobal();
 }
 const hudInventoryBtn = document.querySelector<HTMLButtonElement>('#hud-inventory-btn');
 if (hudInventoryBtn) {
@@ -563,23 +613,56 @@ if (mobileGuideBtn) {
 }
 const mobileMapBtn = document.querySelector<HTMLButtonElement>('#mobile-map');
 if (mobileMapBtn) {
-  mobileMapBtn.onclick = () => game?.toggleMap();
+  mobileMapBtn.onclick = () => toggleMapGlobal();
 }
 
-// Zakładki w przewodniku
-document.querySelectorAll<HTMLButtonElement>('.guide-tab-btn').forEach((btn) => {
-  btn.onclick = () => {
-    const tab = btn.dataset.tab;
-    if (!tab) return;
-    document.querySelectorAll<HTMLButtonElement>('.guide-tab-btn').forEach((b) => {
-      const active = b.dataset.tab === tab;
-      b.classList.toggle('active', active);
-      b.setAttribute('aria-selected', String(active));
-    });
-    document.querySelectorAll<HTMLElement>('.guide-panel').forEach((panel) => {
-      const match = panel.id === `guide-panel-${tab}`;
-      panel.hidden = !match;
-      panel.classList.toggle('active', match);
-    });
+// Przyciski powiększania mapy (+, -, 100%, Ty)
+const mapZoomInBtn = document.querySelector<HTMLButtonElement>('#map-zoom-in');
+if (mapZoomInBtn) {
+  mapZoomInBtn.onclick = (e) => {
+    e.stopPropagation();
+    if (game?.festivalMap) game.festivalMap.zoomIn();
+    else globalFestivalMap?.zoomIn();
   };
-});
+}
+const mapZoomOutBtn = document.querySelector<HTMLButtonElement>('#map-zoom-out');
+if (mapZoomOutBtn) {
+  mapZoomOutBtn.onclick = (e) => {
+    e.stopPropagation();
+    if (game?.festivalMap) game.festivalMap.zoomOut();
+    else globalFestivalMap?.zoomOut();
+  };
+}
+const mapZoomResetBtn = document.querySelector<HTMLButtonElement>('#map-zoom-reset');
+if (mapZoomResetBtn) {
+  mapZoomResetBtn.onclick = (e) => {
+    e.stopPropagation();
+    if (game?.festivalMap) game.festivalMap.resetView();
+    else globalFestivalMap?.resetView();
+  };
+}
+const mapCenterMeBtn = document.querySelector<HTMLButtonElement>('#map-center-me');
+if (mapCenterMeBtn) {
+  mapCenterMeBtn.onclick = (e) => {
+    e.stopPropagation();
+    if (game && game.player && game.festivalMap) {
+      game.festivalMap.centerOnPlayer(game.player.camera.position.x, game.player.camera.position.z);
+    } else {
+      globalFestivalMap?.centerOnPlayer(0, 0);
+    }
+  };
+}
+
+// Zamykanie mapy po kliknięciu w tło modala oraz blokowanie kliknięć w głąb
+const festivalMapModal = document.querySelector<HTMLElement>('#festival-map');
+if (festivalMapModal) {
+  festivalMapModal.onclick = (e) => {
+    if (e.target === festivalMapModal) {
+      toggleMapGlobal(false);
+    }
+  };
+}
+const festivalMapContainer = document.querySelector<HTMLElement>('.festival-map-container');
+if (festivalMapContainer) {
+  festivalMapContainer.onclick = (e) => e.stopPropagation();
+}

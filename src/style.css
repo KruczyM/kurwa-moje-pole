@@ -51,7 +51,9 @@ button:hover {
 #loading,
 #pause,
 #dialog,
-#inventory {
+#inventory,
+#festival-guide,
+#festival-map {
   pointer-events: auto;
 }
 #start {
@@ -105,6 +107,44 @@ h1 i {
   gap: 12px;
   text-align: center;
   background: #15131ed9;
+}
+.load-progress-bar-container {
+  width: 100%;
+  max-width: 420px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 6px auto;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.load-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #f65072, #ffe34d);
+  transition: width 0.15s ease-out;
+}
+.skip-crowd-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 227, 77, 0.15);
+  border: 1px solid #ffe34d;
+  color: #ffe34d;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  transition:
+    background 0.2s,
+    color 0.2s;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+}
+.skip-crowd-btn:hover {
+  background: #ffe34d;
+  color: #15131e;
 }
 #load-error {
   color: #ff7d89;
@@ -617,4 +657,28 @@ h1 i {
   .mobile-look-hint {
     display: none;
   }
+}
+/* Shared festival scrollbar theme for every scrolling panel and the document. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #b2ff45 #21182f;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-track {
+  background: #21182f;
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #b2ff45;
+  border: 2px solid #21182f;
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #ffd152;
+}
+*::-webkit-scrollbar-corner {
+  background: #21182f;
 }

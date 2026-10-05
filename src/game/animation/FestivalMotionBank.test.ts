@@ -15,6 +15,27 @@ async function load(path: string) {
 }
 
 describe('downloaded festival motions', () => {
+  it('ignores invalid pose metadata and accepts an explicit lowered-arm correction', async () => {
+    const source = await load('animations/festival-motion-bank.glb');
+    const bank = new FestivalMotionBank(source);
+    const bind = async (value: unknown) => {
+      const model = await load('characters/amper/npc-animations.glb');
+      model.scene.userData.armPoseCorrectionRadians = value;
+      bank.apply(model);
+      const values = model.animations
+        .find((clip) => clip.name === 'Idle')!
+        .tracks.find((track) => /LeftArm\.quaternion$/.test(track.name))!
+        .values.slice();
+      disposeObjectTree(model.scene);
+      return values;
+    };
+    const baseline = await bind(undefined);
+    for (const invalid of [NaN, Infinity, -1, Math.PI, '1']) expect(await bind(invalid)).toEqual(baseline);
+    const corrected = await bind(THREE.MathUtils.degToRad(66));
+    expect(corrected.every(Number.isFinite)).toBe(true);
+    expect(corrected).not.toEqual(baseline);
+    disposeObjectTree(source.scene);
+  }, 30000);
   it('accounts for all downloads and retargets every rig without invalid tracks or exploding poses', async () => {
     expect(manifest.files).toHaveLength(75);
     expect(manifest.clips).toHaveLength(72);

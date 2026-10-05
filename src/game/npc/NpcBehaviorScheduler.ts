@@ -145,11 +145,7 @@ export class NpcBehaviorScheduler {
         return this.beginTravel('sit');
       }
       // 3. Social
-      if (
-        facts.socialAvailable &&
-        this.socialCooldown <= 0 &&
-        this.random() < this.profile.socialChance
-      ) {
+      if (facts.socialAvailable && this.socialCooldown <= 0 && this.random() < this.profile.socialChance) {
         this.socialCooldown = 24 + this.random() * 20;
         return this.beginTravel('social');
       }

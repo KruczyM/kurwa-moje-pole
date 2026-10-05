@@ -9,6 +9,7 @@ export type FestivalInfrastructureModels = {
   festivalSignpost?: GLTF | null;
   fohTower?: GLTF | null;
   delayTower?: GLTF | null;
+  delayTowerHeavy?: GLTF | null;
   mudBath?: GLTF | null;
   fireTruckOsp?: GLTF | null;
   waterCurtain?: GLTF | null;
@@ -86,13 +87,13 @@ export const FESTIVAL_INFRASTRUCTURE_PLACEMENTS: LandmarkPlacement[] = [
   // 4. Delay Speaker Towers (North & South Field)
   {
     id: 'delay_tower_north',
-    modelKey: 'delayTower',
-    label: 'Wieża Nagłośnieniowa Delay (Północ)',
+    modelKey: 'delayTowerHeavy',
+    label: 'Ciężka Wieża Nagłośnieniowa Delay (Północ)',
     x: 54,
     z: -4,
     rotationY: -Math.PI / 2,
-    colliderSize: [4.0, 11.5, 4.0],
-    grassMaskRadius: 2.5,
+    colliderSize: [6.0, 27.0, 6.0],
+    grassMaskRadius: 3.5,
   },
   {
     id: 'delay_tower_south',
@@ -101,7 +102,7 @@ export const FESTIVAL_INFRASTRUCTURE_PLACEMENTS: LandmarkPlacement[] = [
     x: 54,
     z: 40,
     rotationY: -Math.PI / 2,
-    colliderSize: [4.0, 11.5, 4.0],
+    colliderSize: [4.0, 22.0, 4.0],
     grassMaskRadius: 2.5,
   },
   // 5. Mud Bath & OSP Fire Truck
@@ -413,7 +414,8 @@ export function placeFestivalInfrastructure(
   const instance = new FestivalInfrastructureInstance();
 
   for (const site of FESTIVAL_INFRASTRUCTURE_PLACEMENTS) {
-    const gltf = models[site.modelKey];
+    const gltf =
+      models[site.modelKey] ?? (site.modelKey === 'delayTowerHeavy' ? models.delayTower : undefined);
     if (!gltf) continue;
 
     const root = clone(gltf.scene);
@@ -484,7 +486,6 @@ export function placeFestivalInfrastructure(
       );
       instance.colliders.push(box);
     }
-
 
     // Door registration for ToiToi row
     if (site.modelKey === 'toitoiRow') {
@@ -595,27 +596,57 @@ export function placeFestivalInfrastructure(
   const baseFloor = heightAt(110, 18);
   instance.colliders.push(
     // 1. Front West Fence - Far North Wing
-    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, -15.5), new THREE.Vector3(111.5, baseFloor + 6, -9.25)),
+    new THREE.Box3(
+      new THREE.Vector3(108.5, baseFloor - 3, -15.5),
+      new THREE.Vector3(111.5, baseFloor + 6, -9.25),
+    ),
     // 2. Front West Fence - Middle North Wing (leaving North-West passage at z: [-9.25, -1.25])
-    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, -1.25), new THREE.Vector3(111.5, baseFloor + 6, 16.25)),
+    new THREE.Box3(
+      new THREE.Vector3(108.5, baseFloor - 3, -1.25),
+      new THREE.Vector3(111.5, baseFloor + 6, 16.25),
+    ),
     // 3. Front West Fence - Middle South Wing (leaving Central Gate at z: [16.25, 20.75])
-    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, 20.75), new THREE.Vector3(111.5, baseFloor + 6, 38.25)),
+    new THREE.Box3(
+      new THREE.Vector3(108.5, baseFloor - 3, 20.75),
+      new THREE.Vector3(111.5, baseFloor + 6, 38.25),
+    ),
     // 4. Front West Fence - Far South Wing (leaving South-West passage at z: [38.25, 45.75])
-    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, 45.75), new THREE.Vector3(111.5, baseFloor + 6, 51.5)),
+    new THREE.Box3(
+      new THREE.Vector3(108.5, baseFloor - 3, 45.75),
+      new THREE.Vector3(111.5, baseFloor + 6, 51.5),
+    ),
 
     // 5. East Fence - Far North Wing
-    new THREE.Box3(new THREE.Vector3(192.5, baseFloor - 3, -15.5), new THREE.Vector3(195.5, baseFloor + 6, -9.25)),
+    new THREE.Box3(
+      new THREE.Vector3(192.5, baseFloor - 3, -15.5),
+      new THREE.Vector3(195.5, baseFloor + 6, -9.25),
+    ),
     // 6. East Fence - Middle North Wing (leaving North-East passage at z: [-9.25, -1.25])
-    new THREE.Box3(new THREE.Vector3(192.5, baseFloor - 3, -1.25), new THREE.Vector3(195.5, baseFloor + 6, 16.25)),
+    new THREE.Box3(
+      new THREE.Vector3(192.5, baseFloor - 3, -1.25),
+      new THREE.Vector3(195.5, baseFloor + 6, 16.25),
+    ),
     // 7. East Fence - Middle South Wing (leaving Central East passage at z: [16.25, 20.75])
-    new THREE.Box3(new THREE.Vector3(192.5, baseFloor - 3, 20.75), new THREE.Vector3(195.5, baseFloor + 6, 38.25)),
+    new THREE.Box3(
+      new THREE.Vector3(192.5, baseFloor - 3, 20.75),
+      new THREE.Vector3(195.5, baseFloor + 6, 38.25),
+    ),
     // 8. East Fence - Far South Wing (leaving South-East passage at z: [38.25, 45.75])
-    new THREE.Box3(new THREE.Vector3(192.5, baseFloor - 3, 45.75), new THREE.Vector3(195.5, baseFloor + 6, 51.5)),
+    new THREE.Box3(
+      new THREE.Vector3(192.5, baseFloor - 3, 45.75),
+      new THREE.Vector3(195.5, baseFloor + 6, 51.5),
+    ),
 
     // 9. North Side Fence
-    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, -15.5), new THREE.Vector3(195.5, baseFloor + 6, -12.5)),
+    new THREE.Box3(
+      new THREE.Vector3(108.5, baseFloor - 3, -15.5),
+      new THREE.Vector3(195.5, baseFloor + 6, -12.5),
+    ),
     // 10. South Side Fence
-    new THREE.Box3(new THREE.Vector3(108.5, baseFloor - 3, 48.5), new THREE.Vector3(195.5, baseFloor + 6, 51.5)),
+    new THREE.Box3(
+      new THREE.Vector3(108.5, baseFloor - 3, 48.5),
+      new THREE.Vector3(195.5, baseFloor + 6, 51.5),
+    ),
   );
 
   // Pokojowy Patrol checkpoint trigger at central gate entrance (x: 109.5, z: 18)

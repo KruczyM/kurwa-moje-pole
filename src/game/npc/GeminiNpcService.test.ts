@@ -47,7 +47,7 @@ describe('GeminiNpcService', () => {
     const promptPien = service.buildSystemPrompt('Pień aka Peposz');
     expect(promptPien).toContain('Gospodarz Pola');
     expect(promptPien).toContain('Kurwa Moje Pole');
-    expect(promptPien).toContain('Pol\'and\'Rock');
+    expect(promptPien).toContain("Pol'and'Rock");
     expect(promptPien).toContain('TTS');
 
     const promptZawor = service.buildSystemPrompt('Zawór');

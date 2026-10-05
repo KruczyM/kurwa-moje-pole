@@ -1,14 +1,18 @@
 # Raport z audytu kolizji i nakładania się modeli w świecie (Zadanie G5)
+
 **Data audytu:** 2026-10-03  
-**Status:** Zweryfikowany (PASS) — 0 kolizji  
+**Status:** Zweryfikowany (PASS) — 0 kolizji
 
 ---
 
 ### 1. Zgłoszenie
+
 Sprawdzenie podejrzenia, że namioty gastronomiczne (kramy pasażu) renderują się na zwykłych namiotach kempingowych.
 
 ### 2. Architektura i mechanizm rozmieszczania
+
 W grze występują trzy niezależne grupy obiektów obozowych i handlowych:
+
 1. **Pasaż handlowo-gastronomiczny (`src/game/world/festivalMarket.ts`):**
    - 18 stoisk (w tym duży sklep SiemaShop, stoiska merchu, gastronomii, kawy, antykwariatu, Kodano, zuch, itp.).
    - Główna aleja handlowa `MAIN_ASPHALT_ROAD` / `MARKET_LANE`: `X: [-140, 140]`, `Z: [-40, -30]`.
@@ -27,11 +31,14 @@ W grze występują trzy niezależne grupy obiektów obozowych i handlowych:
      - Pełne obrysy wszystkich 18 stoisk `MARKET_STALL_LAYOUT.map(marketColliderBounds)`.
    - Każdy slot namiotu przed utworzeniem sprawdza bufor bezpieczeństwa `3.15 m` (uwzględniający linki odciągowe):
      ```ts
-     if (reserved.some((r) => x + 3.15 > r.minX && x - 3.15 < r.maxX && z + 3.15 > r.minZ && z - 3.15 < r.maxZ))
+     if (
+       reserved.some((r) => x + 3.15 > r.minX && x - 3.15 < r.maxX && z + 3.15 > r.minZ && z - 3.15 < r.maxZ)
+     )
        continue;
      ```
 
 ### 3. Wyniki weryfikacji i testów jednostkowych
+
 - Skrypt analityczny `scripts/check_collisions.py` przetestował przecięcia wszystkich obrysów:
   `>> SUCCESS: Zero collisions between tents and market stalls.`
 - Testy jednostkowe Vitest:

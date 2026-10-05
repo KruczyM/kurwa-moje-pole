@@ -67,6 +67,7 @@
   ],
   "stagedCharacters": [],
   "environment": {
+    "authoredFestival": "world/festival/authored-festival.glb",
     "flag": "world/flaga2.glb",
     "chair": "world/camping_chair.glb",
     "speaker": "props/speaker.glb",
@@ -81,6 +82,7 @@
     "festivalSignpost": "world/festival/festival_signpost.glb",
     "fohTower": "world/festival/foh_tower.glb",
     "delayTower": "world/festival/delay_tower.glb",
+    "delayTowerHeavy": "world/festival/delay_tower_heavy.glb",
     "mudBath": "world/festival/mud_bath.glb",
     "fireTruckOsp": "world/festival/fire_truck_osp.glb",
     "waterCurtain": "world/festival/water_curtain.glb",
@@ -98,7 +100,24 @@
     "foodtruckBurger": "world/festival/foodtruck_burger.glb",
     "foodtruckMakarun": "world/festival/foodtruck_makarun.glb",
     "rollbarLech": "world/festival/rollbar_lech.glb",
-    "sunflower": "world/festival/sunflower.glb"
+    "sunflower": "world/festival/sunflower.glb",
+    "beerCan": "props/beer_can_woodstock.glb",
+    "festivalChair": "props/festival_folding_chair.glb",
+    "acousticGuitar": "props/acoustic_guitar.glb",
+    "coolerBox": "props/cooler_box.glb",
+    "festivalBackpack": "props/festival_backpack.glb",
+    "trashBagsPile": "props/trash_bags_pile.glb",
+    "campingStove": "props/camping_stove_pot.glb",
+    "waterJug5L": "props/water_jug_5l.glb",
+    "beerCrate": "props/beer_crate.glb",
+    "campTableMessy": "props/camp_table_messy.glb",
+    "campFlagTotem": "props/camp_flag_totem.glb",
+    "tarpCanopy": "props/tarp_canopy.glb",
+    "beerBenchTable": "props/beer_bench_table.glb",
+    "palletSeating": "props/pallet_seating.glb",
+    "campClothesline": "props/camp_clothesline.glb",
+    "disposableBbq": "props/disposable_bbq.glb",
+    "gastroUmbrella": "props/gastro_umbrella.glb"
   },
   "tents": {
     "main": "world/tents/upgraded/main.glb",
@@ -122,7 +141,8 @@
     "cocaine": "interactables/cocaine.glb",
     "mdma": "interactables/mdma.glb",
     "mushrooms": "interactables/mushrooms.glb",
-    "lsd": "interactables/lsd.glb"
+    "lsd": "interactables/lsd.glb",
+    "water": "interactables/water.glb"
   },
   "textures": {
     "grass": {
@@ -167,10 +187,7 @@
     }
   },
   "effects": {
-    "lsdOverlays": [
-      "mandale/3.webp",
-      "mandale/4.webp"
-    ]
+    "lsdOverlays": ["mandale/3.webp", "mandale/4.webp"]
   },
   "audio": {
     "music": "audio/camp-track.mp4",

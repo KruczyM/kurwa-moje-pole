@@ -5,7 +5,7 @@
 .character-preview-layer {
   position: absolute;
   inset: 0;
-  z-index: 999;
+  z-index: 1;
   pointer-events: none;
   background: transparent;
   overflow: visible;

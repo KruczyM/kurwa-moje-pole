@@ -14,6 +14,15 @@ Hunyuan3D-2GP/
 TrellisStudio/
 
 *.blend1
+*.blend2
+*.blend@
+# Local authoring projects, previews and backups; runtime exports stay versioned.
+/blender/
+/references/
+/staging_characters/
+/source-assets/stages/
+*.legacy-bak
+*.pending.glb
 *.log
 __pycache__/
 .pytest_cache/

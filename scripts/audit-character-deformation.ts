@@ -10,6 +10,8 @@ import catalog from '../src/game/assets/assetCatalog.json';
 import { repairKlatwaSkin } from '../src/game/animation/repairKlatwaSkin';
 import { shoulderRepairAssets } from '../src/game/animation/shoulderRepairCatalog';
 import { amperPreviewPose } from '../src/game/ui/amperPreviewPose';
+import { repairDinosaurSkin } from '../src/game/animation/repairDinosaurSkin';
+import { smoothSkinWeights } from '../src/game/animation/smoothSkinWeights';
 
 async function load(path: string) {
   const candidate = process.env.AUDIT_SOURCE ? `${process.env.AUDIT_SOURCE}/${path}` : '';
@@ -31,11 +33,21 @@ for (const asset of [
   if (process.env.AUDIT_IDS && !process.env.AUDIT_IDS.split(',').includes(asset.id)) continue;
   if (process.argv.includes('--reviewed') && !shoulderRepairAssets.some((a) => a.id === asset.id)) continue;
   const model = await load(asset.path);
+  if (process.env.AUDIT_ARM_POSE_DEGREES)
+    model.scene.userData.armPoseCorrectionRadians = THREE.MathUtils.degToRad(
+      Number(process.env.AUDIT_ARM_POSE_DEGREES),
+    );
+  if (process.argv.includes('--dinosaur-weights') && asset.id === '019_punk_spikes_bracelets')
+    repairDinosaurSkin(model.scene);
   if (asset.id === 'ambona' && process.argv.includes('--ambona-pose'))
     model.scene.userData.armPoseCorrectionRadians = Math.PI / 6;
   if (process.argv.includes('--refit'))
     refitDraftShoulders(model, Number(process.env.AUDIT_SHOULDER_LIFT ?? 0));
   repairSkinSeams(model.scene, process.argv.includes('--repair'));
+  if (process.argv.includes('--smooth-only'))
+    model.scene.traverse((object) => {
+      if (object instanceof THREE.SkinnedMesh) smoothSkinWeights(object);
+    });
   if (process.argv.includes('--arms'))
     repairDraftArmSkin(
       model.scene,
@@ -52,18 +64,23 @@ for (const asset of [
     const donor = await load('characters/amper/preview.glb');
     model.animations = [amperPreviewPose(model.scene, donor.scene, donor.animations, asset.id)];
   }
-  for (const mode of process.env.AUDIT_MODES
+  const modes = process.env.AUDIT_MODES
     ? process.env.AUDIT_MODES.split(',')
     : process.env.AUDIT_MODE
       ? [process.env.AUDIT_MODE]
       : process.env.AUDIT_REST
         ? ['rest', 'original', 'bank']
-        : ['original', 'bank']) {
+        : ['original', 'bank'];
+  const times = (process.env.AUDIT_TIMES ?? '0.4').split(',').map(Number);
+  if (times.some((time) => !Number.isFinite(time) || time < 0)) throw new Error('Invalid AUDIT_TIMES');
+  for (const { mode, time } of modes.flatMap((mode) =>
+    (mode === 'rest' ? [0] : times).map((time) => ({ mode, time })),
+  )) {
     const mixer = new THREE.AnimationMixer(model.scene);
     const clipName = process.env.AUDIT_CLIP ?? 'Idle';
     const clip = (mode === 'original' ? original : model.animations).find((c) => c.name === clipName)!;
     if (mode !== 'rest') mixer.clipAction(clip).play();
-    mixer.update(0.4);
+    mixer.update(time);
     model.scene.updateMatrixWorld(true);
     const vertices: number[][] = [],
       faces: number[][] = [];
@@ -93,7 +110,7 @@ for (const asset of [
         vertices: ids.map((i) => vertices[i]),
         faces: keep.map((f) => f.map((i) => remap.get(i)!)),
       });
-    } else output.push({ name: `${asset.id} ${mode} ${clipName}`, vertices, faces });
+    } else output.push({ name: `${asset.id} ${mode} ${clipName} t=${time}`, vertices, faces });
     mixer.stopAllAction();
     mixer.uncacheRoot(model.scene);
   }

@@ -43,32 +43,32 @@
 
 ## 📊 Tablica Statusu Zadań
 
-| Faza       | Zadanie                                                                 |       Status        |   Priorytet   |
-| ---------- | ----------------------------------------------------------------------- | :-----------------: | :-----------: |
-| **Faza 1** | 1.1 Refaktor `Game.ts` (UIManager, ItemInspectController)               | ✅ **ZREALIZOWANE** |       —       |
-|            | 1.2 Bezpieczeństwo XSS i silnik dialogowy AI z głosem                   | ✅ **ZREALIZOWANE** |       —       |
-|            | 1.3 Fix podwójnego obrotu graczy sieciowych (`RemotePlayersManager.ts`) | ✅ **ZREALIZOWANE** | `d6cb1ca`     |
-|            | 1.4 Cache raycastera w `InteractionManager.ts`                          | ✅ **ZREALIZOWANE** | `d6cb1ca`     |
-|            | 1.5 Limit graczy w pokoju = 16 (`Room.ts`, `roomServer.ts`)             | ✅ **ZREALIZOWANE** | `d6cb1ca`     |
-|            | 1.6 Bypass EffectComposer gdy brak efektu                               | ✅ **ZREALIZOWANE** |       —       |
-|            | 1.7 Object pooling dla `ItemUseSequence` & `SeatController`             | ✅ **ZREALIZOWANE** | `d6cb1ca`     |
-| **Faza 2** | 2.1 NPC tańczą przy głośniku obozowym i siadają na krzesłach            | ✅ **ZREALIZOWANE** |       —       |
-|            | 2.2 Dźwięki kontekstowe SFX + Festiwalowe okrzyki obozowe               | ✅ **ZREALIZOWANE** |       —       |
-|            | 2.3 Audio-reactive bas dla mocnych tripów (MDMA, LSD)                   | ✅ **ZREALIZOWANE** |       —       |
-|            | 2.4 Użytkowy ekwipunek: Woda (antidotum) i Okulary przeciwsłoneczne     | ✅ **ZREALIZOWANE** | `d6cb1ca`     |
-|            | 2.5 Współdzielenie używek (poczęstuj piwem / jointem)                   | ✅ **ZREALIZOWANE** |       —       |
-| **Faza 3** | 3.1 Płynny cykl dobowy zintegrowany ze skyboxem i Dużą Sceną            | ✅ **ZREALIZOWANE** |       —       |
-|            | 3.2 Oświetlenie nocne: Fairy lights nad namiotami i latarka gracza      | ✅ **ZREALIZOWANE** |       —       |
-|            | 3.3 Mini-gra w Flanki (Bierball) w centrum obozu                        | ✅ **ZREALIZOWANE** |       —       |
-|            | 3.4 Ogniskowy Jam Session z gitarą przy namiotach                       | ✅ **ZREALIZOWANE** |       —       |
-|            | 3.5 Pełna mapa festiwalowa 2D (klawisz M)                               | ✅ **ZREALIZOWANE** |       —       |
-|            | 3.6 Festiwalowa pogoda: Deszcz, błoto i zjeżdżalnia błotna              | ✅ **ZREALIZOWANE** |       —       |
-| **Faza 4** | 4.1 Dynamiczny swap NPC ↔ Gracz (dla 16 postaci w obozie)               | ✅ **ZREALIZOWANE** |       —       |
-|            | 4.2 Synchronizacja animacji akcji w sieci (`action:trigger`)            | ✅ **ZREALIZOWANE** |       —       |
-|            | 4.3 Wskaźnik mówiącego gracza nad nametagiem w WebRTC                   | ✅ **ZREALIZOWANE** | `d6cb1ca`     |
-|            | 4.4 Rate-limiting na serwerze Socket.io                                 | ✅ **ZREALIZOWANE** |       —       |
-|            | 4.5 Reconnect ze stanem i tokenem sesyjnym                              | ✅ **ZREALIZOWANE** |       —       |
-|            | 4.6 Deployment HTTPS/WSS i konfiguracja TURN                            | 🟢 **DO ZROBIENIA** |   PRODUKCJA   |
+| Faza       | Zadanie                                                                 |       Status        | Priorytet |
+| ---------- | ----------------------------------------------------------------------- | :-----------------: | :-------: |
+| **Faza 1** | 1.1 Refaktor `Game.ts` (UIManager, ItemInspectController)               | ✅ **ZREALIZOWANE** |     —     |
+|            | 1.2 Bezpieczeństwo XSS i silnik dialogowy AI z głosem                   | ✅ **ZREALIZOWANE** |     —     |
+|            | 1.3 Fix podwójnego obrotu graczy sieciowych (`RemotePlayersManager.ts`) | ✅ **ZREALIZOWANE** | `d6cb1ca` |
+|            | 1.4 Cache raycastera w `InteractionManager.ts`                          | ✅ **ZREALIZOWANE** | `d6cb1ca` |
+|            | 1.5 Limit graczy w pokoju = 16 (`Room.ts`, `roomServer.ts`)             | ✅ **ZREALIZOWANE** | `d6cb1ca` |
+|            | 1.6 Bypass EffectComposer gdy brak efektu                               | ✅ **ZREALIZOWANE** |     —     |
+|            | 1.7 Object pooling dla `ItemUseSequence` & `SeatController`             | ✅ **ZREALIZOWANE** | `d6cb1ca` |
+| **Faza 2** | 2.1 NPC tańczą przy głośniku obozowym i siadają na krzesłach            | ✅ **ZREALIZOWANE** |     —     |
+|            | 2.2 Dźwięki kontekstowe SFX + Festiwalowe okrzyki obozowe               | ✅ **ZREALIZOWANE** |     —     |
+|            | 2.3 Audio-reactive bas dla mocnych tripów (MDMA, LSD)                   | ✅ **ZREALIZOWANE** |     —     |
+|            | 2.4 Użytkowy ekwipunek: Woda (antidotum) i Okulary przeciwsłoneczne     | ✅ **ZREALIZOWANE** | `d6cb1ca` |
+|            | 2.5 Współdzielenie używek (poczęstuj piwem / jointem)                   | ✅ **ZREALIZOWANE** |     —     |
+| **Faza 3** | 3.1 Płynny cykl dobowy zintegrowany ze skyboxem i Dużą Sceną            | ✅ **ZREALIZOWANE** |     —     |
+|            | 3.2 Oświetlenie nocne: Fairy lights nad namiotami i latarka gracza      | ✅ **ZREALIZOWANE** |     —     |
+|            | 3.3 Mini-gra w Flanki (Bierball) w centrum obozu                        | ✅ **ZREALIZOWANE** |     —     |
+|            | 3.4 Ogniskowy Jam Session z gitarą przy namiotach                       | ✅ **ZREALIZOWANE** |     —     |
+|            | 3.5 Pełna mapa festiwalowa 2D (klawisz M)                               | ✅ **ZREALIZOWANE** |     —     |
+|            | 3.6 Festiwalowa pogoda: Deszcz, błoto i zjeżdżalnia błotna              | ✅ **ZREALIZOWANE** |     —     |
+| **Faza 4** | 4.1 Dynamiczny swap NPC ↔ Gracz (dla 16 postaci w obozie)               | ✅ **ZREALIZOWANE** |     —     |
+|            | 4.2 Synchronizacja animacji akcji w sieci (`action:trigger`)            | ✅ **ZREALIZOWANE** |     —     |
+|            | 4.3 Wskaźnik mówiącego gracza nad nametagiem w WebRTC                   | ✅ **ZREALIZOWANE** | `d6cb1ca` |
+|            | 4.4 Rate-limiting na serwerze Socket.io                                 | ✅ **ZREALIZOWANE** |     —     |
+|            | 4.5 Reconnect ze stanem i tokenem sesyjnym                              | ✅ **ZREALIZOWANE** |     —     |
+|            | 4.6 Deployment HTTPS/WSS i konfiguracja TURN                            | 🟢 **DO ZROBIENIA** | PRODUKCJA |
 
 ---
 

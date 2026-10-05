@@ -4,6 +4,7 @@ import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { characterAssets } from '../assets/assetManifest';
 import { npcLines } from './npcConfig';
 import { NpcAnimator } from './NpcAnimator';
+import { NPC_BODY_WIDTH_SCALE, NPC_BODY_DEPTH_SCALE } from './modelProportions';
 import { enableInteractionLayer } from '../interactions/InteractionManager';
 import { NPC_MOTION, approachSpeed, brakingSpeed, locomotionForSpeed } from './locomotionCalibration';
 import { NpcNavigationGrid } from './NpcNavigationGrid';
@@ -11,8 +12,15 @@ import { computeNpcSteering, NPC_STEERING, turnDirectionTowards } from './NpcSte
 import { NPC_BEHAVIOR_PROFILES, NpcBehaviorAction, NpcBehaviorScheduler } from './NpcBehaviorScheduler';
 import { NpcStuckWatchdog, NpcWatchdogConfig, WatchdogRecoveryAction } from './NpcStuckWatchdog';
 import { terrainHeight } from '../world/CampWorld';
-import { MAIN_ASPHALT_ROAD, isInsidePrimaryCamp, PRIMARY_CAMP_PLOT } from '../world/festivalLayout';
+import {
+  MAIN_ASPHALT_ROAD,
+  SECOND_CONCRETE_ROAD,
+  isInsidePrimaryCamp,
+  PRIMARY_CAMP_PLOT,
+} from '../world/festivalLayout';
 import { MAD_DOG_CONFIG, seatLayout, type SeatConfig } from '../world/campLandmarks';
+import type { MapScenery } from '../ui/FestivalMap';
+import { CHAIR_POSE_CLIPS, alignChairPelvis } from '../interactions/chairPose';
 
 export function getSeatWorldPose(seat: SeatConfig): { position: THREE.Vector3; rotationY: number } {
   const offsetDistance = 1;
@@ -53,6 +61,7 @@ export type Npc = {
   behavior: NpcBehaviorScheduler;
   watchdog: NpcStuckWatchdog;
   passageWalker: boolean;
+  passageLane?: 'upper' | 'lower';
   passageDirection: number;
   activityCooldown: number;
   isCampMember: boolean;
@@ -62,7 +71,7 @@ export type Npc = {
   isHidden?: boolean;
 };
 const CAMP_RADIUS = 13;
-const SPEAKER_POSITION = { x: -1.45, z: 0.65 };
+const SPEAKER_POSITION = { x: -3.1, z: 1.2 };
 
 /** Dodaje stabilną strefę interakcji niezależną od aktualnej pozy animowanej siatki. */
 function addNpcInteractionHitbox(root: THREE.Group) {
@@ -82,6 +91,54 @@ function addNpcInteractionHitbox(root: THREE.Group) {
 
 export class NpcManager {
   readonly npcs: Npc[] = [];
+  private flankiPitch?: THREE.Vector3;
+  private crowdRoads: Record<'upper' | 'lower', { minX: number; maxX: number; minZ: number; maxZ: number }> =
+    { upper: MAIN_ASPHALT_ROAD, lower: SECOND_CONCRETE_ROAD };
+  private stageCenter = { x: 216, z: 21.5 };
+  private stageAudience = { minX: 170, maxX: 195, minZ: 0, maxZ: 35 };
+
+  setFestivalLayout(scenery: readonly MapScenery[]): void {
+    for (const [lane, id] of [
+      ['upper', 'Road_0'],
+      ['lower', 'Road_1'],
+    ] as const) {
+      const road = scenery.find((item) => item.id === id);
+      if (road)
+        this.crowdRoads[lane] = {
+          minX: road.x - road.width / 2,
+          maxX: road.x + road.width / 2,
+          minZ: road.z - road.depth / 2,
+          maxZ: road.z + road.depth / 2,
+        };
+    }
+    const stage = scenery.find((item) => item.id === 'Main_Stage_Deck_Plinth');
+    if (stage) {
+      this.stageCenter = { x: stage.x, z: stage.z };
+      const front = stage.x - stage.width / 2;
+      this.stageAudience = { minX: front - 37, maxX: front - 12, minZ: stage.z - 17.5, maxZ: stage.z + 17.5 };
+    }
+  }
+
+  reserveFlankiPlayers(center: THREE.Vector3, count = 5) {
+    this.flankiPitch = center.clone();
+    return this.npcs
+      .filter(
+        (n) =>
+          !n.isHidden &&
+          !n.isSitting &&
+          !n.root.userData.flankiTarget &&
+          n.root.position.distanceToSquared(center) <= 60 * 60 &&
+          this.navigation.canStandAt(n.root.position.x, n.root.position.z),
+      )
+      .sort((a, b) => a.root.position.distanceToSquared(center) - b.root.position.distanceToSquared(center))
+      .slice(0, count);
+  }
+
+  private insideFlankiPitch(x: number, z: number) {
+    return (
+      !!this.flankiPitch && Math.abs(x - this.flankiPitch.x) < 3.8 && Math.abs(z - this.flankiPitch.z) < 7.8
+    );
+  }
   speakerAnchor: THREE.Object3D | null = null;
   speakerPlaying = false;
   readonly occupiedSeats = new Map<string, Npc>();
@@ -190,6 +247,47 @@ export class NpcManager {
     return npc?.isHidden ?? false;
   }
 
+  /**
+   * Gromadzi pobliskich obozowiczów wokół boiska do flanków jako widzów i kibiców.
+   */
+  gatherNpcsAtFlanki(pitchCenter: THREE.Vector3, count = 6): void {
+    const candidates = this.npcs
+      .filter((npc) => !npc.isHidden && !npc.isSitting)
+      .sort(
+        (a, b) =>
+          a.root.position.distanceToSquared(pitchCenter) - b.root.position.distanceToSquared(pitchCenter),
+      )
+      .slice(0, count);
+
+    // Pozycje na liniach bocznych boiska do flanków (poza osią rzutu X: [-3.5, 3.5])
+    const spectatorOffsets = [
+      new THREE.Vector3(-4.5, 0, 4.0),
+      new THREE.Vector3(4.5, 0, 4.0),
+      new THREE.Vector3(-4.8, 0, 0.0),
+      new THREE.Vector3(4.8, 0, 0.0),
+      new THREE.Vector3(-4.5, 0, -4.0),
+      new THREE.Vector3(4.5, 0, -4.0),
+    ];
+
+    candidates.forEach((npc, index) => {
+      const offset = spectatorOffsets[index % spectatorOffsets.length];
+      const targetPos = new THREE.Vector3(pitchCenter.x + offset.x, 0, pitchCenter.z + offset.z);
+      targetPos.y = terrainHeight(targetPos.x, targetPos.z);
+
+      npc.returning = false;
+      npc.wait = 30.0;
+      const routed = this.routeTo(npc, targetPos);
+      if (!routed) {
+        npc.root.position.copy(targetPos);
+        const dx = pitchCenter.x - targetPos.x;
+        const dz = pitchCenter.z - targetPos.z;
+        npc.root.rotation.y = Math.atan2(dx, dz);
+        npc.target.copy(targetPos);
+        npc.waypoints.length = 0;
+      }
+    });
+  }
+
   constructor(
     private readonly scene: THREE.Scene,
     models: Map<string, GLTF>,
@@ -222,32 +320,30 @@ export class NpcManager {
         NPC_BEHAVIOR_PROFILES[index % NPC_BEHAVIOR_PROFILES.length],
         this.seed + index * 977,
       );
-    const passageWalker = festival && index % 5 !== 0;
+    const festivalIndex = this.npcs.filter((n) => !n.isCampMember).length;
+    const passageWalker = festival && festivalIndex >= 20;
+    const passageLane = festivalIndex >= 20 && festivalIndex < 40 ? 'lower' : 'upper';
     const isCampMember = !festival;
     let festivalRole: 'stage_dancer' | 'asp_listener' | 'food_queue' | 'chiller' | 'walker' | undefined;
     if (passageWalker) {
       festivalRole = 'walker';
     } else if (!isCampMember) {
-      const roleIndex = (index - 8) % 4;
-      if (roleIndex === 0) festivalRole = 'stage_dancer';
-      else if (roleIndex === 1) festivalRole = 'asp_listener';
-      else if (roleIndex === 2) festivalRole = 'food_queue';
-      else festivalRole = 'chiller';
+      festivalRole = 'stage_dancer';
     }
 
     const isExcluded = isCampMember ? undefined : (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
     const preferred = passageWalker
-      ? this.passageBounds()
+      ? this.passageBounds({ passageLane })
       : isCampMember
         ? { minX: -CAMP_RADIUS, maxX: CAMP_RADIUS, minZ: -CAMP_RADIUS, maxZ: CAMP_RADIUS }
         : festivalRole === 'stage_dancer'
-          ? { minX: 130, maxX: 180, minZ: 0, maxZ: 35 }
+          ? this.stageAudience
           : festivalRole === 'asp_listener'
             ? { minX: -75, maxX: -55, minZ: 92, maxZ: 102 }
             : festivalRole === 'food_queue'
-              ? (behavior.random() < 0.5
-                  ? { minX: -36, maxX: 36, minZ: 81, maxZ: 86 }
-                  : { minX: -125, maxX: -44, minZ: -25, maxZ: -18 })
+              ? behavior.random() < 0.5
+                ? { minX: -36, maxX: 36, minZ: 81, maxZ: 86 }
+                : { minX: -125, maxX: -44, minZ: -25, maxZ: -18 }
               : { minX: -70, maxX: 50, minZ: 30, maxZ: 55 };
     let spawn: THREE.Vector3 | null = null;
     for (let attempt = 0; attempt < 80; attempt++) {
@@ -260,7 +356,10 @@ export class NpcManager {
     if (!spawn) {
       for (let attempt = 0; attempt < 120; attempt++) {
         const candidate = this.navigation.randomWalkablePoint(() => behavior.random(), {}, isExcluded);
-        if (candidate && this.npcs.every((other) => other.root.position.distanceToSquared(candidate) >= 2.25)) {
+        if (
+          candidate &&
+          this.npcs.every((other) => other.root.position.distanceToSquared(candidate) >= 2.25)
+        ) {
           spawn = candidate;
           break;
         }
@@ -272,14 +371,18 @@ export class NpcManager {
     let animator: NpcAnimator | undefined;
     let visual: THREE.Object3D | undefined;
     if (model) {
-      visual = clone(model.scene);
+      const rig = clone(model.scene);
+      visual = new THREE.Group();
+      visual.add(rig);
       animator = model.animations.length
-        ? new NpcAnimator(visual, model.animations, { initialPhase: behavior.random() })
+        ? new NpcAnimator(rig, model.animations, { initialPhase: behavior.random() })
         : undefined;
       // Pierwsza klatka musi zostać zastosowana przed pomiarem SkinnedMesh.
       // Inaczej rig Pierścienia zmienia bounds dopiero po rozpoczęciu pętli.
       animator?.update(0);
       this.fit(visual, 2.45);
+      visual.scale.x *= NPC_BODY_WIDTH_SCALE;
+      visual.scale.z *= NPC_BODY_DEPTH_SCALE;
       if (festival) {
         const center = new THREE.Box3().setFromObject(visual).getCenter(new THREE.Vector3());
         visual.position.x -= center.x;
@@ -303,6 +406,14 @@ export class NpcManager {
       const { x, z } = SPEAKER_POSITION;
       anchor.position.set(x, terrainHeight(x, z) + 0.02, z);
       anchor.userData.interaction = { kind: 'speaker' };
+      anchor.userData.entryRadius = 1.8;
+      const speakerHitbox = new THREE.Mesh(
+        new THREE.BoxGeometry(0.9, 1.4, 0.9),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false }),
+      );
+      speakerHitbox.position.y = 0.7;
+      speakerHitbox.name = 'SpeakerInteractionHitbox';
+      anchor.add(speakerHitbox);
       const accessory = clone(speaker.scene);
       this.fit(accessory, 0.55);
       anchor.add(accessory);
@@ -340,8 +451,9 @@ export class NpcManager {
       behavior,
       watchdog: new NpcStuckWatchdog(asset.name, root.position, this.watchdogConfig),
       passageWalker,
+      passageLane,
       passageDirection: spawn.x < 0 ? 1 : -1,
-      activityCooldown: 8 + (index % 19),
+      activityCooldown: festivalRole === 'stage_dancer' ? 0 : 8 + (index % 19),
       isCampMember,
       festivalRole,
       animLodAccumulator: 0,
@@ -352,12 +464,13 @@ export class NpcManager {
     return true;
   }
 
-  private passageBounds() {
+  private passageBounds(npc?: Pick<Npc, 'passageLane'>) {
+    const road = this.crowdRoads[npc?.passageLane === 'lower' ? 'lower' : 'upper'];
     return {
-      minX: MAIN_ASPHALT_ROAD.minX + 5,
-      maxX: MAIN_ASPHALT_ROAD.maxX - 5,
-      minZ: MAIN_ASPHALT_ROAD.minZ + 1.5,
-      maxZ: MAIN_ASPHALT_ROAD.maxZ - 1.5,
+      minX: road.minX + 5,
+      maxX: road.maxX - 5,
+      minZ: road.minZ + 1.5,
+      maxZ: road.maxZ - 1.5,
     };
   }
   /** Normalizuje wysokość modelu NPC i włącza obsługę cieni. */
@@ -371,10 +484,10 @@ export class NpcManager {
     });
     // Refresh the cloned skeleton after applying Idle before measuring skin bounds.
     object.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(object);
+    const box = new THREE.Box3().setFromObject(object, true);
     const measuredHeight = box.max.y - box.min.y;
     object.scale.setScalar(height / (measuredHeight > 1e-6 ? measuredHeight : 1));
-    box.setFromObject(object);
+    box.setFromObject(object, true);
     object.position.y = -box.min.y;
   }
   /** Zwraca granice jednego z dziewięciu sektorów pełnego pola z marginesem od krawędzi. */
@@ -394,9 +507,11 @@ export class NpcManager {
 
   /** Losuje osiągalny cel w nowym sektorze i zapisuje kompletną, wygładzoną trasę. */
   private pickWanderTarget(npc: Npc) {
-    const isExcluded = npc.isCampMember ? undefined : (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
+    const isExcluded = npc.isCampMember
+      ? undefined
+      : (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
     if (npc.passageWalker) {
-      const road = this.passageBounds();
+      const road = this.passageBounds(npc);
       const middle = (road.minX + road.maxX) / 2;
       for (let attempt = 0; attempt < 12; attempt++) {
         const bounds = {
@@ -404,7 +519,11 @@ export class NpcManager {
           minX: npc.passageDirection > 0 ? middle + 12 : road.minX,
           maxX: npc.passageDirection > 0 ? road.maxX : middle - 12,
         };
-        const candidate = this.navigation.randomWalkablePoint(() => npc.behavior.random(), bounds, isExcluded);
+        const candidate = this.navigation.randomWalkablePoint(
+          () => npc.behavior.random(),
+          bounds,
+          isExcluded,
+        );
         if (
           candidate &&
           candidate.distanceToSquared(npc.root.position) > 100 &&
@@ -420,30 +539,52 @@ export class NpcManager {
     if (npc.festivalRole === 'stage_dancer') {
       const stageBounds = { minX: 125, maxX: 185, minZ: -4, maxZ: 38 };
       for (let attempt = 0; attempt < 12; attempt++) {
-        const candidate = this.navigation.randomWalkablePoint(() => npc.behavior.random(), stageBounds, isExcluded);
-        if (candidate && candidate.distanceToSquared(npc.root.position) > 9 && this.routeTo(npc, candidate)) return true;
+        const candidate = this.navigation.randomWalkablePoint(
+          () => npc.behavior.random(),
+          stageBounds,
+          isExcluded,
+        );
+        if (candidate && candidate.distanceToSquared(npc.root.position) > 9 && this.routeTo(npc, candidate))
+          return true;
       }
     } else if (npc.festivalRole === 'asp_listener') {
       const aspBounds = { minX: -12, maxX: 12, minZ: 90, maxZ: 104 };
       for (let attempt = 0; attempt < 12; attempt++) {
-        const candidate = this.navigation.randomWalkablePoint(() => npc.behavior.random(), aspBounds, isExcluded);
-        if (candidate && candidate.distanceToSquared(npc.root.position) > 9 && this.routeTo(npc, candidate)) return true;
+        const candidate = this.navigation.randomWalkablePoint(
+          () => npc.behavior.random(),
+          aspBounds,
+          isExcluded,
+        );
+        if (candidate && candidate.distanceToSquared(npc.root.position) > 9 && this.routeTo(npc, candidate))
+          return true;
       }
     } else if (npc.festivalRole === 'food_queue') {
-      const queueBounds = npc.root.position.z > 0
-        ? { minX: 48, maxX: 104, minZ: 76, maxZ: 83 }
-        : { minX: -125, maxX: -44, minZ: -28, maxZ: -23 };
+      const queueBounds =
+        npc.root.position.z > 0
+          ? { minX: 48, maxX: 104, minZ: 76, maxZ: 83 }
+          : { minX: -125, maxX: -44, minZ: -28, maxZ: -23 };
       for (let attempt = 0; attempt < 12; attempt++) {
-        const candidate = this.navigation.randomWalkablePoint(() => npc.behavior.random(), queueBounds, isExcluded);
-        if (candidate && candidate.distanceToSquared(npc.root.position) > 9 && this.routeTo(npc, candidate)) return true;
+        const candidate = this.navigation.randomWalkablePoint(
+          () => npc.behavior.random(),
+          queueBounds,
+          isExcluded,
+        );
+        if (candidate && candidate.distanceToSquared(npc.root.position) > 9 && this.routeTo(npc, candidate))
+          return true;
       }
     } else if (npc.festivalRole === 'chiller') {
-      const chillerBounds = npc.behavior.random() < 0.5
-        ? { minX: -110, maxX: 110, minZ: -130, maxZ: -80 }
-        : { minX: -90, maxX: 50, minZ: 24, maxZ: 50 };
+      const chillerBounds =
+        npc.behavior.random() < 0.5
+          ? { minX: -110, maxX: 110, minZ: -130, maxZ: -80 }
+          : { minX: -90, maxX: 50, minZ: 24, maxZ: 50 };
       for (let attempt = 0; attempt < 12; attempt++) {
-        const candidate = this.navigation.randomWalkablePoint(() => npc.behavior.random(), chillerBounds, isExcluded);
-        if (candidate && candidate.distanceToSquared(npc.root.position) > 16 && this.routeTo(npc, candidate)) return true;
+        const candidate = this.navigation.randomWalkablePoint(
+          () => npc.behavior.random(),
+          chillerBounds,
+          isExcluded,
+        );
+        if (candidate && candidate.distanceToSquared(npc.root.position) > 16 && this.routeTo(npc, candidate))
+          return true;
       }
     }
 
@@ -463,7 +604,7 @@ export class NpcManager {
   /** Kieruje NPC do losowego, bezpiecznego punktu centralnej części obozu lub dla festiwalowiczów poza obozem. */
   private pickRunHomeTarget(npc: Npc) {
     if (!npc.isCampMember) {
-      const road = this.passageBounds();
+      const road = this.passageBounds(npc);
       const isExcluded = (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
       for (let attempt = 0; attempt < 12; attempt += 1) {
         const candidate = this.navigation.randomWalkablePoint(() => npc.behavior.random(), road, isExcluded);
@@ -481,7 +622,9 @@ export class NpcManager {
 
   /** Wybiera krótkie spotkanie w pobliżu pojedynczego NPC, bez tworzenia dużych grup. */
   private pickSocialTarget(npc: Npc) {
-    const isExcluded = npc.isCampMember ? undefined : (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
+    const isExcluded = npc.isCampMember
+      ? undefined
+      : (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
     const candidates = this.npcs.filter(
       (other) =>
         other !== npc &&
@@ -585,7 +728,8 @@ export class NpcManager {
 
   /** Przelicza A* do konkretnego celu i pomija waypoint leżący bezpośrednio pod NPC. */
   private routeTo(npc: Npc, target: THREE.Vector3) {
-    const isExcluded = npc.isCampMember ? undefined : (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
+    const isExcluded = (x: number, z: number) =>
+      this.insideFlankiPitch(x, z) || (!npc.isCampMember && isInsidePrimaryCamp(x, z, 1.0));
     const path = this.navigation.findPath(npc.root.position, target, isExcluded);
     if (path.length < 2) return false;
     npc.target.copy(path[path.length - 1]);
@@ -647,8 +791,10 @@ export class NpcManager {
               minZ: -CAMP_RADIUS * 0.7,
               maxZ: CAMP_RADIUS * 0.7,
             }
-          : this.passageBounds();
-        const isExcluded = npc.isCampMember ? undefined : (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
+          : this.passageBounds(npc);
+        const isExcluded = npc.isCampMember
+          ? undefined
+          : (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
         const safePoint =
           this.navigation.randomWalkablePoint(() => npc.behavior.random(), bounds, isExcluded) ??
           (npc.isCampMember ? new THREE.Vector3(0, 0, 0) : new THREE.Vector3(0, 0, -35));
@@ -718,6 +864,8 @@ export class NpcManager {
   /** Aktualizuje decyzje ruchu, obrót, powroty od granicy i płynne animacje NPC. */
   update(dt: number, _time: number, playerPosition?: THREE.Vector3, isSpeakerPlaying?: boolean) {
     if (!Number.isFinite(dt) || dt <= 0) return;
+    if (this.flankiPitch && !this.npcs.some((n) => n.root.userData.flankiTarget))
+      this.flankiPitch = undefined;
     if (isSpeakerPlaying !== undefined) {
       this.speakerPlaying = isSpeakerPlaying;
     }
@@ -743,15 +891,113 @@ export class NpcManager {
       }));
     let socialCount = this.npcs.filter((npc) => !npc.isHidden && npc.behavior.state === 'social').length;
     const dancingCampCount = this.npcs.filter(
-      (npc) => !npc.isHidden && npc.isCampMember && (npc.behavior.state === 'dance' || npc.isDancingAtSpeaker),
+      (npc) =>
+        !npc.isHidden && npc.isCampMember && (npc.behavior.state === 'dance' || npc.isDancingAtSpeaker),
     ).length;
     const sittingCampCount = this.npcs.filter(
-      (npc) => !npc.isHidden && npc.isCampMember && (npc.behavior.state === 'sit' || npc.isSitting || npc.assignedSeatId),
+      (npc) =>
+        !npc.isHidden &&
+        npc.isCampMember &&
+        (npc.behavior.state === 'sit' || npc.isSitting || npc.assignedSeatId),
     ).length;
 
     for (let index = 0; index < this.npcs.length; index++) {
       const npc = this.npcs[index];
       if (npc.isHidden) continue;
+      const flankiTarget = npc.root.userData.flankiTarget as THREE.Vector3 | undefined;
+      if (flankiTarget) {
+        if (!npc.root.userData.flankiActive) {
+          if (!npc.root.userData.flankiRouted) {
+            npc.waypoints = this.navigation.findPath(npc.root.position, flankiTarget);
+            npc.root.userData.flankiRouted = true;
+          }
+          while (
+            npc.waypoints.length &&
+            Math.hypot(npc.root.position.x - npc.waypoints[0].x, npc.root.position.z - npc.waypoints[0].z) <
+              0.2
+          )
+            npc.waypoints.shift();
+          const direction = (npc.waypoints[0] ?? flankiTarget).clone().sub(npc.root.position).setY(0);
+          const distance = direction.length();
+          const moving = distance > 0.08;
+          if (!moving) {
+            npc.root.position.copy(flankiTarget);
+            const can = npc.root.userData.flankiFacing as THREE.Vector3 | undefined;
+            if (can)
+              npc.root.rotation.y = Math.atan2(can.x - npc.root.position.x, can.z - npc.root.position.z);
+            npc.velocity.set(0, 0, 0);
+          }
+          if (moving) {
+            direction.normalize();
+            // A* already checked this segment. Looking past a nearby corner can
+            // steer away from the waypoint forever because a wall lies beyond it.
+            const waypoint = npc.waypoints[0] ?? flankiTarget;
+            const steering = this.navigation.hasLineOfSight(npc.root.position, waypoint)
+              ? { direction: direction.clone(), speedScale: 1 }
+              : computeNpcSteering({
+                  position: npc.root.position,
+                  desiredDirection: direction,
+                  velocity: npc.velocity,
+                  speed: 2.5,
+                  neighbors: [],
+                  canStandAt: (x, z) => this.navigation.canStandAt(x, z),
+                });
+            direction.copy(steering.direction);
+            const previous = npc.root.position.clone();
+            const next = previous
+              .clone()
+              .addScaledVector(direction, Math.min(distance, dt * 2.5 * steering.speedScale));
+            if (this.navigation.hasLineOfSight(previous, next)) npc.root.position.copy(next);
+            const stalled = npc.root.position.distanceToSquared(previous) < 1e-8;
+            npc.root.userData.flankiStalled = stalled ? (npc.root.userData.flankiStalled ?? 0) + dt : 0;
+            if (npc.root.userData.flankiStalled > 0.8) {
+              delete npc.root.userData.flankiRouted;
+              npc.root.userData.flankiStalled = 0;
+            }
+            npc.velocity
+              .copy(npc.root.position)
+              .sub(previous)
+              .multiplyScalar(1 / dt)
+              .setY(0);
+            npc.root.position.y = terrainHeight(npc.root.position.x, npc.root.position.z);
+            npc.root.rotation.y = Math.atan2(direction.x, direction.z);
+          }
+          npc.animator?.play(moving ? 'Walk' : 'Idle');
+          npc.animator?.setMovementSpeed(moving ? 2.5 : 0);
+          npc.animator?.update(dt);
+        }
+        continue;
+      }
+      if (npc.festivalRole === 'stage_dancer' && !npc.inConversation) {
+        npc.stationary = true;
+        npc.speed = 0;
+        npc.velocity.set(0, 0, 0);
+        npc.root.rotation.y = Math.atan2(
+          this.stageCenter.x - npc.root.position.x,
+          this.stageCenter.z - npc.root.position.z,
+        );
+        npc.activityCooldown -= dt;
+        if (npc.activityCooldown <= 0 || !npc.animator?.activityActive) {
+          const clips = ['Headbanging', 'HipHopDancing', 'HipHopDancingVariant1', 'SillyDancing'].filter(
+            (name) => npc.animator?.hasClip(name),
+          );
+          if (clips.length)
+            npc.animator?.startActivity([
+              { name: clips[Math.floor(npc.behavior.random() * clips.length)], seconds: 20 },
+            ]);
+          npc.activityCooldown = 20;
+        }
+        this.stepNpcAnimation(npc, dt, playerPosition, index, true);
+        continue;
+      }
+      if (this.insideFlankiPitch(npc.root.position.x, npc.root.position.z)) {
+        const sign = npc.root.position.x >= this.flankiPitch!.x ? 1 : -1;
+        npc.root.position.x += sign * dt * 2.5;
+        npc.root.position.y = terrainHeight(npc.root.position.x, npc.root.position.z);
+        npc.animator?.play('Walk');
+        npc.animator?.update(dt);
+        continue;
+      }
 
       // Jeśli głośnik przestał grać, zakończ taniec pod głośnikiem
       if (!this.speakerPlaying && npc.isDancingAtSpeaker) {
@@ -780,6 +1026,7 @@ export class NpcManager {
         npc.stationary = true;
         npc.watchdog.resetPosition(npc.root.position);
         this.stepNpcAnimation(npc, dt, playerPosition, index, true);
+        if (npc.isSitting && npc.visual) alignChairPelvis(npc.root, npc.visual);
         continue;
       }
       const nearEdge =
@@ -811,11 +1058,7 @@ export class NpcManager {
         arrived,
         socialAvailable: !npc.passageWalker && socialCount < 2 && this.npcs.length > 1,
         speakerPlaying: this.speakerPlaying,
-        canDance:
-          npc.isCampMember &&
-          Boolean(npc.animator) &&
-          this.speakerPlaying &&
-          dancingCampCount < 3,
+        canDance: npc.isCampMember && Boolean(npc.animator) && this.speakerPlaying && dancingCampCount < 3,
         seatAvailable:
           npc.isCampMember &&
           Boolean(npc.animator) &&
@@ -840,17 +1083,18 @@ export class NpcManager {
         npc.isSitting = true;
         if (npc.visual) {
           npc.visual.rotation.y = Math.PI;
-          npc.visual.position.y = (npc.visualBaseY ?? 0) - 0.38;
+          npc.visual.position.y = (npc.visualBaseY ?? 0) - 0.2;
           npc.visual.position.z = -0.52;
         }
-        const sitClips = ['SittingIdle', 'SittingLaughing', 'SittingTalking'];
+        const sitClips = [...CHAIR_POSE_CLIPS];
         const available = sitClips.filter((c) => npc.animator?.hasClip(c));
-        const sitClip =
-          available.length > 0
-            ? available[Math.floor(npc.behavior.random() * available.length)]
-            : 'SittingIdle';
+        const sitClip = available.length > 0 ? available[0] : 'SittingIdle';
         if (npc.animator?.hasClip(sitClip)) {
-          npc.animator.startActivity([{ name: sitClip, seconds: 12 + npc.behavior.random() * 16 }]);
+          npc.animator.startActivity([
+            { name: sitClip, seconds: 12 + npc.behavior.random() * 16, fadeSeconds: 0 },
+          ]);
+          npc.animator.update(0);
+          if (npc.visual) alignChairPelvis(npc.root, npc.visual);
         }
       }
 
@@ -981,7 +1225,8 @@ export class NpcManager {
       npc.speed = approachSpeed(npc.speed, desiredSpeed, dt);
       const step = Math.min(distance, dt * npc.speed);
       const next = npc.root.position.clone().addScaledVector(npc.steeringDirection, step);
-      const isExcluded = npc.isCampMember ? undefined : (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
+      const isExcluded = (x: number, z: number) =>
+        this.insideFlankiPitch(x, z) || (!npc.isCampMember && isInsidePrimaryCamp(x, z, 1.0));
       if (!this.navigation.hasLineOfSight(npc.root.position, next, isExcluded)) {
         if (!this.routeTo(npc, npc.target)) {
           npc.behavior.routeFailed();
@@ -1061,7 +1306,10 @@ export class NpcManager {
     const pos = npc.root.position;
 
     // 1. Taniec pod Dużą Sceną (Headbanging, HipHopDancing, SillyDancing, Cheering, itp.)
-    if (npc.festivalRole === 'stage_dancer' || (pos.x >= 115 && pos.x <= 195 && pos.z >= -14 && pos.z <= 48)) {
+    if (
+      npc.festivalRole === 'stage_dancer' ||
+      (pos.x >= 115 && pos.x <= 195 && pos.z >= -14 && pos.z <= 48)
+    ) {
       const danceClips = [
         'Headbanging',
         'HipHopDancing',
@@ -1081,7 +1329,10 @@ export class NpcManager {
     }
 
     // 2. Namiot ASP: słuchanie, siedzenie i oklaski
-    if (npc.festivalRole === 'asp_listener' || (pos.x >= -85 && pos.x <= -45 && pos.z >= 86 && pos.z <= 108)) {
+    if (
+      npc.festivalRole === 'asp_listener' ||
+      (pos.x >= -85 && pos.x <= -45 && pos.z >= 86 && pos.z <= 108)
+    ) {
       const aspActivities = [
         'Sitting',
         'SittingIdle',
@@ -1216,7 +1467,11 @@ export class NpcManager {
   }
 
   /** Reaguje na poczęstowanie używką (piwem lub jointem) przez gracza. */
-  shareItemWithNpc(name: string, effect: 'Piwo' | 'Joint', facePosition?: THREE.Vector3): { success: boolean; message?: string } {
+  shareItemWithNpc(
+    name: string,
+    effect: 'Piwo' | 'Joint',
+    facePosition?: THREE.Vector3,
+  ): { success: boolean; message?: string } {
     const key = name.toLowerCase().trim();
     const npc = this.npcs.find(
       (n) =>

@@ -147,10 +147,7 @@ export function placeFestivalStages(
       const minZ = stageBox.isEmpty() ? b.minZ : stageBox.min.z;
       const maxZ = stageBox.isEmpty() ? b.maxZ : stageBox.max.z;
       colliders.push(
-        new THREE.Box3(
-          new THREE.Vector3(minX, -2, minZ),
-          new THREE.Vector3(maxX, floor + site.height, maxZ),
-        ),
+        new THREE.Box3(new THREE.Vector3(minX, -2, minZ), new THREE.Vector3(maxX, floor + site.height, maxZ)),
       );
     }
   }

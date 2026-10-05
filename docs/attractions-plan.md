@@ -2,6 +2,65 @@
 
 ## Aktualizacja wykonawcza 2026-10-03 — przeczytaj najpierw
 
+### Nowy priorytet użytkownika: prywatna gra i naprawy G1–G5
+
+Gra ma być używana prywatnie, bez publikacji. To zastępuje wcześniejsze założenie publicznego wdrożenia: nie planować teraz publikowania ani uploadu mediów do GitHub/CDN. Aktualne repo i plan są w `E:\kodowanie\gra`, branch `feat/festival-next`; poprzedni katalog worktree nie zawiera już projektu. Agenci przed pracą sprawdzają aktualny worktree i przydzielony bazowy SHA.
+
+**Najpierw G2/G3/G4/G5, potem nowe atrakcje.** Poniższe zadania są planem, nie potwierdzeniem wykonania napraw.
+
+#### G1 — prywatna biblioteka koncertów KręciołaTV (S–M)
+
+Życzenie użytkownika: wybrane klipy muzyczne z KręciołaTV dostępne lokalnie i odtwarzane z Dużej Sceny. Przygotować listę konkretnych linków, tytułów i długości, następnie zaimportować do lokalnej biblioteki pliki pozyskane w dozwolony sposób. Pobieranie z YouTube dopiero po potwierdzeniu podstawy uprawniającej do tego pobrania; prywatny charakter gry sam nie rozstrzyga warunków serwisu ani zakresu praw. Nie oznaczać automatycznie wszystkich publicznych filmów jako dozwolonych do pobrania. [Warunki YouTube](https://www.youtube.com/static?template=terms) rozróżniają prywatne oglądanie od pobierania/wykorzystywania poza usługą.
+
+Agent ma obsłużyć import plików dostarczonych przez użytkownika lub uprawnionego, walidację formatów, duplikatów i manifest playlisty. Jeśli dla wybranego nagrania brak potwierdzenia sposobu pobrania, przygotować wpis jako oczekujący, nie obchodzić zabezpieczeń. Oficjalny embed/link może być alternatywą do oglądania, ale nie źródłem wyodrębnionego audio do pogłosu. Bez pobierania cookies konta i bez obchodzenia DRM.
+
+Media lokalne poza śledzonym repo i Git LFS, bez automatycznego uploadu. Manifest nie może zawierać prywatnych tokenów ani podpisanych URL. E1/E2 nadal obowiązują dla przestrzennego audio; hosting publiczny i licencja na publiczne udostępnianie są poza aktualnym zakresem. Testy: brak pliku, błędny format, duplikat, przełączenie klipu, odtwarzanie z lokalnego serwera i brak wysyłania plików na zewnątrz.
+
+#### G2 — konfiguracja lokalnego env i bezpieczne klucze (S, diagnoza przed zmianą)
+
+Zgłoszenie: użytkownik ma klucze w lokalnym env, ale gra ich nie ładuje. Nie uznawać obecności ani poprawności konkretnego sekretu za potwierdzoną bez diagnostyki. Nie odczytywać jego wartości do raportu.
+
+- Sprawdzić nazwy wymaganych ustawień w kodzie, root projektu, cwd procesu, `vite.config.ts`, tryb dev/build, envDir, ładowanie konfiguracji serwera i potrzebę restartu. Raportować tylko nazwę i status obecne/brak, nigdy wartość, prefiks klucza ani cały env.
+- Publiczne ustawienia klienta (np. adres serwera) oddzielić od sekretów. W kodzie znaleziono `VITE_GEMINI_API_KEY` w `GeminiNpcService.ts` i `VITE_ELEVENLABS_API_KEY` w `ElevenLabsNpcService.ts`: wymagają audytu. Prefiks VITE nie jest ochroną sekretu; nie naprawiać błędu przez ekspozycję kluczy w bundlu, UI czy localStorage.
+- `AGENTS.md` zabrania użycia kluczy OpenAI/Gemini/Google, płatnych kredytów i overage. Nie uruchamiać API ani testowych żądań płatnych. Jeżeli oczekiwane działanie wymaga zmiany tej zasady, zgłosić konflikt użytkownikowi zamiast ją obchodzić. Do czasu decyzji zachować lokalny fallback dialogów.
+- Dla dozwolonej integracji wymagającej sekretu projektować pośrednictwo serwera, nie pobieranie sekretu przez grę. Bez otwartego proxy; walidacja, allowlista operacji i limit żądań. Aktywację usług i kosztów traktować jako osobną decyzję, nie część naprawy env.
+- Uzupełnić `.env.example` samymi placeholderami oraz instrukcję uruchomienia. Sprawdzić gitignore; nie przepisywać istniejących prywatnych plików ani kluczy bez potrzeby.
+- Testy na fikcyjnych wartościach: brak konfiguracji, konfiguracja poprawna, tryb dev/build, fallback, brak sekretu w wygenerowanym bundlu/logach. Znaleziony historyczny wyciek zgłosić do rotacji; nie publikować jego wartości i nie usuwać historii samodzielnie.
+
+#### G3 — naprawa helpera/samouczka w menu (S–M, pilne)
+
+Zgłoszenie: nie można wyjść ani przejść dalej. Najpierw odtworzyć i zidentyfikować konkretny overlay/helper; nie zakładać, że pliki trawy z nazwą Tutorial są jego implementacją.
+
+- Sprawdzić przejścia kroków, disabled przycisków, focus trap, klawisz Escape, pointer lock, overlay, stacking contexts, pointer-events i podwójne listenery.
+- Każdy krok ma dostępne „Dalej”, „Wstecz” (oprócz pierwszego), „Pomiń/Zamknij”; ostatni „Gotowe”. Zamknięcie przywraca focus i właściwy stan gry; ponowne otwarcie z pomocy jest możliwe.
+- Samouczek nie może wymagać kliknięcia elementu świata zasłoniętego własnym overlayem. Jeśli dany krok wymaga działania, zapewnić osiągalny cel i opcję pominięcia. Awaria brakującego elementu UI nie może uwięzić gracza.
+- „Suwak”: najpierw ustalić, czy chodzi o scrollbar, czy kontrolkę zakresu. Scrollbar treści domyślnie cienki i zgodny z paletą UI, widoczny gdy treść nie mieści się; nie wyłączać przewijania przez overflow:hidden. Kontrolki zakresu, np. głośności, zachować widoczne z etykietą i aktualną wartością, stylizować spójnie z grą.
+- Testy: przejście wszystkich kroków, zamknięcie z każdego, powrót, reset, mały ekran, landscape, klawiatura/Tab/Escape/Enter i dotyk, powiększenie tekstu. Raport przeglądarki z reprodukcją przed/po; sam test DOM nie kończy zadania.
+
+#### G4 — audyt wszystkich przycisków i warstw UI (M)
+
+Utworzyć macierz ekran × kontrolka × wejście × oczekiwany efekt: menu startowe, wybór postaci, helper, ustawienia, pauza, ekwipunek, dialog, mapa, HUD mobilny i aktywne mini-gry. Dla niedostępnej funkcji odnotować celowe disabled i czytelny powód, nie udawać działającego przycisku.
+
+- Sprawdzać faktyczny hit test (`elementFromPoint`/odpowiednik przeglądarki) w środku i przy krawędziach, a następnie działanie kliknięcia; obrazy/canvas/pseudoelementy i niewidoczne overlaye nie mogą przechwytywać wejścia. Nie ustawiać pointer-events:none na całym interaktywnym panelu.
+- Kontrolować z-index w kontekście rodziców, overflow, sticky/fixed, focus i nakładanie się przycisków. Unikać naprawy przez kolejne arbitralne z-index:999999.
+- Minimum widoki 360×800, 390×844, 844×390, 1366×768, 1920×1080 oraz zoom 200%; dotykowe cele co najmniej około 44×44 CSS px, brak poziomego ucięcia ważnych akcji.
+- Ekrany testować po zamknięciu helpera/modala oraz po zmianie rozmiaru: ukryty backdrop nie może zostać nad grą. Skróty gry nie reagują podczas pisania nicku/czatu.
+- Raport: tabela PASS/FAIL/niezweryfikowane, screenshot i kroki dla każdego błędu. Osobno małe poprawki wspólnego CSS; jeden integrator, bez równoległych edycji całego menu przez kilku agentów.
+
+#### G5 — audyt nakładania się modeli w świecie (M, pilne)
+
+Zgłoszenie do odtworzenia: namioty gastronomiczne renderują się na zwykłych namiotach. Sprawdzić `CampWorld`, `festivalMarket`, `festivalCamping`, `campLayout` i `festivalLayout` oraz aktualne rejestry placementów. Rozróżnić powielone spawny, konflikt układów współrzędnych/skali, przenikanie brył i z-fighting powierzchni. Nie usuwać losowo widocznych namiotów.
+
+- Zbudować read-only raport zajętych obszarów: stabilne ID, kategoria, źródłowy moduł, pozycja, obrót i footprint w świecie po aktualizacji macierzy. Szeroka faza AABB, potwierdzenie obróconym prostokątem/OBB dla kandydatów; nie uznawać każdego przecięcia AABB za błąd.
+- Jawnie dozwolone zagnieżdżenia: stoisko i jego szyld, rekwizyt pod własnym namiotem, podest i konstrukcja. Wykluczenia po relacji rodzic/właściciel, nie ogólne ignorowanie całej kategorii.
+- Stoiska gastronomiczne i Lidl mają rezerwacje przy głównym pasażu; generator zwykłych obozów musi je respektować z marginesem przejścia. Zachować prostokątne parcele obozów. Nie przenosić obiektów na drogę, punkt spawnu, wejście do młyna ani pod scenę.
+- Docelowo jeden współdzielony rejestr obszarów zajętych używany przez placement namiotów, kolizje, maskę trawy i nawigację. W pierwszym Issue naprawić źródłowy konflikt dwóch generatorów, bez przepisywania całego świata.
+- Testy stałego seeda: brak niedozwolonych przecięć sklep–namiot i namiot–namiot, przejezdne alejki, brak podwójnego spawnu po restart, poprawna wysokość na gruncie. Raport przed/po z ID konfliktów i widokiem z góry oraz z poziomu gracza.
+
+### Przydział napraw G
+
+G2: agent diagnostyczny konfiguracji, bez odczytu sekretów do raportów i bez aktywacji API. G3/G4: jeden agent UI, bo pliki i warstwy się pokrywają. G5: osobny agent layoutu, bez modeli NPC i bez edycji UI. G1: osobne przygotowanie manifestu/importera, pobrania warunkowane potwierdzonym sposobem dostępu. Wszystko na przydzielonych branchach/worktree, bez push/merge; review Codexa przed integracją.
+
 Rozszerzenia społeczne, tłum i koncerty: sekcje C–F poniżej. To dalszy plan, nie dodatkowy zakres pierwszego MVP młyna.
 
 Ten dokument zastępuje wcześniejszą specyfikację. Plan nie oznacza wdrożenia. Cel: wierne otoczenie festiwalu, krótkie dobrowolne atrakcje, bez nowych modeli NPC i kosztownych usług.
@@ -20,12 +79,12 @@ Ten dokument zastępuje wcześniejszą specyfikację. Plan nie oznacza wdrożeni
 
 **Priorytet: młyn + paszport + znacznik własnego obozu.** Następnie sprzątanie pola, Flanki i ognisko. Nie implementować wszystkich atrakcji równocześnie.
 
-| ID | Nowa propozycja | Koszt | Zakres i kryteria odbioru |
-| --- | --- | --- | --- |
-| B8 | „Gdzie jest mój namiot?” | XS–S | Jeden marker na istniejącej `FestivalMap`, odległość i kierunek. Domyślnie główny obóz, opcjonalnie własny punkt. Bez teleportacji/pathfindingu. Testy skali mapy, zapisu, błędnego storage i dotyku. |
-| B9 | Sprzątanie pola i zwrot puszek | S | Lokalna runda: 10 puszek w osiągalnych punktach, E/mobile zbiera, oddanie daje odznakę. Stałe/seedowane pozycje, instancing lub istniejący asset. Testy zasięgu, podwójnego zebrania, resetu i kolizji namiotów. Bez wspólnej ekonomii. |
-| B10 | Festiwalowe bingo 3×3 | XS–S | Wspólny zapis z paszportem, nie drugi system. Zdarzenia: siadanie, odwiedzenie sceny, przejazd, ukończona mini-gra. Niewdrożone atrakcje nie mogą blokować kompletu. Testy idempotencji, zapisu i ukończenia. |
-| B11 | Quiz patrolu | S | 5 pytań z lokalnego JSON, 3 odpowiedzi, wyjaśnienie. Bez AI podczas gry. Na start pytania o mapę gry; fakty o realnym festiwalu zatwierdza użytkownik. Testy oceny, losowania z seedem, resetu i anulowania. |
+| ID  | Nowa propozycja                | Koszt | Zakres i kryteria odbioru                                                                                                                                                                                                               |
+| --- | ------------------------------ | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B8  | „Gdzie jest mój namiot?”       | XS–S  | Jeden marker na istniejącej `FestivalMap`, odległość i kierunek. Domyślnie główny obóz, opcjonalnie własny punkt. Bez teleportacji/pathfindingu. Testy skali mapy, zapisu, błędnego storage i dotyku.                                   |
+| B9  | Sprzątanie pola i zwrot puszek | S     | Lokalna runda: 10 puszek w osiągalnych punktach, E/mobile zbiera, oddanie daje odznakę. Stałe/seedowane pozycje, instancing lub istniejący asset. Testy zasięgu, podwójnego zebrania, resetu i kolizji namiotów. Bez wspólnej ekonomii. |
+| B10 | Festiwalowe bingo 3×3          | XS–S  | Wspólny zapis z paszportem, nie drugi system. Zdarzenia: siadanie, odwiedzenie sceny, przejazd, ukończona mini-gra. Niewdrożone atrakcje nie mogą blokować kompletu. Testy idempotencji, zapisu i ukończenia.                           |
+| B11 | Quiz patrolu                   | S     | 5 pytań z lokalnego JSON, 3 odpowiedzi, wyjaśnienie. Bez AI podczas gry. Na start pytania o mapę gry; fakty o realnym festiwalu zatwierdza użytkownik. Testy oceny, losowania z seedem, resetu i anulowania.                            |
 
 B2/B9/B10: nagrody lokalne i kosmetyczne. Bez globalnych rankingów, zmian nicków w sieci i przedmiotów wpływających na rozgrywkę. LocalStorage wersjonowany, walidacja ID, obsługa błędnego JSON i odmowy zapisu. Punkty brać ze stałych layoutu, nie powielać współrzędnych.
 
@@ -106,13 +165,13 @@ Własność: `Game.ts`, `CampWorld.ts`, `AppStateMachine.ts`, prompt/UI i testy.
 
 To sugestie według trudności, nie gwarancje skuteczności modelu:
 
-| Pakiet | Proponowany agent | Granice pracy |
-| --- | --- | --- |
-| A0/A1 | Gemini Pro | Geometria i czysta matematyka; bez Game.ts. |
-| B2, B8, B10, B11 | Gemini Flash; Pro do integracji | Jeden mały moduł i testy, najpierw zadanie próbne. |
-| B1, B4, B9 | Gemini Pro lub Sonnet | Logika aktywności i testy; nie globalna przebudowa gry. |
-| A2/A3/A5 | Jeden agent Pro/Sonnet + końcowe review Codexa | Kamera, stany i sieć są najbardziej ryzykowne. |
-| Fixtures i dokumentacja | Flash / GPT-OSS | Bez rigowania i zmian protokołu. |
+| Pakiet                  | Proponowany agent                              | Granice pracy                                           |
+| ----------------------- | ---------------------------------------------- | ------------------------------------------------------- |
+| A0/A1                   | Gemini Pro                                     | Geometria i czysta matematyka; bez Game.ts.             |
+| B2, B8, B10, B11        | Gemini Flash; Pro do integracji                | Jeden mały moduł i testy, najpierw zadanie próbne.      |
+| B1, B4, B9              | Gemini Pro lub Sonnet                          | Logika aktywności i testy; nie globalna przebudowa gry. |
+| A2/A3/A5                | Jeden agent Pro/Sonnet + końcowe review Codexa | Kamera, stany i sieć są najbardziej ryzykowne.          |
+| Fixtures i dokumentacja | Flash / GPT-OSS                                | Bez rigowania i zmian protokołu.                        |
 
 Nie potrzeba najdroższego modelu do pierwszego quizu czy paszportu. Ocenić jakość jednego małego Issue przed przekazaniem większej partii.
 
@@ -250,19 +309,19 @@ Tablica „teraz gra”, lokalny rozkład koncertów, delikatne światła do jaw
 
 ## F. Dalsze kreatywne atrakcje i podział na małe Issue
 
-| ID | Pomysł | Tanie MVP / zależności |
-| --- | --- | --- |
-| F1 | Tablica ogłoszeń obozu | Lokalnie generowane wiadomości: zguba, wspólne Flanki, spotkanie. 3 wpisy z danych, bez treści graczy i moderacji na start. S. |
-| F2 | Biuro rzeczy znalezionych | Znajdź kapelusz/flagę, rozpoznaj właściciela po dialogu. Jeden rekwizyt i historia, C2. S. |
-| F3 | Wymiana naszywek | Kosmetyczny album 8 ikon za różne aktywności, bez losowych płatnych paczek. B2. XS–S. |
-| F4 | Festiwalowa poczta | NPC prosi o dostarczenie kartki innemu obozowi; odpowiedź i zmiana relacji. Stałe lokalizacje, C1/C2. S. |
-| F5 | Znajomy pokazuje skrót | Po przysłudze odblokowuje wskazówkę/marker na mapie, nie nowy teren. B8/C1. XS. |
-| F6 | Wspólne zdjęcie | Znajomy czeka w ustalonym punkcie, gracz robi pocztówkę. B3/C1; bez pozy z niezweryfikowanego rigu. M. |
-| F7 | Obóz żyje porą dnia | Rano kawa i cisza, wieczorem ognisko, przed koncertem część osób wychodzi. Reguły czasu i istniejące rekwizyty, D1. S–M. |
-| F8 | Pomoc sąsiadom w deszczu | Opcjonalny krótki quest zabezpieczenia plandeki, bez fizyki tkaniny i kar za odmowę. C2 i istniejąca pogoda. S. |
-| F9 | Festiwalowy dziennik wspomnień | Po aktywności krótki wpis i opcjonalna własna pocztówka; lokalny zapis z limitem danych, B2/B3. S. |
-| F10 | Fala oklasków | Po zakończeniu utworu reakcje grup z opóźnieniami, nie idealnie zgodny ruch wszystkich. D3/E3, sprawdzone klipy. S. |
-| F11 | Poranny spacer fotograficzny | Trzy wskazane kadry: słoneczniki, obóz, panorama z młyna; odznaka bez analizy obrazu AI. B2/B3. S. |
+| ID  | Pomysł                         | Tanie MVP / zależności                                                                                                         |
+| --- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| F1  | Tablica ogłoszeń obozu         | Lokalnie generowane wiadomości: zguba, wspólne Flanki, spotkanie. 3 wpisy z danych, bez treści graczy i moderacji na start. S. |
+| F2  | Biuro rzeczy znalezionych      | Znajdź kapelusz/flagę, rozpoznaj właściciela po dialogu. Jeden rekwizyt i historia, C2. S.                                     |
+| F3  | Wymiana naszywek               | Kosmetyczny album 8 ikon za różne aktywności, bez losowych płatnych paczek. B2. XS–S.                                          |
+| F4  | Festiwalowa poczta             | NPC prosi o dostarczenie kartki innemu obozowi; odpowiedź i zmiana relacji. Stałe lokalizacje, C1/C2. S.                       |
+| F5  | Znajomy pokazuje skrót         | Po przysłudze odblokowuje wskazówkę/marker na mapie, nie nowy teren. B8/C1. XS.                                                |
+| F6  | Wspólne zdjęcie                | Znajomy czeka w ustalonym punkcie, gracz robi pocztówkę. B3/C1; bez pozy z niezweryfikowanego rigu. M.                         |
+| F7  | Obóz żyje porą dnia            | Rano kawa i cisza, wieczorem ognisko, przed koncertem część osób wychodzi. Reguły czasu i istniejące rekwizyty, D1. S–M.       |
+| F8  | Pomoc sąsiadom w deszczu       | Opcjonalny krótki quest zabezpieczenia plandeki, bez fizyki tkaniny i kar za odmowę. C2 i istniejąca pogoda. S.                |
+| F9  | Festiwalowy dziennik wspomnień | Po aktywności krótki wpis i opcjonalna własna pocztówka; lokalny zapis z limitem danych, B2/B3. S.                             |
+| F10 | Fala oklasków                  | Po zakończeniu utworu reakcje grup z opóźnieniami, nie idealnie zgodny ruch wszystkich. D3/E3, sprawdzone klipy. S.            |
+| F11 | Poranny spacer fotograficzny   | Trzy wskazane kadry: słoneczniki, obóz, panorama z młyna; odznaka bez analizy obrazu AI. B2/B3. S.                             |
 
 ### Kolejność i delegowanie rozszerzeń
 
@@ -273,4 +332,3 @@ Tablica „teraz gra”, lokalny rozkład koncertów, delikatne światła do jaw
 5. Nie uruchamiać płatnych API, nie pobierać cudzych koncertów „na próbę”, nie wysyłać wiadomości o licencje bez polecenia. Każde zadanie osobny branch/worktree, bez merge; końcowe review pozostaje u Codexa.
 
 ---
-

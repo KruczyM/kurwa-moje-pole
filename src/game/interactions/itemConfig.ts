@@ -1,13 +1,6 @@
 import type { EffectId } from '../effects/EffectManager';
 export type InspectableItemId =
-  | 'cigarette'
-  | 'joint'
-  | 'cocaine'
-  | 'mdma'
-  | 'mushrooms'
-  | 'lsd'
-  | 'water'
-  | 'sunglasses';
+  'cigarette' | 'joint' | 'cocaine' | 'mdma' | 'mushrooms' | 'lsd' | 'water' | 'sunglasses';
 export type InspectableItem = {
   id: InspectableItemId;
   label: string;

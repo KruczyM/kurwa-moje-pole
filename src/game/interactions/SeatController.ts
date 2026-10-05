@@ -3,6 +3,7 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { resolveCanonicalAnimationName } from '../animation/animationContract';
 import { cloneDisposableSkinnedModel, disposeObjectTree } from '../lifecycle/disposeThree';
 import { NpcAnimator, type NpcActivityStep } from '../npc/NpcAnimator';
+import { CHAIR_POSE_CLIPS, alignChairPelvis } from './chairPose';
 
 export type SeatPose = {
   seatId: string;
@@ -19,7 +20,7 @@ type CameraSnapshot = {
 /** Znajduje kanoniczną animację siedzenia niezależnie od wielkości liter nazwy źródłowej. */
 export function findSittingClip(clips: THREE.AnimationClip[]) {
   return (
-    clips.find((clip) => clip.name === 'SittingIdle') ??
+    CHAIR_POSE_CLIPS.map((name) => clips.find((clip) => clip.name === name)).find(Boolean) ??
     clips.find((clip) => resolveCanonicalAnimationName(clip.name) === 'SittingLaughing')
   );
 }
@@ -47,6 +48,7 @@ export class SeatController {
   private restSequence = false;
   private snapshot?: CameraSnapshot;
   private seatId?: string;
+  private chairPose = false;
 
   constructor(
     private scene: THREE.Scene,
@@ -109,7 +111,11 @@ export class SeatController {
     this.root.rotation.y = pose.rotationY;
 
     this.animator?.dispose();
-    this.animator = new NpcAnimator(this.visual, this.character.animations);
+    this.chairPose =
+      !animationName || CHAIR_POSE_CLIPS.includes(clip.name as (typeof CHAIR_POSE_CLIPS)[number]);
+    this.animator = new NpcAnimator(this.visual, this.character.animations, {
+      fadeSeconds: this.chairPose ? 0 : 0.2,
+    });
     this.mixer = this.animator.mixer;
     this.animator.update(0);
     const loop =
@@ -127,6 +133,7 @@ export class SeatController {
       steps.push({ name: 'StandUpFromLaying' });
     } else if (
       /^Sitting(Idle|Talking|Drinking|Laughing)$/.test(clip.name) &&
+      !this.chairPose &&
       this.animator.hasClip('Sitting') &&
       this.animator.hasClip('SittingToStanding')
     ) {
@@ -135,11 +142,13 @@ export class SeatController {
     }
     this.restSequence = steps.length > 1;
     this.animator.startActivity(steps);
+    this.animator.update(0);
+    if (this.chairPose) alignChairPelvis(this.root, this.visual);
     this.exitRequested = !loop;
     this.scene.add(this.root);
 
     const charFacing = pose.rotationY + Math.PI;
-    const charOffset = new THREE.Vector3(0, 0.95, -0.5).applyAxisAngle(
+    const charOffset = new THREE.Vector3(0, 1.25, -0.5).applyAxisAngle(
       new THREE.Vector3(0, 1, 0),
       pose.rotationY,
     );
@@ -154,6 +163,7 @@ export class SeatController {
   /** Aktualizuje zapętloną animację siedzącej postaci. */
   update(deltaSeconds: number) {
     this.animator?.update(deltaSeconds);
+    if (this.chairPose && this.root && this.visual) alignChairPelvis(this.root, this.visual);
   }
 
   /** Przywraca kamerę FPS i odłącza postać od sceny bez usuwania współdzielonego aktora. */
@@ -191,7 +201,7 @@ export class SeatController {
     // Postacie Mixamo domyślnie stoją przodem do +Z, więc obracamy model o 180 stopni.
     // Obniżamy również biodra na poziom płótna krzesła (~0.50m) oraz przesuwamy w głąb siedziska.
     model.rotation.y = Math.PI;
-    model.position.y = -bounds.min.y - 0.38;
+    model.position.y = -bounds.min.y - 0.2;
     model.position.z = -0.52;
     model.traverse((object) => {
       const mesh = object as THREE.Mesh;

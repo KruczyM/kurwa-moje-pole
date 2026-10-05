@@ -13,10 +13,7 @@ describe('ItemInspectController', () => {
   });
 
   it('sets active item on show and cleans up on close', () => {
-    const dummyProp = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 1, 1),
-      new THREE.MeshBasicMaterial(),
-    );
+    const dummyProp = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
     const controller = new ItemInspectController({
       canvas: null,
       getPropModel: (id) => (id === 'Piwo' ? dummyProp : undefined),

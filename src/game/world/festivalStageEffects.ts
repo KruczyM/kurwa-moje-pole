@@ -50,7 +50,7 @@ export class FestivalStageEffects {
     this.geometries.push(coneGeom);
 
     for (let i = 0; i < numSpots; i++) {
-      const t = (i / (numSpots - 1)) - 0.5; // -0.5 to 0.5
+      const t = i / (numSpots - 1) - 0.5; // -0.5 to 0.5
       // Along stage width (perpendicular to facing): stage width is Z axis when facing -X
       const spotZ = config.stageZ + t * 24.0;
       const spotX = config.stageX - 2.0;

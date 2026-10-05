@@ -19,13 +19,10 @@ export const npcLines: Record<string, string[]> = {
     'Pusty żołądek to zły kompan pod sceną, zjedz konserwę!',
   ],
   Dziąsło: [
-    'Siema młody! Zęby straciłem na Jarocinie w \'88, ale serce bije jak dzwon!',
+    "Siema młody! Zęby straciłem na Jarocinie w '88, ale serce bije jak dzwon!",
     'Uważaj w pogo, szanuj starszych punków!',
   ],
-  Hemoroid: [
-    'Masz może wolny leżak z miękkim obiciem?',
-    'Piękny festiwal, tylko ziemia twarda jak beton...',
-  ],
+  Hemoroid: ['Masz może wolny leżak z miękkim obiciem?', 'Piękny festiwal, tylko ziemia twarda jak beton...'],
   Jęczmień: [
     'Poczuj ten chmielowy aromat w letnim powietrzu!',
     'Ciepłe piwo to zbrodnia przeciw ludzkości, chodź do cienia!',

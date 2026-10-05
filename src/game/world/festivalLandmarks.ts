@@ -16,7 +16,7 @@ export function sampleRockShopGrassMask(x: number, z: number) {
   const site = ROCK_SHOP_SITE;
   const distance = Math.max(
     Math.abs(x - site.x) - site.halfWidth,
-    (site.z - site.halfDepth - site.frontApron) - z,
+    site.z - site.halfDepth - site.frontApron - z,
     z - (site.z + site.halfDepth),
   );
   return THREE.MathUtils.smoothstep(distance, 0, 0.3);

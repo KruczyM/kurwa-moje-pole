@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { repairSkinSeams } from '../src/game/animation/repairSkinSeams';
+import { smoothSkinWeights } from '../src/game/animation/smoothSkinWeights';
 import { BEARD_REGIONS, repairBeardSkin } from '../src/game/animation/repairBeardSkin';
 import { repairDraftArmSkin, DRAFT_ARM_MODELS } from '../src/game/animation/repairDraftArmSkin';
 import {
@@ -22,6 +23,10 @@ import { repairZaworClothWeights } from './repair-zawor-cloth-weights';
 import { repairZaworShoulderCaps, refitZaworCapPivots } from '../src/game/animation/repairZaworShoulderCaps';
 
 const install = process.argv.includes('--install');
+const smoothCandidate = process.argv.includes('--smooth-candidate');
+const candidateSource = process.argv.find((arg) => arg.startsWith('--source-root='))?.slice(14);
+if (smoothCandidate && (install || !candidateSource))
+  throw new Error('Smoothing candidates requires --source-root and forbids --install');
 const beards = process.argv.includes('--beards');
 const arms = process.argv.includes('--arms');
 const klatwa = process.argv.includes('--klatwa');
@@ -39,27 +44,31 @@ const selectedIds = process.argv
   .find((arg) => arg.startsWith('--ids='))
   ?.slice(6)
   .split(',');
+if (smoothCandidate && (selectedIds?.length !== 1 || selectedIds[0] !== '019_punk_spikes_bracelets'))
+  throw new Error('This reviewed candidate profile is restricted to NPC019');
 const root = resolve('public/game-assets');
 const report = resolve(
-  cloth
-    ? 'reports/zawor-cloth-weights-20260929'
-    : caps
-      ? 'reports/zawor-shoulder-caps-20260929'
-      : poncho
-        ? 'reports/zawor-poncho-20260928'
-        : ambonaPose
-          ? 'reports/ambona-pose-20260928'
-          : legacyShoulders
-            ? 'reports/legacy-shoulders-20260928'
-            : props
-              ? 'reports/npc-prop-repair-20260928'
-              : klatwa
-                ? 'reports/klatwa-skin-repair-20260927'
-                : arms
-                  ? 'reports/shoulder-rig-repair-20260926'
-                  : beards
-                    ? 'reports/beard-weight-repair-20260926'
-                    : 'reports/skin-weight-repair-20260926',
+  smoothCandidate
+    ? 'reports/npc019-smoothed-candidate-20261004'
+    : cloth
+      ? 'reports/zawor-cloth-weights-20260929'
+      : caps
+        ? 'reports/zawor-shoulder-caps-20260929'
+        : poncho
+          ? 'reports/zawor-poncho-20260928'
+          : ambonaPose
+            ? 'reports/ambona-pose-20260928'
+            : legacyShoulders
+              ? 'reports/legacy-shoulders-20260928'
+              : props
+                ? 'reports/npc-prop-repair-20260928'
+                : klatwa
+                  ? 'reports/klatwa-skin-repair-20260927'
+                  : arms
+                    ? 'reports/shoulder-rig-repair-20260926'
+                    : beards
+                      ? 'reports/beard-weight-repair-20260926'
+                      : 'reports/skin-weight-repair-20260926',
 );
 const paths =
   poncho || caps || cloth
@@ -94,7 +103,7 @@ for (const path of paths) {
   mkdirSync(dirname(backup), { recursive: true });
   const prior = resolve('reports/shoulder-weight-repair-20260926/originals', path);
   if (!existsSync(backup)) copyFileSync(arms && existsSync(prior) ? prior : target, backup);
-  const bytes = readFileSync(backup),
+  const bytes = readFileSync(smoothCandidate ? resolve(candidateSource!, path) : backup),
     jsonLength = bytes.readUInt32LE(12);
   const json = JSON.parse(bytes.subarray(20, 20 + jsonLength).toString());
   const binaryStart = 20 + jsonLength + 8;
@@ -107,7 +116,26 @@ for (const path of paths) {
     bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
     '',
   );
-  if (!beards && !arms && !klatwa && !props && !legacyShoulders && !ambonaPose && !poncho && !caps && !cloth)
+  if (smoothCandidate) {
+    repairSkinSeams(model.scene);
+    model.scene.traverse((object) => {
+      if (object instanceof THREE.SkinnedMesh) smoothSkinWeights(object);
+    });
+    const scene = json.scenes[json.scene ?? 0];
+    scene.extras = { ...scene.extras, armPoseCorrectionRadians: THREE.MathUtils.degToRad(66) };
+  }
+  if (
+    !smoothCandidate &&
+    !beards &&
+    !arms &&
+    !klatwa &&
+    !props &&
+    !legacyShoulders &&
+    !ambonaPose &&
+    !poncho &&
+    !caps &&
+    !cloth
+  )
     repairSkinSeams(model.scene, true);
   if (ambonaPose) {
     const scene = json.scenes[json.scene ?? 0];
@@ -132,11 +160,7 @@ for (const path of paths) {
   if (caps) refitZaworCapPivots(model);
   else if (refitted) {
     const raised = legacyShoulders || raisedShoulderAssets.some((asset) => asset.path === path);
-    refitDraftShoulders(
-      model,
-      legacyShoulders ? 0.02 : shoulderLiftForAsset(assetId),
-      legacyShoulders,
-    );
+    refitDraftShoulders(model, legacyShoulders ? 0.02 : shoulderLiftForAsset(assetId), legacyShoulders);
     repairDraftArmSkin(
       model.scene,
       raised || DRAFT_ARM_MODELS.some((id) => path === `characters/${id}/npc-animations.glb`),
@@ -253,7 +277,7 @@ for (const path of paths) {
   // Repack JSON only when authored joint translations changed. Binary image,
   // geometry and rotation-track payloads remain untouched.
   let resultBytes = bytes;
-  if (refitted || ambonaPose) {
+  if (refitted || ambonaPose || smoothCandidate) {
     const document = Buffer.from(JSON.stringify(json)),
       padded = Buffer.alloc(Math.ceil(document.length / 4) * 4, 32);
     document.copy(padded);

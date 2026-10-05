@@ -43,13 +43,11 @@ for (const [o, points] of rest) {
     ]);
   console.log(
     JSON.stringify(
-      edges
-        .slice(0, 12)
-        .map((e) => ({
-          ...e,
-          rest: [points[e.a].toArray(), points[e.b].toArray()],
-          weights: [weights(e.a), weights(e.b)],
-        })),
+      edges.slice(0, 12).map((e) => ({
+        ...e,
+        rest: [points[e.a].toArray(), points[e.b].toArray()],
+        weights: [weights(e.a), weights(e.b)],
+      })),
       null,
       2,
     ),

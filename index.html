@@ -39,12 +39,20 @@
           <button id="play">WEJDŹ NA POLE</button>
           <button id="play-freecam" type="button" class="freecam-btn">SWOBODNA KAMERA (Ctrl+K)</button>
           <button id="start-guide-btn" type="button" class="guide-btn">📖 PRZEWODNIK I SKRÓTY (H)</button>
+          <button id="start-map-btn" type="button" class="map-btn">🗺️ MAPA FESTIWALU (M)</button>
         </div>
         <small id="start-controls"></small>
       </section>
       <section id="loading" hidden>
-        <strong>ŁADOWANIE OBOZU</strong><span id="load-text">Przygotowywanie sceny…</span
-        ><span id="load-error" hidden></span>
+        <strong>ŁADOWANIE OBOZU</strong>
+        <span id="load-text">Przygotowywanie sceny…</span>
+        <div id="load-progress-bar-container" class="load-progress-bar-container">
+          <div id="load-progress-bar" class="load-progress-bar" style="width: 0%"></div>
+        </div>
+        <button id="skip-crowd-btn" type="button" class="skip-crowd-btn" hidden>
+          WEJDŹ OD RAZU (DOCZYTAJ W TLE)
+        </button>
+        <span id="load-error" hidden></span>
         <div id="load-actions" hidden>
           <button id="retry-load">SPRÓBUJ PONOWNIE</button
           ><button id="back-to-start">WRÓĆ DO WYBORU POSTACI</button>
@@ -76,6 +84,174 @@
         </div>
         <div id="effect-hud">Brak aktywnego efektu</div>
         <div id="controls-hud"></div>
+        <div id="flanki-hud" class="flanki-hud" hidden>
+          <div class="flanki-header">
+            <span class="flanki-title">🍺 MECZ FLANKÓW</span>
+            <span id="flanki-phase-badge" class="flanki-badge">Rzut</span>
+          </div>
+          <div class="flanki-bars">
+            <div class="flanki-bar-container">
+              <div class="flanki-bar-label">
+                <span>Twoje piwo:</span>
+                <span id="flanki-player-beer-val">100%</span>
+              </div>
+              <div class="flanki-bar-track">
+                <div id="flanki-player-beer-fill" class="flanki-bar-fill player"></div>
+              </div>
+            </div>
+            <div class="flanki-bar-container">
+              <div class="flanki-bar-label">
+                <span>Piwo przeciwnika:</span>
+                <span id="flanki-bot-beer-val">100%</span>
+              </div>
+              <div class="flanki-bar-track">
+                <div id="flanki-bot-beer-fill" class="flanki-bar-fill bot"></div>
+              </div>
+            </div>
+          </div>
+          <div class="flanki-meta-row">
+            <div class="flanki-meta-item">
+              🎯 Rzucający: <strong id="flanki-thrower-name">Gracz (Twoja Ekipa)</strong>
+            </div>
+            <div class="flanki-meta-item">⚡ Biegacz: <strong id="flanki-runner-name">Dziąsło</strong></div>
+          </div>
+          <div id="flanki-power-container" class="flanki-power-container" hidden>
+            <div class="flanki-power-label">Siła rzutu:</div>
+            <div class="flanki-power-track">
+              <div id="flanki-power-fill" class="flanki-power-fill"></div>
+              <div
+                id="flanki-recommended-power"
+                class="flanki-sweet-spot-indicator"
+                title="Zalecana siła dla wybranej trajektorii"
+              ></div>
+            </div>
+          </div>
+          <div id="flanki-prompt" class="flanki-prompt">Trzymaj SPACJĘ lub LPM, aby wymierzyć rzut!</div>
+          <div id="flanki-stop-banner" class="flanki-stop-banner" hidden>
+            <div class="flanki-stop-badge">🛑 STOP!</div>
+            <div id="flanki-stop-subtitle" class="flanki-stop-sub">
+              Biegacz przekroczył linię drużyny! Koniec picia!
+            </div>
+          </div>
+        </div>
+        <section
+          id="flanki-roster-modal"
+          class="flanki-roster-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="flanki-roster-title"
+          hidden
+        >
+          <div class="flanki-roster-content">
+            <div class="flanki-roster-header">
+              <h2 id="flanki-roster-title">🍺 MECZ FLANKÓW — SKŁADY DRUŻYN</h2>
+              <p class="flanki-roster-subtitle">
+                Festiwalowy turniej w Czaplinku: 2 rzucających i 1 stały biegacz na drużynę!
+              </p>
+            </div>
+            <div class="flanki-teams-grid">
+              <div class="flanki-team-card team-a">
+                <h3>Twoja Ekipa</h3>
+                <ul id="flanki-team-a-players" class="flanki-player-list"></ul>
+              </div>
+              <div class="flanki-vs">VS</div>
+              <div class="flanki-team-card team-b">
+                <h3>Rywale z Sektora</h3>
+                <ul id="flanki-team-b-players" class="flanki-player-list"></ul>
+              </div>
+            </div>
+            <div class="flanki-rules-box">
+              <strong>Zasady Flanków Pol'and'Rock:</strong>
+              <ol>
+                <li>Rzucający na przemian celują puszkę na środku boiska tenisówką.</li>
+                <li>
+                  Wyceluj łukiem w puszkę. Przytrzymaj LPM lub Spację: trajektoria się blokuje, a siła
+                  spokojnie rośnie. Puść w zielonym zakresie zalecanej siły. Rzut nadal wymaga dobrego
+                  kierunku.
+                </li>
+                <li>
+                  Trafienie przewraca puszkę: drużyna rzucająca pije piwo, a
+                  <strong>stały biegacz rywali</strong> pędzi ją postawić.
+                </li>
+                <li>
+                  Picie wolno kontynuować tylko do momentu, gdy biegacz postawi puszkę i wróci za swoją linię
+                  krzycząc <strong>STOP!</strong>
+                </li>
+                <li>
+                  Rzucający stoją na liniach i piją przez przytrzymanie [E]. Wybierz stałego biegacza w
+                  składzie: jako biegacz podbiegasz WASD, stawiasz puszkę [E] i wracasz za swoją linię.
+                </li>
+                <li>
+                  STOP kończy picie automatycznie. Wygrywa drużyna, której wszyscy rzucający wypiją piwo do
+                  dna.
+                </li>
+              </ol>
+            </div>
+            <div class="flanki-roster-actions">
+              <button id="flanki-cancel-btn" type="button" class="btn-secondary">ANULUJ [Esc]</button>
+              <button id="flanki-start-btn" type="button" class="btn-primary">🍻 ROZPOCZNIJ MECZ</button>
+            </div>
+          </div>
+        </section>
+        <section id="eco-panel" class="eco-panel" hidden aria-label="Eko-Zagroda">
+      <h2>♻ EKO-ZAGRODA</h2>
+      <p>Lody: +35% szybkości przez 12 s. Hamburger: 3 punkty. Co 30 s ostatnie 10 s to EKO-FALA ×2! Na mapie bonusy oznaczone S i 3.</p>
+          <p>Zbieraj puszki, butelki i papier przez 180 sekund. Każdy zbiera własne śmieci. Wygrywa największa liczba zebranych obiektów.</p>
+          <p id="eco-summary"></p><p id="eco-message" role="status"></p>
+          <div class="eco-actions">
+            <button id="eco-deposit" type="button">Oddaj śmieci</button>
+            <button id="eco-solo" type="button">Graj solo</button>
+            <button id="eco-create" type="button">Utwórz wyścig</button>
+            <button id="eco-join" type="button">Dołącz do wyścigu</button>
+            <button id="eco-start" type="button">Start wyścigu</button>
+            <button id="eco-leave" type="button">Opuść wyścig</button>
+          </div>
+          <h3>Tablica wyników pokoju</h3><ol id="eco-leaderboard"></ol>
+          <button id="eco-close" type="button">Wróć do zbierania [Esc]</button>
+        </section>
+        <div id="guitar-hud" class="guitar-hud" hidden>
+          <div class="guitar-header">
+            <div class="guitar-title-row">
+              <span class="guitar-title">🎸 GITARA PRZY OGNISKU</span>
+              <span id="guitar-multiplier-badge" class="guitar-badge">x1</span>
+            </div>
+            <div id="guitar-song-info" class="guitar-song-info">Wybierz utwór z repertuaru</div>
+          </div>
+          <div class="guitar-stats-row">
+            <div class="guitar-stat">Wynik: <strong id="guitar-score-val">0</strong></div>
+            <div class="guitar-stat">Combo: <strong id="guitar-combo-val">0</strong></div>
+            <div class="guitar-stat">Klimat ogniska: <strong id="guitar-cheer-val">50%</strong></div>
+          </div>
+          <div id="guitar-fretboard" class="guitar-fretboard">
+            <div class="guitar-lane" data-lane="0"><div class="guitar-string"></div></div>
+            <div class="guitar-lane" data-lane="1"><div class="guitar-string"></div></div>
+            <div class="guitar-lane" data-lane="2"><div class="guitar-string"></div></div>
+            <div class="guitar-lane" data-lane="3"><div class="guitar-string"></div></div>
+            <div id="guitar-target-line" class="guitar-target-line"></div>
+            <div id="guitar-notes-container" class="guitar-notes-container"></div>
+          </div>
+          <div class="guitar-buttons-row">
+            <button class="guitar-hit-btn" data-lane="0" type="button">D</button>
+            <button class="guitar-hit-btn" data-lane="1" type="button">F</button>
+            <button class="guitar-hit-btn" data-lane="2" type="button">J</button>
+            <button class="guitar-hit-btn" data-lane="3" type="button">K</button>
+          </div>
+          <div id="guitar-feedback" class="guitar-feedback"></div>
+          <div id="guitar-song-select-modal" class="guitar-song-select-modal" hidden>
+            <div class="guitar-modal-title">Wybierz piosenkę do ogniska:</div>
+            <div id="guitar-songs-list" class="guitar-songs-list"></div>
+          </div>
+          <div class="guitar-footer-actions">
+            <button id="guitar-exit-btn" type="button" class="btn-secondary">Odłóż gitarę [Esc]</button>
+          </div>
+        </div>
+        <div id="can-rush-hud" class="can-rush-hud" hidden>
+          <div class="can-rush-title">♻️ EKO-RUSH CHALLENGE</div>
+          <div class="can-rush-row">
+            <span class="can-rush-timer">⏳ Czas: <strong id="can-rush-time-val">90s</strong></span>
+            <span class="can-rush-count">♻ Wynik: <strong id="can-rush-count-val">0</strong></span>
+          </div>
+        </div>
         <div id="prompt" role="status" aria-live="polite" hidden></div>
         <div id="toast" role="status" aria-live="polite"></div>
         <div id="freecam-badge" hidden>SWOBODNA KAMERA [Ctrl+K] · Rolka: prędkość</div>
@@ -89,7 +265,12 @@
         <div id="hud-bottom-right" class="hud-bottom-right">
           <button id="cancel-effect">Anuluj efekt</button>
           <div id="voice-hud" class="voice-hud">
-            <button id="voice-mic-toggle" type="button" aria-label="Przełącz mikrofon" title="Kliknij lub naciśnij [V], aby włączyć/wyciszyć mikrofon">
+            <button
+              id="voice-mic-toggle"
+              type="button"
+              aria-label="Przełącz mikrofon"
+              title="Kliknij lub naciśnij [V], aby włączyć/wyciszyć mikrofon"
+            >
               <span id="voice-mic-icon">🎤</span>
               <span id="voice-mic-text">Mikrofon: Wyłączony</span>
             </button>
@@ -127,6 +308,12 @@
         <div class="festival-map-container">
           <div class="festival-map-header">
             <h2 id="map-title">🗺️ Mapa Festiwalu — Czaplinek-Broczyno</h2>
+            <div class="festival-map-controls">
+              <button id="map-zoom-in" type="button" title="Przybliż mapę [Kółko myszy]">＋</button>
+              <button id="map-zoom-out" type="button" title="Oddal mapę [Kółko myszy]">－</button>
+              <button id="map-zoom-reset" type="button" title="Resetuj powiększenie (100%)">⟲ 100%</button>
+              <button id="map-center-me" type="button" title="Wycentruj na Twojej pozycji">🎯 Ty</button>
+            </div>
             <button id="map-close" type="button" aria-label="Zamknij mapę">✕ [M / Esc]</button>
           </div>
           <div class="festival-map-canvas-wrapper">
@@ -136,10 +323,10 @@
             <span class="legend-item"><span class="legend-badge camp">⛺</span> Obóz #KurwaMojePole</span>
             <span class="legend-item"><span class="legend-badge stage">🎸</span> Duża Scena</span>
             <span class="legend-item"><span class="legend-badge asp">🎪</span> Namiot ASP</span>
-            <span class="legend-item"><span class="legend-badge grzybek">💧</span> Grzybek Wodny</span>
             <span class="legend-item"><span class="legend-badge gastro">🍔</span> Pasaż Gastro</span>
             <span class="legend-item"><span class="legend-badge sunflowers">🌻</span> Pole Słoneczników</span>
             <span class="legend-item"><span class="legend-badge player">🟡</span> Twoja Pozycja</span>
+            <span class="legend-item"><span class="legend-badge other-player">🔵</span> Inni Gracze</span>
           </div>
           <small id="map-help"></small>
         </div>
@@ -155,13 +342,31 @@
           </div>
 
           <nav class="guide-tabs" role="tablist" aria-label="Kategorie przewodnika">
-            <button class="guide-tab-btn active" type="button" role="tab" aria-selected="true" data-tab="controls">
+            <button
+              class="guide-tab-btn active"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              data-tab="controls"
+            >
               🎮 Sterowanie i klawisze
             </button>
-            <button class="guide-tab-btn" type="button" role="tab" aria-selected="false" data-tab="activities">
+            <button
+              class="guide-tab-btn"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              data-tab="activities"
+            >
               ⛺ Co można robić?
             </button>
-            <button class="guide-tab-btn" type="button" role="tab" aria-selected="false" data-tab="interactions">
+            <button
+              class="guide-tab-btn"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              data-tab="interactions"
+            >
               🔍 Interakcje w świecie
             </button>
             <button class="guide-tab-btn" type="button" role="tab" aria-selected="false" data-tab="items">
@@ -170,56 +375,91 @@
             <button class="guide-tab-btn" type="button" role="tab" aria-selected="false" data-tab="dialogue">
               🗣️ Rozmowy z NPC i głos
             </button>
+            <button class="guide-tab-btn" type="button" role="tab" aria-selected="false" data-tab="bingo">
+              🎯 Bingo 3×3
+            </button>
+            <button class="guide-tab-btn" type="button" role="tab" aria-selected="false" data-tab="passport">
+              🛂 Paszport Festiwalowy
+            </button>
           </nav>
 
           <div class="guide-content-area">
             <!-- TAB 1: Klawisze i sterowanie -->
             <div class="guide-panel active" id="guide-panel-controls" role="tabpanel">
               <h3>Pełna klawiszologia i skróty</h3>
-              <p class="guide-intro">Wszystkie akcje dostępne w grze z klawiatury oraz z interfejsu ekranowego:</p>
+              <p class="guide-intro">
+                Wszystkie akcje dostępne w grze z klawiatury oraz z interfejsu ekranowego:
+              </p>
 
               <div class="guide-grid-two">
                 <div class="guide-card">
                   <h4>🏃 Poruszanie się i eksploracja</h4>
                   <ul class="guide-key-list">
-                    <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Poruszanie się postacią (przód, lewo, tył, prawo)</span></li>
+                    <li>
+                      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd
+                      ><span>Poruszanie się postacią (przód, lewo, tył, prawo)</span>
+                    </li>
                     <li><kbd>Myszka</kbd><span>Rozglądanie się w 360° (first-person)</span></li>
                     <li><kbd>Shift</kbd><span>Sprint / szybszy bieg po pasażu i polu</span></li>
-                    <li><kbd>Spacja</kbd><span>Skok (przeskakiwanie przez przeszkody, kałuże i błoto)</span></li>
-                    <li><kbd>Ctrl</kbd> + <kbd>K</kbd><span>Swobodna kamera (tryb drona / inspekcji pola)</span></li>
+                    <li>
+                      <kbd>Spacja</kbd><span>Skok (przeskakiwanie przez przeszkody, kałuże i błoto)</span>
+                    </li>
+                    <li>
+                      <kbd>Ctrl</kbd> + <kbd>K</kbd><span>Swobodna kamera (tryb drona / inspekcji pola)</span>
+                    </li>
                   </ul>
                 </div>
 
                 <div class="guide-card">
                   <h4>⚡ Akcje, ekwipunek i menu</h4>
                   <ul class="guide-key-list">
-                    <li><kbd>E</kbd><span><strong>Główny klawisz interakcji</strong>: rozmowa z NPC, siadanie, Toi-Toi, przedmioty</span></li>
-                    <li><kbd>Tab</kbd> / <kbd>I</kbd><span>Otwarcie i zamknięcie plecaka (Ekwipunek)</span></li>
-                    <li><kbd>1</kbd> – <kbd>9</kbd><span>Szybkie użycie przedmiotu z plecaka (Piwo, Woda, Joint...)</span></li>
+                    <li>
+                      <kbd>E</kbd
+                      ><span
+                        ><strong>Główny klawisz interakcji</strong>: rozmowa z NPC, siadanie, Toi-Toi,
+                        przedmioty</span
+                      >
+                    </li>
+                    <li>
+                      <kbd>Tab</kbd> / <kbd>I</kbd><span>Otwarcie i zamknięcie plecaka (Ekwipunek)</span>
+                    </li>
+                    <li>
+                      <kbd>1</kbd> – <kbd>9</kbd
+                      ><span>Szybkie użycie przedmiotu z plecaka (Piwo, Woda, Joint...)</span>
+                    </li>
                     <li><kbd>M</kbd><span>Otwarcie / zamknięcie Mapy Festiwalu</span></li>
                     <li><kbd>H</kbd> / <kbd>F1</kbd><span>Otwarcie / zamknięcie tego Przewodnika</span></li>
                     <li><kbd>V</kbd><span>Przełączenie mikrofonu (włącz / wycisz czat głosowy)</span></li>
-                    <li><kbd>Esc</kbd><span>Menu pauzy / ustawienia grafiki, trawy i dźwięku / wstawanie</span></li>
+                    <li>
+                      <kbd>Esc</kbd><span>Menu pauzy / ustawienia grafiki, trawy i dźwięku / wstawanie</span>
+                    </li>
                   </ul>
                 </div>
               </div>
 
               <div class="guide-hint-box">
-                💡 <strong>Wskazówka:</strong> Kliknij prawym przyciskiem myszy lub naciśnij [Esc], aby zwolnić kursor i kliknąć przyciski w menu lub HUD!
+                💡 <strong>Wskazówka:</strong> Kliknij prawym przyciskiem myszy lub naciśnij [Esc], aby
+                zwolnić kursor i kliknąć przyciski w menu lub HUD!
               </div>
             </div>
 
             <!-- TAB 2: Co można robić? -->
             <div class="guide-panel" id="guide-panel-activities" role="tabpanel" hidden>
               <h3>Co można robić na festiwalu?</h3>
-              <p class="guide-intro">Lotnisko Czaplinek-Broczyno tętni życiem! Oto główne atrakcje i aktywności:</p>
+              <p class="guide-intro">
+                Lotnisko Czaplinek-Broczyno tętni życiem! Oto główne atrakcje i aktywności:
+              </p>
 
               <div class="guide-activities-list">
                 <div class="activity-entry">
                   <div class="activity-icon">⛺</div>
                   <div class="activity-info">
                     <h4>Obóz #KurwaMojePole i życie obozowe</h4>
-                    <p>Twój macierzysty obóz w centrum mapy. Możesz tu usiąść na leżaku, wypić piwo z ekipą przy stole Mad Doga, porozmawiać z sąsiadami z 200 namiotów, zagrać we flanki, posłuchać klimatycznej muzyki z głośnika i podziwiać powiewającą flagę obozową.</p>
+                    <p>
+                      Twój macierzysty obóz w centrum mapy. Możesz tu usiąść na leżaku, wypić piwo z ekipą
+                      przy stole Mad Doga, porozmawiać z sąsiadami z 200 namiotów, zagrać we flanki, posłuchać
+                      klimatycznej muzyki z głośnika i podziwiać powiewającą flagę obozową.
+                    </p>
                   </div>
                 </div>
 
@@ -227,7 +467,11 @@
                   <div class="activity-icon">🎸</div>
                   <div class="activity-info">
                     <h4>Duża Scena i Mała Scena — Koncerty Rockowe</h4>
-                    <p>Monumentalne sceny z potężnym oświetleniem, nagłośnieniem i telebimami. Podejdź pod barierki i zobacz skaczący pod sceną tłum festiwalowiczów. Z obu stron Dużej Sceny znajdują się korytarze bezpieczeństwa umożliwiające szybkie przejście.</p>
+                    <p>
+                      Monumentalne sceny z potężnym oświetleniem, nagłośnieniem i telebimami. Podejdź pod
+                      barierki i zobacz skaczący pod sceną tłum festiwalowiczów. Z obu stron Dużej Sceny
+                      znajdują się korytarze bezpieczeństwa umożliwiające szybkie przejście.
+                    </p>
                   </div>
                 </div>
 
@@ -235,7 +479,10 @@
                   <div class="activity-icon">🎪</div>
                   <div class="activity-info">
                     <h4>Akademia Sztuk Przepięknych (ASP)</h4>
-                    <p>Ogromny namiot cyrkowy w barwach żółto-niebieskich na południowej alei. Miejsce spotkań, warsztatów, inspirujących rozmów i nocnych koncertów alternatywnych.</p>
+                    <p>
+                      Ogromny namiot cyrkowy w barwach żółto-niebieskich na południowej alei. Miejsce spotkań,
+                      warsztatów, inspirujących rozmów i nocnych koncertów alternatywnych.
+                    </p>
                   </div>
                 </div>
 
@@ -243,7 +490,10 @@
                   <div class="activity-icon">💧</div>
                   <div class="activity-info">
                     <h4>Grzybek Wodny, kurtyny OSP i strefa sanitarna</h4>
-                    <p>Kultowy Grzybek festiwalowy z orzeźwiającym natryskiem, kurtyny wodne strażaków OSP, wielostanowiskowe punkty czerpania darmowej wody pitnej oraz rzędy kabin Toi-Toi.</p>
+                    <p>
+                      Kultowy Grzybek festiwalowy z orzeźwiającym natryskiem, kurtyny wodne strażaków OSP,
+                      wielostanowiskowe punkty czerpania darmowej wody pitnej oraz rzędy kabin Toi-Toi.
+                    </p>
                   </div>
                 </div>
 
@@ -251,7 +501,10 @@
                   <div class="activity-icon">🤎</div>
                   <div class="activity-info">
                     <h4>Kąpiel w błocie pod Dużą Sceną</h4>
-                    <p>Legendarne woodstockowe błoto! Wejdź do strefy błotnej, potaplaj się i spotkaj ubłoconych festiwalowiczów i "potwory błotne".</p>
+                    <p>
+                      Legendarne woodstockowe błoto! Wejdź do strefy błotnej, potaplaj się i spotkaj
+                      ubłoconych festiwalowiczów i "potwory błotne".
+                    </p>
                   </div>
                 </div>
 
@@ -259,7 +512,11 @@
                   <div class="activity-icon">🛒</div>
                   <div class="activity-info">
                     <h4>Pasaż Handlowy (18 kramów), Gastro i Lidl Rock Shop</h4>
-                    <p>Dwie betonowe aleje (Północna i Południowa) pełne kramów z rękodziełem, koszulkami festiwalowymi, strefą Pomorza Zachodniego, foodtruckami oraz słynnym festiwalowym marketem Lidl Rock Shop.</p>
+                    <p>
+                      Dwie betonowe aleje (Północna i Południowa) pełne kramów z rękodziełem, koszulkami
+                      festiwalowymi, strefą Pomorza Zachodniego, foodtruckami oraz słynnym festiwalowym
+                      marketem Lidl Rock Shop.
+                    </p>
                   </div>
                 </div>
 
@@ -267,7 +524,10 @@
                   <div class="activity-icon">🎡</div>
                   <div class="activity-info">
                     <h4>Diabelski Młyn Allegro i Pole Słoneczników</h4>
-                    <p>Podziwiaj obracające się wielkie koło widokowe na tle nieba oraz przespaceruj się pośród tysięcy kwitnących słoneczników na wschodnim krańcu terenu.</p>
+                    <p>
+                      Podziwiaj obracające się wielkie koło widokowe na tle nieba oraz przespaceruj się pośród
+                      tysięcy kwitnących słoneczników na wschodnim krańcu terenu.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -276,37 +536,74 @@
             <!-- TAB 3: Interakcje w świecie -->
             <div class="guide-panel" id="guide-panel-interactions" role="tabpanel" hidden>
               <h3>Z czym można wchodzić w interakcje?</h3>
-              <p class="guide-intro">Świat gry reaguje na klawisz interakcji <kbd>E</kbd> oraz kliknięcia myszą:</p>
+              <p class="guide-intro">
+                Świat gry reaguje na klawisz interakcji <kbd>E</kbd> oraz kliknięcia myszą:
+              </p>
 
               <div class="guide-grid-two">
                 <div class="interaction-card">
-                  <div class="interaction-head"><span class="int-badge">STÓŁ OBOZOWY</span> <strong>Inspekcja i zbieranie [E]</strong></div>
-                  <p>Podejdź do stołu w obozie, nakieruj celownik i naciśnij <kbd>E</kbd>. Otworzy się trójwymiarowy podgląd przedmiotu. Możesz obracać go myszą, użyć na miejscu lub schować do plecaka (przycisk <em>WEŹ DO EKWIPUNKU</em>).</p>
+                  <div class="interaction-head">
+                    <span class="int-badge">STÓŁ OBOZOWY</span> <strong>Inspekcja i zbieranie [E]</strong>
+                  </div>
+                  <p>
+                    Podejdź do stołu w obozie, nakieruj celownik i naciśnij <kbd>E</kbd>. Otworzy się
+                    trójwymiarowy podgląd przedmiotu. Możesz obracać go myszą, użyć na miejscu lub schować do
+                    plecaka (przycisk <em>WEŹ DO EKWIPUNKU</em>).
+                  </p>
                 </div>
 
                 <div class="interaction-card">
-                  <div class="interaction-head"><span class="int-badge">LEŻAKI I KRZESŁA</span> <strong>Siadanie i odpoczynek [E]</strong></div>
-                  <p>Podejdź do dowolnego leżaka lub krzesła turystycznego i wciśnij <kbd>E</kbd>. Kamera przełączy się w tryb odpoczynku z widokiem na otoczenie. Ponowne naciśnięcie <kbd>E</kbd> lub <kbd>Esc</kbd> powoduje wstanie.</p>
+                  <div class="interaction-head">
+                    <span class="int-badge">LEŻAKI I KRZESŁA</span> <strong>Siadanie i odpoczynek [E]</strong>
+                  </div>
+                  <p>
+                    Podejdź do dowolnego leżaka lub krzesła turystycznego i wciśnij <kbd>E</kbd>. Kamera
+                    przełączy się w tryb odpoczynku z widokiem na otoczenie. Ponowne naciśnięcie
+                    <kbd>E</kbd> lub <kbd>Esc</kbd> powoduje wstanie.
+                  </p>
                 </div>
 
                 <div class="interaction-card">
-                  <div class="interaction-head"><span class="int-badge">KABINY TOI-TOI</span> <strong>Animowane drzwi [E]</strong></div>
-                  <p>Podejdź do kabiny Toi-Toi. Naciśnięcie <kbd>E</kbd> otwiera skrzydło drzwi z realistycznym odgłosem zawiasów i pozwala wejść do środka kabiny.</p>
+                  <div class="interaction-head">
+                    <span class="int-badge">KABINY TOI-TOI</span> <strong>Animowane drzwi [E]</strong>
+                  </div>
+                  <p>
+                    Podejdź do kabiny Toi-Toi. Naciśnięcie <kbd>E</kbd> otwiera skrzydło drzwi z realistycznym
+                    odgłosem zawiasów i pozwala wejść do środka kabiny.
+                  </p>
                 </div>
 
                 <div class="interaction-card">
-                  <div class="interaction-head"><span class="int-badge">PUNKTY WODNE</span> <strong>Czerpanie wody i antidotum [E]</strong></div>
-                  <p>Podejdź do kranów wielostanowiskowych lub Grzybka, aby ugasić pragnienie i uzupełnić zapasy wody. Woda jest kluczem do neutralizowania mocnych efektów!</p>
+                  <div class="interaction-head">
+                    <span class="int-badge">PUNKTY WODNE</span>
+                    <strong>Czerpanie wody i antidotum [E]</strong>
+                  </div>
+                  <p>
+                    Podejdź do kranów wielostanowiskowych lub Grzybka, aby ugasić pragnienie i uzupełnić
+                    zapasy wody. Woda jest kluczem do neutralizowania mocnych efektów!
+                  </p>
                 </div>
 
                 <div class="interaction-card">
-                  <div class="interaction-head"><span class="int-badge">POSTACIE NPC</span> <strong>Rozmowa na żywo [E]</strong></div>
-                  <p>Podejdź do dowolnego z 90+ festiwalowiczów. Naciśnięcie <kbd>E</kbd> zatrzymuje postać i otwiera okno dialogu z historią wypowiedzi, zasilane sztuczną inteligencją Gemini i głosami syntezy mowy.</p>
+                  <div class="interaction-head">
+                    <span class="int-badge">POSTACIE NPC</span> <strong>Rozmowa na żywo [E]</strong>
+                  </div>
+                  <p>
+                    Podejdź do dowolnego z 90+ festiwalowiczów. Naciśnięcie <kbd>E</kbd> zatrzymuje postać i
+                    otwiera okno dialogu z historią wypowiedzi, zasilane sztuczną inteligencją Gemini i
+                    głosami syntezy mowy.
+                  </p>
                 </div>
 
                 <div class="interaction-card">
-                  <div class="interaction-head"><span class="int-badge">MENU PAUZY [Esc]</span> <strong>Animacje i gesty</strong></div>
-                  <p>W menu pauzy możesz wybrać animację z listy (np. picie piwa, taniec, machanie, granie na gitarze) i wcisnąć <em>Wykonaj animację</em>, aby obejrzeć swoją postać z kamery trzeciej osoby.</p>
+                  <div class="interaction-head">
+                    <span class="int-badge">MENU PAUZY [Esc]</span> <strong>Animacje i gesty</strong>
+                  </div>
+                  <p>
+                    W menu pauzy możesz wybrać animację z listy (np. picie piwa, taniec, machanie, granie na
+                    gitarze) i wcisnąć <em>Wykonaj animację</em>, aby obejrzeć swoją postać z kamery trzeciej
+                    osoby.
+                  </p>
                 </div>
               </div>
             </div>
@@ -314,7 +611,10 @@
             <!-- TAB 4: Przedmioty i efekty -->
             <div class="guide-panel" id="guide-panel-items" role="tabpanel" hidden>
               <h3>Przedmioty, tripy i antidota</h3>
-              <p class="guide-intro">Wszystkie przedmioty możesz nosić w plecaku <kbd>Tab</kbd> / <kbd>I</kbd> lub aktywować klawiszami numerycznymi <kbd>1</kbd>–<kbd>9</kbd>:</p>
+              <p class="guide-intro">
+                Wszystkie przedmioty możesz nosić w plecaku <kbd>Tab</kbd> / <kbd>I</kbd> lub aktywować
+                klawiszami numerycznymi <kbd>1</kbd>–<kbd>9</kbd>:
+              </p>
 
               <div class="guide-items-table">
                 <div class="item-row">
@@ -323,7 +623,10 @@
                     <span class="item-icon">🍺</span>
                     <strong>Piwo</strong>
                   </div>
-                  <div class="item-desc">Klasyczny festiwalowy browar. Powoduje łagodne, realistyczne kołysanie kamery, swobodę i relaks.</div>
+                  <div class="item-desc">
+                    Klasyczny festiwalowy browar. Powoduje łagodne, realistyczne kołysanie kamery, swobodę i
+                    relaks.
+                  </div>
                   <div class="item-tag sway">Kołysanie</div>
                 </div>
 
@@ -333,7 +636,10 @@
                     <span class="item-icon">🚬</span>
                     <strong>Papieros</strong>
                   </div>
-                  <div class="item-desc">Gęsty, klimatyczny dym unoszący się przed oczami postaci. Idealny towarzysz wieczornych pogawędek przy namiocie.</div>
+                  <div class="item-desc">
+                    Gęsty, klimatyczny dym unoszący się przed oczami postaci. Idealny towarzysz wieczornych
+                    pogawędek przy namiocie.
+                  </div>
                   <div class="item-tag smoke">Dym</div>
                 </div>
 
@@ -343,7 +649,10 @@
                     <span class="item-icon">🌿</span>
                     <strong>Joint</strong>
                   </div>
-                  <div class="item-desc">Ociepla całą paletę kolorów świata do miękkich, złotych odcieni lata, dodając subtelne rozmycie krawędzi.</div>
+                  <div class="item-desc">
+                    Ociepla całą paletę kolorów świata do miękkich, złotych odcieni lata, dodając subtelne
+                    rozmycie krawędzi.
+                  </div>
                   <div class="item-tag warm">Ciepłe barwy</div>
                 </div>
 
@@ -353,7 +662,10 @@
                     <span class="item-icon">⚡</span>
                     <strong>Kreska</strong>
                   </div>
-                  <div class="item-desc">Potężny zastrzyk energii: drastycznie przyspiesza tempo biegu i wyostrza pole widzenia kamery (FOV zoom).</div>
+                  <div class="item-desc">
+                    Potężny zastrzyk energii: drastycznie przyspiesza tempo biegu i wyostrza pole widzenia
+                    kamery (FOV zoom).
+                  </div>
                   <div class="item-tag speed">Tempo + Bieg</div>
                 </div>
 
@@ -363,7 +675,10 @@
                     <span class="item-icon">🍄</span>
                     <strong>Grzyb</strong>
                   </div>
-                  <div class="item-desc">Falowanie geometrii terenu! Grunt pod stopami zaczyna płynnie falować, a obiekty w oddali delikatnie pulsują.</div>
+                  <div class="item-desc">
+                    Falowanie geometrii terenu! Grunt pod stopami zaczyna płynnie falować, a obiekty w oddali
+                    delikatnie pulsują.
+                  </div>
                   <div class="item-tag wave">Falowanie terenu</div>
                 </div>
 
@@ -373,7 +688,10 @@
                     <span class="item-icon">💗</span>
                     <strong>MDMA</strong>
                   </div>
-                  <div class="item-desc">Błogi festiwalowy bloom, rozświetlone kontury scen i namiotów oraz delikatne tęczowe aberracje na światłach.</div>
+                  <div class="item-desc">
+                    Błogi festiwalowy bloom, rozświetlone kontury scen i namiotów oraz delikatne tęczowe
+                    aberracje na światłach.
+                  </div>
                   <div class="item-tag bloom">Bloom & Światło</div>
                 </div>
 
@@ -383,7 +701,10 @@
                     <span class="item-icon">🌈</span>
                     <strong>LSD</strong>
                   </div>
-                  <div class="item-desc">Maksymalne nasycenie barw, fraktalne nakładki wizualne oraz dostęp do zielonego deszczu kodu Matrixa!</div>
+                  <div class="item-desc">
+                    Maksymalne nasycenie barw, fraktalne nakładki wizualne oraz dostęp do zielonego deszczu
+                    kodu Matrixa!
+                  </div>
                   <div class="item-tag matrix">Nasycenie & Matrix</div>
                 </div>
 
@@ -393,7 +714,10 @@
                     <span class="item-icon">💧</span>
                     <strong>Woda (Antidotum)</strong>
                   </div>
-                  <div class="item-desc"><strong>Najważniejszy napój festiwalu!</strong> Natychmiast redukuje intensywność każdego trwającego tripu o 40%. Wypicie 2-3 butelek całkowicie przywraca trzeźwość!</div>
+                  <div class="item-desc">
+                    <strong>Najważniejszy napój festiwalu!</strong> Natychmiast redukuje intensywność każdego
+                    trwającego tripu o 40%. Wypicie 2-3 butelek całkowicie przywraca trzeźwość!
+                  </div>
                   <div class="item-tag antidote">Antidotum -40%</div>
                 </div>
 
@@ -403,53 +727,100 @@
                     <span class="item-icon">🕶️</span>
                     <strong>Okulary przeciwsłoneczne</strong>
                   </div>
-                  <div class="item-desc">Stylowe przyciemnienie obrazu redukujące ostre słońce i zmniejszające odczuwalną intensywność tripu o 50%.</div>
+                  <div class="item-desc">
+                    Stylowe przyciemnienie obrazu redukujące ostre słońce i zmniejszające odczuwalną
+                    intensywność tripu o 50%.
+                  </div>
                   <div class="item-tag tint">Przyciemnienie -50%</div>
                 </div>
               </div>
 
               <div class="guide-hint-box">
-                🛑 <strong>Szybkie anulowanie:</strong> Jeśli efekt jest zbyt intensywny, w każdej chwili możesz kliknąć czerwony przycisk <em>Anuluj efekt</em> w prawym dolnym rogu ekranu lub włączyć opcję <em>Ogranicz ruch obrazu</em> w Menu Pauzy!
+                🛑 <strong>Szybkie anulowanie:</strong> Jeśli efekt jest zbyt intensywny, w każdej chwili
+                możesz kliknąć czerwony przycisk <em>Anuluj efekt</em> w prawym dolnym rogu ekranu lub włączyć
+                opcję <em>Ogranicz ruch obrazu</em> w Menu Pauzy!
               </div>
             </div>
 
             <!-- TAB 5: Rozmowy z NPC i głos -->
             <div class="guide-panel" id="guide-panel-dialogue" role="tabpanel" hidden>
               <h3>Rozmowy z ludźmi (NPC) i interakcja głosowa</h3>
-              <p class="guide-intro">Na festiwalu przebywa ponad 90 postaci o unikalnym wyglądzie, imionach i charakterach!</p>
+              <p class="guide-intro">
+                Na festiwalu przebywa ponad 90 postaci o unikalnym wyglądzie, imionach i charakterach!
+              </p>
 
               <div class="guide-dialogue-steps">
                 <div class="dialogue-step-card">
                   <span class="step-num">1</span>
                   <h4>Podejdź i zagadaj</h4>
-                  <p>Skieruj wzrok na dowolnego festiwalowicza (np. Korbę, Zawora, Hemoroida, wolontariuszkę Pokojowego Patrolu, punkowca czy hippisa) i wciśnij <kbd>E</kbd>. Postać obróci się w Twoją stronę i przywita Cię unikalną kwestią.</p>
+                  <p>
+                    Skieruj wzrok na dowolnego festiwalowicza (np. Korbę, Zawora, Hemoroida, wolontariuszkę
+                    Pokojowego Patrolu, punkowca czy hippisa) i wciśnij <kbd>E</kbd>. Postać obróci się w
+                    Twoją stronę i przywita Cię unikalną kwestią.
+                  </p>
                 </div>
 
                 <div class="dialogue-step-card">
                   <span class="step-num">2</span>
                   <h4>Pisz lub Mów na żywo [V]</h4>
-                  <p>Możesz wpisać własną wiadomość w polu tekstowym i zatwierdzić klawiszem <kbd>Enter</kbd> ALBO kliknąć ikonę 🎤 w prawym dolnym rogu (skrót <kbd>V</kbd>) i mówić do mikrofonu — Twoja mowa zostanie przetłumaczona na tekst w locie!</p>
+                  <p>
+                    Możesz wpisać własną wiadomość w polu tekstowym i zatwierdzić klawiszem
+                    <kbd>Enter</kbd> ALBO kliknąć ikonę 🎤 w prawym dolnym rogu (skrót <kbd>V</kbd>) i mówić
+                    do mikrofonu — Twoja mowa zostanie przetłumaczona na tekst w locie!
+                  </p>
                 </div>
 
                 <div class="dialogue-step-card">
                   <span class="step-num">3</span>
                   <h4>Sztuczna inteligencja Gemini</h4>
-                  <p>NPC myślą w locie dzięki modelowi Gemini AI. Pamiętają kontekst rozmowy, odpowiadają po swojemu, opowiadają o kapelach, plotkują o obozach i reagują na Twoje słowa jak prawdziwi uczestnicy festiwalu.</p>
+                  <p>
+                    NPC myślą w locie dzięki modelowi Gemini AI. Pamiętają kontekst rozmowy, odpowiadają po
+                    swojemu, opowiadają o kapelach, plotkują o obozach i reagują na Twoje słowa jak prawdziwi
+                    uczestnicy festiwalu.
+                  </p>
                 </div>
 
                 <div class="dialogue-step-card">
                   <span class="step-num">4</span>
                   <h4>Głosy i synteza mowy</h4>
-                  <p>Każda postać posiada przypisany tembr głosu (damski lub męski z różną wysokością tonu), odtwarzany przez system syntezy mowy ElevenLabs z płynnym fallbackiem do Web Speech API.</p>
+                  <p>
+                    Każda postać posiada przypisany tembr głosu (damski lub męski z różną wysokością tonu),
+                    odtwarzany przez system syntezy mowy ElevenLabs z płynnym fallbackiem do Web Speech API.
+                  </p>
                 </div>
               </div>
+            </div>
+
+            <!-- TAB 6: Festiwalowe Bingo 3x3 -->
+            <div class="guide-panel" id="guide-panel-bingo" role="tabpanel" hidden>
+              <h3>🎯 Festiwalowe Bingo 3×3</h3>
+              <p class="guide-intro">
+                Zaliczaj festiwalowe aktywności na polu w Czaplinku i zdobądź pełną linię BINGO!
+              </p>
+              <div id="bingo-card-container" class="bingo-card-container"></div>
+              <div class="guide-hint-box">
+                <span class="hint-icon">💡</span>
+                <p>
+                  Każde zrealizowane zadanie (np. jazda kołem widokowym, zwrot puszek, rozwiązanie quizu) jest
+                  natychmiast oznaczane w bingo.
+                </p>
+              </div>
+            </div>
+
+            <!-- TAB 7: Paszport Festiwalowy -->
+            <div class="guide-panel" id="guide-panel-passport" role="tabpanel" hidden>
+              <h3>🛂 Paszport Festiwalowicza</h3>
+              <p class="guide-intro">
+                Zbieraj unikalne pieczątki za eksplorację, pomoc sąsiadom i udział w atrakcjach:
+              </p>
+              <div id="passport-stamps-container" class="passport-stamps-container"></div>
             </div>
           </div>
 
           <div class="festival-guide-footer">
             <div class="guide-nav-steps">
               <button id="guide-prev-btn" type="button" class="guide-nav-btn" disabled>← Wstecz</button>
-              <span id="guide-step-indicator" class="guide-step-indicator">Krok 1 z 5</span>
+              <span id="guide-step-indicator" class="guide-step-indicator">Krok 1 z 7</span>
               <button id="guide-next-btn" type="button" class="guide-nav-btn">Dalej →</button>
             </div>
             <div class="guide-footer-actions">
@@ -493,7 +864,8 @@
           ><label><input id="setting-disable-shake" type="checkbox" /> Wyłącz drżenie</label
           ><label><input id="setting-disable-bloom" type="checkbox" /> Wyłącz bloom</label
           ><label><input id="setting-disable-flashes" type="checkbox" /> Wyłącz błyski</label
-          ><label><input id="setting-disable-aberration" type="checkbox" /> Wyłącz aberrację chromatyczną</label
+          ><label
+            ><input id="setting-disable-aberration" type="checkbox" /> Wyłącz aberrację chromatyczną</label
           ><label
             >Faza Matrix
             <select id="setting-matrix-mode">
@@ -549,15 +921,36 @@
         <div class="dialog-header">
           <h2 id="dialog-name"></h2>
           <div class="dialog-header-actions">
-            <button id="dialog-replay-btn" type="button" class="dialog-btn-small" title="Odtwórz odpowiedź głosem (syntezator mowy)">🔊 Powtórz</button>
-            <button id="dialog-gemini-btn" type="button" class="dialog-btn-small" title="Konfiguracja klucza Gemini AI">⚙️ Gemini</button>
+            <button
+              id="dialog-replay-btn"
+              type="button"
+              class="dialog-btn-small"
+              title="Odtwórz odpowiedź głosem (syntezator mowy)"
+            >
+              🔊 Powtórz
+            </button>
+            <button
+              id="dialog-gemini-btn"
+              type="button"
+              class="dialog-btn-small"
+              title="Konfiguracja klucza Gemini AI"
+            >
+              ⚙️ Gemini
+            </button>
           </div>
           <span id="dialog-voice-status" class="dialog-voice-status">🎤 Gotowy do rozmowy</span>
         </div>
         <div id="dialog-gemini-config" class="dialog-gemini-config" hidden>
           <div class="dialog-gemini-title-row">
             <strong>🎙️ Konfiguracja Głosów i AI Postaci</strong>
-            <button id="dialog-gemini-close-btn" type="button" class="dialog-close-mini" aria-label="Zamknij panel konfiguracji">✕</button>
+            <button
+              id="dialog-gemini-close-btn"
+              type="button"
+              class="dialog-close-mini"
+              aria-label="Zamknij panel konfiguracji"
+            >
+              ✕
+            </button>
           </div>
           <!-- Sekcja 1: ElevenLabs (Opcja 2 - Priorytet) -->
           <div class="dialog-voice-section">
@@ -565,7 +958,10 @@
               <strong class="dialog-section-label">1. ElevenLabs (Realistyczny Dubbing AI)</strong>
               <span class="dialog-badge-prio">Priorytet 1</span>
             </div>
-            <p class="dialog-gemini-desc">Darmowy pakiet: 10 000 znaków/miesięcznie. Po wyczerpaniu limitu gra automatycznie przełączy się na Gemini Audio lub mowę lokalną.</p>
+            <p class="dialog-gemini-desc">
+              Darmowy pakiet: 10 000 znaków/miesięcznie. Po wyczerpaniu limitu gra automatycznie przełączy się
+              na Gemini Audio lub mowę lokalną.
+            </p>
             <div class="dialog-gemini-row">
               <input
                 id="dialog-elevenlabs-key-input"
@@ -581,10 +977,14 @@
           <!-- Sekcja 2: Gemini API (Opcja 1 - Osobowość & Fallback Audio) -->
           <div class="dialog-voice-section">
             <div class="dialog-section-header">
-              <strong class="dialog-section-label">2. Gemini API (Osobowości Postaci & Audio Fallback)</strong>
+              <strong class="dialog-section-label"
+                >2. Gemini API (Osobowości Postaci & Audio Fallback)</strong
+              >
               <span class="dialog-badge-fallback">Fallback 2</span>
             </div>
-            <p class="dialog-gemini-desc">Generuje inteligentne dialogi i służy jako ekspresyjny głos zapasowy.</p>
+            <p class="dialog-gemini-desc">
+              Generuje inteligentne dialogi i służy jako ekspresyjny głos zapasowy.
+            </p>
             <div class="dialog-gemini-row">
               <input
                 id="dialog-gemini-key-input"
@@ -601,6 +1001,7 @@
         <div id="dialog-transcript" class="dialog-transcript">
           <p id="dialog-text"></p>
         </div>
+        <div id="dialog-choices" class="dialog-choices"></div>
         <div class="dialog-input-row">
           <input
             id="dialog-text-input"

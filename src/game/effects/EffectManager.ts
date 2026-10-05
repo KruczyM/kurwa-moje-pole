@@ -9,15 +9,7 @@ import { DEFAULT_GRASS_PRESET, type GrassQualityPreset } from '../world/grassQua
 import type { MatrixPhaseMode } from './MatrixPhaseController';
 import type { MatrixQualityPreset } from './MatrixRainOverlay';
 export type EffectId =
-  | 'Piwo'
-  | 'Papieros'
-  | 'Joint'
-  | 'Kreska'
-  | 'Grzyb'
-  | 'MDMA'
-  | 'LSD'
-  | 'Woda'
-  | 'Okulary';
+  'Piwo' | 'Papieros' | 'Joint' | 'Kreska' | 'Grzyb' | 'MDMA' | 'LSD' | 'Woda' | 'Okulary';
 export type EffectPhase = 'inactive' | 'fadeIn' | 'active' | 'fadeOut';
 export type VisualSettings = {
   intensity: number;
@@ -30,6 +22,7 @@ export type VisualSettings = {
   matrixMode: MatrixPhaseMode;
   matrixQuality: MatrixQualityPreset;
   grassQuality: GrassQualityPreset;
+  preloadCrowd: boolean;
 };
 export const defaultVisualSettings: VisualSettings = {
   intensity: 1,
@@ -42,6 +35,7 @@ export const defaultVisualSettings: VisualSettings = {
   matrixMode: 'auto',
   matrixQuality: 'medium',
   grassQuality: DEFAULT_GRASS_PRESET,
+  preloadCrowd: true,
 };
 export type EffectConfig = {
   fadeIn: number;
@@ -440,6 +434,15 @@ export class EffectManager {
     this.composer.addPass(this.shader);
   }
 
+  /** Wykonuje próbny przebieg kompozytora efektów, aby skompilować shadery post-processingu przed startem gry. */
+  warmUp() {
+    try {
+      this.composer.render(0.001);
+    } catch {
+      // Bezpieczny fallback dla środowisk bez pełnego WebGL (np. jsdom/testy)
+    }
+  }
+
   /** Informuje, czy filtr okularów przeciwsłonecznych jest aktywny. */
   get sunglassesActive(): boolean {
     return this.sunglassesRemaining > 0;
@@ -520,7 +523,8 @@ export class EffectManager {
     }
     const bloomScale = this.sunglassesActive ? 0.5 : 1.0;
     this.bloom.enabled = !this.settings.disableBloom && (this.snapshot.bloom.enabled || c.bloom > 0);
-    this.bloom.strength = THREE.MathUtils.lerp(this.snapshot.bloom.strength, c.bloom, level) * pulse * bloomScale;
+    this.bloom.strength =
+      THREE.MathUtils.lerp(this.snapshot.bloom.strength, c.bloom, level) * pulse * bloomScale;
     this.afterimage.enabled =
       allowMotion && (this.snapshot.afterimage.enabled || (c.afterimage > 0 && level > 0.02));
     this.afterimage.uniforms.damp.value = THREE.MathUtils.lerp(

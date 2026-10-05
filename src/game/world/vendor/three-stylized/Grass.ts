@@ -386,6 +386,7 @@ export class Grass extends THREE.Group {
     this.terrain = this.externalSurface ? undefined : createTerrain(this.normalized.terrain)
     this.activeSurface = this.externalSurface ?? this.terrain!.grassSurface
     this.blades = this.createBlades()
+    this.blades.visible = false
     // CampWorld already owns the visible ground; this facade supplies blades only.
     if (this.terrain) this.add(this.terrain.grassSurface)
     this.add(this.blades)
@@ -410,6 +411,7 @@ export class Grass extends THREE.Group {
     this.distantGrass.setPreset(preset)
     const { width, depth } = surfaceSize(this.activeSurface)
     this.blades.setOptions({ density: grassDensityForSurface(config.grassLayerDensity, width, depth) })
+    this.blades.visible = false
   }
 
   setOptions(patch: GrassOptions): void {
@@ -530,6 +532,7 @@ export class Grass extends THREE.Group {
     this.activeSurface = this.externalSurface ?? this.terrain!.grassSurface
     if (this.terrain) this.add(this.terrain.ground, this.terrain.grassSurface)
     this.blades = this.createBlades()
+    this.blades.visible = false
     this.add(this.blades)
     this.rebuildWildflowers()
   }

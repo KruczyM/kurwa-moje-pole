@@ -41,9 +41,8 @@ const NPC_COLORS = [
 /** Sprawdza, czy overlay diagnostyczny jest dozwolony w bieżącym środowisku. */
 export function isNpcDebugAllowed(): boolean {
   if (typeof window === 'undefined') return false;
-  const isDev = Boolean(import.meta.env?.DEV);
   const urlParam = new URLSearchParams(window.location.search).get('debugNpc');
-  return isDev || urlParam === '1';
+  return urlParam === '1';
 }
 
 /**

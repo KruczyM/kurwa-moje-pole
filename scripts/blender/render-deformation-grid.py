@@ -37,7 +37,8 @@ for i, pose in enumerate(poses):
         if all(v in selected for v in poly.vertices):
             poly.material_index = 1
     curve = bpy.data.curves.new('label', 'FONT')
-    curve.body = pose['name'][:24]
+    label_parts = pose['name'].split(' ', 1)
+    curve.body = label_parts[0][:24] + ('\n' + label_parts[1][:32] if len(label_parts) > 1 else '')
     curve.size = .14
     label = bpy.data.objects.new('label', curve)
     bpy.context.collection.objects.link(label)

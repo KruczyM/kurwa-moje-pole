@@ -75,10 +75,7 @@ export class VoiceReactionManager {
   }
 
   /** Odtwarza losowy lub wybrany festiwalowy okrzyk obozowy z głośnika lub losowej pozycji w obozie. */
-  playCampShout(
-    index?: number,
-    sourcePos?: { x: number; y: number; z: number },
-  ): CampShoutEvent {
+  playCampShout(index?: number, sourcePos?: { x: number; y: number; z: number }): CampShoutEvent {
     let shoutIndex: number;
     if (index !== undefined && index >= 0 && index < FESTIVAL_CAMP_SHOUTS.length) {
       shoutIndex = index;
@@ -93,13 +90,15 @@ export class VoiceReactionManager {
     const shout = FESTIVAL_CAMP_SHOUTS[shoutIndex];
 
     const fromSpeaker = sourcePos ? false : this.random() < 0.5;
-    const position = sourcePos ?? (fromSpeaker
-      ? { x: -1.45, y: 0.65, z: 0.65 }
-      : {
-          x: (this.random() - 0.5) * 20,
-          y: 0,
-          z: (this.random() - 0.5) * 20,
-        });
+    const position =
+      sourcePos ??
+      (fromSpeaker
+        ? { x: -1.45, y: 0.65, z: 0.65 }
+        : {
+            x: (this.random() - 0.5) * 20,
+            y: 0,
+            z: (this.random() - 0.5) * 20,
+          });
 
     const event: CampShoutEvent = {
       text: shout.text,
@@ -142,7 +141,8 @@ export class VoiceReactionManager {
   effectStarted(id: EffectId, now = Date.now()) {
     this.trackedEffect = id;
     this.rareTripChecked = false;
-    const specific = (id in catalog.effectStart ? (catalog.effectStart as Record<string, string[]>)[id] : undefined) ?? [];
+    const specific =
+      (id in catalog.effectStart ? (catalog.effectStart as Record<string, string[]>)[id] : undefined) ?? [];
     const pool = [...catalog.effectStart.common, ...specific];
     if (nonLightEffects.includes(id)) pool.push(...catalog.effectStart.nonLight);
     this.play(pool);

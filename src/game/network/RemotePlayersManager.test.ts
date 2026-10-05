@@ -7,6 +7,74 @@ import { SpatialVoiceManager } from '../audio/SpatialVoiceManager';
 import type { WorldSnapshotPayload } from './networkProtocol';
 
 describe('RemotePlayersManager', () => {
+  it('honors airborne network height only after a jump action, then resumes grounding', () => {
+    const model = new THREE.Group();
+    model.add(new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1)));
+    const manager = new RemotePlayersManager(
+      new THREE.Scene(),
+      new Map([
+        [
+          'amper',
+          {
+            scene: model,
+            animations: [new THREE.AnimationClip('Idle', 1, []), new THREE.AnimationClip('Jump', 1, [])],
+          } as GLTF,
+        ],
+      ]),
+    );
+    manager.handleWorldSnapshot({
+      timestamp: 1,
+      players: [
+        {
+          playerId: 'jumper',
+          character: 'Amper',
+          nickname: 'J',
+          transform: { position: [0, 1, 0], yaw: 0, locomotion: 'Run', speed: 6, timestamp: 1 },
+        },
+      ],
+    });
+    const entity = manager.remotePlayers.get('jumper')!;
+    const camera = new THREE.PerspectiveCamera();
+    manager.update(0.01, camera);
+    expect(entity.root.position.y).toBeCloseTo(0);
+    manager.handleRemoteAction({ playerId: 'jumper', character: 'Amper', action: 'jump', timestamp: 1 });
+    manager.update(0.01, camera);
+    expect(entity.root.position.y).toBeGreaterThan(0);
+    expect(entity.root.position.y).toBeCloseTo(entity.currentPosition.y);
+    for (let i = 0; i < 90; i++) manager.update(1 / 60, camera);
+    expect(entity.root.position.y).toBeCloseTo(0);
+    manager.dispose();
+  });
+  it('keeps animated model feet on the ground even when the clip moves its root', () => {
+    const modelRoot = new THREE.Group();
+    modelRoot.name = 'AnimatedRoot';
+    modelRoot.add(new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1)));
+    const idle = new THREE.AnimationClip('Idle', 1, [
+      new THREE.VectorKeyframeTrack('AnimatedRoot.position', [0, 1], [0, 0, 0, 0, 2, 0]),
+    ]);
+    const models = new Map([['amper', { scene: modelRoot, animations: [idle] } as GLTF]]);
+    const remote = new RemotePlayersManager(new THREE.Scene(), models);
+    const view = new THREE.PerspectiveCamera();
+    remote.handleWorldSnapshot({
+      timestamp: 1,
+      players: [
+        {
+          playerId: 'test',
+          character: 'Amper',
+          nickname: 'Test',
+          transform: { position: [0, 0, 0], yaw: 0, locomotion: 'Idle', speed: 0, timestamp: 1 },
+        },
+      ],
+    });
+    const entity = remote.remotePlayers.get('test')!;
+    for (let i = 0; i < 20; i++) {
+      remote.update(0.03, view);
+      const bounds = new THREE.Box3().setFromObject(entity.root, true);
+      expect(bounds.min.y).toBeCloseTo(entity.root.position.y, 5);
+    }
+    expect(entity.visual!.rotation.y).toBeCloseTo(Math.PI);
+    remote.dispose();
+  });
   let scene: THREE.Scene;
   let camera: THREE.PerspectiveCamera;
   let characterModels: Map<string, GLTF>;

@@ -25,6 +25,10 @@ export class TimeOfDaySkybox {
   private requestToken = 0;
   private disposed = false;
 
+  getPeriod(): SkyboxPeriod {
+    return this.period ?? skyboxPeriodForHour(this.now().getHours());
+  }
+
   constructor(
     private readonly scene: THREE.Scene,
     private readonly now: () => Date = () => new Date(),

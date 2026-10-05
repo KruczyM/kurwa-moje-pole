@@ -206,6 +206,7 @@ export class Room {
     if (slot.status === 'occupied') {
       // Grace period na ponowne połączenie:
       slot.playerId = undefined;
+      this.playerTransforms.delete(charName);
       this.clearDisconnectTimer(charName);
 
       const timer = setTimeout(() => {

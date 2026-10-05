@@ -52,7 +52,7 @@ export type NpcAnimatorOptions = {
   initialPhase?: number;
 };
 
-export type NpcActivityStep = { name: string; seconds?: number };
+export type NpcActivityStep = { name: string; seconds?: number; fadeSeconds?: number };
 
 /** Usuwa błędne przesunięcia oraz postęp Walk/Run, którym zarządza nawigacja.
  * Odejmowanie dryfu cyklu zachowuje kołysanie i ruch pionowy, także w rigach Z-up.
@@ -372,7 +372,8 @@ export class NpcAnimator {
     );
     action.clampWhenFinished = true;
     action.play();
-    if (previous && previous !== action) action.crossFadeFrom(previous, this.fadeSeconds, false);
+    if (previous && previous !== action)
+      action.crossFadeFrom(previous, step.fadeSeconds ?? this.fadeSeconds, false);
     this.currentClip = step.name;
     this.activityRemaining = step.seconds ?? 0;
   }

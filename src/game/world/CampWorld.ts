@@ -1,29 +1,12 @@
 import * as THREE from 'three';
 import { terrainHeight } from './terrainHeight';
-import { createStageGrassMask, placeFestivalStages } from './festivalStages';
+import { AuthoredFestivalWorld } from './AuthoredFestivalWorld';
 export { terrainHeight } from './terrainHeight';
-import { attachTentLod } from './tentLod';
-import { TentPaletteCache } from './tentPalettes';
-import { sampleFestivalRoadMask, tentTerrainOffset } from './festivalCamping';
-import { placeRockShop, sampleRockShopGrassMask } from './festivalLandmarks';
-import { FestivalWheel, placeFestivalWheel, sampleWheelGrassMask } from './festivalWheel';
-import { createZoneGrassMask, festivalZoneTemplates, placeFestivalZones } from './festivalZones';
-import {
-  createMarketGrassMask,
-  marketLaneMaterial,
-  marketTemplates,
-  placeFestivalMarket,
-} from './festivalMarket';
-import {
-  FestivalInfrastructureInstance,
-  placeFestivalInfrastructure,
-  sampleInfrastructureGrassMask,
-} from './festivalInfrastructure';
-import {
-  placeSunflowerField,
-  sampleSunflowerFieldGrassMask,
-  type SunflowerFieldInstance,
-} from './festivalSunflowerField';
+import { FestivalWheel } from './festivalWheel';
+import { FestivalInfrastructureInstance } from './festivalInfrastructure';
+import { type FestivalPropsInstance } from './festivalProps';
+import { FlankiGame } from '../interactions/FlankiGame';
+import { flankiPitchGrassCoverage } from '../interactions/FlankiPhysics';
 import { FestivalStageEffects } from './festivalStageEffects';
 import { ColliderSpatialGrid, type WorldCollider } from './ColliderSpatialGrid';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -31,26 +14,20 @@ import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { inspectableItems } from '../interactions/itemConfig';
 import { itemPresentation } from '../interactions/itemPresentationConfig';
 import { enableInteractionLayer } from '../interactions/InteractionManager';
-import { HorizonPanorama, TimeOfDaySkybox } from './HorizonSkybox';
-import {
-  sampleCampGrassCoverage,
-  sampleTentGrassMask,
-  tentColliderBounds,
-  allTentLayout,
-  type PhysicalSize,
-  type TentConfig,
-  type TentFit,
-  type TentModelId,
-} from './campLayout';
-import { FLAG_CONFIG, MAD_DOG_CONFIG, seatLayout } from './campLandmarks';
+import { HorizonPanorama, TimeOfDaySkybox, type SkyboxPeriod, type SkyboxVariant } from './HorizonSkybox';
+import type { PhysicalSize, TentFit } from './campLayout';
+import { MAD_DOG_CONFIG } from './campLandmarks';
 import { Grass } from './vendor/three-stylized/index';
 import { bindGrassWorldMask, createGrassWorldMask } from './grassWorldMask';
 import { DEFAULT_GRASS_PRESET, grassDensityForSurface, type GrassQualityPreset } from './grassQuality';
+import { RECYCLING_CORRALS } from '../interactions/CanCollector';
+import { createEcoPickupModel } from './ecoPickupModels';
 
 import { WORLD_SIZE, WORLD_LIMIT } from './festivalLayout';
 export { WORLD_LIMIT } from './festivalLayout';
 /** Wysokość wcTronu: co najmniej dwukrotność nominalnej postaci mierzącej 1,8 m. */
 export const TOILET_HEIGHT_METERS = 3.6;
+export const PROCEDURAL_GRASS_ENABLED = false;
 
 export type WorldObject =
   | { object: THREE.Object3D; label: string; action: 'toilet' }
@@ -58,7 +35,13 @@ export type WorldObject =
   | { object: THREE.Object3D; label: string; action: 'item'; itemId: string }
   | { object: THREE.Object3D; label: string; action: 'toitoi_door'; doorId: string }
   | { object: THREE.Object3D; label: string; action: 'field_shower'; showerId: string }
-  | { object: THREE.Object3D; label: string; action: 'patrol_checkpoint' };
+  | { object: THREE.Object3D; label: string; action: 'patrol_checkpoint' }
+  | { object: THREE.Object3D; label: string; action: 'flanki' }
+  | { object: THREE.Object3D; label: string; action: 'flanki_can' }
+  | { object: THREE.Object3D; label: string; action: 'ferris_wheel' }
+  | { object: THREE.Object3D; label: string; action: 'clean_can'; canId: string }
+  | { object: THREE.Object3D; label: string; action: 'clean_corral' }
+  | { object: THREE.Object3D; label: string; action: 'campfire_guitar' };
 
 export type GroundTextures = {
   grassColor?: THREE.Texture | null;
@@ -68,38 +51,10 @@ export type GroundTextures = {
 };
 
 type WorldModels = {
-  tents: Map<TentModelId, GLTF>;
-  flag: GLTF | null;
-  chair: GLTF | null;
-  toilet: GLTF | null;
-  lidlRockShop?: GLTF | null;
-  allegroWheel?: GLTF | null;
-  marketStalls?: GLTF | null;
-  festivalZones?: GLTF | null;
-  mainStage?: GLTF | null;
-  smallStage?: GLTF | null;
-  festivalGate?: GLTF | null;
-  festivalSignpost?: GLTF | null;
-  fohTower?: GLTF | null;
-  delayTower?: GLTF | null;
-  mudBath?: GLTF | null;
-  fireTruckOsp?: GLTF | null;
-  waterCurtain?: GLTF | null;
-  patrolTent?: GLTF | null;
-  krishnaVillage?: GLTF | null;
-  trashCorral?: GLTF | null;
-  grzybek?: GLTF | null;
-  washTaps?: GLTF | null;
-  toitoiRow?: GLTF | null;
-  fieldShowers?: GLTF | null;
-  crowdBarrier?: GLTF | null;
-  festivalFoodTent?: GLTF | null;
-  foodtruckFrytki?: GLTF | null;
-  foodtruckChurros?: GLTF | null;
-  foodtruckBurger?: GLTF | null;
-  foodtruckMakarun?: GLTF | null;
-  rollbarLech?: GLTF | null;
-  sunflower?: GLTF | null;
+  ecoPickups?: GLTF | null;
+  authoredFestival: GLTF;
+  characters?: Map<string, GLTF>;
+  beerCan: GLTF | null;
   interactables: Map<string, GLTF>;
   textures?: GroundTextures;
 };
@@ -208,24 +163,46 @@ export function physicalSizeIsValid(actual: THREE.Vector3, target: PhysicalSize,
 export class CampWorld {
   private wheel: FestivalWheel | null = null;
   public infrastructure: FestivalInfrastructureInstance | null = null;
-  public sunflowerField: SunflowerFieldInstance | null = null;
+  public festivalProps: FestivalPropsInstance | null = null;
+  public flankiGame: FlankiGame | null = null;
   private stageEffects: FestivalStageEffects | null = null;
-  private tentPalettes = new TentPaletteCache();
+  private landmarksRoot: THREE.Group | null = null;
+  private sun!: THREE.DirectionalLight;
+  private hemiLight!: THREE.HemisphereLight;
   private readonly colliderGrid = new ColliderSpatialGrid(16);
+  private readonly canMeshes = new Map<string, THREE.Object3D>();
+  private ecoModelSource?: THREE.Object3D;
+  private spawnOrigin = new THREE.Vector3(0, 0, 15);
+  public mapScenery: AuthoredFestivalWorld['mapScenery'] = [];
   colliders: WorldCollider[] = [];
+
+  getWheel(): FestivalWheel | null {
+    return this.wheel;
+  }
+
+  /** Start outside the authored toilet, even after models are moved in Blender. */
+  getPlayerSpawn() {
+    for (let radius = 0; radius <= 30; radius += 1)
+      for (let i = 0; i < 16; i++) {
+        const angle = (i / 16) * Math.PI * 2;
+        const x = this.spawnOrigin.x + Math.sin(angle) * radius;
+        const z = this.spawnOrigin.z + Math.cos(angle) * radius;
+        if (this.canMove(x, z, 0.5)) return { position: [x, z] as const, yaw: Math.atan2(x, z) };
+      }
+    throw new Error('No safe spawn near the authored main camp');
+  }
 
   addCollider(collider: WorldCollider): void {
     this.colliders.push(collider);
     this.colliderGrid.add(collider);
   }
   interactables: WorldObject[] = [];
-  private grass: Grass;
-  private grassWorldMask: THREE.DataTexture;
+  private grass: Grass | null = null;
+  private grassWorldMask: THREE.DataTexture | null = null;
   private grassQuality: GrassQualityPreset = DEFAULT_GRASS_PRESET;
   private skybox: TimeOfDaySkybox;
   private panorama: HorizonPanorama;
   private readonly debugInteractions: boolean;
-  private readonly debugTentScale: boolean;
 
   constructor(
     scene: THREE.Scene,
@@ -233,17 +210,18 @@ export class CampWorld {
     debugInteractions = interactionDebugEnabled(typeof location === 'undefined' ? '' : location.search),
     grassQuality: GrassQualityPreset = DEFAULT_GRASS_PRESET,
   ) {
+    this.ecoModelSource = models.ecoPickups?.scene;
     this.debugInteractions = debugInteractions;
     this.grassQuality = grassQuality;
-    this.debugTentScale =
-      typeof location !== 'undefined' && new URLSearchParams(location.search).get('debugTentScale') === '1';
     this.skybox = new TimeOfDaySkybox(scene);
     this.panorama = new HorizonPanorama(models.textures?.horizon);
     this.panorama.mesh.userData.excludeMushroomWireframe = true;
     scene.add(this.panorama.mesh);
 
-    scene.add(new THREE.HemisphereLight(0xb9dcff, 0x4b3c23, 1.7));
+    this.hemiLight = new THREE.HemisphereLight(0xb9dcff, 0x4b3c23, 1.7);
+    scene.add(this.hemiLight);
     const sun = new THREE.DirectionalLight(0xffe0b0, 3.2);
+    this.sun = sun;
     sun.position.set(-10, 17, 8);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
@@ -258,312 +236,177 @@ export class CampWorld {
     ground.userData.excludeMushroomWireframe = true;
     scene.add(ground);
 
-    const market = marketTemplates(models.marketStalls);
-    const marketGrassMask = createMarketGrassMask(new Set(market.keys()));
-    const zones = festivalZoneTemplates(models.festivalZones);
-    const zoneGrassMask = createZoneGrassMask(new Set(zones.keys()));
-    const stageGrassMask = createStageGrassMask(models);
+    const authored = new AuthoredFestivalWorld(models.authoredFestival);
+    this.mapScenery = authored.mapScenery;
+    scene.add(authored.root);
+    const toilet = authored.placements.get('CampToilet');
+    if (toilet) {
+      const bounds = new THREE.Box3().setFromObject(toilet);
+      this.spawnOrigin.set((bounds.min.x + bounds.max.x) / 2, 0, bounds.max.z + 2.8);
+    }
     const vegetationCoverage = (x: number, z: number) =>
-      sampleCampGrassCoverage(x, z) *
-      sampleTentGrassMask(x, z) *
-      sampleFestivalRoadMask(x, z) *
-      (models.lidlRockShop ? sampleRockShopGrassMask(x, z) : 1) *
-      (models.allegroWheel ? sampleWheelGrassMask(x, z) : 1) *
-      marketGrassMask(x, z) *
-      zoneGrassMask(x, z) *
-      stageGrassMask(x, z) *
-      sampleInfrastructureGrassMask(x, z) *
-      sampleSunflowerFieldGrassMask(x, z);
-    this.grass = new Grass(
-      {
-        surface: ground,
-        grass: {
-          density: grassDensityForSurface(18, WORLD_SIZE, WORLD_SIZE),
-          brightness: 0.44,
-          coverage: {
-            sample: (point) => vegetationCoverage(point.position.x, point.position.z),
+      Math.min(authored.grassCoverage(x, z), flankiPitchGrassCoverage(x, z));
+    if (PROCEDURAL_GRASS_ENABLED) {
+      this.grass = new Grass(
+        {
+          surface: ground,
+          grass: {
+            density: grassDensityForSurface(18, WORLD_SIZE, WORLD_SIZE),
+            brightness: 0.44,
+            coverage: {
+              sample: (point) => vegetationCoverage(point.position.x, point.position.z),
+            },
+            blade: { minHeight: 0.18, maxHeight: 0.58, minWidth: 0.025, maxWidth: 0.085, segments: 4 },
+            colors: { bottom: '#163313', top: '#2c581e', backlight: '#44782b', ground: '#142911' },
+            wind: {
+              strength: 0.16,
+              speed: 0.85,
+              frequency: 0.55,
+              turbulence: 0.22,
+              lean: 0.025,
+              direction: 32,
+            },
+            lighting: { direction: sun.position.clone().normalize(), color: '#ffe0b0', intensity: 1.1 },
+            shadow: false,
           },
-          blade: { minHeight: 0.18, maxHeight: 0.58, minWidth: 0.025, maxWidth: 0.085, segments: 4 },
-          colors: { bottom: '#163313', top: '#2c581e', backlight: '#44782b', ground: '#142911' },
-          wind: {
-            strength: 0.16,
-            speed: 0.85,
-            frequency: 0.55,
-            turbulence: 0.22,
-            lean: 0.025,
-            direction: 32,
-          },
-          lighting: { direction: sun.position.clone().normalize(), color: '#ffe0b0', intensity: 1.1 },
-          shadow: false,
+          wildflowers: { enabled: false },
         },
-        wildflowers: { enabled: false },
-      },
-      this.grassQuality,
-    );
-    this.grass.userData.excludeMushroomWireframe = true;
-    this.grassWorldMask = createGrassWorldMask(vegetationCoverage);
-    bindGrassWorldMask(this.grass.tutorialGrass, this.grassWorldMask);
-    bindGrassWorldMask(this.grass.distantGrass, this.grassWorldMask);
-    this.grass.syncDirectionalLight(sun);
-    scene.add(this.grass);
+        this.grassQuality,
+      );
+      this.grass.blades.visible = false;
+      this.grass.userData.excludeMushroomWireframe = true;
+      this.grassWorldMask = createGrassWorldMask(vegetationCoverage);
+      bindGrassWorldMask(this.grass.tutorialGrass, this.grassWorldMask);
+      bindGrassWorldMask(this.grass.distantGrass, this.grassWorldMask);
+      this.grass.syncDirectionalLight(sun);
+      scene.add(this.grass);
+    }
 
-    const campRoot = new THREE.Group();
-    campRoot.name = 'CampRoot';
-    const madDogRoot = new THREE.Group();
-    madDogRoot.name = 'MadDog';
-    const tentsRoot = new THREE.Group();
-    tentsRoot.name = 'CampTents';
     const landmarksRoot = new THREE.Group();
-    landmarksRoot.name = 'CampLandmarks';
-    const propsRoot = new THREE.Group();
-    propsRoot.name = 'CampProps';
-    campRoot.add(madDogRoot, tentsRoot, landmarksRoot, propsRoot);
-    scene.add(campRoot);
-
-    this.madDog(madDogRoot, models.tents.get('main') ?? null);
-    this.chairs(madDogRoot, models.chair);
-    allTentLayout.forEach((tent) => this.placeTent(tentsRoot, models.tents.get(tent.model) ?? null, tent));
-    this.flag(landmarksRoot, models.flag);
-    const shopCollider = placeRockShop(landmarksRoot, models.lidlRockShop, terrainHeight);
-    if (shopCollider) this.addCollider({ box: shopCollider });
-    this.wheel = placeFestivalWheel(landmarksRoot, models.allegroWheel, terrainHeight);
-    if (this.wheel) this.addCollider({ box: this.wheel.collider });
-    for (const box of placeFestivalMarket(
-      landmarksRoot,
-      market,
-      terrainHeight,
-      marketLaneMaterial(models.marketStalls),
-    ))
-      this.addCollider({ box });
-    this.table(madDogRoot, models.interactables);
-    for (const box of placeFestivalZones(landmarksRoot, zones, terrainHeight)) this.addCollider({ box });
-    for (const box of placeFestivalStages(landmarksRoot, models, terrainHeight)) this.addCollider({ box });
-    this.infrastructure = placeFestivalInfrastructure(landmarksRoot, models, terrainHeight);
-    if (this.infrastructure) {
-      for (const box of this.infrastructure.colliders) this.addCollider({ box });
-      for (const doorRec of this.infrastructure.toiToiDoors?.getAllRecords() ?? []) {
-        this.interactables.push({
-          object: doorRec.interactionMesh,
-          label: doorRec.label,
-          action: 'toitoi_door',
-          doorId: doorRec.id,
-        });
-      }
-      for (const showerTrigger of this.infrastructure.showerTriggers ?? []) {
-        this.interactables.push({
-          object: showerTrigger,
-          label: 'Umyj się pod prysznicem',
-          action: 'field_shower',
-          showerId: showerTrigger.name,
-        });
-      }
-      for (const checkpoint of this.infrastructure.patrolCheckpoints ?? []) {
-        this.interactables.push({
-          object: checkpoint,
-          label: 'Kontrola Pokojowego Patrolu — Duża Scena',
-          action: 'patrol_checkpoint',
-        });
-      }
+    landmarksRoot.name = 'RuntimeGameplay';
+    this.landmarksRoot = landmarksRoot;
+    scene.add(landmarksRoot);
+    this.wheel = authored.wheel;
+    this.infrastructure = authored.infrastructure;
+    this.festivalProps = authored.props;
+    authored.colliders.forEach((collider) => this.addCollider(collider));
+    this.interactables.push(...authored.interactables);
+    const madDogRoot = authored.placements.get('MadDog');
+    if (madDogRoot) {
+      this.table(madDogRoot, models.interactables);
+      const localFill = new THREE.PointLight(
+        0xffdfc2,
+        MAD_DOG_CONFIG.localFillIntensity,
+        MAD_DOG_CONFIG.localFillDistance,
+        2,
+      );
+      localFill.position.y = MAD_DOG_CONFIG.localFillHeight;
+      madDogRoot.add(localFill);
     }
-    this.stageEffects = new FestivalStageEffects();
-    landmarksRoot.add(this.stageEffects.group);
-    this.sunflowerField = placeSunflowerField(landmarksRoot, models.sunflower, terrainHeight);
-  }
+    // Sky cones and lasers disabled; keep the authored stage fixtures.
 
-  /** Klonuje model, dopasowuje jego wysokość oraz konfiguruje cienie. */
-  private prepare(model: GLTF | null, height: number, color: number) {
-    if (!model) return new THREE.Mesh(new THREE.ConeGeometry(1.7, 1.7, 4), simpleMaterial(color));
-    const root = clone(model.scene),
-      box = new THREE.Box3().setFromObject(root);
-    root.scale.setScalar(height / Math.max(0.01, box.max.y - box.min.y));
-    box.setFromObject(root);
-    root.position.y = -box.min.y;
-    root.traverse((object) => {
-      const mesh = object as THREE.Mesh;
-      if (mesh.isMesh) {
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-      }
+    const flankiCanY = terrainHeight(0, -26);
+    this.flankiGame = new FlankiGame({
+      canPosition: [0, flankiCanY, -26],
+      playerLineZ: -20,
+      botLineZ: -32,
+      beerCanModel: models.beerCan ?? null,
+      characterModels: models.characters,
     });
-    return root;
-  }
-
-  /** Skaluje cały korzeń modelu do jawnych wymiarów fizycznych i osadza go najniższym punktem na ziemi. */
-  private preparePhysical(model: GLTF | null, size: PhysicalSize, fit: TentFit, color: number) {
-    if (!model) {
-      const fallback = new THREE.Mesh(new THREE.BoxGeometry(...size), simpleMaterial(color));
-      fallback.position.y = size[1] / 2;
-      return fallback;
-    }
-    const root = clone(model.scene);
-    const bounds = new THREE.Box3().setFromObject(root);
-    const sourceSize = bounds.getSize(new THREE.Vector3());
-    root.scale.multiply(physicalScale(sourceSize, size, fit));
-    if (fit === 'exact-source-correction') {
-      bounds.setFromObject(root);
-      root.scale.multiply(physicalScale(bounds.getSize(new THREE.Vector3()), size, fit));
-    }
-    bounds.setFromObject(root);
-    root.position.y -= bounds.min.y;
-    root.traverse((object) => {
-      const mesh = object as THREE.Mesh;
-      if (!mesh.isMesh) return;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
+    landmarksRoot.add(this.flankiGame.root);
+    this.interactables.push({
+      object: this.flankiGame.interactionHitbox,
+      label: 'Zagraj we Flanki (Bierball)',
+      action: 'flanki',
     });
-    return root;
-  }
+    this.interactables.push({
+      object: this.flankiGame.canInteractionHitbox,
+      label: 'Postaw puszkę! [E]',
+      action: 'flanki_can',
+    });
 
-  /** Umieszcza namiot i buduje jego uproszczony collider wyłącznie z konfiguracji obozu. */
-  private placeTent(scene: THREE.Object3D, source: GLTF | null, config: TentConfig) {
-    const object = this.preparePhysical(source, config.physicalSize, config.fit, 0x5c8dbe);
-    attachTentLod(object);
-    this.tentPalettes.apply(object, config.palette);
-    object.updateMatrixWorld(true);
-    const measuredPhysicalSize = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
-    if (!physicalSizeIsValid(measuredPhysicalSize, config.physicalSize, config.fit)) {
-      console.warn(`Niepoprawna skala namiotu: ${formatTentDimensions(config.id, measuredPhysicalSize)}`);
-    }
-    const [x, y, z] = config.position;
-    object.name = config.id;
-    object.userData.campObject = {
-      id: config.id,
-      label: config.label,
-      model: config.model,
-    };
-    const floor = object.getObjectByName('Tent_Groundsheet');
-    const floorHeight = floor ? new THREE.Box3().setFromObject(floor).min.y : 0;
-    const groundOffset = tentTerrainOffset(config, floorHeight, terrainHeight);
-    object.position.add(new THREE.Vector3(x, y + terrainHeight(x, z) + groundOffset, z));
-    object.rotation.y = config.rotationY;
-    scene.add(object);
-    scene.updateMatrixWorld(true);
-    if (this.debugTentScale) {
-      console.info(formatTentDimensions(config.id, measuredPhysicalSize));
-    }
-    const bounds = tentColliderBounds(config);
-    const box = new THREE.Box3(
-      new THREE.Vector3(bounds.minX, -2, bounds.minZ),
-      new THREE.Vector3(bounds.maxX, 4, bounds.maxZ),
-    );
-    this.addCollider({ box });
-  }
-
-  /** Umieszcza właściwy model Mad Dog zamiast proceduralnej płachty i słupów. */
-  private madDog(parent: THREE.Group, source: GLTF | null) {
-    const [x, , z] = MAD_DOG_CONFIG.position;
-    parent.position.set(x, terrainHeight(x, z), z);
-    const canopy = this.preparePhysical(source, MAD_DOG_CONFIG.physicalSize, 'uniform-height', 0x16151b);
-    canopy.name = 'MadDog_Model_NoInteriorCollision';
-    parent.add(canopy);
-    canopy.updateMatrixWorld(true);
-    const measured = new THREE.Box3().setFromObject(canopy).getSize(new THREE.Vector3());
-    if (!physicalSizeIsValid(measured, MAD_DOG_CONFIG.physicalSize, 'uniform-height')) {
-      console.warn(`Niepoprawna skala Mad Dog: ${formatTentDimensions('MAIN', measured)}`);
-    } else if (this.debugTentScale) {
-      console.info(formatTentDimensions('MAIN', measured));
-    }
-
-    const ambientFill = new THREE.HemisphereLight(0xffe7cf, 0x55475f, MAD_DOG_CONFIG.ambientFillIntensity);
-    ambientFill.name = 'MadDog_AmbientFill';
-    parent.add(ambientFill);
-
-    const localFill = new THREE.PointLight(
-      0xffdfc2,
-      MAD_DOG_CONFIG.localFillIntensity,
-      MAD_DOG_CONFIG.localFillDistance,
-      2,
-    );
-    localFill.name = 'MadDog_LocalFill';
-    localFill.position.set(0, MAD_DOG_CONFIG.localFillHeight, 0);
-    parent.add(localFill);
-  }
-
-  /** Ustawia osiem interaktywnych krzeseł w kręgu pod Mad Dogiem. */
-  private chairs(parent: THREE.Group, source: GLTF | null) {
-    // Określ, o ile metrów chcesz odsunąć krzesła od centrum (np. 0.5 metra)
-    const offsetDistance = 1;
-
-    seatLayout.forEach((seat) => {
-      // 1. Klonujemy pozycję z layoutu, aby nie modyfikować oryginalnych danych
-      const seatPosition = [...seat.position];
-
-      // 2. Obliczamy wektor kierunku od centrum (0, 0) na płaszczyźnie XZ
-      const x = seatPosition[0];
-      const z = seatPosition[2];
-      const length = Math.sqrt(x * x + z * z);
-
-      if (length > 0) {
-        // Normalizujemy wektor i mnożymy przez odległość odsunięcia
-        seatPosition[0] += (x / length) * offsetDistance;
-        seatPosition[2] += (z / length) * offsetDistance;
-      }
-
-      // 3. Obliczamy pozycję globalną (worldPosition) na podstawie nowej, odsuniętej pozycji
-      const worldPosition: [number, number, number] = [
-        parent.position.x + seatPosition[0],
-        parent.position.y + seatPosition[1],
-        parent.position.z + seatPosition[2],
-      ];
-
-      const root = new THREE.Group();
-      root.name = `Seat_${seat.id}`;
-
-      // Używamy nowej, zmodyfikowanej pozycji
-      root.position.set(seatPosition[0], seatPosition[1], seatPosition[2]);
-      root.rotation.y = seat.rotationY;
-      root.userData.interaction = {
-        kind: 'seat',
-        seatId: seat.id,
-        position: worldPosition,
-        rotationY: seat.rotationY,
-      };
-
-      const chair = this.prepare(source, 1.05, 0x385c82);
-      chair.name = `SeatVisual_${seat.id}`;
-      chair.traverse((object) => {
-        const mesh = object as THREE.Mesh;
-        if (!mesh.isMesh) return;
-        mesh.material = Array.isArray(mesh.material)
-          ? mesh.material.map((material) => material.clone())
-          : mesh.material.clone();
-      });
-      root.add(chair);
-
-      const hitbox = new THREE.Mesh(
-        new THREE.BoxGeometry(1.05, 1.25, 0.9),
+    // Gitara akustyczna przy ognisku (CampfireGuitarGame)
+    const guitarProp = this.festivalProps?.allProps.get('guitar_campfire');
+    if (guitarProp) {
+      const guitarHitbox = new THREE.Mesh(
+        new THREE.BoxGeometry(1.6, 1.4, 1.6),
         new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false }),
       );
-      hitbox.name = `InteractionHitbox_Seat_${seat.id}`;
-      hitbox.position.y = 0.62;
-      root.add(hitbox);
-
-      root.traverse((child) => (child.userData.interactionRoot = root));
-      enableInteractionLayer(root);
-      parent.add(root);
-
-      // Zmodyfikowana pozycja automatycznie aktualizuje colidery i interakcje
-      this.addCollider({ x: worldPosition[0], z: worldPosition[2], r: 0.48 });
+      guitarHitbox.position.copy(guitarProp.position).add(new THREE.Vector3(0, 0.4, 0));
+      guitarHitbox.userData.interaction = {
+        kind: 'campfire_guitar',
+        label: 'Zagraj na gitarze przy ognisku [E]',
+      };
+      guitarHitbox.userData.interactionRoot = guitarHitbox;
+      enableInteractionLayer(guitarHitbox);
+      landmarksRoot.add(guitarHitbox);
       this.interactables.push({
-        object: root,
-        label: `Usiądź (${seat.id})`,
-        action: 'seat',
-        seatId: seat.id,
+        object: guitarHitbox,
+        label: 'Zagraj na gitarze przy ognisku [E]',
+        action: 'campfire_guitar',
       });
-    });
-  }
+    }
 
-  /** Umieszcza kompletny model flaga2, który zawiera już poprawną flagę i konstrukcję. */
-  private flag(parent: THREE.Group, source: GLTF | null) {
-    const flag = this.prepare(source, FLAG_CONFIG.height, 0xf2eadb);
-    flag.name = FLAG_CONFIG.id;
-    const [x, , z] = FLAG_CONFIG.position;
-    flag.position.add(new THREE.Vector3(x, terrainHeight(x, z), z));
-    parent.add(flag);
-    this.addCollider({
-      x: FLAG_CONFIG.position[0],
-      z: FLAG_CONFIG.position[2],
-      r: FLAG_CONFIG.colliderRadius,
+    // 10 puszek do sprzątania pola (CanCollector / Czyste Pole)
+    // Round pickups are created on demand by CanCollector, never at world startup.
+
+    // Eko Zagrody odpadów / recyklingu
+    RECYCLING_CORRALS.forEach((corral) => {
+      const corralMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(corral.radius, corral.radius, 2, 12),
+        new THREE.MeshBasicMaterial({ visible: false }),
+      );
+      corralMesh.position.set(corral.x, terrainHeight(corral.x, corral.z) + 1.0, corral.z);
+      landmarksRoot.add(corralMesh);
+      corralMesh.userData.interaction = { kind: 'clean_corral' };
+      corralMesh.userData.entryRadius = corral.radius;
+      enableInteractionLayer(corralMesh);
+      for (let i = 0; i < 3; i++) {
+        const bin = new THREE.Mesh(
+          new THREE.BoxGeometry(0.75, 1.1, 0.75),
+          new THREE.MeshStandardMaterial({ color: [0x4caf50, 0xffc107, 0x2196f3][i] }),
+        );
+        bin.position.set(corral.x + (i - 1) * 0.95, terrainHeight(corral.x, corral.z) + 0.55, corral.z);
+        landmarksRoot.add(bin);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = 768;
+      canvas.height = 256;
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.fillStyle = '#10261a';
+        context.fillRect(0, 0, 768, 256);
+        context.fillStyle = '#b2ff45';
+        context.textAlign = 'center';
+        context.font = 'bold 58px sans-serif';
+        context.fillText('EKO-ZAGRODA', 384, 85);
+        context.font = '36px sans-serif';
+        context.fillText('SOLO / WYŚCIG / WYNIKI', 384, 150);
+        context.fillText('Podejdź i naciśnij E', 384, 208);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        const sign = new THREE.Mesh(
+          new THREE.PlaneGeometry(3.2, 1.06),
+          new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide }),
+        );
+        sign.position.set(corral.x, terrainHeight(corral.x, corral.z) + 2.1, corral.z);
+        sign.rotation.y = Math.PI;
+        landmarksRoot.add(sign);
+      }
+      if (corral.id === 'trash_corral_market')
+        this.mapScenery.push({
+          id: 'EcoCorral',
+          category: 'Infrastructure',
+          x: corral.x,
+          z: corral.z,
+          width: 4,
+          depth: 2,
+        });
+      this.interactables.push({
+        object: corralMesh,
+        label: `Eko Zagroda Recyklingu (${corral.label}) [E]`,
+        action: 'clean_corral',
+      });
     });
   }
 
@@ -586,8 +429,17 @@ export class CampWorld {
     tableRoot.add(table);
     scene.add(tableRoot);
     scene.updateWorldMatrix(true, true);
-    const tableWorldPosition = tableRoot.getWorldPosition(new THREE.Vector3());
-    this.addCollider({ x: tableWorldPosition.x, z: tableWorldPosition.z, r: 1.35 });
+    // Match the rotated tabletop footprint, not a wide circular exclusion zone.
+    const points = [
+      [box.min.x, box.min.z],
+      [box.max.x, box.min.z],
+      [box.max.x, box.max.z],
+      [box.min.x, box.max.z],
+    ].map(([x, z]) => {
+      const point = new THREE.Vector3(x, 0, z).applyMatrix4(tableRoot.matrixWorld);
+      return { x: point.x, z: point.z };
+    });
+    this.addCollider({ box: new THREE.Box3().setFromObject(table), points });
 
     inspectableItems.forEach((item) => {
       for (let copy = 0; copy < item.tableQuantity; copy++) {
@@ -658,6 +510,100 @@ export class CampWorld {
     return true;
   }
 
+  /** Usuwa lub ukrywa obiekt puszki ze świata po jej zebraniu przez gracza. */
+  removeCanObject(canId: string): boolean {
+    const mesh = this.canMeshes.get(canId);
+    if (mesh) {
+      mesh.visible = false;
+    }
+    this.festivalProps?.hideCan(canId);
+    const idx = this.interactables.findIndex(
+      (entry) => entry.action === 'clean_can' && entry.canId === canId,
+    );
+    if (idx >= 0) {
+      this.interactables.splice(idx, 1);
+      return true;
+    }
+    return Boolean(mesh);
+  }
+
+  /** Aktualizuje pozycję i stan zrespawnowanej puszki w świecie 3D */
+  respawnCanObject(can: {
+    id: string;
+    label: string;
+    position: [number, number, number];
+    isGolden?: boolean;
+  }): void {
+    let mesh = this.canMeshes.get(can.id);
+    const [cx, , cz] = can.position;
+    const y = terrainHeight(cx, cz) + 0.18;
+
+    if (!mesh) {
+      const index = can.id.startsWith('eco_') ? Number(can.id.slice(4)) : -1;
+      const type = index >= 0 ? index % 3 : 0;
+      mesh =
+        createEcoPickupModel(this.ecoModelSource, can.id) ??
+        new THREE.Mesh(
+          index % 12 === 11
+            ? new THREE.OctahedronGeometry(0.4)
+            : index % 12 === 5
+              ? new THREE.SphereGeometry(0.36, 8, 6)
+              : type === 2
+                ? new THREE.BoxGeometry(0.45, 0.035, 0.3)
+                : new THREE.CylinderGeometry(
+                    type === 1 ? 0.1 : 0.18,
+                    type === 1 ? 0.14 : 0.18,
+                    type === 1 ? 0.55 : 0.35,
+                    8,
+                  ),
+          new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.8, roughness: 0.3 }),
+        );
+      if (this.landmarksRoot) {
+        this.landmarksRoot.add(mesh);
+      }
+      this.canMeshes.set(can.id, mesh);
+    }
+
+    const type = can.id.startsWith('eco_') ? Number(can.id.slice(4)) % 3 : 0;
+    const bonus = can.id.startsWith('eco_') ? Number(can.id.slice(4)) % 12 : -1;
+    mesh.position.set(
+      cx,
+      type === 2 ? terrainHeight(cx, cz) + 0.025 : type === 1 ? terrainHeight(cx, cz) + 0.275 : y,
+      cz,
+    );
+    mesh.visible = true;
+    if (bonus === 11 || bonus === 5) mesh.position.y = terrainHeight(cx, cz) + 0.42;
+    if (mesh.userData.ecoModel) mesh.position.y = terrainHeight(cx, cz) + 0.01;
+    mesh.userData.interaction = { kind: 'clean_can', canId: can.id };
+    mesh.userData.entryRadius = 1.2;
+    enableInteractionLayer(mesh);
+
+    if (can.isGolden && mesh instanceof THREE.Mesh) {
+      (mesh.material as THREE.MeshStandardMaterial).color.setHex(0xffd700);
+    } else if (mesh instanceof THREE.Mesh) {
+      (mesh.material as THREE.MeshStandardMaterial).color.setHex(
+        type === 2 ? 0xe1dbc4 : type === 1 ? 0x4e9c79 : 0xc0c0c0,
+      );
+      if (bonus === 11 || bonus === 5)
+        (mesh.material as THREE.MeshStandardMaterial).color.setHex(bonus === 11 ? 0xb2ff45 : 0xffaa20);
+    }
+
+    this.festivalProps?.showCan(can.id);
+
+    // Upewniamy się, że obiekt znajduje się na liście interakcji
+    const existingIdx = this.interactables.findIndex(
+      (entry) => entry.action === 'clean_can' && entry.canId === can.id,
+    );
+    if (existingIdx < 0) {
+      this.interactables.push({
+        object: mesh,
+        label: `Podnieś puszkę (${can.label}) [E]`,
+        action: 'clean_can',
+        canId: can.id,
+      });
+    }
+  }
+
   /** Sprawdza granice świata oraz kolizje dla gracza i NPC z wykorzystaniem siatki przestrzennej O(1). */
   canMove(x: number, z: number, radius = 0.34) {
     return (
@@ -672,7 +618,8 @@ export class CampWorld {
   /** Ustawia preset jakości trawy i regeneruje geometrię/gęstość runtime. */
   setGrassQuality(quality: GrassQualityPreset) {
     this.grassQuality = quality;
-    this.grass.setQuality(quality);
+    this.grass?.setQuality(quality);
+    if (this.grass) this.grass.blades.visible = false;
   }
 
   /** Zwraca aktualnie aktywny preset jakości trawy. */
@@ -680,12 +627,65 @@ export class CampWorld {
     return this.grassQuality;
   }
 
+  /** Zwraca aktualną porę dnia skyboxa (dzień, wieczór, noc) */
+  getTimeOfDay(): SkyboxPeriod {
+    return this.skybox.getPeriod();
+  }
+
+  /** Ustawia ręcznie porę dnia i dopasowuje oświetlenie sceny */
+  setTimeOfDay(period: SkyboxPeriod, variant?: SkyboxVariant): void {
+    this.applyTimeOfDayLighting(period, variant);
+  }
+
+  /** Zwraca instancję efektów świetlnych sceny i wież delay */
+  getStageEffects(): FestivalStageEffects | null {
+    return this.stageEffects;
+  }
+
+  /** Dostosowuje oświetlenie słońca, nieba i efektów scenicznych do aktualnej pory dnia i skyboxa */
+  public applyTimeOfDayLighting(period: SkyboxPeriod, variant?: SkyboxVariant): void {
+    if (period === 'day') {
+      this.sun.color.setHex(0xfff1dc);
+      this.sun.intensity = 3.2;
+      this.sun.position.set(-10, 18, 8);
+      this.hemiLight.color.setHex(0xb9dcff);
+      this.hemiLight.groundColor.setHex(0x4b3c23);
+      this.hemiLight.intensity = 1.6;
+    } else if (period === 'evening') {
+      this.sun.color.setHex(0xff7a33);
+      this.sun.intensity = 2.0;
+      this.sun.position.set(-24, 7, 10);
+      this.hemiLight.color.setHex(0xff7755);
+      this.hemiLight.groundColor.setHex(0x2d1810);
+      this.hemiLight.intensity = 1.1;
+    } else {
+      // night
+      if (variant === 'nebula') {
+        this.sun.color.setHex(0x6644bb);
+        this.sun.intensity = 0.55;
+        this.hemiLight.color.setHex(0x3d1c5a);
+        this.hemiLight.groundColor.setHex(0x0c0714);
+        this.hemiLight.intensity = 0.5;
+      } else {
+        this.sun.color.setHex(0x3366aa);
+        this.sun.intensity = 0.4;
+        this.hemiLight.color.setHex(0x182438);
+        this.hemiLight.groundColor.setHex(0x060a12);
+        this.hemiLight.intensity = 0.45;
+      }
+      this.sun.position.set(-8, 16, 6);
+    }
+    if (this.stageEffects) this.stageEffects.group.visible = period !== 'day';
+    this.grass?.syncDirectionalLight(this.sun);
+  }
+
   /** Aktualizuje proceduralną animację trawy, skybox oraz pozycję panoramy horyzontu. */
   update(time: number, cameraPosition?: THREE.Vector3, deltaSeconds = 0, reduceMotion = false) {
     this.wheel?.update(deltaSeconds, reduceMotion);
     this.infrastructure?.update(deltaSeconds);
     this.stageEffects?.update(deltaSeconds);
-    this.grass.update(time);
+    this.flankiGame?.update(deltaSeconds);
+    this.grass?.update(time);
     this.skybox.update();
     if (cameraPosition) this.panorama.update(cameraPosition);
   }
@@ -696,15 +696,17 @@ export class CampWorld {
     this.wheel = null;
     this.infrastructure?.dispose();
     this.infrastructure = null;
-    this.sunflowerField?.dispose();
-    this.sunflowerField = null;
+    this.festivalProps?.dispose();
+    this.festivalProps = null;
+    this.flankiGame?.dispose();
+    this.flankiGame = null;
     this.stageEffects?.dispose();
     this.stageEffects = null;
-    this.tentPalettes.clear();
+    this.canMeshes.clear();
     this.panorama.dispose();
     this.skybox.dispose();
-    this.grass.dispose();
-    this.grassWorldMask.dispose();
+    this.grass?.dispose();
+    this.grassWorldMask?.dispose();
     this.colliders.length = 0;
     this.colliderGrid.clear();
     this.interactables.length = 0;

@@ -39,7 +39,7 @@ const DATA_TEXTURE_KEYS = [
 /** Zwraca profil powierzchni dla rekwizytu ładowanego z katalogu interakcji. */
 export function interactivePbrProfile(id: string): PbrSurfaceProfile {
   if (id === 'table') return 'wood';
-  if (id === 'mdma' || id === 'cocaine') return 'plastic';
+  if (id === 'mdma' || id === 'cocaine' || id === 'water') return 'plastic';
   if (id === 'mushrooms') return 'organic';
   return 'paper';
 }

@@ -8,14 +8,14 @@ No invalid normalized skin weights were found by this pass. Large local stretch 
 
 Largest sampled edge ratios (not whole-character scale):
 
-| Asset | Clip | Ratio |
-| --- | --- | --- |
-| klatwa | DrunkRunningLeftTurn | 52.8 |
-| 050_blue_alien_girl | DrunkRunForward | 49.2 |
-| gruczol | SneakWalk | 42.1 |
-| 019_punk_spikes_bracelets | Cheering | 33.0 |
-| 026_bubble_blower_hippie | DrunkRunningLeftTurn | 30.0 |
-| 044_hippie_shaman_beads | WalkingVariant | 28.5 |
+| Asset                     | Clip                 | Ratio |
+| ------------------------- | -------------------- | ----- |
+| klatwa                    | DrunkRunningLeftTurn | 52.8  |
+| 050_blue_alien_girl       | DrunkRunForward      | 49.2  |
+| gruczol                   | SneakWalk            | 42.1  |
+| 019_punk_spikes_bracelets | Cheering             | 33.0  |
+| 026_bubble_blower_hippie  | DrunkRunningLeftTurn | 30.0  |
+| 044_hippie_shaman_beads   | WalkingVariant       | 28.5  |
 
 ## Visual evidence
 

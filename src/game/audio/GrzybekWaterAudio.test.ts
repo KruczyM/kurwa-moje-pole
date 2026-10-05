@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  calculateGrzybekSpatialGain,
-  GRZYBEK_AUDIO_CONFIG,
-  GrzybekWaterAudio,
-} from './GrzybekWaterAudio';
+import { calculateGrzybekSpatialGain, GRZYBEK_AUDIO_CONFIG, GrzybekWaterAudio } from './GrzybekWaterAudio';
 
 describe('GrzybekWaterAudio', () => {
   it('computes full volume inside inner radius', () => {

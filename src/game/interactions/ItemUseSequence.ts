@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { terrainHeight } from '../world/terrainHeight';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { resolveCanonicalAnimationName } from '../animation/animationContract';
 import { findRigBone } from '../animation/rigBones';
@@ -73,11 +74,17 @@ export function chooseUseSequenceCamera(
 
 /** Ustawia cienie i normalizuje wysokość postaci po zastosowaniu pierwszej klatki Idle. */
 function fitCharacter(model: THREE.Object3D) {
+  model.updateMatrixWorld(true);
   model.traverse((object) => {
     const mesh = object as THREE.Mesh;
     if (mesh.isMesh) {
       mesh.castShadow = true;
       mesh.receiveShadow = true;
+      if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) {
+        const skinned = mesh as THREE.SkinnedMesh;
+        skinned.skeleton.update();
+        skinned.computeBoundingBox();
+      }
     }
   });
   const bounds = new THREE.Box3().setFromObject(model);
@@ -165,9 +172,7 @@ export class ItemUseSequence {
           (clip) => resolveCanonicalAnimationName(clip.name) === 'Idle',
         );
         if (idle) {
-          this.basePoseAction = this.pooledMixer.clipAction(
-            stabilizeLocomotionRoot(this.pooledVisual, idle),
-          );
+          this.basePoseAction = this.pooledMixer.clipAction(stabilizeLocomotionRoot(this.pooledVisual, idle));
           this.basePoseAction.play();
           this.basePoseAction.paused = true;
         }
@@ -220,13 +225,17 @@ export class ItemUseSequence {
       this.currentClipAction.play();
     }
 
-    const groundY = this.snapshot.position.y - 1.9;
+    const groundY = terrainHeight(this.snapshot.position.x, this.snapshot.position.z);
     this.root.position.set(this.snapshot.position.x, groundY, this.snapshot.position.z);
-    this.root.rotation.y = yaw + Math.PI;
     this.root.visible = false;
     this.scene.add(this.root);
 
     this.targetPosition.copy(chooseUseSequenceCamera(this.snapshot.position, yaw, this.canMove));
+    this.targetPosition.y += groundY - (this.snapshot.position.y - 1.9);
+    this.root.rotation.y = Math.atan2(
+      this.targetPosition.x - this.root.position.x,
+      this.targetPosition.z - this.root.position.z,
+    );
     const target = new THREE.Vector3(this.root.position.x, groundY + 1.18, this.root.position.z);
     const lookMatrix = new THREE.Matrix4().lookAt(this.targetPosition, target, this.camera.up);
     this.targetQuaternion.setFromRotationMatrix(lookMatrix);

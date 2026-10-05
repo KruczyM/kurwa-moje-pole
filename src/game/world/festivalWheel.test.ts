@@ -98,7 +98,7 @@ describe('festival wheel model and animation', () => {
       const cabin = gondolasOf(wheel.root)[0];
       const start = cabin.getWorldPosition(new THREE.Vector3());
       expect(start.y - pivot.y).toBeCloseTo(15, 5);
-      wheel.update(WHEEL_REVOLUTION_SECONDS / 4);
+      wheel.setScheduleTime(13);
       parent.updateMatrixWorld(true);
       const quarter = cabin.getWorldPosition(new THREE.Vector3());
       expect(quarter.x - pivot.x).toBeCloseTo(-15, 5);
@@ -159,22 +159,22 @@ describe('festival wheel model and animation', () => {
     const wheel = placeFestivalWheel(parent, source, terrainHeight)!;
     try {
       // Ustawienie harmonogramu na postój dolny (t = 6s)
-      wheel.setScheduleTime(6);
-      expect(wheel.getScheduleTime()).toBe(6);
+      wheel.setScheduleTime(0);
+      expect(wheel.getScheduleTime()).toBe(0);
       expect(wheel.getScheduleSample().phase).toBe('bottom');
       expect(wheel.getScheduleSample().stopped).toBe(true);
       expect(wheel.getAngle()).toBe(0);
 
       // Wywołanie update w tej samej klatce nie przesuwa czasu podwójnie
       wheel.update(1.0);
-      expect(wheel.getScheduleTime()).toBe(6);
+      expect(wheel.getScheduleTime()).toBe(0);
 
       // W kolejnej klatce update normalnie postępuje
       wheel.update(1.0);
-      expect(wheel.getScheduleTime()).toBe(7);
+      expect(wheel.getScheduleTime()).toBe(1);
 
       // Przeskoczenie na szczyt (t = 50s)
-      wheel.setScheduleTime(50);
+      wheel.setScheduleTime(24);
       expect(wheel.getScheduleSample().phase).toBe('top');
       expect(wheel.getScheduleSample().stopped).toBe(true);
       expect(wheel.getAngle()).toBeCloseTo(Math.PI, 4);

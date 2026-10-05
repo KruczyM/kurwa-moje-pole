@@ -88,7 +88,7 @@ describe('ElevenLabsNpcService', () => {
         headers: expect.objectContaining({
           'xi-api-key': 'sk_valid_key',
         }),
-      })
+      }),
     );
   });
 

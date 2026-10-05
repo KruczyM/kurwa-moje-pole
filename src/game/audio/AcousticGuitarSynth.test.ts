@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  AcousticGuitarSynth,
-  CAMPFIRE_CHORDS,
-  DEFAULT_CAMPFIRE_PROGRESSION,
-} from './AcousticGuitarSynth';
+import { AcousticGuitarSynth, CAMPFIRE_CHORDS, DEFAULT_CAMPFIRE_PROGRESSION } from './AcousticGuitarSynth';
 
 function createMockAudioContext() {
   const gainNode = {

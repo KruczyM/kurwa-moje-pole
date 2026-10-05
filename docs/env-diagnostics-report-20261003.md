@@ -1,13 +1,16 @@
 # Raport diagnostyczny konfiguracji lokalnego ENV (Zadanie G2)
+
 **Data audytu:** 2026-10-03  
-**Status:** Zakończony pomyślnie  
+**Status:** Zakończony pomyślnie
 
 ---
 
 ### 1. Zidentyfikowany problem
+
 Użytkownik zgłosił, że klucze API (w tym ElevenLabs) zostały dodane, ale gra ich nie ładowała.
 
 ### 2. Wyniki analizy diagnostycznej (Audit bezpieczeństwa)
+
 1. **Brak pliku `.env` w katalogu głównym projektu:**
    - W katalogu `E:\kodowanie\gra` istniał jedynie szczątkowy plik `.env.example`.
    - Pliki `.env`, `.env.local`, `.env.development` nie istniały w katalogu głównym projektu.
@@ -23,6 +26,7 @@ Użytkownik zgłosił, że klucze API (w tym ElevenLabs) zostały dodane, ale gr
    - Brak jakichkolwiek sekretów w repozytorium.
 
 ### 3. Wdrożone poprawki
+
 - Zaktualizowano `.env.example` z pełnym zestawem placeholderów (`VITE_SERVER_URL`, `PORT`, `CORS_ORIGIN`, `VITE_GEMINI_API_KEY`, `VITE_ELEVENLABS_API_KEY`).
 - Dodano jasne instrukcje kopiowania do `.env` oraz przypomnienie o konieczności restartu serwera dev.
 - Zapewniono pełną izolację fallbacków offline (jeśli brak klucza ElevenLabs, gra płynnie przełącza się na Web Speech API przeglądarki).

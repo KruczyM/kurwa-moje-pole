@@ -18,7 +18,7 @@ function fixture() {
 function create(seed = 73) {
   const scene = new THREE.Scene();
   const navigation = new NpcNavigationGrid(
-    { minX: -145, maxX: 145, minZ: -50, maxZ: 25 },
+    { minX: -260, maxX: 260, minZ: -170, maxZ: 170 },
     1,
     (x, z) => !(Math.abs(x) < 4 && z > -5 && z < 5),
   );
@@ -36,7 +36,7 @@ describe('streamed festival crowd', () => {
       expect(crowd).toHaveLength(91);
       expect(new Set(crowd.map((n) => n.root.userData.npcId)).size).toBe(91);
       expect(manager.addFestivalNpc(festivalNpcAssets[0], model)).toBe(false);
-      expect(crowd.filter((n) => n.passageWalker).length).toBeGreaterThanOrEqual(72);
+      expect(crowd.filter((n) => n.passageWalker)).toHaveLength(71);
       for (const npc of crowd) {
         expect(navigation.canStandAt(npc.root.position.x, npc.root.position.z)).toBe(true);
         expect(npc.root.parent).toBe(scene);
@@ -62,7 +62,7 @@ describe('streamed festival crowd', () => {
 
   it('keeps passage walkers on the road and alternates destinations across it', () => {
     const { scene, manager } = create();
-    manager.addFestivalNpc(festivalNpcAssets[0], fixture());
+    for (const asset of festivalNpcAssets) manager.addFestivalNpc(asset, fixture());
     const npc = manager.npcs.at(-1)!;
     try {
       expect(npc.passageWalker).toBe(true);
@@ -112,7 +112,7 @@ describe('streamed festival crowd', () => {
     }
   });
 
-  it('assigns specialized festival roles including stage dancers, ASP listeners, food queue members, and chillers', () => {
+  it('assigns the requested 20 stage dancers, 20 lower-road walkers and 51 upper-road walkers', () => {
     const { scene, manager } = create();
     try {
       const model = fixture();
@@ -121,12 +121,13 @@ describe('streamed festival crowd', () => {
 
       const roles = new Set(festivalNpcs.map((n) => n.festivalRole).filter(Boolean));
       expect(roles.has('stage_dancer')).toBe(true);
-      expect(roles.has('asp_listener')).toBe(true);
-      expect(roles.has('food_queue')).toBe(true);
-      expect(roles.has('chiller')).toBe(true);
+      expect(roles).toEqual(new Set(['stage_dancer', 'walker']));
+      expect(festivalNpcs.filter((n) => n.festivalRole === 'stage_dancer')).toHaveLength(20);
+      expect(festivalNpcs.filter((n) => n.passageWalker && n.passageLane === 'lower')).toHaveLength(20);
+      expect(festivalNpcs.filter((n) => n.passageWalker && n.passageLane === 'upper')).toHaveLength(51);
 
       const walkers = festivalNpcs.filter((n) => n.passageWalker);
-      expect(walkers.length).toBeGreaterThanOrEqual(72);
+      expect(walkers).toHaveLength(71);
     } finally {
       manager.dispose();
       disposeObjectTree(scene);

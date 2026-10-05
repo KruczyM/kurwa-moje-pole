@@ -15,12 +15,28 @@ export class ElevenLabsNpcService {
   // - Domi (żeński, energiczny, mocny - Korba, parówka)
   // - Bella (żeński, miękki, melodyjny)
   public static readonly DEFAULT_VOICES: Record<string, ElevenLabsVoiceProfile> = {
-    adam: { voiceId: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', description: 'Głęboki, szorstki głos męski (rockman/weteran)' },
+    adam: {
+      voiceId: 'pNInz6obpgDQGcFmaJgB',
+      name: 'Adam',
+      description: 'Głęboki, szorstki głos męski (rockman/weteran)',
+    },
     antoni: { voiceId: 'ErXwobaYiN019PkySvjV', name: 'Antoni', description: 'Naturalny, ciepły głos męski' },
     josh: { voiceId: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', description: 'Młody, festiwalowy głos męski' },
-    rachel: { voiceId: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', description: 'Ciepły, narracyjny głos kobiecy' },
-    domi: { voiceId: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', description: 'Energiczny, zadziorny głos kobiecy' },
-    bella: { voiceId: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', description: 'Melodyjny, hipisowski głos kobiecy' },
+    rachel: {
+      voiceId: '21m00Tcm4TlvDq8ikWAM',
+      name: 'Rachel',
+      description: 'Ciepły, narracyjny głos kobiecy',
+    },
+    domi: {
+      voiceId: 'AZnzlk1XvdvUeBnXmlld',
+      name: 'Domi',
+      description: 'Energiczny, zadziorny głos kobiecy',
+    },
+    bella: {
+      voiceId: 'EXAVITQu4vr4xnSDxMaL',
+      name: 'Bella',
+      description: 'Melodyjny, hipisowski głos kobiecy',
+    },
   };
 
   private quotaExceeded = false;
@@ -113,7 +129,13 @@ export class ElevenLabsNpcService {
   getVoiceIdForPersona(npcName: string, gender?: 'male' | 'female'): string {
     const lower = npcName.toLowerCase();
 
-    if (gender === 'female' || lower.includes('korba') || lower.includes('girl') || lower.includes('kosmitka') || lower.includes('parówk')) {
+    if (
+      gender === 'female' ||
+      lower.includes('korba') ||
+      lower.includes('girl') ||
+      lower.includes('kosmitka') ||
+      lower.includes('parówk')
+    ) {
       if (lower.includes('korba') || lower.includes('parówk') || lower.includes('punk')) {
         return ElevenLabsNpcService.DEFAULT_VOICES.domi.voiceId;
       }
@@ -138,7 +160,12 @@ export class ElevenLabsNpcService {
       return ElevenLabsNpcService.DEFAULT_VOICES.adam.voiceId;
     }
 
-    if (lower.includes('raver') || lower.includes('dino') || lower.includes('glow') || lower.includes('frog')) {
+    if (
+      lower.includes('raver') ||
+      lower.includes('dino') ||
+      lower.includes('glow') ||
+      lower.includes('frog')
+    ) {
       return ElevenLabsNpcService.DEFAULT_VOICES.josh.voiceId;
     }
 
@@ -192,7 +219,9 @@ export class ElevenLabsNpcService {
       // Analiza błędów limitu (np. darmowe 10 000 znaków wyczerpane):
       const errorText = await response.text().catch(() => '');
       if (response.status === 429 || errorText.toLowerCase().includes('quota') || response.status === 401) {
-        console.warn(`[ElevenLabsNpcService] Limit darmowych znaków ElevenLabs osiągnięty (${response.status}): ${errorText}`);
+        console.warn(
+          `[ElevenLabsNpcService] Limit darmowych znaków ElevenLabs osiągnięty (${response.status}): ${errorText}`,
+        );
         this.quotaExceeded = true;
       } else {
         console.warn(`[ElevenLabsNpcService] Błąd syntezy (${response.status}): ${errorText}`);

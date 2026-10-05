@@ -5,19 +5,19 @@ Główny katalog `E:/kodowanie/gra` pozostaje: zawiera wspólne repozytorium Git
 
 ## Wyniki przeglądu
 
-| Worktree | Decyzja o zmianach |
-| --- | --- |
-| issue-101-manual-workflow | Przeniesiono ręczny workflow, dokumentację, test i usunięcie starego orkiestratora. AGENTS.md pozostawiono bez zmian. |
-| gra-issue-102, gra-issue-103 | Hashowanie i warianty Hunyuan są już w aktywnych plikach; nie nadpisywano ich starszymi wersjami. |
-| issue-102-reference-review | Niedokończone lokalne zmiany zachowane w archiwum; wymagają integracji z aktualnym pipeline wariantów. |
-| issue-24-use-animations, issue-96, issue-97 | Starsze implementacje animacji nie zastępują nowszego systemu. Lokalne zmiany issue-96 zabezpieczono osobno. |
-| issue-29 | Historyczny multiplayer zachowany do osobnego review; nie uznano wszystkich zmian za zbędne. |
-| issue-37 | Historyczny audyt zachowany do osobnego review; nie zastąpiono aktualnych walidatorów starym manifestem. |
-| gra-issue-104 | Dashboard nie uwzględnia aktualnych katalogów wariantów; nie wdrożono jako gotowego narzędzia. |
-| gra-issue-105 | Galeria udostępnia cały katalog repo przez HTTP; nie wdrożono. |
-| gra-issue-106 | Walidacja stagingu nie odpowiada aktualnemu kontraktowi rigów; nie wdrożono. |
-| gra-issue-107 | Brak osobnych commitów realizujących zadanie. |
-| polandrock-festival | Pusty katalog. |
+| Worktree                                    | Decyzja o zmianach                                                                                                    |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| issue-101-manual-workflow                   | Przeniesiono ręczny workflow, dokumentację, test i usunięcie starego orkiestratora. AGENTS.md pozostawiono bez zmian. |
+| gra-issue-102, gra-issue-103                | Hashowanie i warianty Hunyuan są już w aktywnych plikach; nie nadpisywano ich starszymi wersjami.                     |
+| issue-102-reference-review                  | Niedokończone lokalne zmiany zachowane w archiwum; wymagają integracji z aktualnym pipeline wariantów.                |
+| issue-24-use-animations, issue-96, issue-97 | Starsze implementacje animacji nie zastępują nowszego systemu. Lokalne zmiany issue-96 zabezpieczono osobno.          |
+| issue-29                                    | Historyczny multiplayer zachowany do osobnego review; nie uznano wszystkich zmian za zbędne.                          |
+| issue-37                                    | Historyczny audyt zachowany do osobnego review; nie zastąpiono aktualnych walidatorów starym manifestem.              |
+| gra-issue-104                               | Dashboard nie uwzględnia aktualnych katalogów wariantów; nie wdrożono jako gotowego narzędzia.                        |
+| gra-issue-105                               | Galeria udostępnia cały katalog repo przez HTTP; nie wdrożono.                                                        |
+| gra-issue-106                               | Walidacja stagingu nie odpowiada aktualnemu kontraktowi rigów; nie wdrożono.                                          |
+| gra-issue-107                               | Brak osobnych commitów realizujących zadanie.                                                                         |
+| polandrock-festival                         | Pusty katalog.                                                                                                        |
 
 ## Zabezpieczenie i usuwanie
 

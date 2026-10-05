@@ -37,14 +37,25 @@ describe('NpcAiAgent', () => {
 
     it('provides lore and identity for extended heroes', () => {
       const ambona = NpcAiAgent.getPersona('Ambona');
-      expect(ambona.identity.some((line) => line.toLowerCase().includes('ambona') || line.toLowerCase().includes('kazalnicy') || line.toLowerCase().includes('ogłoszeń'))).toBe(true);
+      expect(
+        ambona.identity.some(
+          (line) =>
+            line.toLowerCase().includes('ambona') ||
+            line.toLowerCase().includes('kazalnicy') ||
+            line.toLowerCase().includes('ogłoszeń'),
+        ),
+      ).toBe(true);
       expect(ambona.festivalLore).toHaveProperty('ciemno');
 
       const dziaslo = NpcAiAgent.getPersona('Dziąsło');
       expect(dziaslo.identity.some((line) => line.toLowerCase().includes('jarocin'))).toBe(true);
 
       const jeczmien = NpcAiAgent.getPersona('Jęczmień');
-      expect(jeczmien.identity.some((line) => line.toLowerCase().includes('chmiel') || line.toLowerCase().includes('piw'))).toBe(true);
+      expect(
+        jeczmien.identity.some(
+          (line) => line.toLowerCase().includes('chmiel') || line.toLowerCase().includes('piw'),
+        ),
+      ).toBe(true);
     });
   });
 
@@ -72,15 +83,30 @@ describe('NpcAiAgent', () => {
 
     it('provides thematic lore and identity for signature models', () => {
       const alien = NpcAiAgent.getPersona('050_blue_alien_girl');
-      expect(alien.identity.some((line) => line.toLowerCase().includes('kosmic') || line.toLowerCase().includes('gwiazd'))).toBe(true);
+      expect(
+        alien.identity.some(
+          (line) => line.toLowerCase().includes('kosmic') || line.toLowerCase().includes('gwiazd'),
+        ),
+      ).toBe(true);
       expect(alien.festivalLore).toHaveProperty('bloto');
 
       const hotdog = NpcAiAgent.getPersona('082_hotdog_girl');
-      expect(hotdog.identity.some((line) => line.toLowerCase().includes('parówk') || line.toLowerCase().includes('gastronomii') || line.toLowerCase().includes('hotdog'))).toBe(true);
+      expect(
+        hotdog.identity.some(
+          (line) =>
+            line.toLowerCase().includes('parówk') ||
+            line.toLowerCase().includes('gastronomii') ||
+            line.toLowerCase().includes('hotdog'),
+        ),
+      ).toBe(true);
       expect(hotdog.festivalLore).toHaveProperty('piwo');
 
       const knight = NpcAiAgent.getPersona('084_knight_cosplay');
-      expect(knight.identity.some((line) => line.toLowerCase().includes('rycerz') || line.toLowerCase().includes('zbroi'))).toBe(true);
+      expect(
+        knight.identity.some(
+          (line) => line.toLowerCase().includes('rycerz') || line.toLowerCase().includes('zbroi'),
+        ),
+      ).toBe(true);
       expect(knight.festivalLore).toHaveProperty('pole');
     });
   });
@@ -174,25 +200,44 @@ describe('NpcAiAgent', () => {
     it('ensures Zawór maintains sanitation and toi-toi expertise', () => {
       const zawor = NpcAiAgent.getPersona('Zawór');
       expect(zawor.title).toContain('Hydraulik');
-      expect(zawor.identity.some((line) => line.toLowerCase().includes('toi') || line.toLowerCase().includes('sanit'))).toBe(true);
+      expect(
+        zawor.identity.some(
+          (line) => line.toLowerCase().includes('toi') || line.toLowerCase().includes('sanit'),
+        ),
+      ).toBe(true);
     });
 
     it('ensures Szerszeń maintains festival gossip persona and night hooks', () => {
       const szerszen = NpcAiAgent.getPersona('Szerszeń');
       expect(szerszen.title).toContain('Komentator');
-      expect(szerszen.greetings.some((g) => g.toLowerCase().includes('plotk') || g.toLowerCase().includes('sektor'))).toBe(true);
+      expect(
+        szerszen.greetings.some(
+          (g) => g.toLowerCase().includes('plotk') || g.toLowerCase().includes('sektor'),
+        ),
+      ).toBe(true);
     });
 
     it('ensures Amper maintains camp electrical power lore', () => {
       const amper = NpcAiAgent.getPersona('Amper');
       expect(amper.title).toContain('Elektryk');
-      expect(amper.identity.some((id) => id.toLowerCase().includes('agregat') || id.toLowerCase().includes('prąd') || id.toLowerCase().includes('kable'))).toBe(true);
+      expect(
+        amper.identity.some(
+          (id) =>
+            id.toLowerCase().includes('agregat') ||
+            id.toLowerCase().includes('prąd') ||
+            id.toLowerCase().includes('kable'),
+        ),
+      ).toBe(true);
     });
 
     it('ensures Chlebak possesses camp provisions lore', () => {
       const chlebak = NpcAiAgent.getPersona('Chlebak');
       expect(chlebak.title).toContain('Zaopatrzeniowiec');
-      expect(chlebak.greetings.some((g) => g.toLowerCase().includes('kabanos') || g.toLowerCase().includes('pasztet'))).toBe(true);
+      expect(
+        chlebak.greetings.some(
+          (g) => g.toLowerCase().includes('kabanos') || g.toLowerCase().includes('pasztet'),
+        ),
+      ).toBe(true);
     });
   });
 });

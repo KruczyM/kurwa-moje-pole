@@ -32,6 +32,20 @@ function characterFixture() {
 }
 
 describe('ItemUseSequence', () => {
+  it('faces the actual fallback camera and stays grounded even if the FPS camera is airborne', () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.set(0, 4.9, 0);
+    const sequence = new ItemUseSequence(scene, camera, characterFixture(), new Map(), () => false);
+    sequence.start('Grzyb', 0);
+    sequence.update(0.6);
+    const actor = scene.getObjectByName('PlayerUseSequence')!;
+    const direction = new THREE.Vector3(0, 0, 1).applyQuaternion(actor.quaternion);
+    const toCamera = camera.position.clone().sub(actor.position).setY(0).normalize();
+    expect(direction.dot(toCamera)).toBeCloseTo(1);
+    expect(actor.position.y).toBeCloseTo(0);
+    sequence.dispose();
+  });
   it('selects a collision-free side camera when the direct path is blocked', () => {
     const origin = new THREE.Vector3(0, 1.9, 0);
     const camera = chooseUseSequenceCamera(origin, 0, (x, z) => !(Math.abs(x) < 0.15 && z < -0.4));

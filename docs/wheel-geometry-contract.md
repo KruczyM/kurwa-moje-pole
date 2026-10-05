@@ -1,4 +1,5 @@
 # Kontrakt Geometrii Młyna Diabelskiego (Ferris Wheel A0)
+
 **Wersja specyfikacji:** 1.0 (2026-10-03)  
 **Model referencyjny:** `public/game-assets/world/festival/allegroWheel.glb`  
 **Koordynaty bazy młyna w świecie:** `FESTIVAL_WHEEL_SITE` = `{ x: 116.0, z: -59.0 }`, `Y_terenu` ≈ `0.025 m`
@@ -6,16 +7,18 @@
 ---
 
 ### 1. Węzły strukturalne i transformacje modelu
-| Nazwa węzła w GLTF | Rola | Pozycja lokalna (rel. root) | Wymiary / Promień |
-| :--- | :--- | :--- | :--- |
-| `Festival_Allegro_Wheel` | Korzeń sceny obiektu | `(116.0, ground + 0.025, -59.0)` | `31.7m (X) x 33.05m (Y) x 10.3m (Z)` |
-| `Static_Wheel_Deck` | Podest wejściowy dla pasażerów | `(0, 0, 0)` | Wysokość podłogi podestu: `~1.2m` |
-| `Wheel_Rotor` | Oś obrotowa i szprychy | `(0, 18.0, 0)` | Oś obrotu Z: `AXIS = (0, 0, 1)`, promień gondoli: `15.0 m` |
-| `Gondola_0` .. `Gondola_23` | 24 wiszące gondole pasażerskie | Na obwodzie `R = 15.0m` od rotora | Kontr-obrót zachowujący stały pion |
+
+| Nazwa węzła w GLTF          | Rola                           | Pozycja lokalna (rel. root)       | Wymiary / Promień                                          |
+| :-------------------------- | :----------------------------- | :-------------------------------- | :--------------------------------------------------------- |
+| `Festival_Allegro_Wheel`    | Korzeń sceny obiektu           | `(116.0, ground + 0.025, -59.0)`  | `31.7m (X) x 33.05m (Y) x 10.3m (Z)`                       |
+| `Static_Wheel_Deck`         | Podest wejściowy dla pasażerów | `(0, 0, 0)`                       | Wysokość podłogi podestu: `~1.2m`                          |
+| `Wheel_Rotor`               | Oś obrotowa i szprychy         | `(0, 18.0, 0)`                    | Oś obrotu Z: `AXIS = (0, 0, 1)`, promień gondoli: `15.0 m` |
+| `Gondola_0` .. `Gondola_23` | 24 wiszące gondole pasażerskie | Na obwodzie `R = 15.0m` od rotora | Kontr-obrót zachowujący stały pion                         |
 
 ---
 
 ### 2. Wybór kabiny pasażerskiej MVP i faza dolna
+
 - **Kabina startowa (`gondolaIndex = 0`):**
   W pliku GLB przy zerowym obrocie rotora kabina 0 znajduje się na samej górze (`Y = 18.0 + 15.0 = 33.0 m`).
 - **Kabina dolna MVP (`MVP_CABIN_INDEX = 12`):**
@@ -33,6 +36,7 @@
 ---
 
 ### 3. Kontrakt interakcji i bezpieczeństwa FPP
+
 1. **Tryb kamery w kabinie:**
    - Własny kąt yaw/pitch gracza (swobodne rozglądanie się w 360° bez ruszania nogami).
    - Brak head-bobbingu i kroków.

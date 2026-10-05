@@ -19,10 +19,21 @@ export class PlayerController {
   yaw = 0;
   pitch = 0;
   enabled = false;
+  movementLocked = false;
   freeCamera = false;
   freeCamSpeed = 22;
   private velocity = new THREE.Vector2();
   private bobTime = 0;
+  private jumpHeight = 0;
+  private jumpVelocity = 0;
+  isAirborne(): boolean {
+    return this.jumpHeight > 0 || this.jumpVelocity > 0;
+  }
+  requestJump(): boolean {
+    if (!this.enabled || this.movementLocked || this.freeCamera || this.isAirborne()) return false;
+    this.jumpVelocity = 6.2;
+    return true;
+  }
   private swayTime = 0;
   private readonly baseY = 1.9;
   private fallbackMousePosition = new THREE.Vector2();
@@ -99,6 +110,15 @@ export class PlayerController {
   lookBy(dx: number, dy: number) {
     if (this.enabled) this.rotateView(dx, dy);
   }
+  /** Blokuje lub odblokowuje ruch pieszy (np. w trakcie przejażdżki w kabinie), zachowując rozglądanie. */
+  setMovementLocked(locked: boolean) {
+    this.movementLocked = locked;
+    if (locked) {
+      this.jumpHeight = 0;
+      this.jumpVelocity = 0;
+      this.stop();
+    }
+  }
   /** Ustawia analogowy ruch z joysticka ekranowego. */
   setMobileMove(forward: number, right: number, run: boolean) {
     this.mobileForward = THREE.MathUtils.clamp(forward, -1, 1);
@@ -135,22 +155,17 @@ export class PlayerController {
     // Pointer Lock jest potrzebny tylko do rozglądania. Po zamknięciu pauzy
     // przeglądarka może odmówić jego natychmiastowego odzyskania, ale nie
     // powinno to blokować klawiatury ani wymuszać dodatkowego kliknięcia.
-    if (!this.enabled) return;
+    if (!this.enabled || this.movementLocked) return;
 
     if (this.freeCamera) {
       const forwardDir = new THREE.Vector3();
       this.camera.getWorldDirection(forwardDir);
 
-      const rightDir = new THREE.Vector3()
-        .crossVectors(forwardDir, new THREE.Vector3(0, 1, 0))
-        .normalize();
+      const rightDir = new THREE.Vector3().crossVectors(forwardDir, new THREE.Vector3(0, 1, 0)).normalize();
 
-      const forward =
-        this.axis(['w', 'arrowup'], ['s', 'arrowdown']) + this.mobileForward;
-      const right =
-        this.axis(['d', 'arrowright'], ['a', 'arrowleft']) + this.mobileRight;
-      const up =
-        this.axis([' ', 'space', 'e'], ['c', 'q']);
+      const forward = this.axis(['w', 'arrowup'], ['s', 'arrowdown']) + this.mobileForward;
+      const right = this.axis(['d', 'arrowright'], ['a', 'arrowleft']) + this.mobileRight;
+      const up = this.axis([' ', 'space', 'e'], ['c', 'q']);
 
       const moveVec = new THREE.Vector3();
       moveVec.addScaledVector(forwardDir, forward);
@@ -206,9 +221,19 @@ export class PlayerController {
     this.bobTime += dt * moving * (mod.bob || 1) * 2.6;
     const bob = Math.sin(this.bobTime) * Math.min(0.055, moving * 0.012);
     const shake = mod.shake ? Math.sin(performance.now() * 0.025) * mod.shake * 0.012 : 0;
+    if (this.isAirborne()) {
+      this.jumpHeight += this.jumpVelocity * dt - 9 * dt * dt;
+      this.jumpVelocity -= 18 * dt;
+      if (this.jumpHeight <= 0) {
+        this.jumpHeight = 0;
+        this.jumpVelocity = 0;
+      }
+    }
     const targetY =
       this.baseY + this.getGroundHeight(this.camera.position.x, this.camera.position.z) + bob + shake;
-    this.camera.position.y = THREE.MathUtils.damp(this.camera.position.y, targetY, 20, dt);
+    this.camera.position.y = this.isAirborne()
+      ? targetY + this.jumpHeight
+      : THREE.MathUtils.damp(this.camera.position.y, targetY, 20, dt);
     this.swayTime += dt;
     const sway = mod.sway || 0;
     const swayPitch = Math.sin(this.swayTime * 0.85) * sway * 0.022;
@@ -276,6 +301,7 @@ export class PlayerController {
     if (this.disposed) return;
     this.disposed = true;
     this.enabled = false;
+    this.movementLocked = false;
     this.stop();
     this.keys.clear();
     this.events.dispose();

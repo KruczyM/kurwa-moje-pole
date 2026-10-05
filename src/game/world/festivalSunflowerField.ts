@@ -81,7 +81,9 @@ export function placeSunflowerField(
   // 1. Cultivated Dark Earth Bed Mesh
   const segX = Math.round(fieldWidth / 2);
   const segZ = Math.round(fieldDepth / 2);
-  const soilGeo = new THREE.PlaneGeometry(fieldWidth + 2.0, fieldDepth + 2.0, segX, segZ).rotateX(-Math.PI / 2);
+  const soilGeo = new THREE.PlaneGeometry(fieldWidth + 2.0, fieldDepth + 2.0, segX, segZ).rotateX(
+    -Math.PI / 2,
+  );
   const posAttr = soilGeo.attributes.position;
   const centerX = (b.minX + b.maxX) / 2;
   const centerZ = (b.minZ + b.maxZ) / 2;
@@ -144,7 +146,16 @@ export function placeSunflowerField(
   // 3. Grid coordinates with organic jitter
   const stepX = 1.05;
   const stepZ = 1.05;
-  const positions: Array<{ x: number; y: number; z: number; scaleX: number; scaleY: number; scaleZ: number; rotY: number; rotX: number }> = [];
+  const positions: Array<{
+    x: number;
+    y: number;
+    z: number;
+    scaleX: number;
+    scaleY: number;
+    scaleZ: number;
+    rotY: number;
+    rotX: number;
+  }> = [];
 
   const rand = createDeterministicRandom(20260801);
 
@@ -159,7 +170,7 @@ export function placeSunflowerField(
       const scaleY = 0.85 + rand() * 0.35; // 1.55m to 2.20m tall
       const scaleXZ = 0.88 + rand() * 0.24;
       // Facing north towards the road (-Z), with natural +/- 20 deg yaw sway
-      const rotY = (rand() - 0.5) * 0.70;
+      const rotY = (rand() - 0.5) * 0.7;
       const rotX = (rand() - 0.5) * 0.12;
 
       positions.push({

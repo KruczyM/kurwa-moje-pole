@@ -15,6 +15,8 @@ const gameAsset = (path: string) => {
 };
 
 /** Jedyny rejestr adresów binarnych zasobów używanych przez klienta. */
+export const authoredFestivalUrl = gameAsset(catalog.environment.authoredFestival);
+
 export const characterAssets: CharacterAsset[] = catalog.characters.map(({ id, name }) => ({
   id,
   name,
@@ -32,6 +34,7 @@ export const festivalNpcAssets = catalog.festivalNpcs.map(({ id, name, path }) =
 }));
 
 export const festivalMotionBankUrl = gameAsset('animations/festival-motion-bank.glb');
+export const ecoPickupModelsUrl = gameAsset('world/festival/eco-pickups.glb');
 
 export const environmentAssets = {
   flag: gameAsset(catalog.environment.flag),
@@ -48,6 +51,7 @@ export const environmentAssets = {
   festivalSignpost: gameAsset(catalog.environment.festivalSignpost),
   fohTower: gameAsset(catalog.environment.fohTower),
   delayTower: gameAsset(catalog.environment.delayTower),
+  delayTowerHeavy: gameAsset(catalog.environment.delayTowerHeavy),
   mudBath: gameAsset(catalog.environment.mudBath),
   fireTruckOsp: gameAsset(catalog.environment.fireTruckOsp),
   waterCurtain: gameAsset(catalog.environment.waterCurtain),
@@ -66,6 +70,11 @@ export const environmentAssets = {
   foodtruckMakarun: gameAsset(catalog.environment.foodtruckMakarun),
   rollbarLech: gameAsset(catalog.environment.rollbarLech),
   sunflower: gameAsset(catalog.environment.sunflower),
+  beerCan: gameAsset(catalog.environment.beerCan),
+  festivalChair: gameAsset(catalog.environment.festivalChair),
+  acousticGuitar: gameAsset(catalog.environment.acousticGuitar),
+  coolerBox: gameAsset(catalog.environment.coolerBox),
+  festivalBackpack: gameAsset(catalog.environment.festivalBackpack),
 };
 
 export const tentAssets = Object.fromEntries(
@@ -80,6 +89,7 @@ export const interactiveAssets = {
   mdma: gameAsset(catalog.interactives.mdma),
   mushrooms: gameAsset(catalog.interactives.mushrooms),
   lsd: gameAsset(catalog.interactives.lsd),
+  water: gameAsset(catalog.interactives.water),
 };
 
 export const textureAssets = {

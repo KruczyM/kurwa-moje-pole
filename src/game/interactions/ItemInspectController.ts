@@ -30,9 +30,7 @@ export class ItemInspectController {
   constructor(options: ItemInspectControllerOptions) {
     this.canvas =
       options.canvas ??
-      (typeof document !== 'undefined'
-        ? document.querySelector<HTMLCanvasElement>('#inspect-canvas')
-        : null);
+      (typeof document !== 'undefined' ? document.querySelector<HTMLCanvasElement>('#inspect-canvas') : null);
     this.getPropModel = options.getPropModel;
   }
 
@@ -110,11 +108,7 @@ export class ItemInspectController {
     this.camera.updateProjectionMatrix();
     this.pivot.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(this.pivot);
-    this.cameraBaseDistance = inspectCameraDistance(
-      bounds,
-      this.camera.aspect,
-      this.camera.fov,
-    );
+    this.cameraBaseDistance = inspectCameraDistance(bounds, this.camera.aspect, this.camera.fov);
     this.camera.position.set(0, 0, this.cameraBaseDistance);
     this.camera.lookAt(0, 0, 0);
   }

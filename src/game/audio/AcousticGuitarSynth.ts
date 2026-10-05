@@ -249,7 +249,7 @@ export class AcousticGuitarSynth {
     // 6: GÓRA
     // 7: DÓŁ
     // 8: GÓRA
-    const eighthNoteDuration = (60 / this.tempoBpm) / 2;
+    const eighthNoteDuration = 60 / this.tempoBpm / 2;
     this.beatTimer += dt;
 
     if (this.beatTimer >= eighthNoteDuration) {

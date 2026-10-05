@@ -228,7 +228,8 @@ export class NpcNavigationGrid {
     let anchor = 0;
     while (anchor < path.length - 1) {
       let visible = path.length - 1;
-      while (visible > anchor + 1 && !this.hasLineOfSight(path[anchor], path[visible], isExcluded)) visible -= 1;
+      while (visible > anchor + 1 && !this.hasLineOfSight(path[anchor], path[visible], isExcluded))
+        visible -= 1;
       result.push(path[visible]);
       anchor = visible;
     }
@@ -248,7 +249,10 @@ export class NpcNavigationGrid {
       reversed.push(this.pointForIndex(current));
     reversed.reverse();
     const exactStart = new THREE.Vector3(start.x, 0, start.z);
-    if (this.canStandAt(start.x, start.z, isExcluded) && this.hasLineOfSight(exactStart, reversed[0], isExcluded)) {
+    if (
+      this.canStandAt(start.x, start.z, isExcluded) &&
+      this.hasLineOfSight(exactStart, reversed[0], isExcluded)
+    ) {
       reversed[0] = exactStart;
     }
     const exactGoal = new THREE.Vector3(goal.x, 0, goal.z);
@@ -289,6 +293,10 @@ export class NpcNavigationGrid {
             if (isExcluded(hPt.x, hPt.z) || isExcluded(vPt.x, vPt.z)) continue;
           }
         }
+        // Walkable cell centres alone do not guarantee a clear edge: a tent corner
+        // can lie between them and otherwise leave an NPC stuck on that edge.
+        if (!this.hasLineOfSight(this.pointForIndex(index), this.pointForIndex(neighbor), isExcluded))
+          continue;
         result.push([neighbor, dx && dz ? Math.SQRT2 : 1]);
       }
     }

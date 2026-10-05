@@ -136,7 +136,9 @@ export class SpatialVoiceManager {
 
   private getOrCreateAudioContext(): AudioContext | undefined {
     if (typeof window === 'undefined') return undefined;
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return undefined;
 
     if (!this.audioContext || this.audioContext.state === 'closed') {
@@ -275,11 +277,7 @@ export class SpatialVoiceManager {
     if (peer) {
       peer.isMuted = payload.isMuted;
       if (peer.gainNode) {
-        peer.gainNode.gain.value = computeVoiceSpatialGain(
-          peer.distance,
-          peer.isMuted,
-          this.userVolume,
-        );
+        peer.gainNode.gain.value = computeVoiceSpatialGain(peer.distance, peer.isMuted, this.userVolume);
       }
       if (peer.isMuted && peer.isSpeaking) {
         peer.isSpeaking = false;
@@ -296,10 +294,7 @@ export class SpatialVoiceManager {
     let connection: RTCPeerConnection;
     if (typeof RTCPeerConnection !== 'undefined') {
       connection = new RTCPeerConnection({
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-        ],
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }],
       });
     } else {
       connection = {
@@ -369,12 +364,16 @@ export class SpatialVoiceManager {
 
     try {
       if (sig.type === 'offer') {
-        await peer.connection.setRemoteDescription(new RTCSessionDescription(sig as RTCSessionDescriptionInit));
+        await peer.connection.setRemoteDescription(
+          new RTCSessionDescription(sig as RTCSessionDescriptionInit),
+        );
         const answer = await peer.connection.createAnswer();
         await peer.connection.setLocalDescription(answer);
         this.networkClient?.sendVoiceSignal(senderPeerId, peer.connection.localDescription?.toJSON());
       } else if (sig.type === 'answer') {
-        await peer.connection.setRemoteDescription(new RTCSessionDescription(sig as RTCSessionDescriptionInit));
+        await peer.connection.setRemoteDescription(
+          new RTCSessionDescription(sig as RTCSessionDescriptionInit),
+        );
       } else if ('candidate' in sig && sig.candidate) {
         await peer.connection.addIceCandidate(new RTCIceCandidate(sig as RTCIceCandidateInit));
       }
@@ -510,11 +509,7 @@ export class SpatialVoiceManager {
   /**
    * Aktualizuje pozycje przestrzenne, głośność oraz stan mówienia zdalnych graczy w pętli renderowania gry.
    */
-  update(
-    listenerPos: Vector3Like,
-    listenerYaw: number,
-    remotePositions: Map<string, Vector3Like>,
-  ): void {
+  update(listenerPos: Vector3Like, listenerYaw: number, remotePositions: Map<string, Vector3Like>): void {
     if (this.disposed) return;
 
     let speakingPeersChanged = false;

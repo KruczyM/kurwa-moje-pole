@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "world:export": "node scripts/export-authored-world.mjs",
     "dev": "concurrently -n \"server,client\" -c \"cyan,magenta\" \"npm:server\" \"npm:dev:client\"",
     "dev:client": "vite",
     "server": "tsx server/roomServer.ts",

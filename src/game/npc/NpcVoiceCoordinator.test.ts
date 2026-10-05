@@ -3,6 +3,9 @@ import * as THREE from 'three';
 import { NpcVoiceCoordinator } from './NpcVoiceCoordinator';
 import { NpcManager, Npc } from './NpcManager';
 import { geminiNpcService } from './GeminiNpcService';
+import { NpcRelationships } from './NpcRelationships';
+import { NpcBranchingDialogue } from './NpcBranchingDialogue';
+import { PatrolQuiz } from '../interactions/PatrolQuiz';
 
 describe('NpcVoiceCoordinator', () => {
   let npcManagerMock: NpcManager;
@@ -321,6 +324,56 @@ describe('NpcVoiceCoordinator', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     expect(webSpeechSpy).toHaveBeenCalledWith('Siemanko!', expect.any(Object), undefined);
+
+    coordinator.dispose();
+  });
+
+  it('presents branching dialogue choices when interacting with registered NPC', () => {
+    const relationships = new NpcRelationships();
+    const branching = new NpcBranchingDialogue(relationships);
+
+    const choicesEl = {
+      innerHTML: '',
+      appendChild: vi.fn(),
+    } as any;
+
+    const coordinator = new NpcVoiceCoordinator(npcManagerMock, {
+      choicesContainer: choicesEl,
+      branchingDialogue: branching,
+    });
+
+    coordinator.startConversation('Ania z Patrolu');
+    expect(choicesEl.appendChild).toHaveBeenCalled();
+
+    coordinator.dispose();
+  });
+
+  it('initiates and answers Patrol Quiz in dialogue', () => {
+    const relationships = new NpcRelationships();
+    const branching = new NpcBranchingDialogue(relationships);
+    const quiz = new PatrolQuiz();
+
+    const appendedButtons: any[] = [];
+    const choicesEl = {
+      innerHTML: '',
+      appendChild: (btn: any) => appendedButtons.push(btn),
+    } as any;
+
+    const coordinator = new NpcVoiceCoordinator(npcManagerMock, {
+      choicesContainer: choicesEl,
+      branchingDialogue: branching,
+      patrolQuiz: quiz,
+    });
+
+    coordinator.startConversation('Ania z Patrolu');
+    // Find button with Quiz
+    const quizBtn = appendedButtons.find((btn) => btn.textContent.includes('Quiz'));
+    expect(quizBtn).toBeDefined();
+
+    // Trigger quiz
+    appendedButtons.length = 0;
+    quizBtn.onclick();
+    expect(quiz.getProgress().currentQuestionIndex).toBe(0);
 
     coordinator.dispose();
   });

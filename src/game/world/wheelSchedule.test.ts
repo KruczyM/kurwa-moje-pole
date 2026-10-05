@@ -32,54 +32,54 @@ describe('wheelSchedule', () => {
     expect(t0.phase).toBe('bottom');
     expect(t0.angle).toBe(0);
     expect(t0.stopped).toBe(true);
-    expect(t0.secondsToPhaseEnd).toBe(12);
+    expect(t0.secondsToPhaseEnd).toBe(3);
 
-    const t11_9 = sampleWheelSchedule(11.9);
+    const t11_9 = sampleWheelSchedule(2.9);
     expect(t11_9.phase).toBe('bottom');
     expect(t11_9.angle).toBe(0);
     expect(t11_9.stopped).toBe(true);
     expect(t11_9.secondsToPhaseEnd).toBeCloseTo(0.1, 4);
 
     // 2. Wjazd [12, 48)
-    const t12 = sampleWheelSchedule(12);
+    const t12 = sampleWheelSchedule(3);
     expect(t12.phase).toBe('ascending');
     expect(t12.angle).toBeCloseTo(0, 5);
     expect(t12.stopped).toBe(false);
-    expect(t12.secondsToPhaseEnd).toBe(36);
+    expect(t12.secondsToPhaseEnd).toBe(20);
 
-    const t30 = sampleWheelSchedule(30); // środek wjazdu (u = 0.5 -> smootherstep = 0.5)
+    const t30 = sampleWheelSchedule(13); // środek wjazdu (u = 0.5 -> smootherstep = 0.5)
     expect(t30.phase).toBe('ascending');
     expect(t30.angle).toBeCloseTo(Math.PI * 0.5, 4);
     expect(t30.stopped).toBe(false);
 
     // 3. Góra [48, 53)
-    const t48 = sampleWheelSchedule(48);
+    const t48 = sampleWheelSchedule(23);
     expect(t48.phase).toBe('top');
     expect(t48.angle).toBeCloseTo(Math.PI, 4);
     expect(t48.stopped).toBe(true);
-    expect(t48.secondsToPhaseEnd).toBe(5);
+    expect(t48.secondsToPhaseEnd).toBe(3);
 
-    const t50 = sampleWheelSchedule(50);
+    const t50 = sampleWheelSchedule(24);
     expect(t50.phase).toBe('top');
     expect(t50.angle).toBeCloseTo(Math.PI, 4);
     expect(t50.stopped).toBe(true);
-    expect(t50.secondsToPhaseEnd).toBeCloseTo(3, 4);
+    expect(t50.secondsToPhaseEnd).toBeCloseTo(2, 4);
 
     // 4. Zjazd [53, 89)
-    const t53 = sampleWheelSchedule(53);
+    const t53 = sampleWheelSchedule(26);
     expect(t53.phase).toBe('descending');
     expect(t53.angle).toBeCloseTo(Math.PI, 4);
     expect(t53.stopped).toBe(false);
-    expect(t53.secondsToPhaseEnd).toBe(36);
+    expect(t53.secondsToPhaseEnd).toBe(20);
 
-    const t71 = sampleWheelSchedule(71); // środek zjazdu (u = 0.5)
+    const t71 = sampleWheelSchedule(36); // środek zjazdu (u = 0.5)
     expect(t71.phase).toBe('descending');
     expect(t71.angle).toBeCloseTo(Math.PI * 1.5, 4);
     expect(t71.stopped).toBe(false);
   });
 
   it('cycles smoothly across multiple full revolutions without angle leaps', () => {
-    expect(WHEEL_CYCLE_SECONDS).toBe(89);
+    expect(WHEEL_CYCLE_SECONDS).toBe(46);
 
     for (let cycle = 0; cycle < 3; cycle++) {
       const baseTime = cycle * WHEEL_CYCLE_SECONDS;
@@ -88,13 +88,13 @@ describe('wheelSchedule', () => {
       expect(atStart.angle).toBeCloseTo(0, 4);
       expect(atStart.stopped).toBe(true);
 
-      const atTop = sampleWheelSchedule(baseTime + 50);
+      const atTop = sampleWheelSchedule(baseTime + 24);
       expect(atTop.phase).toBe('top');
       expect(atTop.angle).toBeCloseTo(Math.PI, 4);
       expect(atTop.stopped).toBe(true);
 
       // Kąt tuż przed końcem cyklu dąży do 2Pi
-      const atEnd = sampleWheelSchedule(baseTime + 88.99);
+      const atEnd = sampleWheelSchedule(baseTime + 45.99);
       expect(atEnd.phase).toBe('descending');
       expect(atEnd.angle).toBeCloseTo(Math.PI * 2, 1);
     }
@@ -111,8 +111,8 @@ describe('wheelSchedule', () => {
   });
 
   it('distinguishes top stop from bottom stop (only bottom allows boarding/exit)', () => {
-    const bottom = sampleWheelSchedule(5);
-    const top = sampleWheelSchedule(50);
+    const bottom = sampleWheelSchedule(1);
+    const top = sampleWheelSchedule(24);
 
     expect(bottom.stopped).toBe(true);
     expect(bottom.phase).toBe('bottom');

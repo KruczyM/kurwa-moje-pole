@@ -18,10 +18,7 @@ describe('ColliderSpatialGrid', () => {
 
   it('detects collision with box colliders and respects boundaries', () => {
     const grid = new ColliderSpatialGrid(16);
-    const box = new THREE.Box3(
-      new THREE.Vector3(-5, 0, -5),
-      new THREE.Vector3(5, 5, 5),
-    );
+    const box = new THREE.Box3(new THREE.Vector3(-5, 0, -5), new THREE.Vector3(5, 5, 5));
     grid.add({ box });
 
     expect(grid.hasCollision(0, 0, 0.3)).toBe(true);
@@ -33,10 +30,7 @@ describe('ColliderSpatialGrid', () => {
   it('correctly handles colliders spanning across cell boundaries', () => {
     const grid = new ColliderSpatialGrid(16);
     // Spans from x: 10 to 22 (crosses boundary at x: 16)
-    const box = new THREE.Box3(
-      new THREE.Vector3(10, 0, 10),
-      new THREE.Vector3(22, 5, 22),
-    );
+    const box = new THREE.Box3(new THREE.Vector3(10, 0, 10), new THREE.Vector3(22, 5, 22));
     grid.add({ box });
 
     // In cell (0, 0)
@@ -66,16 +60,10 @@ describe('ColliderSpatialGrid', () => {
       { x: -50, z: -30, r: 4 },
       { x: 25, z: 80, r: 1.5 },
       {
-        box: new THREE.Box3(
-          new THREE.Vector3(-10, 0, -10),
-          new THREE.Vector3(10, 5, 10),
-        ),
+        box: new THREE.Box3(new THREE.Vector3(-10, 0, -10), new THREE.Vector3(10, 5, 10)),
       },
       {
-        box: new THREE.Box3(
-          new THREE.Vector3(30, 0, -40),
-          new THREE.Vector3(60, 5, -20),
-        ),
+        box: new THREE.Box3(new THREE.Vector3(30, 0, -40), new THREE.Vector3(60, 5, -20)),
       },
     ];
 

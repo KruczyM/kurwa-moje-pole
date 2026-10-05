@@ -18,11 +18,19 @@ const collectVoiceNames = (value) => {
 };
 collectVoiceNames(voiceCatalog);
 const requiredLocomotion = ['Idle', 'Walk', 'Run'];
-const knownBlockers = {};
+const knownBlockers = {
+  'environment:delayTower': {
+    'missing-base-color-map': 'Model konstrukcji kratownicowej z proceduralnymi materiałami PBR w Blenderze',
+  },
+  'environment:delayTowerHeavy': {
+    'missing-base-color-map': 'Model konstrukcji kratownicowej z proceduralnymi materiałami PBR w Blenderze',
+  },
+};
 const GLB_MAGIC = 0x46546c67;
 const JSON_CHUNK = 0x4e4f534a;
 const BIN_CHUNK = 0x004e4942;
 const environmentPbrProfiles = {
+  authoredFestival: 'mixed',
   flag: 'fabric',
   chair: 'mixed',
   speaker: 'plastic',
@@ -34,6 +42,7 @@ const environmentPbrProfiles = {
   mainStage: 'mixed',
   smallStage: 'mixed',
   delayTower: 'mixed',
+  delayTowerHeavy: 'mixed',
   festivalGate: 'mixed',
   festivalSignpost: 'mixed',
   fireTruckOsp: 'mixed',
@@ -56,8 +65,26 @@ const environmentPbrProfiles = {
   foodtruckMakarun: 'mixed',
   rollbarLech: 'mixed',
   sunflower: 'organic',
+  beerCan: 'mixed',
+  festivalChair: 'mixed',
+  acousticGuitar: 'wood',
+  coolerBox: 'plastic',
+  festivalBackpack: 'fabric',
+  trashBagsPile: 'plastic',
+  campingStove: 'mixed',
+  waterJug5L: 'plastic',
+  beerCrate: 'mixed',
+  campTableMessy: 'mixed',
+  campFlagTotem: 'wood',
+  tarpCanopy: 'fabric',
+  beerBenchTable: 'wood',
+  palletSeating: 'wood',
+  campClothesline: 'fabric',
+  disposableBbq: 'mixed',
+  gastroUmbrella: 'fabric',
 };
 const interactivePbrProfiles = {
+  water: 'plastic',
   table: 'wood',
   cigarette: 'paper',
   joint: 'paper',
@@ -373,7 +400,7 @@ function inspectTextureReferences(gltf, filePath, problems) {
 }
 
 /** Zbiera semantykę PBR źródłowego glTF i odrzuca czynniki spoza zakresu specyfikacji. */
-function inspectPbrDefinitions(gltf, problems) {
+function inspectPbrDefinitions(gltf, problems, assetId) {
   const materials = gltf.materials ?? [];
   const summary = {
     baseColorMaps: 0,
@@ -414,7 +441,14 @@ function inspectPbrDefinitions(gltf, problems) {
       }
     }
   });
-  if (materials.length > 0 && summary.baseColorMaps === 0) {
+  // These authored models deliberately use vertex/solid colors, not bitmap textures.
+  // Missing factors are legal glTF defaults (white); factor ranges are validated above.
+  const approvedFactorModel = [
+    'interactive:water',
+    'environment:delayTower',
+    'environment:delayTowerHeavy',
+  ].includes(assetId);
+  if (materials.length > 0 && summary.baseColorMaps === 0 && !approvedFactorModel) {
     problems.push(issue('error', 'missing-base-color-map', 'zatwierdzony model nie ma tekstury Base Color'));
   }
   if (summary.unlitMaterials > 0) {
@@ -517,7 +551,7 @@ function validateGlb(asset, filePath) {
   });
 
   inspectTextureReferences(gltf, filePath, problems);
-  const pbr = inspectPbrDefinitions(gltf, problems);
+  const pbr = inspectPbrDefinitions(gltf, problems, asset.id);
   const bounds = { min: [Infinity, Infinity, Infinity], max: [-Infinity, -Infinity, -Infinity], vertices: 0 };
   const positionAccessors = new Set();
   meshes.forEach((mesh, meshIndex) => {

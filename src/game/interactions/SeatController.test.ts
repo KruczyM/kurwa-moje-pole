@@ -2,8 +2,30 @@ import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
 import { findSittingClip, seatCameraPosition, SeatController } from './SeatController';
+import { alignChairPelvis } from './chairPose';
 
 describe('SeatController helpers', () => {
+  it('prefers the chair pose and keeps animated pelvis placement stable under a rotated seat', () => {
+    const chair = new THREE.AnimationClip('MaleSittingPose', 1);
+    expect(findSittingClip([new THREE.AnimationClip('SittingIdle', 1), chair])).toBe(chair);
+    const root = new THREE.Group();
+    root.position.set(8, 2, 9);
+    root.rotation.y = 0.7;
+    const visual = new THREE.Group();
+    visual.scale.setScalar(2);
+    root.add(visual);
+    const hips = new THREE.Bone();
+    hips.name = 'mixamorig:Hips';
+    hips.position.set(0, 1, 0.4);
+    visual.add(hips);
+    for (let i = 0; i < 3; i++) {
+      hips.position.y += 0.2;
+      expect(alignChairPelvis(root, visual)).toBe(true);
+      const pelvis = root.worldToLocal(hips.getWorldPosition(new THREE.Vector3()));
+      expect(pelvis.y).toBeCloseTo(0.65);
+      expect(pelvis.z).toBeCloseTo(-0.1);
+    }
+  });
   it('finishes the get-up transition before returning control after rest', () => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera();
@@ -87,9 +109,9 @@ describe('SeatController helpers', () => {
     const visual = seatedRoot.children[0];
     expect(visual.rotation.y).toBeCloseTo(Math.PI);
     expect(visual.position.z).toBeCloseTo(-0.52);
-    // Spód modelu postaci w układzie krzesła jest obniżony o 0.38m poniżej poziomu stania (0)
+    // Model postaci w układzie krzesła jest uniesiony na wysokość +0.16m, aby biodra spoczywały na płótnie krzesła
     const visualBounds = new THREE.Box3().setFromObject(visual);
-    expect(visualBounds.min.y).toBeCloseTo(-0.38);
+    expect(visualBounds.min.y).toBeCloseTo(-0.2);
 
     // Domyślne krzesło przy rotationY = 0 ma przód w -Z.
     // Kamera powinna stanąć przed siedzącą postacią (w stronę -Z) i patrzeć w stronę postaci.

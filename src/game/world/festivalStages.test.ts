@@ -42,7 +42,11 @@ describe('provisional generated stages', () => {
       const aspRoot = parent.children[1];
       const aspBounds = new THREE.Box3().setFromObject(aspRoot);
       expect(aspBounds.min.y).toBeCloseTo(0.025);
-      const entrancePoint = new THREE.Vector3(aspBounds.min.x + 0.5, 1.0, (aspBounds.min.z + aspBounds.max.z) / 2);
+      const entrancePoint = new THREE.Vector3(
+        aspBounds.min.x + 0.5,
+        1.0,
+        (aspBounds.min.z + aspBounds.max.z) / 2,
+      );
       expect(boxes.some((b) => b.containsPoint(entrancePoint))).toBe(false);
       for (let i = 0; i < 2; i++) {
         const root = parent.children[i];

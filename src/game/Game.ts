@@ -1,10 +1,10 @@
 import { FestivalMap } from './ui/FestivalMap';
+import { StageLiveScreens } from './world/StageLiveScreens';
 import * as THREE from 'three';
 import { AssetLoader } from './assets/AssetLoader';
-import { characterAssets, effectAssets, musicAsset } from './assets/assetManifest';
+import { characterAssets, effectAssets, festivalNpcAssets, musicAsset } from './assets/assetManifest';
 import { CampWorld, WORLD_LIMIT, terrainHeight } from './world/CampWorld';
 import { PlayerController } from './player/PlayerController';
-import { PLAYER_SPAWN_CONFIG } from './world/campLandmarks';
 import { isMobileInputDevice, MobileControls } from './player/MobileControls';
 import { NpcManager } from './npc/NpcManager';
 import { NPC_NAVIGATION_CELL_SIZE, NPC_NAVIGATION_RADIUS, NpcNavigationGrid } from './npc/NpcNavigationGrid';
@@ -12,12 +12,14 @@ import { NpcDebugOverlay, isNpcDebugAllowed } from './npc/NpcDebugOverlay';
 import { EffectManager, EffectId, VisualSettings } from './effects/EffectManager';
 import { InteractionManager } from './interactions/InteractionManager';
 import { SpeakerAudio } from './audio/SpeakerAudio';
+import { audioPerceptionAt } from './audio/AudioPerception';
 import { CampAmbientAudio } from './audio/CampAmbientAudio';
 import { GrzybekWaterAudio } from './audio/GrzybekWaterAudio';
 import { InspectableItemId, itemById } from './interactions/itemConfig';
 import { ItemInspectController } from './interactions/ItemInspectController';
-import { AppState, AppStateMachine, escapeTarget } from './lifecycle/AppStateMachine';
+import { AppState, AppStateMachine, escapeTarget, isStageAudioEnabled } from './lifecycle/AppStateMachine';
 import { EventScope } from './lifecycle/EventScope';
+import { shouldAdvancePausedSharedWorld } from './lifecycle/sharedWorldPolicy';
 import { disposeObjectTree } from './lifecycle/disposeThree';
 import { AnimationLoop } from './lifecycle/AnimationLoop';
 import { MushroomWireframeEffect } from './effects/MushroomWireframeEffect';
@@ -39,9 +41,22 @@ import { SeatController, type SeatPose } from './interactions/SeatController';
 import { configureColorPipeline } from './rendering/colorPipeline';
 import { RemotePlayersManager } from './network/RemotePlayersManager';
 import type { NetworkClient } from './network/NetworkClient';
+import type { FlankiLobbyState } from './network/flankiProtocol';
 import { UIManager } from './ui/UIManager';
 import { SpatialVoiceManager, type MicState } from './audio/SpatialVoiceManager';
 import { NpcVoiceCoordinator } from './npc/NpcVoiceCoordinator';
+import { FestivalPassport } from './interactions/FestivalPassport';
+import { FestivalBingo } from './interactions/FestivalBingo';
+import { NpcRelationships } from './npc/NpcRelationships';
+import { NpcBranchingDialogue } from './npc/NpcBranchingDialogue';
+import { PatrolQuiz } from './interactions/PatrolQuiz';
+import { CanCollector } from './interactions/CanCollector';
+import { ECO_DURATION_SECONDS, type EcoPoint } from './interactions/ecoChallenge';
+import { CampfireGuitarGame } from './interactions/CampfireGuitarGame';
+import { WheelRideController } from './world/WheelRideController';
+import { SpatialStageAcoustics } from './audio/SpatialStageAcoustics';
+import { ConcertLibrary } from './audio/ConcertLibrary';
+import { ConcertState } from './npc/ConcertState';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -113,9 +128,16 @@ export class Game {
     getPropModel: (id) => this.propModels.get(id),
   });
   readonly ui = new UIManager();
-  private festivalMap: FestivalMap | null = null;
+  festivalMap: FestivalMap | null = null;
+  private stageLiveScreens?: StageLiveScreens;
   private events = new EventScope();
   private unsubscribeState: () => void;
+  private flankiNetworkCleanup: (() => void)[] = [];
+  private ecoMode: 'solo' | 'race' | null = null;
+  private ecoRoundId = '';
+  private ecoBest = 0;
+  private activeFlankiSession = '';
+  private lastFlankiPhase = 'idle';
   private started = false;
   private disposed = false;
   private animationLoop = new AnimationLoop(() => this.updateFrame());
@@ -135,10 +157,81 @@ export class Game {
   private seatController?: SeatController;
   private pendingItemUse?: PendingItemUse;
   private pendingWarningItem?: PendingWarningItem;
+  readonly passport = new FestivalPassport({
+    onStampAwarded: (stamp) => {
+      this.toast(`🏆 Nowa pieczątka w Paszporcie: ${stamp.icon} ${stamp.title}!`);
+    },
+  });
+  readonly bingo = new FestivalBingo({
+    passport: this.passport,
+    onSquareChecked: (square) => {
+      this.toast(`🎯 Bingo zaliczone: ${square.label}!`);
+    },
+    onBingo: () => {
+      this.toast('🎉 BINGO! Ukończono linię w festiwalowym Bingo!');
+    },
+  });
+  readonly relationships = new NpcRelationships();
+  readonly branchingDialogue = new NpcBranchingDialogue(this.relationships);
+  readonly patrolQuiz = new PatrolQuiz({
+    passport: this.passport,
+    onQuizCompleted: (score) => {
+      if (score.passed) {
+        this.bingo.checkSquare('quiz');
+        this.toast(`🎉 Egzamin Patrolu zdany! Wynik: ${score.correct}/${score.total}`);
+      }
+    },
+  });
+  readonly canCollector = new CanCollector({
+    minigameOnly: true,
+    onCanRemoved: (id) => this.world?.removeCanObject(id),
+    passport: this.passport,
+    onBadgeAwarded: (badge) => {
+      this.bingo.checkSquare('puszki');
+      this.toast(`🏆 Odznaka „${badge}” odblokowana!`);
+    },
+    onCanSpawned: (can) => {
+      this.world?.respawnCanObject(can);
+    },
+    onCanCollected: (can) => {
+      if (can.label.startsWith('Eko-Sprint')) this.toast('Eko-Sprint! +35% szybkości przez 12 sekund.');
+      if (this.ecoMode !== 'race' || this.networkClient?.ecoState?.phase !== 'playing') return;
+      const roundId = this.ecoRoundId;
+      void this.networkClient
+        .requestEco('collect', { roundId, canId: can.id, generation: can.generation ?? 0 })
+        .then((accepted) => {
+          if (!accepted && this.ecoRoundId === roundId) {
+            this.canCollector.restoreRejectedPickup(can.id);
+            this.toast('Serwer nie potwierdził zebrania. Spróbuj ponownie.');
+          }
+        });
+    },
+    onGoldenCanCollected: () => {
+      this.toast('⭐ ZŁOTA PUSZKA WOODSTOCK 1995! (+5 puszek & +35% sprint)');
+    },
+    onRushFinished: (res) => {
+      if (this.ecoMode === 'solo') {
+        this.ecoBest = Math.max(this.ecoBest, res.totalCollected);
+        try {
+          localStorage.setItem('eco-best-v1', String(this.ecoBest));
+        } catch {
+          /* Storage optional. */
+        }
+      }
+      this.toast(res.message);
+    },
+  });
+  campfireGuitarGame = new CampfireGuitarGame();
+  readonly concertState = new ConcertState();
+  readonly concertLibrary = new ConcertLibrary();
+  readonly stageAcoustics = new SpatialStageAcoustics();
+  wheelRideController?: WheelRideController;
+  private landmarkCheckTimer = 0;
   constructor(
     readonly state: AppStateMachine,
     readonly networkClient?: NetworkClient,
   ) {
+    this.scene.add(this.camera);
     try {
       this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     } catch {
@@ -153,6 +246,9 @@ export class Game {
     this.scene.fog = new THREE.Fog(0x8da1b5, 100, 380);
     this.events.listen(window, 'resize', () => this.resize());
     this.events.listen(window, 'keydown', (event) => this.key(event as KeyboardEvent));
+    this.events.listen(window, 'keyup', (event) => this.keyUp(event as KeyboardEvent));
+    this.events.listen(this.canvas, 'pointerdown', (event) => this.pointerDown(event as PointerEvent));
+    this.events.listen(window, 'pointerup', (event) => this.pointerUp(event as PointerEvent));
     this.events.listen(document, 'pointerlockchange', () => this.pointerLockChanged());
     this.settingsService.onVisualChange((visual) => {
       this.effects?.setSettings(visual);
@@ -168,6 +264,19 @@ export class Game {
     this.syncSettingsUi();
     this.syncInventoryUi();
     this.ui.initLsdOverlays(effectAssets.lsdOverlays[0], effectAssets.lsdOverlays[1]);
+    const mapCanvas =
+      typeof document !== 'undefined'
+        ? document.querySelector<HTMLCanvasElement>('#festival-map-canvas')
+        : null;
+    this.festivalMap = new FestivalMap(mapCanvas);
+    void this.festivalMap
+      .loadBlenderReference()
+      .catch(() => this.toast('Nie udało się załadować rzutu mapy z Blendera.'));
+    this.ui.initMapControls(
+      this.festivalMap,
+      () => (this.player ? { x: this.player.camera.position.x, z: this.player.camera.position.z } : null),
+      () => this.toggleMap(false),
+    );
     this.syncState(this.state.current);
   }
 
@@ -198,6 +307,39 @@ export class Game {
         throw new Error('Nie udało się załadować żadnej postaci. Sprawdź Git LFS i pliki game-assets.');
       assets.interactables.forEach((asset, id) => this.propModels.set(id, asset.scene));
       this.world = new CampWorld(this.scene, assets);
+      try {
+        this.ecoBest = Math.max(0, Number(localStorage.getItem('eco-best-v1')) || 0);
+      } catch {
+        /* Storage optional. */
+      }
+      for (const can of this.canCollector.getAllCans()) {
+        if (can.collected) this.world.removeCanObject(can.id);
+        else this.world.respawnCanObject(can);
+      }
+      if (this.networkClient)
+        this.flankiNetworkCleanup.push(
+          this.networkClient.onEcoState((eco) => {
+            const member = eco?.players.some((p) => p.id === this.networkClient?.getMyPlayerId());
+            if (eco?.phase === 'playing' && member && eco.id !== this.ecoRoundId) {
+              this.ecoRoundId = eco.id;
+              this.beginEcoRound(
+                eco.seed,
+                eco.pool,
+                Math.max(0, (eco.endsAt - eco.serverNow) / 1000),
+                'race',
+              );
+            } else if (this.ecoMode === 'race' && (!member || eco?.phase === 'finished')) {
+              this.canCollector.stopRush();
+              if (!member) this.ecoMode = null;
+            }
+          }),
+        );
+      this.stageLiveScreens = new StageLiveScreens(this.scene, this.world.mapScenery);
+      const audioStage = this.world.mapScenery.find((item) => item.id === 'Main_Stage_Deck_Plinth');
+      if (audioStage) this.stageAcoustics.setStagePosition(audioStage);
+      this.syncStageAudio();
+      this.stageLiveScreens.setVideoPlaylist(this.stageAcoustics);
+      this.festivalMap?.setAuthoredLayout(this.world.mapScenery);
       this.world.setGrassQuality(this.settings.grassQuality);
       const npcNavigation = new NpcNavigationGrid(
         {
@@ -218,6 +360,7 @@ export class Game {
         Math.floor(Math.random() * 0x100000000),
       );
       this.remotePlayersManager = new RemotePlayersManager(this.scene, assets.characters, this.networkClient);
+      this.npcs.setFestivalLayout(this.world.mapScenery);
       if (isNpcDebugAllowed() && this.world) {
         this.npcDebugOverlay = new NpcDebugOverlay({
           scene: this.scene,
@@ -230,7 +373,7 @@ export class Game {
         this.canvas,
         (x, z) => this.world!.canMove(x, z),
         !this.mobileInput,
-        PLAYER_SPAWN_CONFIG,
+        this.world.getPlayerSpawn(),
       );
       if (this.mobileInput) {
         this.mobileControls = new MobileControls(qs('#mobile-controls'), {
@@ -245,6 +388,7 @@ export class Game {
       this.effects = new EffectManager(this.renderer, this.scene, this.camera, this.speakerAudio);
       this.effects.setSettings(this.settings);
       this.interactions = new InteractionManager(this.camera, () => [
+        ...(this.npcs!.speakerAnchor ? [this.npcs!.speakerAnchor] : []),
         ...this.npcs!.npcs.map((npc) => npc.root),
         ...this.world!.interactables.map((item) => item.object),
       ]);
@@ -255,6 +399,7 @@ export class Game {
       const selectedCharacter =
         (selectedAsset ? assets.characters.get(selectedAsset.id) : undefined) ??
         assets.characters.values().next().value;
+      if (selectedCharacter) this.stageLiveScreens?.setLocalAvatar(selectedCharacter);
       this.useSequence = new ItemUseSequence(
         this.scene,
         this.camera,
@@ -264,6 +409,61 @@ export class Game {
       );
       this.seatController = new SeatController(this.scene, this.camera, selectedCharacter);
       this.itemUseSfx = new ItemUseSfxPlayer();
+      if (this.world.flankiGame) {
+        this.world.flankiGame.setCallbacks({
+          onToast: (msg) => this.toast(msg),
+          onVictory: () => {
+            this.passport.awardStamp('flanki_player');
+            this.bingo.checkSquare('flanki');
+          },
+          onDrinkSfx: () => {
+            this.itemUseSfx?.play('swallow');
+          },
+          onThrowSfx: () => {
+            this.itemUseSfx?.play('beer_open');
+          },
+          onHitSfx: () => {
+            this.itemUseSfx?.play('beer_open');
+          },
+          onChokeSfx: () => {
+            this.voiceReactions.playToilet();
+          },
+          onSendMultiplayerAction: (action, payload) => {
+            if (this.networkClient?.isOnline()) {
+              this.networkClient.sendFlankiAction(action, payload);
+            }
+          },
+        });
+      }
+      this.campfireGuitarGame.setCallbacks({
+        onToast: (msg) => this.toast(msg),
+        onSongFinished: (stats) => {
+          if (stats.accuracyPercent >= 60) {
+            this.passport.recordEvent('campfire_guitar');
+            this.toast(`🎉 Brawo! Odblokowano pieczątkę „Bard Ogniska” (${stats.finalScore} pkt)!`);
+          }
+        },
+        onCrowdCheerSfx: () => {
+          this.toast('🔥 Ognisko szaleje z zachwytu!');
+        },
+      });
+      if (this.networkClient) {
+        this.flankiNetworkCleanup.push(
+          this.networkClient.onError((error) => {
+            if (error.code === 'UNAUTHORIZED') this.toast(error.message);
+          }),
+          this.networkClient.onFlankiLobby((lobby) => this.syncFlankiLobby(lobby)),
+          this.networkClient.onFlankiAction((event) => {
+            if (event.sessionId === this.activeFlankiSession)
+              this.world?.flankiGame?.handleNetworkAction(
+                event.action,
+                event.payload,
+                event.playerId,
+                event.sessionId,
+              );
+          }),
+        );
+      }
       this.ui.populateMotionSelect(this.seatController.animationNames);
       this.campAmbient.start();
       this.grzybekAudio.init();
@@ -313,31 +513,94 @@ export class Game {
           HTMLButtonElement | undefined,
         elevenLabsStatusElement: document.querySelector('#dialog-elevenlabs-status') as
           HTMLElement | undefined,
+        choicesContainer: document.querySelector('#dialog-choices') as HTMLElement | undefined,
+        branchingDialogue: this.branchingDialogue,
+        patrolQuiz: this.patrolQuiz,
       });
+
+      // Kontroler przejażdżki kołem widokowym:
+      const wheel = this.world.getWheel();
+      if (wheel && this.player) {
+        this.wheelRideController = new WheelRideController(wheel, this.camera, this.player, {
+          onFade: (showing) => this.ui.setFade(showing),
+          onStateChange: (state) => {
+            if (state === 'riding') {
+              this.toast('Przejażdżka kołem! Rozglądaj się myszką. [E] — opuść kabinę na dole.');
+            } else if (state === 'idle') {
+              this.passport.recordEvent('ferris_wheel');
+              this.bingo.checkSquare('mlyn');
+            }
+          },
+        });
+      }
+
+      const progressBar =
+        typeof document !== 'undefined' ? document.querySelector<HTMLDivElement>('#load-progress-bar') : null;
+      const skipCrowdBtn =
+        typeof document !== 'undefined' ? document.querySelector<HTMLButtonElement>('#skip-crowd-btn') : null;
+
+      let skippedCrowd = false;
+      if (skipCrowdBtn) {
+        skipCrowdBtn.hidden = false;
+        skipCrowdBtn.onclick = () => {
+          skippedCrowd = true;
+          skipCrowdBtn.hidden = true;
+          this.toast('Pominięto ładowanie — tłum wczyta się w tle.');
+        };
+      }
+
+      if (this.settings.preloadCrowd !== false) {
+        text.textContent = `Wczytywanie postaci festiwalowiczów (0/${festivalNpcAssets.length})…`;
+        if (progressBar) progressBar.style.width = '20%';
+        await loader.loadFestivalNpcs(
+          (asset, model) => this.npcs?.addFestivalNpc(asset, model) ?? false,
+          () => this.disposed || skippedCrowd,
+          (loaded, total, name) => {
+            if (this.disposed || skippedCrowd) return;
+            const percent = 20 + Math.round((loaded / total) * 60);
+            if (progressBar) progressBar.style.width = `${percent}%`;
+            text.textContent = `Wczytywanie festiwalowiczów (${loaded}/${total}): ${name}`;
+          },
+          4,
+        );
+      }
+
+      if (skipCrowdBtn) skipCrowdBtn.hidden = true;
+      if (progressBar) progressBar.style.width = '85%';
+      text.textContent = 'Rozgrzewka grafiki i shaderów…';
+      await this.warmUpGpu();
+      if (progressBar) progressBar.style.width = '100%';
 
       this.startLoop();
       this.state.transition('playing');
-      this.toast('Festiwalowicze doczytują się w tle. Szukaj ich przy asfaltowym pasażu.');
+
       if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('camp-free-camera') === '1') {
         sessionStorage.removeItem('camp-free-camera');
         this.toggleFreeCamera(true);
       }
-      void loader
-        .loadFestivalNpcs(
-          (asset, model) => this.npcs?.addFestivalNpc(asset, model) ?? false,
-          () => this.disposed,
-        )
-        .then((result) => {
-          if (!this.disposed) {
-            console.info('Festiwalowicze:', result);
-            this.toast(
-              `Festiwalowicze: ${result.loaded}/${result.total}${result.failed ? ' — część modeli nie została wczytana' : ' — tłum gotowy'}`,
-            );
-          }
-        })
-        .catch((cause) => {
-          if (!this.disposed) console.error('Ładowanie festiwalowiczów przerwane:', cause);
-        });
+
+      if (skippedCrowd || this.settings.preloadCrowd === false) {
+        this.toast('Festiwalowicze doczytują się w tle: pod dużą sceną i na obu pasażach.');
+        void loader
+          .loadFestivalNpcs(
+            (asset, model) => this.npcs?.addFestivalNpc(asset, model) ?? false,
+            () => this.disposed,
+          )
+          .then((result) => {
+            if (!this.disposed) {
+              console.info('Festiwalowicze (tło):', result);
+              this.toast(
+                `Festiwalowicze: ${result.loaded}/${result.total}${result.failed ? ' — część modeli nie została wczytana' : ' — tłum gotowy'}`,
+              );
+            }
+          })
+          .catch((cause) => {
+            if (!this.disposed) console.error('Ładowanie festiwalowiczów przerwane:', cause);
+          });
+      } else {
+        const loadedCount = this.npcs?.npcs.length ?? 0;
+        this.toast(`Obóz i festiwalowicze gotowi (${loadedCount} postaci). Miłej zabawy!`);
+      }
     } catch (cause) {
       if (this.disposed) return;
       error.textContent = `Nie udało się uruchomić gry: ${cause instanceof Error ? cause.message : String(cause)}`;
@@ -356,11 +619,11 @@ export class Game {
     switch (state) {
       case 'active':
         icon.textContent = '🎤';
-        text.textContent = 'Mikrofon: Włączony [M]';
+        text.textContent = 'Mikrofon: Włączony [V]';
         break;
       case 'muted':
         icon.textContent = '🔇';
-        text.textContent = 'Mikrofon: Wyciszony [M]';
+        text.textContent = 'Mikrofon: Wyciszony [V]';
         break;
       case 'requesting':
         icon.textContent = '⏳';
@@ -384,8 +647,16 @@ export class Game {
   /** Obsługuje globalne skróty Escape, Tab, E oraz Ctrl+K zgodnie ze stanem gry. */
   private key(event: KeyboardEvent) {
     if (this.disposed) return;
+    if (this.ui.isEcoPanelOpen()) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.closeEcoPanel();
+      }
+      return;
+    }
+    const keyLower = event.key.toLowerCase();
     if (
-      (event.key === 'v' || event.key === 'V') &&
+      (keyLower === 'v' || keyLower === 'u') &&
       (this.state.current === 'playing' || this.state.current === 'seated')
     ) {
       this.spatialVoice?.toggleMute();
@@ -413,11 +684,104 @@ export class Game {
       this.toggleFreeCamera();
       return;
     }
+    const activeFlanki = this.world?.flankiGame;
+    if ((this.ui.isGuideOpen() || this.ui.isMapOpen()) && ['e', ' '].includes(event.key.toLowerCase()))
+      return;
+    if (
+      event.key.toLowerCase() === 'e' &&
+      this.state.current === 'playing' &&
+      activeFlanki &&
+      !this.ui.isFlankiRosterOpen() &&
+      !['idle', 'game_over'].includes(activeFlanki.getPhase())
+    ) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (!event.repeat) {
+        if (activeFlanki.canLocalRunnerMove()) {
+          activeFlanki.updateLocalRunnerPosition(this.camera.position);
+          activeFlanki.standUpCanByPlayer();
+        } else activeFlanki.setPlayerDrinking(true);
+      }
+      return;
+    }
+    if (this.campfireGuitarGame && this.campfireGuitarGame.getPhase() === 'playing') {
+      const k = event.key.toLowerCase();
+      let lane = -1;
+      if (k === 'd' || k === '1') lane = 0;
+      else if (k === 'f' || k === '2') lane = 1;
+      else if (k === 'j' || k === '3') lane = 2;
+      else if (k === 'k' || k === '4') lane = 3;
+
+      if (lane >= 0) {
+        event.preventDefault();
+        if (!event.repeat) this.campfireGuitarGame.hitLane(lane);
+        return;
+      }
+    }
+    if (this.campfireGuitarGame.getPhase() !== 'idle' && event.key !== 'Escape') return;
+    if (event.code === 'Space' || event.key === ' ') {
+      const flanki = this.world?.flankiGame;
+      if (flanki && flanki.getPhase() !== 'idle') {
+        const phase = flanki.getPhase();
+        if (phase === 'aiming') {
+          event.preventDefault();
+          flanki.startCharge(this.camera.position, this.camera.getWorldDirection(new THREE.Vector3()));
+          return;
+        }
+      }
+      if (
+        this.state.current === 'playing' &&
+        !this.ui.isMapOpen() &&
+        !this.ui.isGuideOpen() &&
+        !this.ui.isFlankiRosterOpen() &&
+        (!flanki || ['idle', 'game_over'].includes(flanki.getPhase()))
+      ) {
+        event.preventDefault();
+        if (!event.repeat && this.player?.requestJump()) {
+          this.networkClient?.sendAction('jump');
+          this.stageLiveScreens?.playLocalJump();
+        }
+        return;
+      }
+    }
     const action = resolveGameInput(this.state.current, event.key, event.repeat);
     if (!action) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     if (action === 'escape') {
+      if (this.ui.isGuideOpen()) {
+        this.toggleGuide(false);
+        return;
+      }
+      if (this.ui.isMapOpen()) {
+        this.toggleMap(false);
+        return;
+      }
+      if (this.wheelRideController && !this.wheelRideController.isIdle()) {
+        this.wheelRideController.cancelToGround();
+        this.toast('Przerwano przejażdżkę kołem widokowym.');
+        return;
+      }
+      if (this.ui.isFlankiRosterOpen()) {
+        this.networkClient?.requestFlankiLobby('leave');
+        this.ui.hideFlankiRoster();
+        if (this.state.current === 'playing' && !this.mobileInput) {
+          this.canvas.requestPointerLock?.().catch?.(() => undefined);
+        }
+        return;
+      }
+      if (this.world?.flankiGame && this.world.flankiGame.getPhase() !== 'idle') {
+        if (this.activeFlankiSession) this.networkClient?.requestFlankiLobby('leave');
+        this.world.flankiGame.stopMatch();
+        this.toast('Mecz flanków przerwany.');
+        if (this.player) this.player.setMovementLocked(false);
+        return;
+      }
+      if (this.campfireGuitarGame && this.campfireGuitarGame.getPhase() !== 'idle') {
+        this.campfireGuitarGame.stopSong();
+        this.toast('Odłożono gitarę.');
+        return;
+      }
       const source = this.state.current;
       const menuEscape = source === 'playing' || source === 'paused';
       const target = escapeTarget(source);
@@ -446,6 +810,44 @@ export class Game {
     if (this.state.current === 'seated') this.leaveSeat();
     else if (this.state.current === 'inspecting') this.acceptInspect();
     else if (this.state.current === 'playing') this.interact();
+  }
+
+  private keyUp(event: KeyboardEvent) {
+    if (this.disposed) return;
+    if (event.key.toLowerCase() === 'e') this.world?.flankiGame?.setPlayerDrinking(false);
+    if (event.code === 'Space' || event.key === ' ') {
+      const flanki = this.world?.flankiGame;
+      if (flanki) {
+        const phase = flanki.getPhase();
+        if (phase === 'aiming') {
+          const dir = this.camera.getWorldDirection(new THREE.Vector3());
+          flanki.releaseThrow(this.camera.position, dir);
+        }
+      }
+    }
+  }
+
+  private pointerDown(event: PointerEvent) {
+    if (this.disposed || event.button !== 0) return;
+    if (this.ui.isGuideOpen() || this.ui.isMapOpen()) return;
+    if (this.state.current !== 'playing') return;
+    const flanki = this.world?.flankiGame;
+    if (!flanki) return;
+    const phase = flanki.getPhase();
+    if (phase === 'aiming') {
+      flanki.startCharge(this.camera.position, this.camera.getWorldDirection(new THREE.Vector3()));
+    }
+  }
+
+  private pointerUp(event: PointerEvent) {
+    if (this.disposed || event.button !== 0) return;
+    const flanki = this.world?.flankiGame;
+    if (!flanki) return;
+    const phase = flanki.getPhase();
+    if (phase === 'aiming') {
+      const dir = this.camera.getWorldDirection(new THREE.Vector3());
+      flanki.releaseThrow(this.camera.position, dir);
+    }
   }
 
   /** Sprząta bieżący modal i przechodzi do wskazanego stanu. */
@@ -491,8 +893,108 @@ export class Game {
   }
 
   /** Otwiera pauzę wyłącznie po rzeczywistej utracie wcześniej uzyskanego pointer lock. */
+  private closeEcoPanel() {
+    this.ui.setEcoPanelOpen(false);
+    if (this.state.current === 'playing') this.player?.requestPointerLock();
+  }
+
+  private ecoSpawnPool(): EcoPoint[] {
+    const pool: EcoPoint[] = [];
+    const add = (x: number, z: number) => {
+      if (
+        pool.length < 240 &&
+        Math.abs(x) <= 290 &&
+        Math.abs(z) <= 170 &&
+        this.world?.canMove(x, z, 0.7) &&
+        !pool.some((p) => p.x === x && p.z === z)
+      )
+        pool.push({ x, z });
+    };
+    for (const road of this.world?.mapScenery.filter((p) => /^Road_/.test(p.id)) ?? []) {
+      for (let x = road.x - road.width / 2 + 7; x < road.x + road.width / 2 - 7; x += 14) {
+        add(x, road.z - 2);
+        add(x, road.z + 2);
+      }
+    }
+    for (let x = -130; x <= 130; x += 26) for (let z = -130; z <= 130; z += 26) add(x, z);
+    const stage = this.world?.mapScenery.find((p) => p.id === 'Main_Stage_Deck_Plinth');
+    if (stage)
+      for (let x = stage.x - 45; x <= stage.x - 20; x += 8)
+        for (let z = stage.z - 16; z <= stage.z + 16; z += 8) add(x, z);
+    return pool;
+  }
+
+  private beginEcoRound(seed: number, pool: EcoPoint[], seconds: number, mode: 'solo' | 'race') {
+    for (const can of this.canCollector.getAllCans()) this.world?.removeCanObject(can.id);
+    this.ecoMode = mode;
+    this.canCollector.startEcoRound(seed, pool, seconds);
+    this.ui.setEcoPanelOpen(false);
+    this.toast('Eko-Rush: zbieraj śmieci [E]. Wyniki znajdziesz w Eko-Zagrodzie.');
+  }
+
+  private updateEcoPanel() {
+    const network = this.networkClient,
+      eco = network?.ecoState;
+    const member = eco?.players.some((p) => p.id === network?.getMyPlayerId());
+    const active = this.canCollector.isRushActive();
+    const request = (operation: string, payload: Record<string, unknown> = {}) => {
+      void network?.requestEco(operation, payload).then((ok) => {
+        if (!ok)
+          this.toast(
+            'Nie potwierdzono operacji. Sprawdź połączenie i uruchom ponownie backend po aktualizacji.',
+          );
+      });
+    };
+    this.ui.updateEcoPanel(
+      `Plecak: ${this.canCollector.getInventoryCount()} | Rekord solo: ${this.ecoBest} | ${active ? `Pozostało ${this.canCollector.getRushTimeRemaining()} s` : eco?.phase === 'lobby' ? `Lobby: ${eco.players.length}/16 graczy — gospodarz rozpoczyna` : eco?.phase === 'finished' ? 'Wyścig zakończony — poniżej wyniki końcowe' : 'Runda: 180 sekund'}`,
+      eco?.players.slice().sort((a, b) => b.score - a.score || a.name.localeCompare(b.name)) ?? [
+        { name: 'Twój wynik solo', score: this.canCollector.getRushStats().cansCollected },
+      ],
+      {
+        deposit: {
+          enabled: this.canCollector.getInventoryCount() > 0,
+          run: () => this.toast(this.canCollector.depositCans(this.camera.position).message),
+        },
+        solo: {
+          enabled: !active && !member,
+          run: () => {
+            const pool = this.ecoSpawnPool();
+            if (pool.length < 48) {
+              this.toast('Za mało bezpiecznych miejsc na śmieci.');
+              return;
+            }
+            this.beginEcoRound(Math.floor(Math.random() * 0xffffffff), pool, ECO_DURATION_SECONDS, 'solo');
+          },
+        },
+        create: {
+          enabled: !!network?.isOnline() && !active && (!eco || eco.phase === 'finished'),
+          run: () => request('create', { pool: this.ecoSpawnPool() }),
+        },
+        join: {
+          enabled: !!network?.isOnline() && !active && eco?.phase === 'lobby' && !member,
+          run: () => request('join'),
+        },
+        start: {
+          enabled:
+            eco?.phase === 'lobby' && eco.hostId === network?.getMyPlayerId() && eco.players.length >= 2,
+          run: () => request('start'),
+        },
+        leave: { enabled: !!member, run: () => request('leave') },
+        close: { enabled: true, run: () => this.closeEcoPanel() },
+      },
+    );
+  }
+
   private pointerLockChanged() {
     if (this.disposed || this.state.current !== 'playing' || this.toiletTimer) return;
+    if (
+      this.ui.isEcoPanelOpen() ||
+      this.ui.isMapOpen() ||
+      this.ui.isGuideOpen() ||
+      this.ui.isFlankiRosterOpen() ||
+      this.campfireGuitarGame.getPhase() !== 'idle'
+    )
+      return;
     if (this.pointerLockPause.update(document.pointerLockElement === this.canvas))
       this.state.transition('paused');
   }
@@ -504,12 +1006,62 @@ export class Game {
       return;
     }
     if (this.state.current !== 'playing' || !this.interactions) return;
+    if (this.campfireGuitarGame.getPhase() !== 'idle') return;
+    if (this.ui.isFlankiRosterOpen() || this.ui.isEcoPanelOpen()) return;
     if (this.toiletTimer) {
       this.finishToilet();
       return;
     }
-    const interaction = this.interactions.current;
+    const interaction = this.interactions.update();
     if (!interaction) return;
+    if (interaction.kind === 'flanki') {
+      if (this.world?.flankiGame) {
+        const flanki = this.world.flankiGame;
+        const phase = flanki.getPhase();
+        if (phase === 'idle' || phase === 'game_over') {
+          if (!(this.networkClient?.isOnline() && this.networkClient.supportsFlanki()))
+            flanki.prepareOfflineLobby();
+          if (this.npcs) flanki.enlistNearbyNpcs(this.npcs.reserveFlankiPlayers(flanki.canPosition));
+          this.pointerLockPause.reset();
+          if (document.pointerLockElement) document.exitPointerLock?.();
+          if (this.networkClient?.isOnline() && this.networkClient.supportsFlanki()) {
+            void this.networkClient.requestFlankiLobby('join').then((accepted) => {
+              if (!accepted && !this.activeFlankiSession) flanki.stopMatch();
+            });
+            this.toast('Dołączanie do lobby Flanek…');
+            return;
+          }
+          this.ui.showFlankiRoster(
+            flanki.roster,
+            () => {
+              if (!flanki.arePlayersReady()) {
+                this.toast('Poczekaj, aż zawodnicy podejdą na linie.');
+                return false;
+              }
+              flanki.startMatch();
+              this.positionPlayerForFlanki();
+              if (!this.mobileInput) {
+                this.canvas.requestPointerLock?.().catch?.(() => undefined);
+              }
+            },
+            () => {
+              flanki.stopMatch();
+              if (!this.mobileInput) {
+                this.canvas.requestPointerLock?.().catch?.(() => undefined);
+              }
+            },
+            { onRunnerChange: (team, id) => flanki.selectRunner(team, id) },
+          );
+        }
+      }
+      return;
+    }
+    if (interaction.kind === 'flanki_can') {
+      if (this.world?.flankiGame) {
+        this.world.flankiGame.standUpCanByPlayer();
+      }
+      return;
+    }
     if (interaction.kind === 'speaker') {
       if (!this.speakerReactionPlayed) {
         this.speakerReactionPlayed = true;
@@ -531,7 +1083,62 @@ export class Game {
       }
       return;
     }
+    if (interaction.kind === 'ferris_wheel') {
+      if (this.wheelRideController) {
+        if (this.wheelRideController.isIdle()) {
+          const started = this.wheelRideController.requestBoarding(false);
+          if (started) {
+            this.toast('Wejście zgłoszone — wsiądziesz podczas postoju dolnej kabiny.');
+          } else {
+            this.toast('Nie można teraz rozpocząć przejażdżki. Spróbuj ponownie przy wejściu.');
+          }
+        } else {
+          this.wheelRideController.queueExit();
+          this.toast('Zgłoszono wyjście z koła na najbliższej dolnej stacji.');
+        }
+      }
+      return;
+    }
+    if (interaction.kind === 'campfire_guitar') {
+      if (this.campfireGuitarGame) {
+        if (this.campfireGuitarGame.getPhase() === 'idle') {
+          this.campfireGuitarGame.openSongSelect();
+          this.pointerLockPause.reset();
+          if (document.pointerLockElement) document.exitPointerLock?.();
+          this.player?.stop();
+          this.toast('🎸 Gitara przy ognisku! Wybierz piosenkę i graj klawiszami [D, F, J, K].');
+        }
+      }
+      return;
+    }
+    if (interaction.kind === 'clean_can') {
+      const canId = interaction.canId;
+      const collected = this.canCollector.collectCan(canId, this.camera.position);
+      if (collected) {
+        this.world?.removeCanObject(canId);
+        const count = this.canCollector.getInventoryCount();
+        this.toast(
+          `${this.canCollector.getAllCans().find((c) => c.id === canId)?.label ?? 'Śmieć'} — plecak: ${count}${this.canCollector.getEcoWaveMultiplier() === 2 ? ' | EKO-FALA ×2!' : ''}`,
+        );
+        if (count >= 5) {
+          this.bingo.checkSquare('puszki');
+        }
+      } else {
+        this.toast('Puszka poza zasięgiem.');
+      }
+      return;
+    }
+    if (interaction.kind === 'clean_corral') {
+      this.ui.setEcoPanelOpen(true);
+      this.pointerLockPause.reset();
+      document.exitPointerLock();
+      this.player?.stop();
+      this.updateEcoPanel();
+      return;
+    }
     if (interaction.kind === 'field_shower') {
+      this.passport.recordEvent('water_refill');
+      this.bingo.checkSquare('woda');
       this.toast('Orzeźwiający prysznic! Zmyłeś z siebie festiwalowy kurz i błoto.');
       return;
     }
@@ -791,6 +1398,8 @@ export class Game {
   }
   /** Włącza albo wyłącza pauzę, o ile bieżący stan pozwala na przejście. */
   setPause(on: boolean) {
+    if (on) this.world?.flankiGame?.cancelThrowCharge();
+    if (on) this.world?.flankiGame?.setPlayerDrinking(false);
     if (on && this.state.current === 'playing') this.state.transition('paused');
     else if (!on && this.state.current === 'paused') this.state.transition('playing');
   }
@@ -807,6 +1416,7 @@ export class Game {
       this.speakerAudio.setUserVolume(this.audioSettings.speakerVolume);
     }
     if (typeof values.ambientVolume === 'number') {
+      this.syncStageAudio();
       this.campAmbient.setVolume(this.audioSettings.ambientVolume);
       this.grzybekAudio.setVolume(this.audioSettings.ambientVolume);
     }
@@ -819,7 +1429,15 @@ export class Game {
   }
 
   /** Synchronizuje HUD, modale, sterowanie graczem i pointer lock ze stanem aplikacji. */
+  private syncStageAudio() {
+    this.stageAcoustics.update(this.camera.position, this.player?.yaw ?? 0);
+    this.stageAcoustics.setUserVolume(
+      isStageAudioEnabled(this.state.current) ? this.audioSettings.ambientVolume : 0,
+    );
+  }
+
   private syncState(state: AppState) {
+    this.syncStageAudio();
     this.ui.syncState(state, this.mobileInput);
     if (state === 'paused') {
       this.campAmbient.pause();
@@ -847,6 +1465,57 @@ export class Game {
     }
   }
 
+  /** Prekompiluje shadery sceny oraz inicjalizuje tekstury na GPU, eliminując przycięcia klatek po starcie gry. */
+  private async warmUpGpu() {
+    try {
+      this.scene.updateMatrixWorld(true);
+      if (typeof this.renderer.compileAsync === 'function') {
+        try {
+          await this.renderer.compileAsync(this.scene, this.camera);
+        } catch {
+          this.renderer.compile(this.scene, this.camera);
+        }
+      } else if (typeof this.renderer.compile === 'function') {
+        this.renderer.compile(this.scene, this.camera);
+      }
+
+      this.scene.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          const mesh = obj as THREE.Mesh;
+          const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const mat of materials) {
+            if (!mat) continue;
+            const standard = mat as THREE.MeshStandardMaterial;
+            if (standard.map && typeof this.renderer.initTexture === 'function') {
+              try {
+                this.renderer.initTexture(standard.map);
+              } catch {
+                // ignoruj brak wsparcia
+              }
+            }
+            if (standard.normalMap && typeof this.renderer.initTexture === 'function') {
+              try {
+                this.renderer.initTexture(standard.normalMap);
+              } catch {
+                // ignoruj brak wsparcia
+              }
+            }
+            if (standard.roughnessMap && typeof this.renderer.initTexture === 'function') {
+              try {
+                this.renderer.initTexture(standard.roughnessMap);
+              } catch {
+                // ignoruj brak wsparcia
+              }
+            }
+          }
+        }
+      });
+      this.effects?.warmUp();
+    } catch (err) {
+      console.warn('GPU warmup warning (non-fatal):', err);
+    }
+  }
+
   /** Uruchamia zegar Three.js oraz pojedynczą pętlę renderującą. */
   private startLoop() {
     this.clock.start();
@@ -858,13 +1527,23 @@ export class Game {
     if (this.disposed) return;
     const dt = Math.min(this.clock.getDelta(), 0.05),
       state = this.state.current;
+    if (state !== 'playing' && this.world?.flankiGame?.getHudState().isChugging)
+      this.world.flankiGame.setPlayerDrinking(false);
     if (state !== 'paused' && state !== 'error') {
       if (this.toiletTimer && state === 'playing') {
         this.toiletTimer -= dt;
         if (this.toiletTimer <= 0) this.finishToilet();
       }
       if (state === 'playing') {
-        this.player?.update(dt, this.effects?.modifiers || { speed: 1, sway: 0, shake: 0, bob: 1 });
+        if (this.world?.flankiGame && !['idle', 'game_over'].includes(this.world.flankiGame.getPhase()))
+          this.player?.setMovementLocked(
+            this.world.flankiGame.shouldLockPlayerMovement() || this.ui.isGuideOpen() || this.ui.isMapOpen(),
+          );
+        const speedBoost = this.canCollector.getSpeedBoostMultiplier();
+        const baseMods = this.effects?.modifiers || { speed: 1, sway: 0, shake: 0, bob: 1 };
+        const activeMods = speedBoost > 1.0 ? { ...baseMods, speed: baseMods.speed * speedBoost } : baseMods;
+        this.player?.update(dt, activeMods);
+        this.world?.flankiGame?.updateLocalRunnerPosition(this.camera.position);
         this.updateInteractionPrompt();
       }
       if (state === 'playing' || state === 'seated') {
@@ -896,13 +1575,27 @@ export class Game {
           this.state.transition('playing');
         }
       }
-      this.world?.update(this.clock.elapsedTime, this.camera.position, dt, this.settings.reduceMotion);
+      this.world?.update(
+        this.clock.elapsedTime,
+        this.camera.position,
+        dt,
+        this.wheelRideController?.shouldReduceMotion(this.settings.reduceMotion) ??
+          this.settings.reduceMotion,
+      );
       this.effects?.update(dt);
       const speakerPos = this.npcs?.getSpeakerWorldPosition();
       if (speakerPos) {
         this.speakerAudio.setSpeakerPosition(speakerPos);
       }
       this.speakerAudio.update(this.camera.position, dt);
+      const perception = audioPerceptionAt(
+        this.effects?.active ?? null,
+        this.effects?.visualIntensity ?? 0,
+        this.clock.elapsedTime,
+        this.settings.reduceMotion,
+      );
+      this.speakerAudio.setPerception(perception);
+      this.stageAcoustics.setPerception(perception);
       if (this.world?.infrastructure?.grzybekParticles) {
         this.grzybekAudio.update(this.camera.position.x, this.camera.position.z);
       }
@@ -916,6 +1609,8 @@ export class Game {
         }
       }
       this.voiceReactions.update(dt, this.effects?.active || null, this.effects?.phase || 'inactive');
+      // Material-swapping effects must never own the same meshes simultaneously.
+      if (this.effects?.active === 'Grzyb') this.matrixWireframe.update(false, 0, false);
       this.mushroomWireframe.update(
         this.effects?.active === 'Grzyb',
         dt,
@@ -931,7 +1626,7 @@ export class Game {
       );
       this.matrixRain.update(dt, matrixAlpha, this.settings.reduceMotion, this.settings.disableFlashes);
       this.matrixWireframe.update(
-        this.matrixController.isWireframeEligible,
+        this.matrixController.isWireframeEligible && this.effects?.active !== 'Grzyb',
         matrixAlpha,
         this.settings.reduceMotion,
       );
@@ -940,12 +1635,155 @@ export class Game {
       }
     }
     if (state === 'paused' || state === 'error') {
+      // A local overlay cannot pause the host's shared simulation or remote avatars.
+      if (shouldAdvancePausedSharedWorld(state, this.networkClient?.isOnline() ?? false)) {
+        this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position, this.speakerAudio.isPlaying);
+        this.remotePlayersManager?.update(dt, this.camera);
+        this.world?.update(
+          this.clock.elapsedTime,
+          this.camera.position,
+          dt,
+          this.wheelRideController?.shouldReduceMotion(this.settings.reduceMotion) ??
+            this.settings.reduceMotion,
+        );
+      }
       this.mushroomWireframe.update(false, 0, 0, false);
       this.matrixWireframe.update(false, 0, false);
     }
     this.npcDebugOverlay?.update(this.camera);
+    this.stageLiveScreens?.update(
+      dt,
+      this.renderer,
+      this.camera,
+      this.remotePlayersManager?.getPlayerMarkers() ?? [],
+      this.networkClient?.isOnline() && this.player
+        ? {
+            id: this.networkClient?.getMyPlayerId() ?? 'local',
+            name: 'Ty',
+            x: this.camera.position.x,
+            z: this.camera.position.z,
+            yaw: this.player.yaw,
+            y: this.player.isAirborne() ? this.camera.position.y - 1.9 : 0,
+          }
+        : undefined,
+    );
     this.effects?.render();
     this.updateEffectHud();
+    this.ui.updateFlankiHud(this.world?.flankiGame?.getHudState() ?? null);
+    this.canCollector.update(dt);
+    if (this.ui.isEcoPanelOpen()) this.updateEcoPanel();
+    this.campfireGuitarGame.update(dt);
+    this.ui.updateGuitarHud(
+      this.campfireGuitarGame.getHudState(),
+      (songId) => this.campfireGuitarGame.startSong(songId),
+      (lane) => this.campfireGuitarGame.hitLane(lane),
+      () => this.campfireGuitarGame.stopSong(),
+    );
+    this.ui.updateCanRushHud(
+      this.canCollector.isRushActive(),
+      this.canCollector.getRushTimeRemaining(),
+      this.ecoMode === 'race'
+        ? (this.networkClient?.ecoState?.players.find((p) => p.id === this.networkClient?.getMyPlayerId())
+            ?.score ?? 0)
+        : this.canCollector.getRushStats().cansCollected,
+      [
+        this.canCollector.getEcoWaveMultiplier() === 2 ? 'EKO-FALA ×2' : '',
+        this.canCollector.getSpeedBoostRemaining() > 0
+          ? `Sprint ${Math.ceil(this.canCollector.getSpeedBoostRemaining())} s`
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' | '),
+    );
+    if (this.isMapOpen() && this.player) {
+      const forwardDir = new THREE.Vector3();
+      this.camera.getWorldDirection(forwardDir);
+      this.festivalMap?.render(
+        {
+          x: this.player.camera.position.x,
+          z: this.player.camera.position.z,
+          yaw: this.player.yaw,
+          dirX: forwardDir.x,
+          dirZ: forwardDir.z,
+        },
+        this.remotePlayersManager?.getPlayerMarkers() ?? [],
+        performance.now(),
+        this.canCollector.getActiveCanMarkers(),
+      );
+    }
+    if (this.world?.flankiGame) {
+      const flankiPhase = this.world.flankiGame.getPhase();
+      if (flankiPhase === 'game_over' && this.lastFlankiPhase !== 'game_over')
+        this.world.flankiGame.releaseParticipants();
+      this.lastFlankiPhase = flankiPhase;
+      const shouldLockMove =
+        this.ui.isEcoPanelOpen() ||
+        this.ui.isFlankiRosterOpen() ||
+        this.ui.isGuideOpen() ||
+        this.ui.isMapOpen() ||
+        this.campfireGuitarGame.getPhase() !== 'idle' ||
+        this.world.flankiGame.shouldLockPlayerMovement() ||
+        (this.wheelRideController !== undefined && !this.wheelRideController.isIdle());
+      if (this.player && this.player.movementLocked !== shouldLockMove) {
+        this.player.setMovementLocked(shouldLockMove);
+      }
+      this.world.flankiGame.updateThrowHand(this.camera);
+      if (flankiPhase === 'aiming') {
+        this.world.flankiGame.updateAimPreview(
+          this.camera.position,
+          this.camera.getWorldDirection(new THREE.Vector3()),
+        );
+      }
+    }
+    this.wheelRideController?.update(
+      dt,
+      this.wheelRideController.shouldReduceMotion(this.settings.reduceMotion),
+    );
+    if (state === 'playing') {
+      this.landmarkCheckTimer += dt;
+      if (this.landmarkCheckTimer >= 0.5) {
+        this.landmarkCheckTimer = 0;
+        const px = this.camera.position.x;
+        const pz = this.camera.position.z;
+
+        // Duża Scena (216, 18)
+        const distStage = Math.hypot(px - 216, pz - 18);
+        if (distStage < 45) {
+          this.passport.recordEvent('main_stage');
+          this.bingo.checkSquare('scena');
+        }
+
+        // ASP Namiot (-65, 97)
+        const distAsp = Math.hypot(px - -65, pz - 97);
+        if (distAsp < 30) {
+          this.bingo.checkSquare('asp');
+        }
+
+        // Kąpiel Błotna (64, -12)
+        const distMud = Math.hypot(px - 64, pz - -12);
+        if (distMud < 14) {
+          this.passport.recordEvent('mud_bath');
+          this.bingo.checkSquare('bloto');
+        }
+
+        // Grzybek Wodny (160, -8)
+        const distGrzybek = Math.hypot(px - 160, pz - -8);
+        if (distGrzybek < 12) {
+          this.passport.recordEvent('water_refill');
+          this.bingo.checkSquare('woda');
+        }
+
+        // Obóz gracza (0, 0)
+        const distCamp = Math.hypot(px, pz);
+        if (distCamp < 12) {
+          this.passport.recordEvent('tent_builder');
+          this.bingo.checkSquare('namiot');
+        }
+
+        // Obliczenie parametrów akustycznych Dużej Sceny
+        this.stageAcoustics.update(this.camera.position, this.player?.yaw ?? 0);
+      }
+    }
   }
 
   /** Buduje tekst podpowiedzi dla aktualnie wskazanego obiektu. */
@@ -956,20 +1794,34 @@ export class Game {
       return;
     }
     const action =
-      interaction.kind === 'npc'
-        ? `Porozmawiaj z ${interaction.name}`
-        : interaction.kind === 'speaker'
-          ? 'Włącz / wyłącz muzykę'
-          : interaction.kind === 'item'
-            ? itemById.get(interaction.itemId)?.label || 'Obejrzyj przedmiot'
-            : interaction.kind === 'seat'
-              ? 'Usiądź na krześle'
-              : interaction.kind === 'toitoi_door'
-                ? this.world?.infrastructure?.toiToiDoors?.getDoor(interaction.doorId)?.label ||
-                  'Otwórz / zamknij toi-toi'
-                : interaction.kind === 'field_shower'
-                  ? 'Umyj się pod prysznicem'
-                  : 'Wejdź do toi-toia';
+      interaction.kind === 'flanki'
+        ? 'Zagraj we Flanki'
+        : interaction.kind === 'flanki_can'
+          ? 'Postaw puszkę! [E]'
+          : interaction.kind === 'campfire_guitar'
+            ? 'Zagraj na gitarze przy ognisku [E]'
+            : interaction.kind === 'ferris_wheel'
+              ? 'Przejedź się kołem widokowym'
+              : interaction.kind === 'clean_can'
+                ? 'Podnieś puszkę'
+                : interaction.kind === 'clean_corral'
+                  ? this.canCollector.getInventoryCount() > 0
+                    ? 'Oddaj puszki do Eko Zagrody [E]'
+                    : 'Rozpocznij Eko-Rush Challenge [E]'
+                  : interaction.kind === 'npc'
+                    ? `Porozmawiaj z ${interaction.name}`
+                    : interaction.kind === 'speaker'
+                      ? 'Włącz / wyłącz muzykę'
+                      : interaction.kind === 'item'
+                        ? itemById.get(interaction.itemId)?.label || 'Obejrzyj przedmiot'
+                        : interaction.kind === 'seat'
+                          ? 'Usiądź na krześle'
+                          : interaction.kind === 'toitoi_door'
+                            ? this.world?.infrastructure?.toiToiDoors?.getDoor(interaction.doorId)?.label ||
+                              'Otwórz / zamknij toi-toi'
+                            : interaction.kind === 'field_shower'
+                              ? 'Umyj się pod prysznicem'
+                              : 'Wejdź do toi-toia';
     this.ui.setInteractionPrompt(interactionControlHint(action, this.mobileInput ? 'mobile' : 'desktop'));
   }
 
@@ -1015,8 +1867,15 @@ export class Game {
   /** Przełącza widoczność modala Przewodnika Festiwalowicza */
   toggleGuide(open?: boolean): boolean {
     const isOpen = this.ui.toggleGuide(open);
-    if (isOpen && document.pointerLockElement) {
-      document.exitPointerLock?.();
+    if (isOpen) {
+      this.world?.flankiGame?.cancelThrowCharge();
+      this.world?.flankiGame?.setPlayerDrinking(false);
+      this.player?.stop();
+      this.ui.renderBingo(this.bingo);
+      this.ui.renderPassport(this.passport);
+      if (document.pointerLockElement) {
+        document.exitPointerLock?.();
+      }
     }
     return isOpen;
   }
@@ -1025,15 +1884,31 @@ export class Game {
   toggleMap(open?: boolean): boolean {
     const isOpen = this.ui.toggleMap(open);
     if (isOpen) {
+      this.world?.flankiGame?.cancelThrowCharge();
+      this.world?.flankiGame?.setPlayerDrinking(false);
+      this.player?.stop();
       if (document.pointerLockElement) {
         document.exitPointerLock?.();
       }
       if (this.player) {
-        this.festivalMap?.render({
-          x: this.player.camera.position.x,
-          z: this.player.camera.position.z,
-          yaw: this.player.yaw,
-        });
+        const forwardDir = new THREE.Vector3();
+        this.camera.getWorldDirection(forwardDir);
+        this.festivalMap?.render(
+          {
+            x: this.player.camera.position.x,
+            z: this.player.camera.position.z,
+            yaw: this.player.yaw,
+            dirX: forwardDir.x,
+            dirZ: forwardDir.z,
+          },
+          this.remotePlayersManager?.getPlayerMarkers() ?? [],
+          performance.now(),
+          this.canCollector.getActiveCanMarkers(),
+        );
+      }
+    } else {
+      if (this.state.current === 'playing' && !this.mobileInput) {
+        this.canvas.requestPointerLock?.().catch?.(() => undefined);
       }
     }
     return isOpen;
@@ -1047,7 +1922,68 @@ export class Game {
     return this.ui.isMapOpen();
   }
 
+  private positionPlayerForFlanki() {
+    const flanki = this.world?.flankiGame;
+    if (!flanki || !this.player) return;
+    this.camera.position.copy(flanki.getLocalStandPosition()).add(new THREE.Vector3(0, 1.9, 0));
+    const bearing = flanki.canPosition.clone().sub(this.camera.position);
+    this.player.yaw = Math.atan2(-bearing.x, -bearing.z);
+    this.player.pitch = -0.25;
+    this.camera.rotation.set(-0.25, this.player.yaw, 0, 'YXZ');
+  }
+
+  private syncFlankiLobby(lobby: FlankiLobbyState | null) {
+    const flanki = this.world?.flankiGame;
+    const playerId = this.networkClient?.getMyPlayerId();
+    if (!flanki || !playerId) return;
+    if (!lobby || !lobby.players.some((player) => player.id === playerId)) {
+      if (this.activeFlankiSession) {
+        flanki.stopMatch();
+        this.player?.setMovementLocked(false);
+        this.world?.flankiGame?.stopMatch();
+        this.ui.hideFlankiRoster();
+        this.activeFlankiSession = '';
+      }
+      if (lobby?.phase === 'waiting')
+        this.toast('🍻 Trwa zbieranie ekipy na Flanki! Podejdź do boiska i wciśnij [E].');
+      return;
+    }
+    if (lobby.phase === 'waiting') {
+      this.activeFlankiSession = lobby.sessionId;
+      flanki.configureLobby(lobby, playerId);
+      if (this.npcs) flanki.enlistNearbyNpcs(this.npcs.reserveFlankiPlayers(flanki.canPosition));
+      if (document.pointerLockElement) document.exitPointerLock?.();
+      this.ui.showFlankiRoster(
+        flanki.roster,
+        () => {
+          if (!flanki.arePlayersReady()) {
+            this.toast('Poczekaj, aż zawodnicy podejdą na linie.');
+            return false;
+          }
+          this.networkClient?.requestFlankiLobby('start');
+        },
+        () => this.networkClient?.requestFlankiLobby('leave'),
+        {
+          canStart: lobby.hostId === playerId,
+          localTeam: lobby.players.find((player) => player.id === playerId)?.team,
+          onRunnerChange: (team, runnerId) =>
+            this.networkClient?.requestFlankiLobby('runner', { team, runnerId }),
+          status: `${lobby.players.length}/4 graczy. Pozostali mogą dołączyć przy boisku przed startem; wolne miejsca zajmą NPC.`,
+        },
+      );
+    } else if (flanki.getPhase() === 'idle' || flanki.getPhase() === 'game_over') {
+      this.activeFlankiSession = lobby.sessionId;
+      flanki.configureLobby(lobby, playerId);
+      flanki.startMatch({ multiplayer: true, isHost: lobby.hostId === playerId });
+      this.ui.hideFlankiRoster();
+      this.positionPlayerForFlanki();
+      if (!this.mobileInput) this.canvas.requestPointerLock?.().catch?.(() => undefined);
+    }
+  }
+
   dispose() {
+    if (this.activeFlankiSession) this.networkClient?.requestFlankiLobby('leave');
+    this.flankiNetworkCleanup.forEach((cleanup) => cleanup());
     if (this.disposed) return;
     this.disposed = true;
     this.animationLoop.stop();
@@ -1075,8 +2011,11 @@ export class Game {
     this.spatialVoice = undefined;
     this.npcVoiceCoordinator?.dispose();
     this.npcVoiceCoordinator = undefined;
+    this.wheelRideController?.dispose();
+    this.wheelRideController = undefined;
     this.npcDebugOverlay?.dispose();
     this.npcDebugOverlay = undefined;
+    this.stageLiveScreens?.dispose();
     this.world?.dispose();
     this.effects?.dispose();
     this.mushroomWireframe.dispose();
@@ -1087,6 +2026,7 @@ export class Game {
     this.campAmbient.dispose();
     this.grzybekAudio.dispose();
     this.voiceReactions.dispose();
+    this.campfireGuitarGame.dispose();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
     disposeObjectTree(this.scene);
     this.renderer.renderLists.dispose();

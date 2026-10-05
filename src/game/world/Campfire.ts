@@ -118,12 +118,7 @@ export class Campfire {
     this.materials.push(emberMat);
 
     // 6. Ciepłe światło PointLight
-    this.light = new THREE.PointLight(
-      0xff7a22,
-      this.baseLightIntensity,
-      config.lightDistance ?? 16,
-      1.5,
-    );
+    this.light = new THREE.PointLight(0xff7a22, this.baseLightIntensity, config.lightDistance ?? 16, 1.5);
     this.light.position.set(0, 0.45, 0);
     this.light.name = 'Campfire_PointLight';
     this.root.add(this.light);

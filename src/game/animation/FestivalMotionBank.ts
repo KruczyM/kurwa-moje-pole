@@ -89,7 +89,14 @@ export class FestivalMotionBank {
     const generated: THREE.AnimationClip[] = [];
     // Explicit asset metadata for Ambona's A-pose mesh with a horizontal rig.
     // Do not infer this from bone count: most 22-joint assets are true T-poses.
-    const armPose = model.scene.userData.armPoseCorrectionRadians === Math.PI / 6 ? Math.PI / 6 : 0;
+    const configuredPose = model.scene.userData.armPoseCorrectionRadians;
+    const armPose =
+      typeof configuredPose === 'number' &&
+      Number.isFinite(configuredPose) &&
+      configuredPose >= 0 &&
+      configuredPose <= Math.PI / 2
+        ? configuredPose
+        : 0;
     for (const motion of this.motions) {
       const outputs = new Map(bones.map((bone) => [bone, new Float32Array(motion.times.length * 4)]));
       const positions = new Float32Array(motion.times.length * 3);

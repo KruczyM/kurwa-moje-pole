@@ -17,6 +17,22 @@ function target(kind: 'npc' | 'item', z: number, itemId = 'joint') {
 }
 
 describe('InteractionManager', () => {
+  it('allows entry inside an explicit attraction zone without aiming at its surface', () => {
+    const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
+    camera.position.y = 1.9;
+    const entry = new THREE.Object3D();
+    entry.userData.interaction = { kind: 'flanki' };
+    entry.userData.entryRadius = 3.5;
+    entry.position.set(2, 1, 0);
+    entry.updateMatrixWorld(true);
+    camera.updateMatrixWorld(true);
+    const manager = new InteractionManager(camera, () => [entry]);
+    expect(manager.update()).toEqual({ kind: 'flanki' });
+    camera.position.x = 10;
+    camera.updateMatrixWorld(true);
+    expect(manager.update()).toBeNull();
+    manager.dispose();
+  });
   it('uses a dedicated interaction layer without disabling the render layer', () => {
     const item = target('item', -2);
 

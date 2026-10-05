@@ -1,13 +1,6 @@
 import * as THREE from 'three';
-import {
-  type VisualSettings,
-  defaultVisualSettings,
-  type EffectId,
-} from '../effects/EffectManager';
-import {
-  DEFAULT_GRASS_PRESET,
-  isGrassQualityPreset,
-} from '../world/grassQuality';
+import { type VisualSettings, defaultVisualSettings, type EffectId } from '../effects/EffectManager';
+import { DEFAULT_GRASS_PRESET, isGrassQualityPreset } from '../world/grassQuality';
 
 export const INTENSE_EFFECTS: readonly EffectId[] = ['Grzyb', 'MDMA', 'LSD', 'Kreska'];
 
@@ -24,7 +17,7 @@ export type AudioSettings = {
 export const defaultAudioSettings: AudioSettings = {
   speakerVolume: 0.7,
   ambientVolume: 0.35,
-  speakerEnabled: false,
+  speakerEnabled: true,
 };
 
 /** Wykrywa systemową preferencję ograniczenia ruchu (prefers-reduced-motion). */

@@ -1254,7 +1254,10 @@ export class NpcAiAgent {
     return rawInput
       .trim()
       .replace(/[?!.„”"']/g, '')
-      .replace(/^(czy|powiedz mi|jak myslisz|jak myślisz|co sadzisz|co sądzisz|powiedz|co to jest|a co z|a)\s+/i, '')
+      .replace(
+        /^(czy|powiedz mi|jak myslisz|jak myślisz|co sadzisz|co sądzisz|powiedz|co to jest|a co z|a)\s+/i,
+        '',
+      )
       .trim();
   }
 

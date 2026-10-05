@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+import { circleTouchesFootprint } from './tentFootprint';
 
 export type WorldCollider =
   | { x: number; z: number; r: number }
-  | { box: THREE.Box3; enabled?: () => boolean };
+  | { box: THREE.Box3; enabled?: () => boolean; points?: { x: number; z: number }[] };
 
 /**
  * Siatka podziału przestrzennego (Spatial Hash Grid) dla kolizji obiektów świata gry.
@@ -83,6 +84,7 @@ export class ColliderSpatialGrid {
   private collidesWith(collider: WorldCollider, x: number, z: number, radius: number): boolean {
     if ('enabled' in collider && collider.enabled && !collider.enabled()) return false;
     if ('box' in collider) {
+      if (collider.points) return circleTouchesFootprint(x, z, radius, collider.points);
       return (
         x > collider.box.min.x - radius &&
         x < collider.box.max.x + radius &&

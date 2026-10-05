@@ -3,6 +3,8 @@ import { NpcManager } from './NpcManager';
 import { NpcAiAgent, type NpcVoiceSettings, type NpcDialogueContext } from './NpcAiAgent';
 import { geminiNpcService } from './GeminiNpcService';
 import { elevenLabsNpcService } from './ElevenLabsNpcService';
+import { NpcBranchingDialogue } from './NpcBranchingDialogue';
+import { PatrolQuiz } from '../interactions/PatrolQuiz';
 
 export function cleanTextForSpeech(text: string): string {
   return text
@@ -89,6 +91,9 @@ export interface NpcVoiceCoordinatorOptions {
   elevenLabsSaveButton?: HTMLButtonElement;
   elevenLabsClearButton?: HTMLButtonElement;
   elevenLabsStatusElement?: HTMLElement;
+  choicesContainer?: HTMLElement;
+  branchingDialogue?: NpcBranchingDialogue;
+  patrolQuiz?: PatrolQuiz;
   onStatusChange?: (status: VoiceCoordinatorStatus, message?: string) => void;
 }
 
@@ -99,6 +104,7 @@ export class NpcVoiceCoordinator {
   private status: VoiceCoordinatorStatus = 'idle';
   private listeningActive = false;
   private disposed = false;
+  private isQuizActive = false;
 
   private voices: SpeechSynthesisVoice[] = [];
   private readonly activeUtterances = new Set<SpeechSynthesisUtterance>();
@@ -126,6 +132,9 @@ export class NpcVoiceCoordinator {
   private readonly elevenLabsSaveButton?: HTMLButtonElement;
   private readonly elevenLabsClearButton?: HTMLButtonElement;
   private readonly elevenLabsStatusElement?: HTMLElement;
+  private readonly choicesContainer?: HTMLElement;
+  private readonly branchingDialogue?: NpcBranchingDialogue;
+  private readonly patrolQuiz?: PatrolQuiz;
   private readonly onStatusChange?: (status: VoiceCoordinatorStatus, message?: string) => void;
 
   constructor(
@@ -151,6 +160,9 @@ export class NpcVoiceCoordinator {
     this.elevenLabsSaveButton = options.elevenLabsSaveButton;
     this.elevenLabsClearButton = options.elevenLabsClearButton;
     this.elevenLabsStatusElement = options.elevenLabsStatusElement;
+    this.choicesContainer = options.choicesContainer;
+    this.branchingDialogue = options.branchingDialogue;
+    this.patrolQuiz = options.patrolQuiz;
     this.onStatusChange = options.onStatusChange;
 
     this.initSpeechSynthesis();
@@ -429,11 +441,139 @@ export class NpcVoiceCoordinator {
     }
   }
 
+  private resolveDialogueNpcId(npcName: string): string | undefined {
+    const lower = npcName.toLowerCase();
+    if (lower.includes('ania') || lower.includes('patrol')) return 'pokojowy_patrol_ania';
+    if (lower.includes('wiesław') || lower.includes('wieslaw')) return 'woodstock_wieslaw';
+    if (lower.includes('mati') || lower.includes('flanki')) return 'flanki_mistrz_mati';
+    if (lower.includes('jurek') || lower.includes('owsiak')) return 'jurek';
+    if (lower.includes('jan') || lower.includes('kryszn')) return 'krysznowiec_jan';
+    if (lower.includes('kuba') || lower.includes('eko')) return 'eko_wolontariusz_kuba';
+    return undefined;
+  }
+
+  private clearChoices(): void {
+    if (this.choicesContainer) {
+      this.choicesContainer.innerHTML = '';
+    }
+  }
+
+  private renderChoices(): void {
+    if (!this.choicesContainer) return;
+    this.choicesContainer.innerHTML = '';
+
+    const createChoiceButton = (className: string, text: string, onClick: () => void): HTMLButtonElement => {
+      if (typeof document === 'undefined') {
+        const classes = new Set(className.split(' ').filter(Boolean));
+        return {
+          className,
+          textContent: text,
+          onclick: onClick,
+          classList: {
+            add: (cls: string) => {
+              classes.add(cls);
+            },
+            contains: (cls: string) => classes.has(cls),
+          },
+        } as unknown as HTMLButtonElement;
+      }
+      const btn = document.createElement('button');
+      btn.className = className;
+      btn.textContent = text;
+      btn.onclick = onClick;
+      return btn;
+    };
+
+    if (this.isQuizActive && this.patrolQuiz) {
+      if (this.patrolQuiz.isCompleted()) {
+        const score = this.patrolQuiz.getScore();
+        const finishBtn = createChoiceButton(
+          'dialog-choice-btn quiz-choice',
+          `Zakończ quiz (Wynik: ${score.correct}/${score.total}) ✓`,
+          () => {
+            this.isQuizActive = false;
+            const dialogueNpcId = this.resolveDialogueNpcId(this.currentNpcName || '');
+            if (this.branchingDialogue && dialogueNpcId) {
+              this.branchingDialogue.startDialogue(dialogueNpcId);
+            }
+            this.renderChoices();
+          },
+        );
+        this.choicesContainer.appendChild(finishBtn);
+        return;
+      }
+
+      const q = this.patrolQuiz.getCurrentQuestion();
+      if (!q) return;
+
+      q.choices.forEach((choiceText, index) => {
+        const btn = createChoiceButton('dialog-choice-btn quiz-choice', `${index + 1}. ${choiceText}`, () => {
+          const feedback = this.patrolQuiz!.submitAnswer(index as 0 | 1 | 2);
+          const feedbackText = feedback.isCorrect
+            ? `Prawidłowo! ${feedback.explanation}`
+            : `Niestety nie. ${feedback.explanation}`;
+          this.history.push({ sender: 'Ty', text: choiceText, isPlayer: true });
+          this.history.push({ sender: this.currentNpcName || 'Patrol', text: feedbackText, isPlayer: false });
+          this.renderHistory();
+          const persona = NpcAiAgent.getPersona(this.currentNpcName || '');
+          this.speakText(feedbackText, persona.voiceSettings, () => {
+            this.renderChoices();
+          });
+        });
+        this.choicesContainer!.appendChild(btn);
+      });
+      return;
+    }
+
+    if (!this.branchingDialogue || !this.branchingDialogue.isDialogueActive()) {
+      return;
+    }
+
+    const options = this.branchingDialogue.getAvailableOptions();
+    options.forEach((opt, index) => {
+      const btn = createChoiceButton('dialog-choice-btn', opt.label, () => {
+        this.history.push({ sender: 'Ty', text: opt.label, isPlayer: true });
+
+        if (opt.label.toLowerCase().includes('quiz') && this.patrolQuiz) {
+          this.isQuizActive = true;
+          this.patrolQuiz.reset();
+          const q = this.patrolQuiz.getCurrentQuestion();
+          const quizIntro = `Rozpoczynamy Quiz Patrolu! Pytanie 1 z 5: ${q?.question}`;
+          this.history.push({ sender: this.currentNpcName || 'Ania', text: quizIntro, isPlayer: false });
+          this.renderHistory();
+          const persona = NpcAiAgent.getPersona(this.currentNpcName || '');
+          this.speakText(quizIntro, persona.voiceSettings, () => {
+            this.renderChoices();
+          });
+          return;
+        }
+
+        const result = this.branchingDialogue!.selectOption(index);
+        if (result) {
+          this.history.push({ sender: this.currentNpcName || 'NPC', text: result.text, isPlayer: false });
+          this.renderHistory();
+          const persona = NpcAiAgent.getPersona(this.currentNpcName || '');
+          this.speakText(result.text, persona.voiceSettings, () => {
+            this.renderChoices();
+          });
+        } else {
+          this.renderHistory();
+          this.renderChoices();
+        }
+      });
+      if (opt.label.toLowerCase().includes('quiz')) {
+        btn.classList.add('quiz-choice');
+      }
+      this.choicesContainer!.appendChild(btn);
+    });
+  }
+
   /**
    * Otwiera interakcję z wybranym botem NPC, zatrzymuje jego ruch i zwraca go ku graczowi.
    */
   startConversation(npcName: string, playerPosition?: THREE.Vector3): void {
     this.currentNpcName = npcName;
+    this.isQuizActive = false;
     this.updateGeminiIndicator();
 
     // 1. Zatrzymanie ruchu bota i obrót ku graczowi:
@@ -445,12 +585,26 @@ export class NpcVoiceCoordinator {
       this.nameElement.textContent = `${persona.name} · ${persona.title}`;
     }
 
-    const initialLine =
-      npc?.line && npc.line.length > 0
-        ? npc.line[Math.floor(Math.random() * npc.line.length)]
-        : persona.greetings && persona.greetings.length > 0
-          ? persona.greetings[Math.floor(Math.random() * persona.greetings.length)]
-          : 'Siemanko! Czym mogę służyć na naszym polu?';
+    const dialogueNpcId = this.resolveDialogueNpcId(npcName);
+    let initialLine = '';
+
+    if (this.branchingDialogue && dialogueNpcId) {
+      const node = this.branchingDialogue.startDialogue(dialogueNpcId);
+      if (node) {
+        initialLine = node.text;
+        this.renderChoices();
+      }
+    }
+
+    if (!initialLine) {
+      initialLine =
+        npc?.line && npc.line.length > 0
+          ? npc.line[Math.floor(Math.random() * npc.line.length)]
+          : persona.greetings && persona.greetings.length > 0
+            ? persona.greetings[Math.floor(Math.random() * persona.greetings.length)]
+            : 'Siemanko! Czym mogę służyć na naszym polu?';
+      this.clearChoices();
+    }
 
     this.history = [{ sender: this.currentNpcName, text: initialLine, isPlayer: false }];
     geminiNpcService.recordInitialGreeting(npcName, initialLine);
@@ -458,7 +612,6 @@ export class NpcVoiceCoordinator {
 
     // 3. Wypowiedzenie linii powitalnej przez syntezator mowy:
     this.speakText(initialLine, persona.voiceSettings, () => {
-      // Po wypowiedzeniu powitania automatycznie uruchom nasłuchiwanie mikrofonu:
       this.startListening();
     });
   }
@@ -470,6 +623,11 @@ export class NpcVoiceCoordinator {
     this.stopListening();
     this.cancelSpeaking();
     this.closeGeminiConfig();
+    this.clearChoices();
+    this.isQuizActive = false;
+    if (this.branchingDialogue) {
+      this.branchingDialogue.endDialogue();
+    }
 
     if (this.currentNpcName) {
       this.npcManager.resumeNpcAfterConversation(this.currentNpcName, 2.0);
