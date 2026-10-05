@@ -86,9 +86,9 @@ describe('festival partner zone prototypes', () => {
       const templates = festivalZoneTemplates(source);
       const before = [...templates.values()].map((o) => o.matrix.toArray());
       const boxes = placeFestivalZones(parent, templates, terrainHeight);
-      expect(boxes).toHaveLength(6);
-      expect(FESTIVAL_ZONE_SITES.filter((s) => s.id === 'redBull')).toHaveLength(4);
-      expect(new Set(parent.children.map((o) => o.userData.campObject.id)).size).toBe(6);
+      expect(boxes).toHaveLength(4);
+      expect(FESTIVAL_ZONE_SITES.filter((s) => s.id === 'redBull')).toHaveLength(2);
+      expect(new Set(parent.children.map((o) => o.userData.campObject.id)).size).toBe(4);
       parent.updateMatrixWorld(true);
       const mask = createZoneGrassMask(new Set(templates.keys()));
       for (const [i, site] of FESTIVAL_ZONE_SITES.entries()) {
@@ -138,7 +138,7 @@ describe('festival partner zone prototypes', () => {
     for (const site of FESTIVAL_ZONE_SITES) {
       const b = zoneBounds(site);
       expect(Math.max(Math.abs(b.minX), Math.abs(b.maxX), Math.abs(b.minZ), Math.abs(b.maxZ))).toBeLessThan(
-        54,
+        160,
       );
       for (const tent of allTentLayout)
         expect(overlap(b, tentColliderBounds(tent)), `${site.id}/${tent.id}`).toBe(false);
@@ -163,7 +163,8 @@ describe('festival partner zone prototypes', () => {
         expect(mask(site.x, site.z)).toBe(site.id === 'pomorze' ? 0 : 1);
         expect(createZoneGrassMask(new Set())(site.x, site.z)).toBe(1);
       }
-      expect(mask(0, 43 + 3.2 + 0.125)).toBeCloseTo(0.5);
+      const site = FESTIVAL_ZONE_SITES.find((s) => s.id === 'pomorze')!;
+      expect(mask(site.x, site.z + site.halfDepth + 0.125)).toBeCloseTo(0.5);
     } finally {
       parent.add(source.scene);
       disposeObjectTree(parent);

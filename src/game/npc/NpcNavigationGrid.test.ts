@@ -5,6 +5,16 @@ import { NpcNavigationGrid } from './NpcNavigationGrid';
 const bounds = { minX: -10, maxX: 10, minZ: -10, maxZ: 10 };
 
 describe('NpcNavigationGrid', () => {
+  it('does not route across a collider between otherwise walkable cell centres', () => {
+    const navigation = new NpcNavigationGrid(
+      { minX: 0, maxX: 4, minZ: 0, maxZ: 4 },
+      1,
+      (x, z) => !(x > 0.2 && x < 0.8 && z < 0.6),
+    );
+    const path = navigation.findPath(new THREE.Vector3(0, 0, 0), new THREE.Vector3(3, 0, 0));
+    expect(path.length).toBeGreaterThan(2);
+    for (let i = 1; i < path.length; i++) expect(navigation.hasLineOfSight(path[i - 1], path[i])).toBe(true);
+  });
   it('routes around a collider and smooths redundant grid waypoints', () => {
     const navigation = new NpcNavigationGrid(bounds, 0.5, (x, z) => !(x > -1 && x < 1 && z > -8 && z < 8));
     const path = navigation.findPath(new THREE.Vector3(-6, 0, 0), new THREE.Vector3(6, 0, 0));

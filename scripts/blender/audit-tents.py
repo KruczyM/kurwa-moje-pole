@@ -135,7 +135,7 @@ def main():
     parser.add_argument('--wheel-angle', type=float, default=0)
     parser.add_argument('--night', action='store_true')
     parser.add_argument('--size', type=int, choices=[640,1024,1536], default=640)
-    parser.add_argument('--market-variant', choices=['merch','food','coffee','siemaShop','antykwariat','informacja','kodano'])
+    parser.add_argument('--market-variant', choices=['merch','food','coffee','siemaShop','antykwariat','informacja','kodano','swiece','bizuteria','ksiazki','kwiatek','zuch','altercore','sankowo','vesper','militaria','lokaah','siva'])
     parser.add_argument('--zone', choices=['pomorze','redBull','iqos'])
     parser.add_argument('--views', nargs='+', default=['beauty'],
                         choices=['beauty', 'front', 'side', 'rear', 'interior'])

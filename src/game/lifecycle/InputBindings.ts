@@ -30,7 +30,10 @@ export function resolveGameInput(state: AppState, key: string, repeat = false): 
   ) {
     return 'escape';
   }
-  if (key === 'Tab' && (state === 'playing' || state === 'inventory')) {
+  if (
+    (key === 'Tab' || key.toLowerCase() === 'i' || key.toLowerCase() === 'b') &&
+    (state === 'playing' || state === 'inventory')
+  ) {
     return 'toggle-inventory';
   }
   if (key.toLowerCase() === 'e' && (state === 'playing' || state === 'seated' || state === 'inspecting')) {
@@ -90,7 +93,7 @@ export function startControlHint(mode: InputMode = 'desktop') {
   if (mode === 'mobile') {
     return 'Joystick — ruch i bieg · przeciągnięcie ekranu — rozglądanie · UŻYJ — interakcja · przyciski MENU i EKWIPUNEK';
   }
-  return `${inputBindings.move} — ruch · ${inputBindings.look} — rozglądanie · ${inputBindings.run} — szybciej · ${inputBindings.interact} — interakcja · ${inputBindings.inventory} — ekwipunek · ${inputBindings.escape} — pauza`;
+  return `${inputBindings.move} — ruch · ${inputBindings.look} — rozglądanie · ${inputBindings.run} — szybciej · ${inputBindings.interact} — interakcja · ${inputBindings.inventory} — ekwipunek · ${inputBindings.escape} — pauza · Ctrl+K — swobodna kamera`;
 }
 
 /** Buduje kontekstową podpowiedź E bez duplikowania nazwy klawisza w logice świata. */

@@ -57,13 +57,16 @@ export class TutorialTriangleGrass extends THREE.Mesh {
     const mat = new THREE.ShaderMaterial({
       vertexColors: true,
       side: THREE.DoubleSide,
+      fog: true,
       uniforms: {
         ...worldGrassMaskUniforms(),
+        ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
         uTime: time,
         uPlayerPosition: player,
       },
       vertexShader: `
         ${worldGrassMaskShader}
+        #include <fog_pars_vertex>
         attribute vec3 aYaw;
         uniform float uTime;
         uniform vec3 uPlayerPosition;
@@ -71,28 +74,16 @@ export class TutorialTriangleGrass extends THREE.Mesh {
         varying float vShade;
 
         float terrain(vec2 p) {
-          return 0.18 * sin(p.x * 0.065) * cos(p.y * 0.055) + 0.09 * sin(p.x * 0.19 + p.y * 0.13);
+          return 0.0;
         }
 
-        float campCoverage(vec2 p) {
-          float period = 35.0;
-          float halfParcel = 15.5;
-
-          float gx = abs(mod(p.x + 3500.0 + 17.5, period) - 17.5);
-          float gz = abs(mod(p.y + 3500.0 + 17.5, period) - 17.5);
-
-          if (gx > halfParcel || gz > halfParcel) {
-            return 0.0;
-          }
-          return 1.0;
-        }
 
         void main() {
           vec3 p = position;
           vec2 origin = mod(position.xz - uPlayerPosition.xz + 26.0, 52.0) - 26.0;
           p.xz = uPlayerPosition.xz + origin;
 
-          float cov = campCoverage(p.xz) * worldGrassCoverage(p.xz);
+          float cov = worldGrassCoverage(p.xz);
           if (cov <= 0.01) {
             gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
             return;
@@ -103,9 +94,9 @@ export class TutorialTriangleGrass extends THREE.Mesh {
           float tip = color.g;
           float side = color.r > 0.05 ? 1.0 : (color.b > 0.05 ? -1.0 : 0.0);
           float n = fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5);
-          float h = (0.24 + n * 0.32) * cov;
+          float h = (0.13 + n * 0.15) * cov * (1.0 - smoothstep(20.0, 25.5, length(origin)));
 
-          p += aYaw * side * 0.010 * (0.3 + 0.7 * cov);
+          p += aYaw * side * 0.018 * (0.3 + 0.7 * cov);
           p.y += tip * h;
 
           float w = (sin(uTime * 0.72 + p.x * 0.42 + p.z * 0.29) + sin(uTime * 0.31 + p.z * 0.74)) * 0.035 * tip * tip * cov;
@@ -114,10 +105,13 @@ export class TutorialTriangleGrass extends THREE.Mesh {
 
           vTip = tip;
           vShade = n;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+          vec4 mvPosition = modelViewMatrix * vec4(p, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+          #include <fog_vertex>
         }
       `,
       fragmentShader: `
+        #include <fog_pars_fragment>
         varying float vTip;
         varying float vShade;
 
@@ -128,6 +122,9 @@ export class TutorialTriangleGrass extends THREE.Mesh {
           vec3 light = vec3(0.085, 0.300, 0.095); // Wierzcholki oswietlone sloncem
           vec3 col = mix(mix(dark, mid, vShade), light, vTip * 0.75);
           gl_FragColor = vec4(col, 1.0);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+          #include <fog_fragment>
         }
       `,
     });

@@ -1,0 +1,15 @@
+{
+  "input": "E:\\kodowanie\\gra\\Hunyuan3D-2GP\\output\\characters_mv\\hemoroid\\variant_0f5cb696a2708774ec548ec3fbbce07fc7aabc421db4da3ac8a80ce2a7f03973\\textured.glb",
+  "output": "E:\\kodowanie\\gra\\.ai\\worktrees\\festival-2026-tent-upgrades\\source-assets\\rigged-festival\\hemoroid\\t-pose.glb",
+  "bones": 22,
+  "clips": [
+    "Idle",
+    "Run",
+    "Walk"
+  ],
+  "firstViewExtracted": false,
+  "quality": "automatic-draft-needs-visual-review",
+  "vertices": 28317,
+  "fallbackVertices": 28317,
+  "heatWarning": "Bone heat left unweighted vertices; geometric fallback used"
+}

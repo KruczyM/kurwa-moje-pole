@@ -121,6 +121,39 @@ describe('stabilizeLocomotionRoot', () => {
 });
 
 describe('NpcAnimator state machine', () => {
+  it('starts crowd members at different phases and preserves them through locomotion transitions', () => {
+    const clips = animationSet();
+    for (const phase of [0.12, 0.64]) {
+      const animator = new NpcAnimator(new THREE.Group(), clips, {
+        initialPhase: phase,
+        fadeSeconds: 0,
+        minimumStateSeconds: { Idle: 0, Walk: 0, Run: 0 },
+      });
+      animator.update(0);
+      expect(animator.getDiagnostics().normalizedTime).toBeCloseTo(phase);
+      expect(animator.getDiagnostics().stateElapsed).toBe(0);
+      animator.setMovementSpeed(1.3);
+      animator.play('Walk');
+      expect(animator.getDiagnostics().normalizedTime).toBeCloseTo(phase);
+      animator.play('Run');
+      expect(animator.getDiagnostics().normalizedTime).toBeCloseTo(phase);
+      animator.queueOneShot('Capoeira');
+      expect(animator.getDiagnostics().normalizedTime).toBe(0);
+      animator.dispose();
+    }
+  });
+
+  it.each([
+    [1.25, 0.25],
+    [-0.25, 0.75],
+    [NaN, 0],
+    [Infinity, 0],
+  ])('normalizes initial phase %s to %s', (initialPhase, expected) => {
+    const animator = new NpcAnimator(new THREE.Group(), animationSet(), { initialPhase });
+    expect(animator.getDiagnostics().normalizedTime).toBeCloseTo(expected);
+    animator.dispose();
+  });
+
   it('does not restart an action when the same state is requested every frame', () => {
     const clips = animationSet();
     const animator = new NpcAnimator(new THREE.Group(), clips);

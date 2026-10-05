@@ -4,6 +4,7 @@ import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { characterAssets } from '../assets/assetManifest';
 import { npcLines } from './npcConfig';
 import { NpcAnimator } from './NpcAnimator';
+import { NPC_BODY_WIDTH_SCALE, NPC_BODY_DEPTH_SCALE } from './modelProportions';
 import { enableInteractionLayer } from '../interactions/InteractionManager';
 import { NPC_MOTION, approachSpeed, brakingSpeed, locomotionForSpeed } from './locomotionCalibration';
 import { NpcNavigationGrid } from './NpcNavigationGrid';
@@ -11,11 +12,43 @@ import { computeNpcSteering, NPC_STEERING, turnDirectionTowards } from './NpcSte
 import { NPC_BEHAVIOR_PROFILES, NpcBehaviorAction, NpcBehaviorScheduler } from './NpcBehaviorScheduler';
 import { NpcStuckWatchdog, NpcWatchdogConfig, WatchdogRecoveryAction } from './NpcStuckWatchdog';
 import { terrainHeight } from '../world/CampWorld';
+import {
+  MAIN_ASPHALT_ROAD,
+  SECOND_CONCRETE_ROAD,
+  isInsidePrimaryCamp,
+  PRIMARY_CAMP_PLOT,
+} from '../world/festivalLayout';
+import { MAD_DOG_CONFIG, seatLayout, type SeatConfig } from '../world/campLandmarks';
+import type { MapScenery } from '../ui/FestivalMap';
+import { CHAIR_POSE_CLIPS, alignChairPelvis } from '../interactions/chairPose';
+
+export function getSeatWorldPose(seat: SeatConfig): { position: THREE.Vector3; rotationY: number } {
+  const offsetDistance = 1;
+  const x = seat.position[0];
+  const z = seat.position[2];
+  const length = Math.hypot(x, z);
+  const offsetX = length > 0 ? (x / length) * offsetDistance : 0;
+  const offsetZ = length > 0 ? (z / length) * offsetDistance : 0;
+  const [madX, , madZ] = MAD_DOG_CONFIG.position;
+  const worldX = madX + x + offsetX;
+  const worldZ = madZ + z + offsetZ;
+  const worldY = terrainHeight(worldX, worldZ);
+  return {
+    position: new THREE.Vector3(worldX, worldY, worldZ),
+    rotationY: seat.rotationY,
+  };
+}
+
 export type Npc = {
   root: THREE.Group;
   name: string;
   line: string[];
   animator?: NpcAnimator;
+  visual?: THREE.Object3D;
+  visualBaseY?: number;
+  assignedSeatId?: string;
+  isSitting?: boolean;
+  isDancingAtSpeaker?: boolean;
   phase: number;
   target: THREE.Vector3;
   wait: number;
@@ -27,18 +60,18 @@ export type Npc = {
   waypoints: THREE.Vector3[];
   behavior: NpcBehaviorScheduler;
   watchdog: NpcStuckWatchdog;
+  passageWalker: boolean;
+  passageLane?: 'upper' | 'lower';
+  passageDirection: number;
+  activityCooldown: number;
+  isCampMember: boolean;
+  festivalRole?: 'stage_dancer' | 'asp_listener' | 'food_queue' | 'chiller' | 'walker';
+  animLodAccumulator: number;
+  inConversation?: boolean;
+  isHidden?: boolean;
 };
-const spawns = [
-    [-2, -1],
-    [1, -1],
-    [2.4, 1],
-    [-2.6, 1.2],
-    [0, 1.3],
-    [4.8, 2.7],
-    [7, -4],
-    [-8, 5],
-  ],
-  CAMP_RADIUS = 13;
+const CAMP_RADIUS = 13;
+const SPEAKER_POSITION = { x: -3.1, z: 1.2 };
 
 /** Dodaje stabilną strefę interakcji niezależną od aktualnej pozy animowanej siatki. */
 function addNpcInteractionHitbox(root: THREE.Group) {
@@ -58,83 +91,387 @@ function addNpcInteractionHitbox(root: THREE.Group) {
 
 export class NpcManager {
   readonly npcs: Npc[] = [];
+  private flankiPitch?: THREE.Vector3;
+  private crowdRoads: Record<'upper' | 'lower', { minX: number; maxX: number; minZ: number; maxZ: number }> =
+    { upper: MAIN_ASPHALT_ROAD, lower: SECOND_CONCRETE_ROAD };
+  private stageCenter = { x: 216, z: 21.5 };
+  private stageAudience = { minX: 170, maxX: 195, minZ: 0, maxZ: 35 };
+
+  setFestivalLayout(scenery: readonly MapScenery[]): void {
+    for (const [lane, id] of [
+      ['upper', 'Road_0'],
+      ['lower', 'Road_1'],
+    ] as const) {
+      const road = scenery.find((item) => item.id === id);
+      if (road)
+        this.crowdRoads[lane] = {
+          minX: road.x - road.width / 2,
+          maxX: road.x + road.width / 2,
+          minZ: road.z - road.depth / 2,
+          maxZ: road.z + road.depth / 2,
+        };
+    }
+    const stage = scenery.find((item) => item.id === 'Main_Stage_Deck_Plinth');
+    if (stage) {
+      this.stageCenter = { x: stage.x, z: stage.z };
+      const front = stage.x - stage.width / 2;
+      this.stageAudience = { minX: front - 37, maxX: front - 12, minZ: stage.z - 17.5, maxZ: stage.z + 17.5 };
+    }
+  }
+
+  reserveFlankiPlayers(center: THREE.Vector3, count = 5) {
+    this.flankiPitch = center.clone();
+    return this.npcs
+      .filter(
+        (n) =>
+          !n.isHidden &&
+          !n.isSitting &&
+          !n.root.userData.flankiTarget &&
+          n.root.position.distanceToSquared(center) <= 60 * 60 &&
+          this.navigation.canStandAt(n.root.position.x, n.root.position.z),
+      )
+      .sort((a, b) => a.root.position.distanceToSquared(center) - b.root.position.distanceToSquared(center))
+      .slice(0, count);
+  }
+
+  private insideFlankiPitch(x: number, z: number) {
+    return (
+      !!this.flankiPitch && Math.abs(x - this.flankiPitch.x) < 3.8 && Math.abs(z - this.flankiPitch.z) < 7.8
+    );
+  }
   speakerAnchor: THREE.Object3D | null = null;
+  speakerPlaying = false;
+  readonly occupiedSeats = new Map<string, Npc>();
+  private disposed = false;
+  private readonly ids = new Set<string>();
+  private updateFrameIndex = 0;
+
+  setSpeakerPlaying(playing: boolean): void {
+    this.speakerPlaying = playing;
+  }
+
+  isSeatOccupied(seatId: string): boolean {
+    return this.occupiedSeats.has(seatId);
+  }
+
+  vacateSeat(seatId: string): boolean {
+    const occupant = this.occupiedSeats.get(seatId);
+    if (!occupant) return false;
+    this.standUpNpc(occupant);
+    return true;
+  }
+
+  standUpNpc(npc: Npc): void {
+    if (npc.assignedSeatId) {
+      this.occupiedSeats.delete(npc.assignedSeatId);
+      npc.assignedSeatId = undefined;
+    }
+    if (npc.isSitting) {
+      npc.isSitting = false;
+      if (npc.visual) {
+        npc.visual.rotation.y = 0;
+        npc.visual.position.y = npc.visualBaseY ?? 0;
+        npc.visual.position.z = 0;
+      }
+    }
+    npc.isDancingAtSpeaker = false;
+    npc.animator?.cancelActivity();
+    npc.stationary = false;
+    npc.speed = 0;
+    npc.velocity.set(0, 0, 0);
+    npc.target.copy(npc.root.position);
+    npc.watchdog.resetPosition(npc.root.position);
+    npc.behavior.forceWander();
+    this.applyBehaviorAction(npc, 'wander');
+  }
+
+  /**
+   * Ukrywa bota NPC o podanej nazwie lub ID (używane gdy człowiek dołącza do pokoju multiplayer na tym slocie).
+   */
+  hideNpc(nameOrId: string): boolean {
+    const key = nameOrId.toLowerCase().trim();
+    const npc = this.npcs.find(
+      (n) =>
+        n.name.toLowerCase() === key ||
+        (n.root.userData?.npcId && String(n.root.userData.npcId).toLowerCase() === key) ||
+        n.root.name.toLowerCase() === `npc_${key}`,
+    );
+    if (!npc) return false;
+    if (npc.isHidden) return true;
+
+    if (npc.isSitting || npc.assignedSeatId) {
+      this.standUpNpc(npc);
+    }
+    npc.isHidden = true;
+    npc.root.visible = false;
+    // Odsuń poza zasięg raycastera interakcji i kolizji
+    npc.root.position.y = -200;
+    return true;
+  }
+
+  /**
+   * Przywraca bota NPC do obozu (używane gdy gracz opuszcza pokój).
+   */
+  showNpc(nameOrId: string): boolean {
+    const key = nameOrId.toLowerCase().trim();
+    const npc = this.npcs.find(
+      (n) =>
+        n.name.toLowerCase() === key ||
+        (n.root.userData?.npcId && String(n.root.userData.npcId).toLowerCase() === key) ||
+        n.root.name.toLowerCase() === `npc_${key}`,
+    );
+    if (!npc) return false;
+    if (!npc.isHidden) return true;
+
+    npc.isHidden = false;
+    npc.root.visible = true;
+    const ground = terrainHeight(npc.target.x, npc.target.z);
+    npc.root.position.set(npc.target.x, ground, npc.target.z);
+    npc.watchdog.resetPosition(npc.root.position);
+    npc.behavior.forceWander();
+    this.applyBehaviorAction(npc, 'wander');
+    return true;
+  }
+
+  /**
+   * Sprawdza, czy bot o danej nazwie lub ID jest obecnie ukryty.
+   */
+  isNpcHidden(nameOrId: string): boolean {
+    const key = nameOrId.toLowerCase().trim();
+    const npc = this.npcs.find(
+      (n) =>
+        n.name.toLowerCase() === key ||
+        (n.root.userData?.npcId && String(n.root.userData.npcId).toLowerCase() === key) ||
+        n.root.name.toLowerCase() === `npc_${key}`,
+    );
+    return npc?.isHidden ?? false;
+  }
+
+  /**
+   * Gromadzi pobliskich obozowiczów wokół boiska do flanków jako widzów i kibiców.
+   */
+  gatherNpcsAtFlanki(pitchCenter: THREE.Vector3, count = 6): void {
+    const candidates = this.npcs
+      .filter((npc) => !npc.isHidden && !npc.isSitting)
+      .sort(
+        (a, b) =>
+          a.root.position.distanceToSquared(pitchCenter) - b.root.position.distanceToSquared(pitchCenter),
+      )
+      .slice(0, count);
+
+    // Pozycje na liniach bocznych boiska do flanków (poza osią rzutu X: [-3.5, 3.5])
+    const spectatorOffsets = [
+      new THREE.Vector3(-4.5, 0, 4.0),
+      new THREE.Vector3(4.5, 0, 4.0),
+      new THREE.Vector3(-4.8, 0, 0.0),
+      new THREE.Vector3(4.8, 0, 0.0),
+      new THREE.Vector3(-4.5, 0, -4.0),
+      new THREE.Vector3(4.5, 0, -4.0),
+    ];
+
+    candidates.forEach((npc, index) => {
+      const offset = spectatorOffsets[index % spectatorOffsets.length];
+      const targetPos = new THREE.Vector3(pitchCenter.x + offset.x, 0, pitchCenter.z + offset.z);
+      targetPos.y = terrainHeight(targetPos.x, targetPos.z);
+
+      npc.returning = false;
+      npc.wait = 30.0;
+      const routed = this.routeTo(npc, targetPos);
+      if (!routed) {
+        npc.root.position.copy(targetPos);
+        const dx = pitchCenter.x - targetPos.x;
+        const dz = pitchCenter.z - targetPos.z;
+        npc.root.rotation.y = Math.atan2(dx, dz);
+        npc.target.copy(targetPos);
+        npc.waypoints.length = 0;
+      }
+    });
+  }
+
   constructor(
-    scene: THREE.Scene,
+    private readonly scene: THREE.Scene,
     models: Map<string, GLTF>,
     speaker: GLTF | null,
     readonly navigation: NpcNavigationGrid,
-    watchdogConfig?: NpcWatchdogConfig,
+    private readonly watchdogConfig?: NpcWatchdogConfig,
+    private readonly seed = 0x51f15e,
   ) {
     characterAssets.forEach((asset, index) => {
-      const root = new THREE.Group(),
-        model = models.get(asset.id);
-      let animator: NpcAnimator | undefined;
-      if (model) {
-        const visual = clone(model.scene);
-        animator = new NpcAnimator(visual, model.animations);
-        // Pierwsza klatka musi zostać zastosowana przed pomiarem SkinnedMesh.
-        // Inaczej rig Pierścienia zmienia bounds dopiero po rozpoczęciu pętli.
-        animator.update(0);
-        this.fit(visual, 2.45);
-        root.add(visual);
-      } else {
-        const fallback = new THREE.Mesh(
-          new THREE.CapsuleGeometry(0.34, 0.75, 4, 10),
-          new THREE.MeshStandardMaterial({ color: 0xff5d76 }),
-        );
-        fallback.position.y = 1;
-        root.add(fallback);
-      }
-      if (index === 0 && speaker) {
-        const anchor = new THREE.Object3D();
-        const x = spawns[0][0] + 0.55;
-        const z = spawns[0][1] + 1.65;
-        anchor.position.set(x, terrainHeight(x, z) + 0.02, z);
-        anchor.userData.interaction = { kind: 'speaker' };
-        const accessory = clone(speaker.scene);
-        this.fit(accessory, 0.55);
-        anchor.add(accessory);
-        anchor.name = 'Static_Camp_Speaker';
-        anchor.traverse((object) => (object.userData.interactionRoot = anchor));
-        enableInteractionLayer(anchor);
-        scene.add(anchor);
-        this.speakerAnchor = anchor;
-      }
-      root.position.set(spawns[index][0], 0, spawns[index][1]);
-      root.position.set(
-        spawns[index][0],
-        terrainHeight(spawns[index][0], spawns[index][1]),
-        spawns[index][1],
-      );
-      root.userData.interaction = { kind: 'npc', name: asset.name };
-      addNpcInteractionHitbox(root);
-      root.traverse((o) => (o.userData.interactionRoot = root));
-      enableInteractionLayer(root);
-      scene.add(root);
-      const npc = {
-        root,
-        name: asset.name,
-        line: npcLines[asset.name] || ['Cześć!'],
-        animator,
-        phase: index,
-        target: new THREE.Vector3(),
-        wait: 0,
-        returning: false,
-        stationary: true,
-        speed: 0,
-        velocity: new THREE.Vector3(),
-        steeringDirection: new THREE.Vector3(),
-        waypoints: [],
-        behavior: new NpcBehaviorScheduler(
-          NPC_BEHAVIOR_PROFILES[index % NPC_BEHAVIOR_PROFILES.length],
-          0x51f15e + index * 977,
-        ),
-        watchdog: new NpcStuckWatchdog(asset.name, root.position, watchdogConfig),
-      };
-      npc.target.copy(root.position);
-      this.npcs.push(npc);
+      this.addNpc(asset, index, models.get(asset.id), speaker);
     });
+  }
+
+  /** Add streamed crowd models through the existing controller and animation lifecycle. */
+  addFestivalNpc(asset: { id: string; name: string }, model: GLTF) {
+    if (this.disposed || this.ids.has(asset.id)) return false;
+    return this.addNpc(asset, this.npcs.length, model, null, true);
+  }
+
+  private addNpc(
+    asset: { id: string; name: string },
+    index: number,
+    model: GLTF | undefined,
+    speaker: GLTF | null,
+    festival = false,
+  ) {
+    const scene = this.scene;
+    const root = new THREE.Group(),
+      behavior = new NpcBehaviorScheduler(
+        NPC_BEHAVIOR_PROFILES[index % NPC_BEHAVIOR_PROFILES.length],
+        this.seed + index * 977,
+      );
+    const festivalIndex = this.npcs.filter((n) => !n.isCampMember).length;
+    const passageWalker = festival && festivalIndex >= 20;
+    const passageLane = festivalIndex >= 20 && festivalIndex < 40 ? 'lower' : 'upper';
+    const isCampMember = !festival;
+    let festivalRole: 'stage_dancer' | 'asp_listener' | 'food_queue' | 'chiller' | 'walker' | undefined;
+    if (passageWalker) {
+      festivalRole = 'walker';
+    } else if (!isCampMember) {
+      festivalRole = 'stage_dancer';
+    }
+
+    const isExcluded = isCampMember ? undefined : (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
+    const preferred = passageWalker
+      ? this.passageBounds({ passageLane })
+      : isCampMember
+        ? { minX: -CAMP_RADIUS, maxX: CAMP_RADIUS, minZ: -CAMP_RADIUS, maxZ: CAMP_RADIUS }
+        : festivalRole === 'stage_dancer'
+          ? this.stageAudience
+          : festivalRole === 'asp_listener'
+            ? { minX: -75, maxX: -55, minZ: 92, maxZ: 102 }
+            : festivalRole === 'food_queue'
+              ? behavior.random() < 0.5
+                ? { minX: -36, maxX: 36, minZ: 81, maxZ: 86 }
+                : { minX: -125, maxX: -44, minZ: -25, maxZ: -18 }
+              : { minX: -70, maxX: 50, minZ: 30, maxZ: 55 };
+    let spawn: THREE.Vector3 | null = null;
+    for (let attempt = 0; attempt < 80; attempt++) {
+      const candidate = this.navigation.randomWalkablePoint(() => behavior.random(), preferred, isExcluded);
+      if (candidate && this.npcs.every((other) => other.root.position.distanceToSquared(candidate) >= 2.25)) {
+        spawn = candidate;
+        break;
+      }
+    }
+    if (!spawn) {
+      for (let attempt = 0; attempt < 120; attempt++) {
+        const candidate = this.navigation.randomWalkablePoint(() => behavior.random(), {}, isExcluded);
+        if (
+          candidate &&
+          this.npcs.every((other) => other.root.position.distanceToSquared(candidate) >= 2.25)
+        ) {
+          spawn = candidate;
+          break;
+        }
+      }
+    }
+    if (!spawn) {
+      spawn = this.navigation.randomWalkablePoint(() => behavior.random(), {}) ?? new THREE.Vector3(0, 0, 0);
+    }
+    let animator: NpcAnimator | undefined;
+    let visual: THREE.Object3D | undefined;
+    if (model) {
+      const rig = clone(model.scene);
+      visual = new THREE.Group();
+      visual.add(rig);
+      animator = model.animations.length
+        ? new NpcAnimator(rig, model.animations, { initialPhase: behavior.random() })
+        : undefined;
+      // Pierwsza klatka musi zostać zastosowana przed pomiarem SkinnedMesh.
+      // Inaczej rig Pierścienia zmienia bounds dopiero po rozpoczęciu pętli.
+      animator?.update(0);
+      this.fit(visual, 2.45);
+      visual.scale.x *= NPC_BODY_WIDTH_SCALE;
+      visual.scale.z *= NPC_BODY_DEPTH_SCALE;
+      if (festival) {
+        const center = new THREE.Box3().setFromObject(visual).getCenter(new THREE.Vector3());
+        visual.position.x -= center.x;
+        visual.position.z -= center.z;
+        visual.traverse((object) => {
+          if (object instanceof THREE.Mesh) object.castShadow = false;
+        });
+      }
+      root.userData.animationStatus = animator ? 'clips-available' : 'static-needs-rig';
+      root.add(visual);
+    } else {
+      const fallback = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.34, 0.75, 4, 10),
+        new THREE.MeshStandardMaterial({ color: 0xff5d76 }),
+      );
+      fallback.position.y = 1;
+      root.add(fallback);
+    }
+    if (index === 0 && speaker) {
+      const anchor = new THREE.Object3D();
+      const { x, z } = SPEAKER_POSITION;
+      anchor.position.set(x, terrainHeight(x, z) + 0.02, z);
+      anchor.userData.interaction = { kind: 'speaker' };
+      anchor.userData.entryRadius = 1.8;
+      const speakerHitbox = new THREE.Mesh(
+        new THREE.BoxGeometry(0.9, 1.4, 0.9),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false }),
+      );
+      speakerHitbox.position.y = 0.7;
+      speakerHitbox.name = 'SpeakerInteractionHitbox';
+      anchor.add(speakerHitbox);
+      const accessory = clone(speaker.scene);
+      this.fit(accessory, 0.55);
+      anchor.add(accessory);
+      anchor.name = 'Static_Camp_Speaker';
+      anchor.traverse((object) => (object.userData.interactionRoot = anchor));
+      enableInteractionLayer(anchor);
+      scene.add(anchor);
+      this.speakerAnchor = anchor;
+    }
+    root.position.set(spawn.x, terrainHeight(spawn.x, spawn.z), spawn.z);
+    root.name = `NPC_${asset.id}`;
+    root.userData.npcId = asset.id;
+    root.rotation.y = behavior.random() * Math.PI * 2;
+    root.userData.interaction = { kind: 'npc', name: asset.name };
+    addNpcInteractionHitbox(root);
+    root.traverse((o) => (o.userData.interactionRoot = root));
+    enableInteractionLayer(root);
+    scene.add(root);
+    const npc: Npc = {
+      root,
+      name: asset.name,
+      line: npcLines[asset.name] || ['Cześć!'],
+      animator,
+      visual,
+      visualBaseY: visual?.position.y ?? 0,
+      phase: index,
+      target: new THREE.Vector3(),
+      wait: 0,
+      returning: false,
+      stationary: true,
+      speed: 0,
+      velocity: new THREE.Vector3(),
+      steeringDirection: new THREE.Vector3(),
+      waypoints: [],
+      behavior,
+      watchdog: new NpcStuckWatchdog(asset.name, root.position, this.watchdogConfig),
+      passageWalker,
+      passageLane,
+      passageDirection: spawn.x < 0 ? 1 : -1,
+      activityCooldown: festivalRole === 'stage_dancer' ? 0 : 8 + (index % 19),
+      isCampMember,
+      festivalRole,
+      animLodAccumulator: 0,
+    };
+    npc.target.copy(root.position);
+    this.npcs.push(npc);
+    this.ids.add(asset.id);
+    return true;
+  }
+
+  private passageBounds(npc?: Pick<Npc, 'passageLane'>) {
+    const road = this.crowdRoads[npc?.passageLane === 'lower' ? 'lower' : 'upper'];
+    return {
+      minX: road.minX + 5,
+      maxX: road.maxX - 5,
+      minZ: road.minZ + 1.5,
+      maxZ: road.maxZ - 1.5,
+    };
   }
   /** Normalizuje wysokość modelu NPC i włącza obsługę cieni. */
   private fit(object: THREE.Object3D, height: number) {
@@ -147,10 +484,10 @@ export class NpcManager {
     });
     // Refresh the cloned skeleton after applying Idle before measuring skin bounds.
     object.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(object);
+    const box = new THREE.Box3().setFromObject(object, true);
     const measuredHeight = box.max.y - box.min.y;
     object.scale.setScalar(height / (measuredHeight > 1e-6 ? measuredHeight : 1));
-    box.setFromObject(object);
+    box.setFromObject(object, true);
     object.position.y = -box.min.y;
   }
   /** Zwraca granice jednego z dziewięciu sektorów pełnego pola z marginesem od krawędzi. */
@@ -170,11 +507,93 @@ export class NpcManager {
 
   /** Losuje osiągalny cel w nowym sektorze i zapisuje kompletną, wygładzoną trasę. */
   private pickWanderTarget(npc: Npc) {
+    const isExcluded = npc.isCampMember
+      ? undefined
+      : (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
+    if (npc.passageWalker) {
+      const road = this.passageBounds(npc);
+      const middle = (road.minX + road.maxX) / 2;
+      for (let attempt = 0; attempt < 12; attempt++) {
+        const bounds = {
+          ...road,
+          minX: npc.passageDirection > 0 ? middle + 12 : road.minX,
+          maxX: npc.passageDirection > 0 ? road.maxX : middle - 12,
+        };
+        const candidate = this.navigation.randomWalkablePoint(
+          () => npc.behavior.random(),
+          bounds,
+          isExcluded,
+        );
+        if (
+          candidate &&
+          candidate.distanceToSquared(npc.root.position) > 100 &&
+          this.routeTo(npc, candidate)
+        ) {
+          npc.passageDirection *= -1;
+          return true;
+        }
+      }
+      return false;
+    }
+
+    if (npc.festivalRole === 'stage_dancer') {
+      const stageBounds = { minX: 125, maxX: 185, minZ: -4, maxZ: 38 };
+      for (let attempt = 0; attempt < 12; attempt++) {
+        const candidate = this.navigation.randomWalkablePoint(
+          () => npc.behavior.random(),
+          stageBounds,
+          isExcluded,
+        );
+        if (candidate && candidate.distanceToSquared(npc.root.position) > 9 && this.routeTo(npc, candidate))
+          return true;
+      }
+    } else if (npc.festivalRole === 'asp_listener') {
+      const aspBounds = { minX: -12, maxX: 12, minZ: 90, maxZ: 104 };
+      for (let attempt = 0; attempt < 12; attempt++) {
+        const candidate = this.navigation.randomWalkablePoint(
+          () => npc.behavior.random(),
+          aspBounds,
+          isExcluded,
+        );
+        if (candidate && candidate.distanceToSquared(npc.root.position) > 9 && this.routeTo(npc, candidate))
+          return true;
+      }
+    } else if (npc.festivalRole === 'food_queue') {
+      const queueBounds =
+        npc.root.position.z > 0
+          ? { minX: 48, maxX: 104, minZ: 76, maxZ: 83 }
+          : { minX: -125, maxX: -44, minZ: -28, maxZ: -23 };
+      for (let attempt = 0; attempt < 12; attempt++) {
+        const candidate = this.navigation.randomWalkablePoint(
+          () => npc.behavior.random(),
+          queueBounds,
+          isExcluded,
+        );
+        if (candidate && candidate.distanceToSquared(npc.root.position) > 9 && this.routeTo(npc, candidate))
+          return true;
+      }
+    } else if (npc.festivalRole === 'chiller') {
+      const chillerBounds =
+        npc.behavior.random() < 0.5
+          ? { minX: -110, maxX: 110, minZ: -130, maxZ: -80 }
+          : { minX: -90, maxX: 50, minZ: 24, maxZ: 50 };
+      for (let attempt = 0; attempt < 12; attempt++) {
+        const candidate = this.navigation.randomWalkablePoint(
+          () => npc.behavior.random(),
+          chillerBounds,
+          isExcluded,
+        );
+        if (candidate && candidate.distanceToSquared(npc.root.position) > 16 && this.routeTo(npc, candidate))
+          return true;
+      }
+    }
+
     for (let attempt = 0; attempt < 18; attempt += 1) {
       const sector = npc.behavior.nextSector(9);
       const candidate = this.navigation.randomWalkablePoint(
         () => npc.behavior.random(),
         this.sectorBounds(sector),
+        isExcluded,
       );
       if (!candidate || candidate.distanceToSquared(npc.root.position) <= 25) continue;
       if (this.routeTo(npc, candidate)) return true;
@@ -182,8 +601,17 @@ export class NpcManager {
     return false;
   }
 
-  /** Kieruje NPC do losowego, bezpiecznego punktu centralnej części obozu. */
+  /** Kieruje NPC do losowego, bezpiecznego punktu centralnej części obozu lub dla festiwalowiczów poza obozem. */
   private pickRunHomeTarget(npc: Npc) {
+    if (!npc.isCampMember) {
+      const road = this.passageBounds(npc);
+      const isExcluded = (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
+      for (let attempt = 0; attempt < 12; attempt += 1) {
+        const candidate = this.navigation.randomWalkablePoint(() => npc.behavior.random(), road, isExcluded);
+        if (candidate && this.routeTo(npc, candidate)) return true;
+      }
+      return false;
+    }
     const bounds = { minX: -CAMP_RADIUS, maxX: CAMP_RADIUS, minZ: -CAMP_RADIUS, maxZ: CAMP_RADIUS };
     for (let attempt = 0; attempt < 12; attempt += 1) {
       const candidate = this.navigation.randomWalkablePoint(() => npc.behavior.random(), bounds);
@@ -194,10 +622,14 @@ export class NpcManager {
 
   /** Wybiera krótkie spotkanie w pobliżu pojedynczego NPC, bez tworzenia dużych grup. */
   private pickSocialTarget(npc: Npc) {
+    const isExcluded = npc.isCampMember
+      ? undefined
+      : (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
     const candidates = this.npcs.filter(
       (other) =>
         other !== npc &&
         other.behavior.state !== 'run-home' &&
+        (!isExcluded || !isExcluded(other.root.position.x, other.root.position.z)) &&
         other.root.position.distanceToSquared(npc.root.position) > 9 &&
         other.root.position.distanceToSquared(npc.root.position) < 196,
     );
@@ -206,11 +638,70 @@ export class NpcManager {
     const direction = partner.root.position.clone().sub(npc.root.position).setY(0).normalize();
     const side = new THREE.Vector3(-direction.z, 0, direction.x).multiplyScalar(1.35);
     const candidate = partner.root.position.clone().add(side);
+    if (isExcluded && isExcluded(candidate.x, candidate.z)) return false;
     return this.navigation.canStandAt(candidate.x, candidate.z) && this.routeTo(npc, candidate);
+  }
+
+  /** Kieruje NPC na wolne miejsce pod głośnikiem kempingowym do tańca. */
+  private pickDanceTarget(npc: Npc) {
+    if (!npc.isCampMember) return false;
+    for (let attempt = 0; attempt < 16; attempt++) {
+      const angle = npc.behavior.random() * Math.PI * 2;
+      const radius = 1.4 + npc.behavior.random() * 1.8;
+      const candidate = new THREE.Vector3(
+        SPEAKER_POSITION.x + Math.cos(angle) * radius,
+        0,
+        SPEAKER_POSITION.z + Math.sin(angle) * radius,
+      );
+      candidate.y = terrainHeight(candidate.x, candidate.z);
+      if (this.navigation.canStandAt(candidate.x, candidate.z) && this.routeTo(npc, candidate)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Kieruje NPC do najbliższego wolnego krzesła w obozie. */
+  private pickSitTarget(npc: Npc) {
+    if (!npc.isCampMember) return false;
+    const availableSeats = seatLayout.filter((seat) => !this.occupiedSeats.has(seat.id));
+    if (availableSeats.length === 0) return false;
+
+    const sorted = [...availableSeats].sort((a, b) => {
+      const poseA = getSeatWorldPose(a);
+      const poseB = getSeatWorldPose(b);
+      const distA = npc.root.position.distanceToSquared(poseA.position);
+      const distB = npc.root.position.distanceToSquared(poseB.position);
+      return distA - distB;
+    });
+
+    for (const chosen of sorted) {
+      const pose = getSeatWorldPose(chosen);
+      if (this.routeTo(npc, pose.position)) {
+        this.occupiedSeats.set(chosen.id, npc);
+        npc.assignedSeatId = chosen.id;
+        return true;
+      }
+    }
+    return false;
   }
 
   /** Stosuje decyzję schedulera i przygotowuje odpowiedni cel nawigacji. */
   private applyBehaviorAction(npc: Npc, action: NpcBehaviorAction) {
+    if (action !== 'sit' && (npc.isSitting || npc.assignedSeatId)) {
+      if (npc.assignedSeatId) {
+        this.occupiedSeats.delete(npc.assignedSeatId);
+        npc.assignedSeatId = undefined;
+      }
+      if (npc.isSitting) {
+        npc.isSitting = false;
+        if (npc.visual) {
+          npc.visual.rotation.y = 0;
+          npc.visual.position.y = npc.visualBaseY ?? 0;
+          npc.visual.position.z = 0;
+        }
+      }
+    }
     npc.returning = action === 'run-home';
     if (action === 'idle') {
       npc.waypoints.length = 0;
@@ -222,7 +713,11 @@ export class NpcManager {
         ? this.pickWanderTarget(npc)
         : action === 'social'
           ? this.pickSocialTarget(npc)
-          : this.pickRunHomeTarget(npc);
+          : action === 'dance'
+            ? this.pickDanceTarget(npc)
+            : action === 'sit'
+              ? this.pickSitTarget(npc)
+              : this.pickRunHomeTarget(npc);
     if (!routed) {
       npc.behavior.routeFailed();
       npc.returning = false;
@@ -233,7 +728,9 @@ export class NpcManager {
 
   /** Przelicza A* do konkretnego celu i pomija waypoint leżący bezpośrednio pod NPC. */
   private routeTo(npc: Npc, target: THREE.Vector3) {
-    const path = this.navigation.findPath(npc.root.position, target);
+    const isExcluded = (x: number, z: number) =>
+      this.insideFlankiPitch(x, z) || (!npc.isCampMember && isInsidePrimaryCamp(x, z, 1.0));
+    const path = this.navigation.findPath(npc.root.position, target, isExcluded);
     if (path.length < 2) return false;
     npc.target.copy(path[path.length - 1]);
     npc.waypoints = path.slice(path[0].distanceToSquared(npc.root.position) < 0.04 ? 1 : 0);
@@ -246,6 +743,24 @@ export class NpcManager {
 
   /** Wykonuje stopniowane odzyskiwanie zalecone przez watchdog bez resetowania animacji. */
   private applyWatchdogRecovery(npc: Npc, action: WatchdogRecoveryAction) {
+    if (npc.isSitting || npc.assignedSeatId) {
+      if (npc.assignedSeatId) {
+        this.occupiedSeats.delete(npc.assignedSeatId);
+        npc.assignedSeatId = undefined;
+      }
+      if (npc.isSitting) {
+        npc.isSitting = false;
+        if (npc.visual) {
+          npc.visual.rotation.y = 0;
+          npc.visual.position.y = npc.visualBaseY ?? 0;
+          npc.visual.position.z = 0;
+        }
+      }
+    }
+    if (npc.isDancingAtSpeaker) {
+      npc.isDancingAtSpeaker = false;
+      npc.animator?.cancelActivity();
+    }
     switch (action) {
       case 'steer_nudge': {
         const lateral = new THREE.Vector3(-npc.steeringDirection.z, 0, npc.steeringDirection.x).normalize();
@@ -269,15 +784,20 @@ export class NpcManager {
         break;
       }
       case 'teleport': {
-        const bounds = {
-          minX: -CAMP_RADIUS * 0.7,
-          maxX: CAMP_RADIUS * 0.7,
-          minZ: -CAMP_RADIUS * 0.7,
-          maxZ: CAMP_RADIUS * 0.7,
-        };
+        const bounds = npc.isCampMember
+          ? {
+              minX: -CAMP_RADIUS * 0.7,
+              maxX: CAMP_RADIUS * 0.7,
+              minZ: -CAMP_RADIUS * 0.7,
+              maxZ: CAMP_RADIUS * 0.7,
+            }
+          : this.passageBounds(npc);
+        const isExcluded = npc.isCampMember
+          ? undefined
+          : (x: number, z: number) => isInsidePrimaryCamp(x, z, 1.0);
         const safePoint =
-          this.navigation.randomWalkablePoint(() => npc.behavior.random(), bounds) ??
-          new THREE.Vector3(0, 0, 0);
+          this.navigation.randomWalkablePoint(() => npc.behavior.random(), bounds, isExcluded) ??
+          (npc.isCampMember ? new THREE.Vector3(0, 0, 0) : new THREE.Vector3(0, 0, -35));
         safePoint.y = terrainHeight(safePoint.x, safePoint.z);
         npc.root.position.copy(safePoint);
         npc.velocity.set(0, 0, 0);
@@ -299,16 +819,216 @@ export class NpcManager {
     npc.animator?.update(deltaTime);
   }
 
+  /** Aktualizuje animację NPC z adaptacyjnym LOD dystansowym i przeplataniem klatek dla tłumu. */
+  private stepNpcAnimation(
+    npc: Npc,
+    dt: number,
+    playerPosition?: THREE.Vector3,
+    index = 0,
+    isActivity = false,
+  ) {
+    if (!npc.animator) return;
+    if (!playerPosition) {
+      if (isActivity) npc.animator.update(dt);
+      else this.updateAnimation(npc, dt);
+      return;
+    }
+
+    const distSq = npc.root.position.distanceToSquared(playerPosition);
+    let frameSkip = 1;
+    if (distSq > 75 * 75) {
+      frameSkip = 8;
+    } else if (distSq > 36 * 36) {
+      frameSkip = 4;
+    } else if (distSq > 16 * 16) {
+      frameSkip = 2;
+    }
+
+    if (frameSkip === 1) {
+      const totalDt = npc.animLodAccumulator + dt;
+      npc.animLodAccumulator = 0;
+      if (isActivity) npc.animator.update(totalDt);
+      else this.updateAnimation(npc, totalDt);
+      return;
+    }
+
+    npc.animLodAccumulator += dt;
+    if ((this.updateFrameIndex + index) % frameSkip === 0) {
+      const totalDt = npc.animLodAccumulator;
+      npc.animLodAccumulator = 0;
+      if (isActivity) npc.animator.update(totalDt);
+      else this.updateAnimation(npc, totalDt);
+    }
+  }
+
   /** Aktualizuje decyzje ruchu, obrót, powroty od granicy i płynne animacje NPC. */
-  update(dt: number, _time: number, playerPosition?: THREE.Vector3) {
+  update(dt: number, _time: number, playerPosition?: THREE.Vector3, isSpeakerPlaying?: boolean) {
     if (!Number.isFinite(dt) || dt <= 0) return;
-    const snapshots = this.npcs.map((npc) => ({
-      npc,
-      position: npc.root.position.clone(),
-      velocity: npc.velocity.clone(),
-    }));
-    let socialCount = this.npcs.filter((npc) => npc.behavior.state === 'social').length;
-    for (const npc of this.npcs) {
+    if (this.flankiPitch && !this.npcs.some((n) => n.root.userData.flankiTarget))
+      this.flankiPitch = undefined;
+    if (isSpeakerPlaying !== undefined) {
+      this.speakerPlaying = isSpeakerPlaying;
+    }
+    this.updateFrameIndex++;
+
+    if (playerPosition) {
+      for (const [seatId, occupant] of Array.from(this.occupiedSeats.entries())) {
+        const seat = seatLayout.find((s) => s.id === seatId);
+        if (!seat) continue;
+        const pose = getSeatWorldPose(seat);
+        if (playerPosition.distanceTo(pose.position) < 2.5) {
+          this.standUpNpc(occupant);
+        }
+      }
+    }
+
+    const snapshots = this.npcs
+      .filter((npc) => !npc.isHidden)
+      .map((npc) => ({
+        npc,
+        position: npc.root.position.clone(),
+        velocity: npc.velocity.clone(),
+      }));
+    let socialCount = this.npcs.filter((npc) => !npc.isHidden && npc.behavior.state === 'social').length;
+    const dancingCampCount = this.npcs.filter(
+      (npc) =>
+        !npc.isHidden && npc.isCampMember && (npc.behavior.state === 'dance' || npc.isDancingAtSpeaker),
+    ).length;
+    const sittingCampCount = this.npcs.filter(
+      (npc) =>
+        !npc.isHidden &&
+        npc.isCampMember &&
+        (npc.behavior.state === 'sit' || npc.isSitting || npc.assignedSeatId),
+    ).length;
+
+    for (let index = 0; index < this.npcs.length; index++) {
+      const npc = this.npcs[index];
+      if (npc.isHidden) continue;
+      const flankiTarget = npc.root.userData.flankiTarget as THREE.Vector3 | undefined;
+      if (flankiTarget) {
+        if (!npc.root.userData.flankiActive) {
+          if (!npc.root.userData.flankiRouted) {
+            npc.waypoints = this.navigation.findPath(npc.root.position, flankiTarget);
+            npc.root.userData.flankiRouted = true;
+          }
+          while (
+            npc.waypoints.length &&
+            Math.hypot(npc.root.position.x - npc.waypoints[0].x, npc.root.position.z - npc.waypoints[0].z) <
+              0.2
+          )
+            npc.waypoints.shift();
+          const direction = (npc.waypoints[0] ?? flankiTarget).clone().sub(npc.root.position).setY(0);
+          const distance = direction.length();
+          const moving = distance > 0.08;
+          if (!moving) {
+            npc.root.position.copy(flankiTarget);
+            const can = npc.root.userData.flankiFacing as THREE.Vector3 | undefined;
+            if (can)
+              npc.root.rotation.y = Math.atan2(can.x - npc.root.position.x, can.z - npc.root.position.z);
+            npc.velocity.set(0, 0, 0);
+          }
+          if (moving) {
+            direction.normalize();
+            // A* already checked this segment. Looking past a nearby corner can
+            // steer away from the waypoint forever because a wall lies beyond it.
+            const waypoint = npc.waypoints[0] ?? flankiTarget;
+            const steering = this.navigation.hasLineOfSight(npc.root.position, waypoint)
+              ? { direction: direction.clone(), speedScale: 1 }
+              : computeNpcSteering({
+                  position: npc.root.position,
+                  desiredDirection: direction,
+                  velocity: npc.velocity,
+                  speed: 2.5,
+                  neighbors: [],
+                  canStandAt: (x, z) => this.navigation.canStandAt(x, z),
+                });
+            direction.copy(steering.direction);
+            const previous = npc.root.position.clone();
+            const next = previous
+              .clone()
+              .addScaledVector(direction, Math.min(distance, dt * 2.5 * steering.speedScale));
+            if (this.navigation.hasLineOfSight(previous, next)) npc.root.position.copy(next);
+            const stalled = npc.root.position.distanceToSquared(previous) < 1e-8;
+            npc.root.userData.flankiStalled = stalled ? (npc.root.userData.flankiStalled ?? 0) + dt : 0;
+            if (npc.root.userData.flankiStalled > 0.8) {
+              delete npc.root.userData.flankiRouted;
+              npc.root.userData.flankiStalled = 0;
+            }
+            npc.velocity
+              .copy(npc.root.position)
+              .sub(previous)
+              .multiplyScalar(1 / dt)
+              .setY(0);
+            npc.root.position.y = terrainHeight(npc.root.position.x, npc.root.position.z);
+            npc.root.rotation.y = Math.atan2(direction.x, direction.z);
+          }
+          npc.animator?.play(moving ? 'Walk' : 'Idle');
+          npc.animator?.setMovementSpeed(moving ? 2.5 : 0);
+          npc.animator?.update(dt);
+        }
+        continue;
+      }
+      if (npc.festivalRole === 'stage_dancer' && !npc.inConversation) {
+        npc.stationary = true;
+        npc.speed = 0;
+        npc.velocity.set(0, 0, 0);
+        npc.root.rotation.y = Math.atan2(
+          this.stageCenter.x - npc.root.position.x,
+          this.stageCenter.z - npc.root.position.z,
+        );
+        npc.activityCooldown -= dt;
+        if (npc.activityCooldown <= 0 || !npc.animator?.activityActive) {
+          const clips = ['Headbanging', 'HipHopDancing', 'HipHopDancingVariant1', 'SillyDancing'].filter(
+            (name) => npc.animator?.hasClip(name),
+          );
+          if (clips.length)
+            npc.animator?.startActivity([
+              { name: clips[Math.floor(npc.behavior.random() * clips.length)], seconds: 20 },
+            ]);
+          npc.activityCooldown = 20;
+        }
+        this.stepNpcAnimation(npc, dt, playerPosition, index, true);
+        continue;
+      }
+      if (this.insideFlankiPitch(npc.root.position.x, npc.root.position.z)) {
+        const sign = npc.root.position.x >= this.flankiPitch!.x ? 1 : -1;
+        npc.root.position.x += sign * dt * 2.5;
+        npc.root.position.y = terrainHeight(npc.root.position.x, npc.root.position.z);
+        npc.animator?.play('Walk');
+        npc.animator?.update(dt);
+        continue;
+      }
+
+      // Jeśli głośnik przestał grać, zakończ taniec pod głośnikiem
+      if (!this.speakerPlaying && npc.isDancingAtSpeaker) {
+        npc.isDancingAtSpeaker = false;
+        npc.animator?.cancelActivity();
+        npc.behavior.forceWander();
+        this.applyBehaviorAction(npc, 'wander');
+      }
+
+      // Jeśli siedzenie wygasło w animatorze, postać wstaje
+      if (npc.isSitting && !npc.animator?.activityActive) {
+        this.standUpNpc(npc);
+      }
+
+      // Jeśli taniec wygasł, wracaj do wander
+      if (npc.isDancingAtSpeaker && !npc.animator?.activityActive) {
+        npc.isDancingAtSpeaker = false;
+        npc.behavior.forceWander();
+        this.applyBehaviorAction(npc, 'wander');
+      }
+
+      npc.activityCooldown = Math.max(0, npc.activityCooldown - dt);
+      if (npc.animator?.activityActive) {
+        npc.speed = 0;
+        npc.velocity.set(0, 0, 0);
+        npc.stationary = true;
+        npc.watchdog.resetPosition(npc.root.position);
+        this.stepNpcAnimation(npc, dt, playerPosition, index, true);
+        if (npc.isSitting && npc.visual) alignChairPelvis(npc.root, npc.visual);
+        continue;
+      }
       const nearEdge =
         npc.root.position.x < this.navigation.bounds.minX + 2 ||
         npc.root.position.x > this.navigation.bounds.maxX - 2 ||
@@ -321,12 +1041,30 @@ export class NpcManager {
         npc.waypoints.length <= 1 &&
         (npc.target.x - npc.root.position.x) ** 2 + (npc.target.z - npc.root.position.z) ** 2 <=
           NPC_MOTION.arrivalRadius ** 2;
+
+      let playerNearSeat = false;
+      if (playerPosition && npc.assignedSeatId) {
+        const seat = seatLayout.find((s) => s.id === npc.assignedSeatId);
+        if (seat) {
+          const pose = getSeatWorldPose(seat);
+          playerNearSeat = playerPosition.distanceTo(pose.position) < 2.5;
+        }
+      }
+
       const previousState = npc.behavior.state;
       const action = npc.behavior.update(dt, {
         nearEdge,
         insideSafeZone,
         arrived,
-        socialAvailable: socialCount < 2 && this.npcs.length > 1,
+        socialAvailable: !npc.passageWalker && socialCount < 2 && this.npcs.length > 1,
+        speakerPlaying: this.speakerPlaying,
+        canDance: npc.isCampMember && Boolean(npc.animator) && this.speakerPlaying && dancingCampCount < 3,
+        seatAvailable:
+          npc.isCampMember &&
+          Boolean(npc.animator) &&
+          this.occupiedSeats.size < seatLayout.length &&
+          sittingCampCount < 3,
+        playerNearSeat,
       });
       if (action) this.applyBehaviorAction(npc, action);
       if (previousState !== 'social' && npc.behavior.state === 'social') socialCount += 1;
@@ -334,7 +1072,85 @@ export class NpcManager {
       npc.returning = npc.behavior.state === 'run-home';
       npc.stationary = !npc.behavior.travelling;
 
+      // Obsługa dotarcia na krzesło i rozpoczęcie animacji siedzenia
+      if (npc.behavior.state === 'sit' && !npc.isSitting && !npc.behavior.travelling) {
+        const seat = seatLayout.find((s) => s.id === npc.assignedSeatId);
+        if (seat) {
+          const pose = getSeatWorldPose(seat);
+          npc.root.position.copy(pose.position);
+          npc.root.rotation.y = pose.rotationY;
+        }
+        npc.isSitting = true;
+        if (npc.visual) {
+          npc.visual.rotation.y = Math.PI;
+          npc.visual.position.y = (npc.visualBaseY ?? 0) - 0.2;
+          npc.visual.position.z = -0.52;
+        }
+        const sitClips = [...CHAIR_POSE_CLIPS];
+        const available = sitClips.filter((c) => npc.animator?.hasClip(c));
+        const sitClip = available.length > 0 ? available[0] : 'SittingIdle';
+        if (npc.animator?.hasClip(sitClip)) {
+          npc.animator.startActivity([
+            { name: sitClip, seconds: 12 + npc.behavior.random() * 16, fadeSeconds: 0 },
+          ]);
+          npc.animator.update(0);
+          if (npc.visual) alignChairPelvis(npc.root, npc.visual);
+        }
+      }
+
+      // Obsługa dotarcia pod głośnik i rozpoczęcie tańca
+      if (npc.behavior.state === 'dance' && !npc.isDancingAtSpeaker && !npc.behavior.travelling) {
+        npc.isDancingAtSpeaker = true;
+        const dx = SPEAKER_POSITION.x - npc.root.position.x;
+        const dz = SPEAKER_POSITION.z - npc.root.position.z;
+        if (dx * dx + dz * dz > 0.001) {
+          npc.root.rotation.y = Math.atan2(dx, dz);
+          npc.steeringDirection.set(dx, 0, dz).normalize();
+        }
+        const danceClips = ['Headbanging', 'HipHopDancing', 'HipHopDancingVariant1', 'SillyDancing'];
+        const available = danceClips.filter((c) => npc.animator?.hasClip(c));
+        if (available.length > 0) {
+          const clip = available[Math.floor(npc.behavior.random() * available.length)];
+          npc.animator?.startActivity([{ name: clip, seconds: 8 + npc.behavior.random() * 10 }]);
+        }
+      }
+
+      if (npc.inConversation) {
+        npc.speed = 0;
+        npc.velocity.set(0, 0, 0);
+        this.updateAnimation(npc, dt);
+        continue;
+      }
+
+      if (!npc.isCampMember && isInsidePrimaryCamp(npc.root.position.x, npc.root.position.z, 0.5)) {
+        const px = npc.root.position.x;
+        const pz = npc.root.position.z;
+        const distLeft = Math.abs(px - PRIMARY_CAMP_PLOT.minX);
+        const distRight = Math.abs(px - PRIMARY_CAMP_PLOT.maxX);
+        const distBottom = Math.abs(pz - PRIMARY_CAMP_PLOT.minZ);
+        const distTop = Math.abs(pz - PRIMARY_CAMP_PLOT.maxZ);
+        const minDist = Math.min(distLeft, distRight, distBottom, distTop);
+        if (minDist === distLeft) {
+          npc.root.position.x = PRIMARY_CAMP_PLOT.minX - 2.5;
+        } else if (minDist === distRight) {
+          npc.root.position.x = PRIMARY_CAMP_PLOT.maxX + 2.5;
+        } else if (minDist === distBottom) {
+          npc.root.position.z = PRIMARY_CAMP_PLOT.minZ - 2.5;
+        } else {
+          npc.root.position.z = PRIMARY_CAMP_PLOT.maxZ + 2.5;
+        }
+        npc.root.position.y = terrainHeight(npc.root.position.x, npc.root.position.z);
+        npc.waypoints.length = 0;
+        npc.velocity.set(0, 0, 0);
+        npc.speed = 0;
+        npc.wait = 0;
+        this.applyBehaviorAction(npc, 'wander');
+      }
+
       if (npc.stationary) {
+        if (!npc.isSitting && !npc.isDancingAtSpeaker) {
+          this.tryActivity(npc, playerPosition);
+        }
         npc.root.position.y = terrainHeight(npc.root.position.x, npc.root.position.z);
         npc.speed = approachSpeed(npc.speed, 0, dt);
         npc.velocity.set(0, 0, 0);
@@ -391,7 +1207,10 @@ export class NpcManager {
         velocity: npc.velocity,
         speed: npc.speed,
         neighbors,
-        canStandAt: (x, z) => this.navigation.canStandAt(x, z),
+        canStandAt: (x, z) => {
+          if (!npc.isCampMember && isInsidePrimaryCamp(x, z, 1.0)) return false;
+          return this.navigation.canStandAt(x, z);
+        },
       });
       npc.steeringDirection.copy(
         turnDirectionTowards(npc.steeringDirection, steering.direction, NPC_STEERING.maximumTurnRate * dt),
@@ -406,7 +1225,9 @@ export class NpcManager {
       npc.speed = approachSpeed(npc.speed, desiredSpeed, dt);
       const step = Math.min(distance, dt * npc.speed);
       const next = npc.root.position.clone().addScaledVector(npc.steeringDirection, step);
-      if (!this.navigation.hasLineOfSight(npc.root.position, next)) {
+      const isExcluded = (x: number, z: number) =>
+        this.insideFlankiPitch(x, z) || (!npc.isCampMember && isInsidePrimaryCamp(x, z, 1.0));
+      if (!this.navigation.hasLineOfSight(npc.root.position, next, isExcluded)) {
         if (!this.routeTo(npc, npc.target)) {
           npc.behavior.routeFailed();
           npc.waypoints.length = 0;
@@ -433,17 +1254,286 @@ export class NpcManager {
         npc.target,
       );
       if (recoveryAction) this.applyWatchdogRecovery(npc, recoveryAction);
-      this.updateAnimation(npc, dt);
+      this.stepNpcAnimation(npc, dt, playerPosition, index, false);
     }
   }
-  /** Zwraca aktualną pozycję głośnika w przestrzeni świata lub null jeśli brak kotwicy. */
+
+  /** Zarządza animacjami i czynnościami w miejscu w zależności od roli i lokacji. */
+  private tryActivity(npc: Npc, player?: THREE.Vector3) {
+    const animator = npc.animator;
+    if (!animator || npc.activityCooldown > 0) return;
+
+    // Główny obóz: zachowaj szybkie gesty i rzadki odpoczynek dla stabilności schedulera i soak testów
+    if (npc.isCampMember) {
+      npc.activityCooldown = 25 + npc.behavior.random() * 45;
+      const p = npc.root.position;
+      const road = MAIN_ASPHALT_ROAD;
+      const outsideRoad =
+        p.x < road.minX - 3 || p.x > road.maxX + 3 || p.z < road.minZ - 3 || p.z > road.maxZ + 3;
+      const free =
+        outsideRoad &&
+        (!player || p.distanceToSquared(player) > 16) &&
+        this.npcs.every((other) => other === npc || other.root.position.distanceToSquared(p) > 16) &&
+        [-2, 0, 2].every((x) => [-2, 0, 2].every((z) => this.navigation.canStandAt(p.x + x, p.z + z)));
+      if (
+        free &&
+        npc.behavior.random() < 0.45 &&
+        animator.startActivity([
+          { name: 'LieDown' },
+          { name: 'LayingIdle', seconds: 15 + npc.behavior.random() * 25 },
+          { name: 'StandUpFromLaying' },
+        ])
+      )
+        return;
+      const gestures = [
+        'LookAround',
+        'Waving',
+        'ArmStretching',
+        'NeckStretching',
+        'Laughing',
+        'HeadNodYes',
+        'Talking',
+        'Clapping',
+      ];
+      const available = gestures.filter((name) => animator.hasClip(name));
+      if (available.length)
+        animator.startActivity([{ name: available[Math.floor(npc.behavior.random() * available.length)] }]);
+      return;
+    }
+
+    // Tłum festiwalowy: czynności dopasowane do przypisanej roli oraz strefy festiwalowej
+    npc.activityCooldown = 12 + npc.behavior.random() * 25;
+    const pos = npc.root.position;
+
+    // 1. Taniec pod Dużą Sceną (Headbanging, HipHopDancing, SillyDancing, Cheering, itp.)
+    if (
+      npc.festivalRole === 'stage_dancer' ||
+      (pos.x >= 115 && pos.x <= 195 && pos.z >= -14 && pos.z <= 48)
+    ) {
+      const danceClips = [
+        'Headbanging',
+        'HipHopDancing',
+        'HipHopDancingVariant1',
+        'SillyDancing',
+        'Cheering',
+        'Clapping',
+        'Jump',
+        'Yelling',
+      ];
+      const available = danceClips.filter((name) => animator.hasClip(name));
+      if (available.length) {
+        const clip = available[Math.floor(npc.behavior.random() * available.length)];
+        animator.startActivity([{ name: clip, seconds: 5 + npc.behavior.random() * 10 }]);
+        return;
+      }
+    }
+
+    // 2. Namiot ASP: słuchanie, siedzenie i oklaski
+    if (
+      npc.festivalRole === 'asp_listener' ||
+      (pos.x >= -85 && pos.x <= -45 && pos.z >= 86 && pos.z <= 108)
+    ) {
+      const aspActivities = [
+        'Sitting',
+        'SittingIdle',
+        'SittingTalking',
+        'SittingDrinking',
+        'Clapping',
+        'HeadNodYes',
+        'HardHeadNod',
+        'LengthyHeadNod',
+      ];
+      const available = aspActivities.filter((name) => animator.hasClip(name));
+      if (available.length) {
+        const clip = available[Math.floor(npc.behavior.random() * available.length)];
+        animator.startActivity([{ name: clip, seconds: 6 + npc.behavior.random() * 12 }]);
+        return;
+      }
+    }
+
+    // 3. Kolejka po jedzenie przed namiotami gastronomicznymi
+    if (
+      npc.festivalRole === 'food_queue' ||
+      (pos.z >= 79 && pos.z <= 90 && pos.x >= -38 && pos.x <= 38) ||
+      (pos.z >= -26 && pos.z <= -16 && pos.x >= -130 && pos.x <= -42)
+    ) {
+      const queueClips = [
+        'TextingWhileStanding',
+        'LookAround',
+        'WeightShift',
+        'RelievedSigh',
+        'Drinking',
+        'Talking',
+      ];
+      const available = queueClips.filter((name) => animator.hasClip(name));
+      if (available.length) {
+        const clip = available[Math.floor(npc.behavior.random() * available.length)];
+        animator.startActivity([{ name: clip, seconds: 5 + npc.behavior.random() * 8 }]);
+        return;
+      }
+    }
+
+    // 4. Leżenie przy drodze lub na sąsiednich obozach (chiller)
+    if (npc.festivalRole === 'chiller' || (!npc.passageWalker && npc.behavior.random() < 0.4)) {
+      const layClips = ['LayingIdle', 'LayingIdleFootCrossed', 'SleepingIdle'];
+      const availableLay = layClips.filter((name) => animator.hasClip(name));
+      if (availableLay.length && animator.hasClip('LieDown') && animator.hasClip('StandUpFromLaying')) {
+        const layClip = availableLay[Math.floor(npc.behavior.random() * availableLay.length)];
+        if (
+          animator.startActivity([
+            { name: 'LieDown' },
+            { name: layClip, seconds: 12 + npc.behavior.random() * 20 },
+            { name: 'StandUpFromLaying' },
+          ])
+        ) {
+          return;
+        }
+      }
+    }
+
+    // Gesty ogólne
+    const generalGestures = [
+      'LookAround',
+      'Waving',
+      'ArmStretching',
+      'NeckStretching',
+      'Laughing',
+      'HeadNodYes',
+      'Talking',
+      'Clapping',
+      'BeingCocky',
+      'HappyHandGesture',
+    ];
+    const available = generalGestures.filter((name) => animator.hasClip(name));
+    if (available.length) {
+      animator.startActivity([{ name: available[Math.floor(npc.behavior.random() * available.length)] }]);
+    }
+  }
+
   getSpeakerWorldPosition(target: THREE.Vector3 = new THREE.Vector3()): THREE.Vector3 | null {
     if (!this.speakerAnchor) return null;
     return this.speakerAnchor.getWorldPosition(target);
   }
 
+  /** Zatrzymuje ruch bota na czas rozmowy z graczem i obraca go w stronę gracza. */
+  pauseNpcForConversation(name: string, facePosition?: THREE.Vector3): Npc | undefined {
+    const npc = this.npcs.find((n) => n.name === name);
+    if (!npc) return undefined;
+    if (npc.isSitting || npc.assignedSeatId) {
+      if (npc.assignedSeatId) {
+        this.occupiedSeats.delete(npc.assignedSeatId);
+        npc.assignedSeatId = undefined;
+      }
+      if (npc.isSitting) {
+        npc.isSitting = false;
+        if (npc.visual) {
+          npc.visual.rotation.y = 0;
+          npc.visual.position.y = npc.visualBaseY ?? 0;
+          npc.visual.position.z = 0;
+        }
+      }
+    }
+    if (npc.isDancingAtSpeaker) {
+      npc.isDancingAtSpeaker = false;
+      npc.animator?.cancelActivity();
+    }
+    npc.inConversation = true;
+    npc.stationary = true;
+    npc.speed = 0;
+    npc.velocity.set(0, 0, 0);
+    npc.waypoints.length = 0;
+    if (facePosition) {
+      const dx = facePosition.x - npc.root.position.x;
+      const dz = facePosition.z - npc.root.position.z;
+      if (dx * dx + dz * dz > 0.0001) {
+        npc.root.rotation.y = Math.atan2(dx, dz);
+        npc.steeringDirection.set(dx, 0, dz).normalize();
+      }
+    }
+    return npc;
+  }
+
+  /** Wznawia naturalne zachowanie NPC po zakończeniu dialogu. */
+  resumeNpcAfterConversation(name: string, resumeWaitSeconds = 2.0): void {
+    const npc = this.npcs.find((n) => n.name === name);
+    if (!npc) return;
+    npc.inConversation = false;
+    npc.stationary = false;
+    npc.wait = resumeWaitSeconds;
+    npc.speed = 0;
+    npc.velocity.set(0, 0, 0);
+    npc.target.copy(npc.root.position);
+    npc.watchdog.resetPosition(npc.root.position);
+  }
+
+  /** Reaguje na poczęstowanie używką (piwem lub jointem) przez gracza. */
+  shareItemWithNpc(
+    name: string,
+    effect: 'Piwo' | 'Joint',
+    facePosition?: THREE.Vector3,
+  ): { success: boolean; message?: string } {
+    const key = name.toLowerCase().trim();
+    const npc = this.npcs.find(
+      (n) =>
+        n.name.toLowerCase() === key ||
+        (n.root.userData?.npcId && String(n.root.userData.npcId).toLowerCase() === key) ||
+        n.root.name.toLowerCase() === `npc_${key}`,
+    );
+    if (!npc || npc.isHidden) return { success: false };
+
+    npc.stationary = true;
+    npc.speed = 0;
+    npc.velocity.set(0, 0, 0);
+    npc.waypoints.length = 0;
+    npc.wait = 4.0;
+
+    if (facePosition) {
+      const dx = facePosition.x - npc.root.position.x;
+      const dz = facePosition.z - npc.root.position.z;
+      if (dx * dx + dz * dz > 0.0001) {
+        npc.root.rotation.y = Math.atan2(dx, dz);
+        npc.steeringDirection.set(dx, 0, dz).normalize();
+      }
+    }
+
+    if (effect === 'Piwo') {
+      const drinkClips = ['Drinking', 'HappyHandGesture', 'Laughing'];
+      const available = drinkClips.filter((c) => npc.animator?.hasClip(c));
+      const clip = available[0] ?? 'HappyHandGesture';
+      if (npc.animator?.hasClip(clip)) {
+        npc.animator.startActivity([{ name: clip, seconds: 3.5 }]);
+      }
+    } else {
+      const smokeClips = ['RelievedSigh', 'HappyHandGesture', 'Laughing'];
+      const available = smokeClips.filter((c) => npc.animator?.hasClip(c));
+      const clip = available[0] ?? 'HappyHandGesture';
+      if (npc.animator?.hasClip(clip)) {
+        npc.animator.startActivity([{ name: clip, seconds: 3.5 }]);
+      }
+    }
+
+    const responses =
+      effect === 'Piwo'
+        ? [
+            'Dzięki mordeczko! Zimne piwko to skarb!',
+            'Za festiwal! Twoje zdrowie!',
+            'Ooo, z nieba mi spadłeś, dzięki!',
+            'Masz złote serce, brachu!',
+          ]
+        : [
+            'Dzięki stary, idealny moment na dymka!',
+            'Ale dobry sort, dzięki wielkie!',
+            'Peace and love, dzięki za jointa!',
+            'Szacuneczek, mordeczko!',
+          ];
+    const message = responses[Math.floor(npc.behavior.random() * responses.length)];
+    return { success: true, message };
+  }
+
   /** Zatrzymuje miksery animacji wszystkich NPC. */
   dispose() {
+    this.disposed = true;
+    this.occupiedSeats.clear();
     this.npcs.forEach((n) => n.animator?.dispose());
   }
 }

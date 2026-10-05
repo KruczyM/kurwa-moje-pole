@@ -2,12 +2,17 @@ import * as THREE from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {
   characterAssets,
+  festivalNpcAssets,
+  festivalMotionBankUrl,
   environmentAssets,
   interactiveAssets,
-  tentAssets,
+  authoredFestivalUrl,
   textureAssets,
+  ecoPickupModelsUrl,
 } from './assetManifest';
-import type { TentModelId } from '../world/campLayout';
+import { FestivalMotionBank } from '../animation/FestivalMotionBank';
+import { repairSkinSeams } from '../animation/repairSkinSeams';
+import { disposeObjectTree } from '../lifecycle/disposeThree';
 import {
   applyPbrMaterialPolicy,
   interactivePbrProfile,
@@ -22,16 +27,11 @@ export type WorldTextures = {
 };
 
 export type LoadedAssets = {
+  ecoPickups?: GLTF | null;
   characters: Map<string, GLTF>;
-  tents: Map<TentModelId, GLTF>;
-  flag: GLTF | null;
-  chair: GLTF | null;
+  authoredFestival: GLTF;
   speaker: GLTF | null;
-  toilet: GLTF | null;
-  lidlRockShop: GLTF | null;
-  allegroWheel: GLTF | null;
-  marketStalls: GLTF | null;
-  festivalZones: GLTF | null;
+  beerCan: GLTF | null;
   interactables: Map<string, GLTF>;
   textures: WorldTextures;
   errors: string[];
@@ -41,10 +41,64 @@ export class AssetLoader {
   private textureLoader = new THREE.TextureLoader();
   private cache = new Map<string, Promise<GLTF | null>>();
   private textureCache = new Map<string, Promise<THREE.Texture | null>>();
+  private motionBank?: Promise<FestivalMotionBank | null>;
   constructor(
     private progress: (message: string) => void,
     private error: (message: string) => void,
+    private motionBankUrl: string | null = festivalMotionBankUrl,
   ) {}
+
+  private loadMotionBank() {
+    if (!this.motionBank)
+      this.motionBank = this.motionBankUrl
+        ? this.load(this.motionBankUrl, 'Animacje festiwalowe', 'character')
+            .then((source) => {
+              if (!source) return null;
+              return new FestivalMotionBank(source);
+            })
+            .catch((error) => {
+              this.error(`Nie udało się przygotować animacji: ${String(error)}`);
+              return null;
+            })
+        : Promise.resolve(null);
+    return this.motionBank;
+  }
+
+  /** Stream or preload the large crowd, using the same cache and bounded concurrency. */
+  async loadFestivalNpcs(
+    accept: (asset: (typeof festivalNpcAssets)[number], model: GLTF) => boolean,
+    cancelled: () => boolean,
+    onProgress?: (loaded: number, total: number, name: string) => void,
+    concurrency = 2,
+  ) {
+    const motionBank = await this.loadMotionBank();
+    let next = 0;
+    let loaded = 0;
+    let failed = 0;
+    const total = festivalNpcAssets.length;
+    const worker = async () => {
+      while (!cancelled() && next < festivalNpcAssets.length) {
+        const asset = festivalNpcAssets[next++];
+        const model = await this.load(asset.url, asset.name, 'character');
+        if (!model) {
+          failed++;
+          onProgress?.(loaded, total, asset.name);
+          continue;
+        }
+        if (!cancelled()) motionBank?.apply(model);
+        if (cancelled() || !accept(asset, model)) {
+          disposeObjectTree(model.scene);
+          this.cache.delete(asset.url);
+        } else {
+          loaded++;
+        }
+        onProgress?.(loaded, total, asset.name);
+      }
+    };
+    const workers = Array.from({ length: Math.max(1, concurrency) }, () => worker());
+    await Promise.all(workers);
+    return { loaded, failed, total };
+  }
   /** Ładuje pojedynczy GLB, buforuje Promise i zamienia błąd na kontrolowane `null`. */
   private load(url: string, label: string, profile: PbrSurfaceProfile) {
     if (!this.cache.has(url))
@@ -53,6 +107,7 @@ export class AssetLoader {
         this.loader
           .loadAsync(url)
           .then((value) => {
+            if (profile === 'character') repairSkinSeams(value.scene);
             applyPbrMaterialPolicy(value.scene, profile);
             this.progress(`Załadowano: ${label}`);
             return value;
@@ -102,12 +157,12 @@ export class AssetLoader {
       original(m);
     };
     const characters = new Map<string, GLTF>(),
-      interactables = new Map<string, GLTF>(),
-      tents = new Map<TentModelId, GLTF>();
+      interactables = new Map<string, GLTF>();
+    const motionBank = await this.loadMotionBank();
     await Promise.all(
       characterAssets.map(async (asset) => {
         const gltf = await this.load(asset.url, asset.name, 'character');
-        if (gltf) characters.set(asset.id, gltf);
+        if (gltf) characters.set(asset.id, motionBank?.apply(gltf) ?? gltf);
       }),
     );
     await Promise.all(
@@ -116,23 +171,16 @@ export class AssetLoader {
         if (gltf) interactables.set(id, gltf);
       }),
     );
-    await Promise.all(
-      Object.entries(tentAssets).map(async ([id, url]) => {
-        const gltf = await this.load(url, `namiot ${id}`, 'fabric');
-        if (gltf) tents.set(id as TentModelId, gltf);
-      }),
-    );
-    const [flag, chair, speaker, toilet, lidlRockShop, allegroWheel, marketStalls, festivalZones] =
-      await Promise.all([
-        this.load(environmentAssets.flag, 'maszt z flagą', 'fabric'),
-        this.load(environmentAssets.chair, 'krzesło campingowe', 'mixed'),
-        this.load(environmentAssets.speaker, 'głośnik', 'plastic'),
-        this.load(environmentAssets.toilet, 'toi-toi wcTron', 'plastic'),
-        this.load(environmentAssets.lidlRockShop, 'Lidl Rock Shop', 'mixed'),
-        this.load(environmentAssets.allegroWheel, 'młyn Allegro', 'mixed'),
-        this.load(environmentAssets.marketStalls, 'stoiska pasażu handlowego', 'mixed'),
-        this.load(environmentAssets.festivalZones, 'strefy festiwalowe i scena Pomorza', 'mixed'),
-      ]);
+    const [authoredFestival, speaker, beerCan, ecoPickups] = await Promise.all([
+      this.load(authoredFestivalUrl, 'Świat festiwalu z Blendera', 'mixed'),
+      this.load(environmentAssets.speaker, 'głośnik', 'plastic'),
+      this.load(environmentAssets.beerCan, 'puszka piwa Woodstock', 'mixed'),
+      this.load(ecoPickupModelsUrl, 'Modele Eko i przekąsek', 'mixed'),
+    ]);
+    if (!authoredFestival)
+      throw new Error(
+        'Nie udało się załadować świata z Blendera. Ponownie wyeksportuj authored-festival.glb.',
+      );
     const [grassColor, grassNormal, grassRoughness, horizon] = await Promise.all([
       this.loadTexture(textureAssets.grass.color, 'tekstura trawy (kolor)', THREE.SRGBColorSpace),
       this.loadTexture(textureAssets.grass.normal, 'tekstura trawy (normal)', THREE.NoColorSpace),
@@ -141,15 +189,10 @@ export class AssetLoader {
     ]);
     return {
       characters,
-      tents,
-      flag,
-      chair,
+      authoredFestival,
       speaker,
-      toilet,
-      lidlRockShop,
-      allegroWheel,
-      marketStalls,
-      festivalZones,
+      beerCan,
+      ecoPickups,
       interactables,
       textures: {
         grassColor,

@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Room } from './Room';
-import { validateAndSanitizeNickname } from '../src/game/network/networkProtocol';
+import {
+  validateAndSanitizeNickname,
+  CANONICAL_CHARACTERS,
+  MAX_PLAYERS_PER_ROOM,
+} from '../src/game/network/networkProtocol';
 
 describe('validateAndSanitizeNickname', () => {
   it('akceptuje prawidłowy pseudonim z polskimi znakami', () => {
@@ -45,12 +49,41 @@ describe('Room', () => {
     });
   });
 
-  it('inicjalizuje wszystkie 8 postaci jako wolne (free)', () => {
+  it('inicjalizuje wszystkie 16 postaci jako wolne (free)', () => {
+    expect(MAX_PLAYERS_PER_ROOM).toBe(16);
+    expect(CANONICAL_CHARACTERS.length).toBe(16);
     const state = room.getPublicState();
     expect(state.roomId).toBe('test-room');
     expect(state.playerCount).toBe(0);
-    expect(Object.keys(state.slots).length).toBe(8);
+    expect(Object.keys(state.slots).length).toBe(16);
     expect(state.slots['Amper'].status).toBe('free');
+    expect(room.isFull).toBe(false);
+  });
+
+  it('poprawnie raportuje isFull gdy liczba niefree slotów osiągnie 16', () => {
+    expect(room.isFull).toBe(false);
+
+    // Rezerwujemy 15 postaci:
+    for (let i = 0; i < 15; i++) {
+      const char = CANONICAL_CHARACTERS[i];
+      const res = room.reserve(`p${i}`, char, `Gracz${i}`, `token-${i}`);
+      expect(res.success).toBe(true);
+      expect(room.isFull).toBe(false);
+    }
+
+    // Rezerwujemy 16. postać - pokój staje się pełny:
+    const lastChar = CANONICAL_CHARACTERS[15];
+    const resLast = room.reserve('p15', lastChar, 'Gracz15', 'token-15');
+    expect(resLast.success).toBe(true);
+    expect(room.isFull).toBe(true);
+
+    // Po potwierdzeniu (status occupied) pokój nadal jest pełny:
+    room.confirm('p15', lastChar, 'token-15');
+    expect(room.isFull).toBe(true);
+
+    // Zwolnienie jednej postaci powoduje, że pokój nie jest już pełny:
+    room.release('p15', lastChar, 'token-15');
+    expect(room.isFull).toBe(false);
   });
 
   it('rezerwuje postać i blokuje ją dla innego gracza (atomowość)', () => {

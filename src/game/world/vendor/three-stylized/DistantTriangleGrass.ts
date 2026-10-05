@@ -1,9 +1,10 @@
 import * as THREE from 'three';
+import { ALL_CAMPING_PLOTS, WORLD_LIMIT } from '../../festivalLayout';
 import { worldGrassMaskShader, worldGrassMaskUniforms } from '../../grassWorldMask';
 import { DEFAULT_GRASS_PRESET, GRASS_PRESETS, type GrassQualityPreset } from '../../grassQuality';
 
 function createDistantGeometry(count: number): THREE.BufferGeometry {
-  const extent = 58.5;
+  const extent = WORLD_LIMIT - 0.3;
   const p = new Float32Array(count * 9);
   const c = new Float32Array(count * 9);
   const yaw = new Float32Array(count * 9);
@@ -14,8 +15,11 @@ function createDistantGeometry(count: number): THREE.BufferGeometry {
   };
 
   for (let i = 0; i < count; i++) {
-    const x = rnd() * extent * 2 - extent;
-    const z = rnd() * extent * 2 - extent;
+    // Permanent world-space meadow: concentrate the existing budget in populated camps.
+    const plot = ALL_CAMPING_PLOTS[i % ALL_CAMPING_PLOTS.length];
+    const inCamp = i % 5 !== 0;
+    const x = inCamp ? plot.minX + rnd() * (plot.maxX - plot.minX) : rnd() * extent * 2 - extent;
+    const z = inCamp ? plot.minZ + rnd() * (plot.maxZ - plot.minZ) : rnd() * extent * 2 - extent;
     const a = rnd() * Math.PI * 2;
     for (let v = 0; v < 3; v++) {
       const o = (i * 3 + v) * 3;
@@ -50,33 +54,23 @@ export class DistantTriangleGrass extends THREE.Mesh {
     const m = new THREE.ShaderMaterial({
       vertexColors: true,
       side: THREE.DoubleSide,
-      uniforms: { uTime: time, ...worldGrassMaskUniforms() },
+      fog: true,
+      uniforms: { uTime: time, ...worldGrassMaskUniforms(), ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog) },
       vertexShader: `
         ${worldGrassMaskShader}
+        #include <fog_pars_vertex>
         attribute vec3 aYaw;
         uniform float uTime;
         varying float vTip;
 
         float terrain(vec2 p) {
-          return 0.18 * sin(p.x * 0.065) * cos(p.y * 0.055) + 0.09 * sin(p.x * 0.19 + p.y * 0.13);
+          return 0.0;
         }
 
-        float campCoverage(vec2 p) {
-          float period = 35.0;
-          float halfParcel = 15.5;
-
-          float gx = abs(mod(p.x + 3500.0 + 17.5, period) - 17.5);
-          float gz = abs(mod(p.y + 3500.0 + 17.5, period) - 17.5);
-
-          if (gx > halfParcel || gz > halfParcel) {
-            return 0.0;
-          }
-          return 1.0;
-        }
 
         void main() {
           vec3 q = position;
-          float cov = campCoverage(q.xz) * worldGrassCoverage(q.xz);
+          float cov = worldGrassCoverage(q.xz);
           if (cov <= 0.01) {
             gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
             return;
@@ -85,21 +79,27 @@ export class DistantTriangleGrass extends THREE.Mesh {
           float tip = color.g;
           float side = color.r > 0.05 ? 1.0 : (color.b > 0.05 ? -1.0 : 0.0);
           float h = (0.12 + fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5) * 0.18) * cov;
-          q += aYaw * side * 0.007;
+          q += aYaw * side * 0.055;
           q.y += tip * h;
           float wind = sin(uTime * 0.5 + q.x * 0.2 + q.z * 0.15) * 0.018 * tip * tip;
           q.x += wind;
           q.z += wind * 0.5;
           vTip = tip;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(q, 1.0);
+          vec4 mvPosition = modelViewMatrix * vec4(q, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+          #include <fog_vertex>
         }
       `,
       fragmentShader: `
+        #include <fog_pars_fragment>
         varying float vTip;
         void main() {
           vec3 dark = vec3(0.014, 0.075, 0.022);
           vec3 light = vec3(0.065, 0.240, 0.080);
           gl_FragColor = vec4(mix(dark, light, vTip), 1.0);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+          #include <fog_fragment>
         }
       `,
     });

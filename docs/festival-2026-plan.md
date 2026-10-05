@@ -1,5 +1,35 @@
 # Pol’and’Rock 2026 — etapy realizacji
 
+## Bieżąca kolejka — 26.09.2026
+
+Duża Scena i ASP są obecnie wykonywane przez Gemini. Nie modyfikować tych modeli ani ich builderów do czasu zgłoszenia zakończenia; dopiero wtedy osobny review.
+
+Priorytet użytkownika: deformacje ramion/ubrań NPC. Wdrożono korektę wag oraz nową Klątwę w wyborze; szczegóły i ograniczenia w [raporcie animacji](festival-motion-bank.md). Odbiór wizualny w grze pozostaje otwarty.
+
+Pozostała kolejka (starsze sekcje niżej są historią, nie stanem ukończenia):
+
+1. Małe parasole gastronomiczne, osobny punkt zwrotu kaucji i punkty odpadów przy pasażu.
+2. Strefy mBank, PZU, medyczna, TVP oraz balony Altercore; nie odgadywać nieczytelnych referencji.
+3. Pole słoneczników zgodnie z relacją do alei ASP na mapie, po ustaleniu miejsca scen przez Gemini.
+4. Odbiór trawy, szyldów i przejść w dzień/noc; pomiar FPS/pamięci tłumu i optymalizacja.
+5. Dopracowanie siadania na ziemi oraz dopasowania pozy odpoczynku do proporcji poszczególnych rigów.
+6. Dodatkowe animacje multiplayer i przekazywanie postaci NPC ↔ gracz (otwarte #30/#31).
+7. Mapa z pozycją gracza i punktami orientacyjnymi (#107).
+8. Przegląd aktualności błędów używania przedmiotów (#96/#97) oraz technicznych zadań release/QA (#34–#37). Nie traktować samego otwartego Issue jako dowodu, że poprawki jeszcze nie istnieją.
+
+Świece, biżuteria i koty mają już dedykowane wyposażenie w builderze stoisk. 107 modeli ma riggi/animacje, a wybór gracza 16 pozycji — nie powtarzać dawnego zadania importu statycznych NPC.
+
+## Bieżąca kolejność prac — 24.09.2026
+
+Pracujemy na `feat/festival-next`. Poniższe starsze sekcje pozostają historią decyzji. Aktualny stan: świat 320 × 320 m, 207 namiotów na równych parcelach, sześć parceli wokół obozu, asfaltowy pasaż z 18 stoiskami, Lidlem i IQOS oraz dokładnie dwa namioty Red Bull. Front SiemaShopu korzysta z fotografii użytkownika; ma ograniczenia perspektywy i uciętego prawego krańca. Szczegóły: [materiały i rozmieszczenie](festival-materials-2026-09-24.md).
+
+1. Dopracować wyposażenie istniejących stoisk według fotografii: świece, biżuteria i ręcznie szyte koty zamiast skopiowanych okularów/koszulek. Kwiatek Lasu zachowuje neutralną ekspozycję do potwierdzenia asortymentu.
+2. Sprawdzić render pasażu i wygląd trawy w grze, czytelność szyldów oraz przejścia. Odbiór runtime nadal `VISUAL_GAMEPLAY_VERIFICATION_PENDING_HUMAN`.
+3. Następne elementy z referencji: małe parasole przy gastronomii, punkt zwrotu kaucji i infrastruktura odpadów; potem namioty warsztatowe/ASP i strefy. Nie odtwarzać nieczytelnych logotypów jako rzekomo oryginalnych.
+4. Integracja nowych NPC wymaga osobnego domknięcia riggingu i kontroli deformacji. Statyczne modele nie są gotowymi chodzącymi postaciami.
+
+Aktualna prośba użytkownika wznawia prace nad modelami i wyglądem; historyczne wstrzymanie nowych modeli poniżej nie jest już bieżącym priorytetem.
+
 Zakres użytkownika: Czaplinek–Broczyno 2026, mapa i fotografie przekazane w rozmowie.
 Zdjęcia scen pochodzą z różnych edycji; nie traktujemy dekoracji z 2014/2021 jako dokumentacji 2026.
 Istniejący prototyp na `feat/polandrock-czaplinek-festival` pozostaje osobno; jego układ wymaga weryfikacji względem mapy użytkownika.

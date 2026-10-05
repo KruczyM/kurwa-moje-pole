@@ -1,15 +1,73 @@
 {
   "characters": [
-    { "id": "amper", "name": "Amper" },
-    { "id": "antena", "name": "Antena" },
-    { "id": "gruczol", "name": "Gruczoł" },
-    { "id": "klatwa", "name": "Klątwa" },
-    { "id": "krwiak", "name": "Krwiak" },
-    { "id": "pien", "name": "Pień" },
-    { "id": "pierscien", "name": "Pierścień" },
-    { "id": "zawor", "name": "Zawór" }
+    {
+      "id": "amper",
+      "name": "Amper"
+    },
+    {
+      "id": "antena",
+      "name": "Antena"
+    },
+    {
+      "id": "gruczol",
+      "name": "Gruczoł"
+    },
+    {
+      "id": "klatwa",
+      "name": "Klątwa"
+    },
+    {
+      "id": "krwiak",
+      "name": "Krwiak"
+    },
+    {
+      "id": "pien",
+      "name": "Pień"
+    },
+    {
+      "id": "pierscien",
+      "name": "Pierścień"
+    },
+    {
+      "id": "zawor",
+      "name": "Zawór"
+    },
+    {
+      "id": "ambona",
+      "name": "Ambona"
+    },
+    {
+      "id": "chlebak",
+      "name": "Chlebak"
+    },
+    {
+      "id": "dziaslo",
+      "name": "Dziąsło"
+    },
+    {
+      "id": "hemoroid",
+      "name": "Hemoroid"
+    },
+    {
+      "id": "jeczmien",
+      "name": "Jęczmień"
+    },
+    {
+      "id": "kobra",
+      "name": "Kobra"
+    },
+    {
+      "id": "korba",
+      "name": "Korba"
+    },
+    {
+      "id": "szerszen",
+      "name": "Szerszeń"
+    }
   ],
+  "stagedCharacters": [],
   "environment": {
+    "authoredFestival": "world/festival/authored-festival.glb",
     "flag": "world/flaga2.glb",
     "chair": "world/camping_chair.glb",
     "speaker": "props/speaker.glb",
@@ -17,7 +75,49 @@
     "lidlRockShop": "world/festival/lidlRockShop.glb",
     "allegroWheel": "world/festival/allegroWheel.glb",
     "marketStalls": "world/festival/marketStalls.glb",
-    "festivalZones": "world/festival/festivalZones.glb"
+    "festivalZones": "world/festival/festivalZones.glb",
+    "mainStage": "world/festival/main_stage.glb",
+    "smallStage": "world/festival/small_stage.glb",
+    "festivalGate": "world/festival/festival_gate.glb",
+    "festivalSignpost": "world/festival/festival_signpost.glb",
+    "fohTower": "world/festival/foh_tower.glb",
+    "delayTower": "world/festival/delay_tower.glb",
+    "delayTowerHeavy": "world/festival/delay_tower_heavy.glb",
+    "mudBath": "world/festival/mud_bath.glb",
+    "fireTruckOsp": "world/festival/fire_truck_osp.glb",
+    "waterCurtain": "world/festival/water_curtain.glb",
+    "patrolTent": "world/festival/patrol_tent.glb",
+    "krishnaVillage": "world/festival/krishna_village.glb",
+    "trashCorral": "world/festival/trash_corral.glb",
+    "grzybek": "world/festival/grzybek.glb",
+    "washTaps": "world/festival/krany_festiwalowe.glb",
+    "toitoiRow": "world/festival/toitoi_row.glb",
+    "fieldShowers": "world/festival/prysznice_polowe.glb",
+    "crowdBarrier": "world/festival/crowd_barrier.glb",
+    "festivalFoodTent": "world/festival/festival_food_tent.glb",
+    "foodtruckFrytki": "world/festival/foodtruck_frytki.glb",
+    "foodtruckChurros": "world/festival/foodtruck_churros.glb",
+    "foodtruckBurger": "world/festival/foodtruck_burger.glb",
+    "foodtruckMakarun": "world/festival/foodtruck_makarun.glb",
+    "rollbarLech": "world/festival/rollbar_lech.glb",
+    "sunflower": "world/festival/sunflower.glb",
+    "beerCan": "props/beer_can_woodstock.glb",
+    "festivalChair": "props/festival_folding_chair.glb",
+    "acousticGuitar": "props/acoustic_guitar.glb",
+    "coolerBox": "props/cooler_box.glb",
+    "festivalBackpack": "props/festival_backpack.glb",
+    "trashBagsPile": "props/trash_bags_pile.glb",
+    "campingStove": "props/camping_stove_pot.glb",
+    "waterJug5L": "props/water_jug_5l.glb",
+    "beerCrate": "props/beer_crate.glb",
+    "campTableMessy": "props/camp_table_messy.glb",
+    "campFlagTotem": "props/camp_flag_totem.glb",
+    "tarpCanopy": "props/tarp_canopy.glb",
+    "beerBenchTable": "props/beer_bench_table.glb",
+    "palletSeating": "props/pallet_seating.glb",
+    "campClothesline": "props/camp_clothesline.glb",
+    "disposableBbq": "props/disposable_bbq.glb",
+    "gastroUmbrella": "props/gastro_umbrella.glb"
   },
   "tents": {
     "main": "world/tents/upgraded/main.glb",
@@ -41,13 +141,14 @@
     "cocaine": "interactables/cocaine.glb",
     "mdma": "interactables/mdma.glb",
     "mushrooms": "interactables/mushrooms.glb",
-    "lsd": "interactables/lsd.glb"
+    "lsd": "interactables/lsd.glb",
+    "water": "interactables/water.glb"
   },
   "textures": {
     "grass": {
-      "color": "textures/grass/Grass006_2K-JPG/Grass006_2K-JPG_Color.jpg",
-      "normal": "textures/grass/Grass006_2K-JPG/Grass006_2K-JPG_NormalGL.jpg",
-      "roughness": "textures/grass/Grass006_2K-JPG/Grass006_2K-JPG_Roughness.jpg"
+      "color": "textures/ground/Grass004_1K-JPG_Color.jpg",
+      "normal": "textures/ground/Grass004_1K-JPG_NormalGL.jpg",
+      "roughness": "textures/ground/Grass004_1K-JPG_Roughness.jpg"
     },
     "horizon": "textures/horizon/field.jpg",
     "skyboxes": {
@@ -91,5 +192,462 @@
   "audio": {
     "music": "audio/camp-track.mp4",
     "voiceBase": "audio/Teksty Kolesia"
-  }
+  },
+  "festivalNpcs": [
+    {
+      "id": "001_pirate_parrot_girl",
+      "name": "Pirate Parrot Girl",
+      "path": "npc_models/001_pirate_parrot_girl.glb"
+    },
+    {
+      "id": "002_denim_vest_rocker",
+      "name": "Denim Vest Rocker",
+      "path": "npc_models/002_denim_vest_rocker.glb"
+    },
+    {
+      "id": "003_summer_curly_hair_girl",
+      "name": "Summer Curly Hair Girl",
+      "path": "npc_models/003_summer_curly_hair_girl.glb"
+    },
+    {
+      "id": "004_tiedye_peace_fan",
+      "name": "Tiedye Peace Fan",
+      "path": "npc_models/004_tiedye_peace_fan.glb"
+    },
+    {
+      "id": "005_boho_festival_girl",
+      "name": "Boho Festival Girl",
+      "path": "npc_models/005_boho_festival_girl.glb"
+    },
+    {
+      "id": "006_rasta_dreadlocks",
+      "name": "Rasta Dreadlocks",
+      "path": "npc_models/006_rasta_dreadlocks.glb"
+    },
+    {
+      "id": "007_glitter_face_raver",
+      "name": "Glitter Face Raver",
+      "path": "npc_models/007_glitter_face_raver.glb"
+    },
+    {
+      "id": "008_grunge_flannel_rocker",
+      "name": "Grunge Flannel Rocker",
+      "path": "npc_models/008_grunge_flannel_rocker.glb"
+    },
+    {
+      "id": "009_mud_slide_warrior",
+      "name": "Mud Slide Warrior",
+      "path": "npc_models/009_mud_slide_warrior.glb"
+    },
+    {
+      "id": "010_sunflower_hat_girl",
+      "name": "Sunflower Hat Girl",
+      "path": "npc_models/010_sunflower_hat_girl.glb"
+    },
+    {
+      "id": "011_leather_jacket_metalhead",
+      "name": "Leather Jacket Metalhead",
+      "path": "npc_models/011_leather_jacket_metalhead.glb"
+    },
+    {
+      "id": "012_acoustic_songster",
+      "name": "Acoustic Songster",
+      "path": "npc_models/012_acoustic_songster.glb"
+    },
+    {
+      "id": "013_folk_bohemian_girl",
+      "name": "Folk Bohemian Girl",
+      "path": "npc_models/013_folk_bohemian_girl.glb"
+    },
+    {
+      "id": "014_speedo_mud_fan",
+      "name": "Speedo Mud Fan",
+      "path": "npc_models/014_speedo_mud_fan.glb"
+    },
+    {
+      "id": "015_feather_headband_hippie",
+      "name": "Feather Headband Hippie",
+      "path": "npc_models/015_feather_headband_hippie.glb"
+    },
+    {
+      "id": "016_vintage_shades_guy",
+      "name": "Vintage Shades Guy",
+      "path": "npc_models/016_vintage_shades_guy.glb"
+    },
+    {
+      "id": "017_retro_windbreaker_raver",
+      "name": "Retro Windbreaker Raver",
+      "path": "npc_models/017_retro_windbreaker_raver.glb"
+    },
+    {
+      "id": "018_rainbow_socks_fan",
+      "name": "Rainbow Socks Fan",
+      "path": "npc_models/018_rainbow_socks_fan.glb"
+    },
+    {
+      "id": "019_punk_spikes_bracelets",
+      "name": "Punk Spikes Bracelets",
+      "path": "npc_models/019_punk_spikes_bracelets.glb"
+    },
+    {
+      "id": "020_polandrock_camper",
+      "name": "Polandrock Camper",
+      "path": "npc_models/020_polandrock_camper.glb"
+    },
+    {
+      "id": "021_flag_cape_supporter",
+      "name": "Flag Cape Supporter",
+      "path": "npc_models/021_flag_cape_supporter.glb"
+    },
+    {
+      "id": "022_bandana_rocker",
+      "name": "Bandana Rocker",
+      "path": "npc_models/022_bandana_rocker.glb"
+    },
+    {
+      "id": "023_neon_sunglasses_girl",
+      "name": "Neon Sunglasses Girl",
+      "path": "npc_models/023_neon_sunglasses_girl.glb"
+    },
+    {
+      "id": "024_plaid_shirt_guitarist",
+      "name": "Plaid Shirt Guitarist",
+      "path": "npc_models/024_plaid_shirt_guitarist.glb"
+    },
+    {
+      "id": "025_festival_totem_bearer",
+      "name": "Festival Totem Bearer",
+      "path": "npc_models/025_festival_totem_bearer.glb"
+    },
+    {
+      "id": "026_bubble_blower_hippie",
+      "name": "Bubble Blower Hippie",
+      "path": "npc_models/026_bubble_blower_hippie.glb"
+    },
+    {
+      "id": "027_combat_boots_punk",
+      "name": "Combat Boots Punk",
+      "path": "npc_models/027_combat_boots_punk.glb"
+    },
+    {
+      "id": "028_flower_crown_girl",
+      "name": "Flower Crown Girl",
+      "path": "npc_models/028_flower_crown_girl.glb"
+    },
+    {
+      "id": "029_denim_jacket_patches",
+      "name": "Denim Jacket Patches",
+      "path": "npc_models/029_denim_jacket_patches.glb"
+    },
+    {
+      "id": "030_festival_peace_sign",
+      "name": "Festival Peace Sign",
+      "path": "npc_models/030_festival_peace_sign.glb"
+    },
+    {
+      "id": "031_mud_bath_enthusiast",
+      "name": "Mud Bath Enthusiast",
+      "path": "npc_models/031_mud_bath_enthusiast.glb"
+    },
+    {
+      "id": "032_rock_band_tshirt",
+      "name": "Rock Band Tshirt",
+      "path": "npc_models/032_rock_band_tshirt.glb"
+    },
+    {
+      "id": "033_bucket_hat_explorer",
+      "name": "Bucket Hat Explorer",
+      "path": "npc_models/033_bucket_hat_explorer.glb"
+    },
+    {
+      "id": "034_cosplay_festival_hero",
+      "name": "Cosplay Festival Hero",
+      "path": "npc_models/034_cosplay_festival_hero.glb"
+    },
+    {
+      "id": "035_bright_raincoat_camper",
+      "name": "Bright Raincoat Camper",
+      "path": "npc_models/035_bright_raincoat_camper.glb"
+    },
+    {
+      "id": "036_dreadlock_bun_girl",
+      "name": "Dreadlock Bun Girl",
+      "path": "npc_models/036_dreadlock_bun_girl.glb"
+    },
+    {
+      "id": "037_bearded_woodstocker",
+      "name": "Bearded Woodstocker",
+      "path": "npc_models/037_bearded_woodstocker.glb"
+    },
+    {
+      "id": "038_cargo_shorts_hiker",
+      "name": "Cargo Shorts Hiker",
+      "path": "npc_models/038_cargo_shorts_hiker.glb"
+    },
+    {
+      "id": "039_neon_mesh_raver",
+      "name": "Neon Mesh Raver",
+      "path": "npc_models/039_neon_mesh_raver.glb"
+    },
+    {
+      "id": "040_crochet_top_boho",
+      "name": "Crochet Top Boho",
+      "path": "npc_models/040_crochet_top_boho.glb"
+    },
+    {
+      "id": "041_straw_hat_sunseeker",
+      "name": "Straw Hat Sunseeker",
+      "path": "npc_models/041_straw_hat_sunseeker.glb"
+    },
+    {
+      "id": "042_heavy_metal_banger",
+      "name": "Heavy Metal Banger",
+      "path": "npc_models/042_heavy_metal_banger.glb"
+    },
+    {
+      "id": "043_punk_leather_choker",
+      "name": "Punk Leather Choker",
+      "path": "npc_models/043_punk_leather_choker.glb"
+    },
+    {
+      "id": "044_hippie_shaman_beads",
+      "name": "Hippie Shaman Beads",
+      "path": "npc_models/044_hippie_shaman_beads.glb"
+    },
+    {
+      "id": "045_colorful_poncho_girl",
+      "name": "Colorful Poncho Girl",
+      "path": "npc_models/045_colorful_poncho_girl.glb"
+    },
+    {
+      "id": "046_festival_sleeveless_guy",
+      "name": "Festival Sleeveless Guy",
+      "path": "npc_models/046_festival_sleeveless_guy.glb"
+    },
+    {
+      "id": "047_peace_symbol_vest",
+      "name": "Peace Symbol Vest",
+      "path": "npc_models/047_peace_symbol_vest.glb"
+    },
+    {
+      "id": "048_retro_tracksuit_raver",
+      "name": "Retro Tracksuit Raver",
+      "path": "npc_models/048_retro_tracksuit_raver.glb"
+    },
+    {
+      "id": "049_braided_hair_hippie",
+      "name": "Braided Hair Hippie",
+      "path": "npc_models/049_braided_hair_hippie.glb"
+    },
+    {
+      "id": "050_blue_alien_girl",
+      "name": "Blue Alien Girl",
+      "path": "npc_models/050_blue_alien_girl.glb"
+    },
+    {
+      "id": "051_denim_overalls_fan",
+      "name": "Denim Overalls Fan",
+      "path": "npc_models/051_denim_overalls_fan.glb"
+    },
+    {
+      "id": "052_muddy_sneakers_rocker",
+      "name": "Muddy Sneakers Rocker",
+      "path": "npc_models/052_muddy_sneakers_rocker.glb"
+    },
+    {
+      "id": "053_indie_rock_fan",
+      "name": "Indie Rock Fan",
+      "path": "npc_models/053_indie_rock_fan.glb"
+    },
+    {
+      "id": "054_striped_sweater_guitarist",
+      "name": "Striped Sweater Guitarist",
+      "path": "npc_models/054_striped_sweater_guitarist.glb"
+    },
+    {
+      "id": "055_rave_glowstick_dancer",
+      "name": "Rave Glowstick Dancer",
+      "path": "npc_models/055_rave_glowstick_dancer.glb"
+    },
+    {
+      "id": "056_festival_mud_sprinter",
+      "name": "Festival Mud Sprinter",
+      "path": "npc_models/056_festival_mud_sprinter.glb"
+    },
+    {
+      "id": "057_acoustic_troubadour",
+      "name": "Acoustic Troubadour",
+      "path": "npc_models/057_acoustic_troubadour.glb"
+    },
+    {
+      "id": "058_boho_fringe_vest",
+      "name": "Boho Fringe Vest",
+      "path": "npc_models/058_boho_fringe_vest.glb"
+    },
+    {
+      "id": "059_leather_wristband_metalhead",
+      "name": "Leather Wristband Metalhead",
+      "path": "npc_models/059_leather_wristband_metalhead.glb"
+    },
+    {
+      "id": "060_psychedelic_swirl_shirt",
+      "name": "Psychedelic Swirl Shirt",
+      "path": "npc_models/060_psychedelic_swirl_shirt.glb"
+    },
+    {
+      "id": "061_woodstock_spirit_girl",
+      "name": "Woodstock Spirit Girl",
+      "path": "npc_models/061_woodstock_spirit_girl.glb"
+    },
+    {
+      "id": "062_sunglasses_bandana_fan",
+      "name": "Sunglasses Bandana Fan",
+      "path": "npc_models/062_sunglasses_bandana_fan.glb"
+    },
+    {
+      "id": "063_rocker_black_vest",
+      "name": "Rocker Black Vest",
+      "path": "npc_models/063_rocker_black_vest.glb"
+    },
+    {
+      "id": "064_neon_hoodie_raver",
+      "name": "Neon Hoodie Raver",
+      "path": "npc_models/064_neon_hoodie_raver.glb"
+    },
+    {
+      "id": "065_summer_tanktop_camper",
+      "name": "Summer Tanktop Camper",
+      "path": "npc_models/065_summer_tanktop_camper.glb"
+    },
+    {
+      "id": "066_flower_power_guitarist",
+      "name": "Flower Power Guitarist",
+      "path": "npc_models/066_flower_power_guitarist.glb"
+    },
+    {
+      "id": "067_mud_champion_guy",
+      "name": "Mud Champion Guy",
+      "path": "npc_models/067_mud_champion_guy.glb"
+    },
+    {
+      "id": "068_festival_flag_waver",
+      "name": "Festival Flag Waver",
+      "path": "npc_models/068_festival_flag_waver.glb"
+    },
+    {
+      "id": "069_boho_wide_pants",
+      "name": "Boho Wide Pants",
+      "path": "npc_models/069_boho_wide_pants.glb"
+    },
+    {
+      "id": "070_vintage_denim_shorts",
+      "name": "Vintage Denim Shorts",
+      "path": "npc_models/070_vintage_denim_shorts.glb"
+    },
+    {
+      "id": "071_biker_beard_leather",
+      "name": "Biker Beard Leather",
+      "path": "npc_models/071_biker_beard_leather.glb"
+    },
+    {
+      "id": "072_rave_bucket_hat",
+      "name": "Rave Bucket Hat",
+      "path": "npc_models/072_rave_bucket_hat.glb"
+    },
+    {
+      "id": "073_peace_love_music_fan",
+      "name": "Peace Love Music Fan",
+      "path": "npc_models/073_peace_love_music_fan.glb"
+    },
+    {
+      "id": "074_rock_festival_veteran",
+      "name": "Rock Festival Veteran",
+      "path": "npc_models/074_rock_festival_veteran.glb"
+    },
+    {
+      "id": "075_hippie_round_glasses",
+      "name": "Hippie Round Glasses",
+      "path": "npc_models/075_hippie_round_glasses.glb"
+    },
+    {
+      "id": "076_frog_suit_guy",
+      "name": "Frog Suit Guy",
+      "path": "npc_models/076_frog_suit_guy.glb"
+    },
+    {
+      "id": "077_funny_hat_guy",
+      "name": "Funny Hat Guy",
+      "path": "npc_models/077_funny_hat_guy.glb"
+    },
+    {
+      "id": "078_girl_with_guitar",
+      "name": "Girl With Guitar",
+      "path": "npc_models/078_girl_with_guitar.glb"
+    },
+    {
+      "id": "079_guy_in_kilt",
+      "name": "Guy In Kilt",
+      "path": "npc_models/079_guy_in_kilt.glb"
+    },
+    {
+      "id": "080_hippie_tiedye",
+      "name": "Hippie Tiedye",
+      "path": "npc_models/080_hippie_tiedye.glb"
+    },
+    {
+      "id": "081_hippie_towel",
+      "name": "Hippie Towel",
+      "path": "npc_models/081_hippie_towel.glb"
+    },
+    {
+      "id": "082_hotdog_girl",
+      "name": "Hotdog Girl",
+      "path": "npc_models/082_hotdog_girl.glb"
+    },
+    {
+      "id": "083_kilt_punk",
+      "name": "Kilt Punk",
+      "path": "npc_models/083_kilt_punk.glb"
+    },
+    {
+      "id": "084_knight_cosplay",
+      "name": "Knight Cosplay",
+      "path": "npc_models/084_knight_cosplay.glb"
+    },
+    {
+      "id": "085_mud_guy",
+      "name": "Mud Guy",
+      "path": "npc_models/085_mud_guy.glb"
+    },
+    {
+      "id": "086_mud_monster",
+      "name": "Mud Monster",
+      "path": "npc_models/086_mud_monster.glb"
+    },
+    {
+      "id": "087_neon_raver",
+      "name": "Neon Raver",
+      "path": "npc_models/087_neon_raver.glb"
+    },
+    {
+      "id": "088_older_biker",
+      "name": "Older Biker",
+      "path": "npc_models/088_older_biker.glb"
+    },
+    {
+      "id": "089_peace_hippie",
+      "name": "Peace Hippie",
+      "path": "npc_models/089_peace_hippie.glb"
+    },
+    {
+      "id": "090_punk_mohawk",
+      "name": "Punk Mohawk",
+      "path": "npc_models/090_punk_mohawk.glb"
+    },
+    {
+      "id": "dino",
+      "name": "dino",
+      "path": "npc_models/dino.glb"
+    }
+  ]
 }

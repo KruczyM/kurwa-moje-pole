@@ -1,0 +1,15 @@
+{
+  "input": "E:\\kodowanie\\gra\\Hunyuan3D-2GP\\output\\characters_mv\\korba\\variant_4c4366476217b6170ce236fc85f3dbfeafe93fd63cb3f716ca28271bc39a6436\\textured.glb",
+  "output": "E:\\kodowanie\\gra\\.ai\\worktrees\\festival-2026-tent-upgrades\\source-assets\\rigged-festival\\korba\\t-pose.glb",
+  "bones": 22,
+  "clips": [
+    "Idle",
+    "Run",
+    "Walk"
+  ],
+  "firstViewExtracted": false,
+  "quality": "automatic-draft-needs-visual-review",
+  "vertices": 27124,
+  "fallbackVertices": 27124,
+  "heatWarning": "Bone heat left unweighted vertices; geometric fallback used"
+}

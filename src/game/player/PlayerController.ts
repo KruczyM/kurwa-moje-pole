@@ -19,8 +19,21 @@ export class PlayerController {
   yaw = 0;
   pitch = 0;
   enabled = false;
+  movementLocked = false;
+  freeCamera = false;
+  freeCamSpeed = 22;
   private velocity = new THREE.Vector2();
   private bobTime = 0;
+  private jumpHeight = 0;
+  private jumpVelocity = 0;
+  isAirborne(): boolean {
+    return this.jumpHeight > 0 || this.jumpVelocity > 0;
+  }
+  requestJump(): boolean {
+    if (!this.enabled || this.movementLocked || this.freeCamera || this.isAirborne()) return false;
+    this.jumpVelocity = 6.2;
+    return true;
+  }
   private swayTime = 0;
   private readonly baseY = 1.9;
   private fallbackMousePosition = new THREE.Vector2();
@@ -47,12 +60,20 @@ export class PlayerController {
     );
     camera.rotation.set(0, this.yaw, 0, 'YXZ');
     canvas.tabIndex = -1;
-    this.events.listen(window, 'keydown', (event) =>
-      this.keys.add((event as KeyboardEvent).key.toLowerCase()),
-    );
+    this.events.listen(window, 'keydown', (event) => {
+      const e = event as KeyboardEvent;
+      if (e.ctrlKey && e.key.toLowerCase() === 'k') return;
+      this.keys.add(e.key.toLowerCase());
+    });
     this.events.listen(window, 'keyup', (event) =>
       this.keys.delete((event as KeyboardEvent).key.toLowerCase()),
     );
+    this.events.listen(window, 'wheel', (event) => {
+      if (!this.freeCamera || !this.enabled) return;
+      const wheel = event as WheelEvent;
+      const delta = wheel.deltaY < 0 ? 3 : -3;
+      this.freeCamSpeed = THREE.MathUtils.clamp(this.freeCamSpeed + delta, 4, 120);
+    });
     this.events.listen(canvas, 'click', () => {
       if (this.enabled) this.requestPointerLock();
     });
@@ -89,6 +110,15 @@ export class PlayerController {
   lookBy(dx: number, dy: number) {
     if (this.enabled) this.rotateView(dx, dy);
   }
+  /** Blokuje lub odblokowuje ruch pieszy (np. w trakcie przejażdżki w kabinie), zachowując rozglądanie. */
+  setMovementLocked(locked: boolean) {
+    this.movementLocked = locked;
+    if (locked) {
+      this.jumpHeight = 0;
+      this.jumpVelocity = 0;
+      this.stop();
+    }
+  }
   /** Ustawia analogowy ruch z joysticka ekranowego. */
   setMobileMove(forward: number, right: number, run: boolean) {
     this.mobileForward = THREE.MathUtils.clamp(forward, -1, 1);
@@ -99,12 +129,61 @@ export class PlayerController {
   private axis(positive: string[], negative: string[]) {
     return Number(positive.some((k) => this.keys.has(k))) - Number(negative.some((k) => this.keys.has(k)));
   }
+  /** Sprawdza, czy aktywny jest tryb swobodnej kamery. */
+  isFreeCamera(): boolean {
+    return this.freeCamera;
+  }
+  /** Włącza lub wyłącza tryb swobodnej kamery. */
+  setFreeCamera(active = true, initialHeight?: number) {
+    this.freeCamera = active;
+    if (active) {
+      this.velocity.set(0, 0);
+      if (initialHeight !== undefined) {
+        this.camera.position.y = initialHeight;
+      } else if (this.camera.position.y < 3.5) {
+        this.camera.position.y = 12.0;
+      }
+    }
+  }
+  /** Zmienia bazową prędkość swobodnej kamery. */
+  adjustFreeCamSpeed(delta: number): number {
+    this.freeCamSpeed = THREE.MathUtils.clamp(this.freeCamSpeed + delta, 4, 120);
+    return this.freeCamSpeed;
+  }
   /** Aktualizuje ruch FPS, kolizje, kołysanie, drganie oraz pozycję kamery. */
   update(dt: number, mod: PlayerModifiers) {
     // Pointer Lock jest potrzebny tylko do rozglądania. Po zamknięciu pauzy
     // przeglądarka może odmówić jego natychmiastowego odzyskania, ale nie
     // powinno to blokować klawiatury ani wymuszać dodatkowego kliknięcia.
-    if (!this.enabled) return;
+    if (!this.enabled || this.movementLocked) return;
+
+    if (this.freeCamera) {
+      const forwardDir = new THREE.Vector3();
+      this.camera.getWorldDirection(forwardDir);
+
+      const rightDir = new THREE.Vector3().crossVectors(forwardDir, new THREE.Vector3(0, 1, 0)).normalize();
+
+      const forward = this.axis(['w', 'arrowup'], ['s', 'arrowdown']) + this.mobileForward;
+      const right = this.axis(['d', 'arrowright'], ['a', 'arrowleft']) + this.mobileRight;
+      const up = this.axis([' ', 'space', 'e'], ['c', 'q']);
+
+      const moveVec = new THREE.Vector3();
+      moveVec.addScaledVector(forwardDir, forward);
+      moveVec.addScaledVector(rightDir, right);
+      moveVec.y += up;
+
+      if (moveVec.lengthSq() > 0) {
+        moveVec.normalize();
+      }
+
+      const runMultiplier = this.keys.has('shift') || this.mobileRun ? 2.2 : 1.0;
+      const currentSpeed = this.freeCamSpeed * runMultiplier;
+
+      this.camera.position.addScaledVector(moveVec, currentSpeed * dt);
+      this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
+      return;
+    }
+
     const forward = THREE.MathUtils.clamp(
       this.axis(['w', 'arrowup'], ['s', 'arrowdown']) + this.mobileForward,
       -1,
@@ -121,11 +200,20 @@ export class PlayerController {
     const response = direction.x || direction.z ? 12 : 16;
     this.velocity.x = THREE.MathUtils.damp(this.velocity.x, direction.x * targetSpeed, response, dt);
     this.velocity.y = THREE.MathUtils.damp(this.velocity.y, direction.z * targetSpeed, response, dt);
-    const nx = this.camera.position.x + this.velocity.x * dt,
-      nz = this.camera.position.z + this.velocity.y * dt;
+    const cx = this.camera.position.x;
+    const cz = this.camera.position.z;
+    const nx = cx + this.velocity.x * dt;
+    const nz = cz + this.velocity.y * dt;
+
     if (this.canMove(nx, nz)) {
       this.camera.position.x = nx;
       this.camera.position.z = nz;
+    } else if (this.canMove(nx, cz)) {
+      this.camera.position.x = nx;
+      this.velocity.y *= 0.2;
+    } else if (this.canMove(cx, nz)) {
+      this.camera.position.z = nz;
+      this.velocity.x *= 0.2;
     } else {
       this.velocity.multiplyScalar(0.15);
     }
@@ -133,9 +221,19 @@ export class PlayerController {
     this.bobTime += dt * moving * (mod.bob || 1) * 2.6;
     const bob = Math.sin(this.bobTime) * Math.min(0.055, moving * 0.012);
     const shake = mod.shake ? Math.sin(performance.now() * 0.025) * mod.shake * 0.012 : 0;
+    if (this.isAirborne()) {
+      this.jumpHeight += this.jumpVelocity * dt - 9 * dt * dt;
+      this.jumpVelocity -= 18 * dt;
+      if (this.jumpHeight <= 0) {
+        this.jumpHeight = 0;
+        this.jumpVelocity = 0;
+      }
+    }
     const targetY =
       this.baseY + this.getGroundHeight(this.camera.position.x, this.camera.position.z) + bob + shake;
-    this.camera.position.y = THREE.MathUtils.damp(this.camera.position.y, targetY, 20, dt);
+    this.camera.position.y = this.isAirborne()
+      ? targetY + this.jumpHeight
+      : THREE.MathUtils.damp(this.camera.position.y, targetY, 20, dt);
     this.swayTime += dt;
     const sway = mod.sway || 0;
     const swayPitch = Math.sin(this.swayTime * 0.85) * sway * 0.022;
@@ -165,6 +263,16 @@ export class PlayerController {
   }
   /** Zwraca aktualną transformację gracza do synchronizacji sieciowej. */
   getTransform(now = Date.now()): PlayerTransform {
+    if (this.freeCamera) {
+      return {
+        position: [this.camera.position.x, this.camera.position.y - this.baseY, this.camera.position.z],
+        yaw: this.yaw,
+        pitch: this.pitch,
+        locomotion: 'Idle',
+        speed: 0,
+        timestamp: now,
+      };
+    }
     const speed = this.velocity.length();
     let locomotion: LocomotionState = 'Idle';
     if (speed > 4.0) {
@@ -193,6 +301,7 @@ export class PlayerController {
     if (this.disposed) return;
     this.disposed = true;
     this.enabled = false;
+    this.movementLocked = false;
     this.stop();
     this.keys.clear();
     this.events.dispose();

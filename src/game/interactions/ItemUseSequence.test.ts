@@ -32,6 +32,20 @@ function characterFixture() {
 }
 
 describe('ItemUseSequence', () => {
+  it('faces the actual fallback camera and stays grounded even if the FPS camera is airborne', () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.set(0, 4.9, 0);
+    const sequence = new ItemUseSequence(scene, camera, characterFixture(), new Map(), () => false);
+    sequence.start('Grzyb', 0);
+    sequence.update(0.6);
+    const actor = scene.getObjectByName('PlayerUseSequence')!;
+    const direction = new THREE.Vector3(0, 0, 1).applyQuaternion(actor.quaternion);
+    const toCamera = camera.position.clone().sub(actor.position).setY(0).normalize();
+    expect(direction.dot(toCamera)).toBeCloseTo(1);
+    expect(actor.position.y).toBeCloseTo(0);
+    sequence.dispose();
+  });
   it('selects a collision-free side camera when the direct path is blocked', () => {
     const origin = new THREE.Vector3(0, 1.9, 0);
     const camera = chooseUseSequenceCamera(origin, 0, (x, z) => !(Math.abs(x) < 0.15 && z < -0.4));
@@ -108,5 +122,44 @@ describe('ItemUseSequence', () => {
     expect(sequence.active).toBe(false);
     expect(camera.position.distanceTo(original)).toBeLessThan(1e-7);
     expect(scene.getObjectByName('PlayerUseSequence')).toBeUndefined();
+  });
+
+  it('emits contextual sfx sound event at the configured timestamp', () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
+    const sequence = new ItemUseSequence(scene, camera, undefined, new Map(), () => true);
+
+    sequence.start('Piwo', 0);
+    // At t=0.1s (before sfx delay 0.2s)
+    const eventBefore = sequence.update(0.1);
+    expect(eventBefore.sfx).toBeUndefined();
+
+    // At t=0.25s (after sfx delay 0.2s)
+    const eventAt = sequence.update(0.15);
+    expect(eventAt.sfx).toBe('beer_open');
+
+    // Subsequent updates should not repeat the one-shot sfx
+    const eventAfter = sequence.update(0.15);
+    expect(eventAfter.sfx).toBeUndefined();
+    sequence.cancel();
+  });
+
+  it('reuses the pooled character model across multiple starts without re-cloning', () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
+    const character = characterFixture();
+    const sequence = new ItemUseSequence(scene, camera, character, new Map(), () => true);
+
+    expect(sequence.start('Piwo', 0)).toBe(true);
+    const firstVisual = scene.getObjectByName('PlayerUseSequence')?.children[0];
+    expect(firstVisual).toBeDefined();
+    sequence.cancel();
+
+    expect(sequence.start('Joint', 0)).toBe(true);
+    const secondVisual = scene.getObjectByName('PlayerUseSequence')?.children[0];
+    expect(secondVisual).toBe(firstVisual);
+    sequence.cancel();
+
+    sequence.dispose();
   });
 });

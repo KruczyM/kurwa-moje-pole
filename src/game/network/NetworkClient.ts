@@ -1,10 +1,17 @@
 import { io, Socket } from 'socket.io-client';
+import type { EcoState } from '../interactions/ecoChallenge';
+import type { FlankiLobbyState, FlankiNetworkEvent } from './flankiProtocol';
 import {
   type CharacterName,
   type RoomState,
   type NetworkErrorPayload,
   type PlayerTransform,
   type WorldSnapshotPayload,
+  type VoiceSignalPayload,
+  type VoiceRelayPayload,
+  type VoiceMutePayload,
+  type VoicePeerMutePayload,
+  type VoicePeerNotificationPayload,
   validateAndSanitizeNickname,
 } from './networkProtocol';
 
@@ -34,7 +41,10 @@ export function resolveServerUrl(customUrl?: string): string | undefined {
     const param = new URLSearchParams(location.search).get('server');
     if (param && param.trim().length > 0) return param.trim();
 
-    const envUrl = typeof import.meta !== 'undefined' && import.meta.env.VITE_SERVER_URL;
+    const envUrl =
+      typeof import.meta !== 'undefined' && import.meta.env
+        ? (import.meta.env.VITE_SERVER_URL as string | undefined)
+        : undefined;
     if (envUrl && typeof envUrl === 'string' && envUrl.trim().length > 0) {
       return envUrl.trim();
     }
@@ -48,11 +58,37 @@ export function resolveServerUrl(customUrl?: string): string | undefined {
 }
 
 export class NetworkClient {
+  ecoState: EcoState | null = null;
+  private ecoListeners = new Set<(state: EcoState | null) => void>();
+  onEcoState(listener: (state: EcoState | null) => void): () => void {
+    this.ecoListeners.add(listener);
+    listener(this.ecoState);
+    return () => {
+      this.ecoListeners.delete(listener);
+    };
+  }
+  requestEco(operation: string, payload: Record<string, unknown> = {}): Promise<boolean> {
+    if (!this.isOnline() || !this.socket) return Promise.resolve(false);
+    return new Promise((resolve) =>
+      this.socket!.timeout(4000).emit(
+        'eco:request',
+        { operation, ...payload },
+        (error: Error | null, accepted: boolean) => resolve(!error && accepted === true),
+      ),
+    );
+  }
   private socket?: Socket;
   private status: NetworkConnectionStatus = 'disconnected';
   private currentState?: RoomState;
   private latestSnapshot?: WorldSnapshotPayload;
   private myPlayerId?: string;
+  private flankiLobby: FlankiLobbyState | null = null;
+  private flankiSupported = false;
+  supportsFlanki() {
+    return this.flankiSupported;
+  }
+  private flankiLobbyListeners = new Set<(lobby: FlankiLobbyState | null) => void>();
+  private flankiActionListeners = new Set<(event: FlankiNetworkEvent) => void>();
   private sessionToken: string;
   private nickname: string;
   private roomId: string;
@@ -62,6 +98,13 @@ export class NetworkClient {
   private snapshotListeners = new Set<(snapshot: WorldSnapshotPayload) => void>();
   private errorListeners = new Set<(error: NetworkErrorPayload) => void>();
   private statusListeners = new Set<(status: NetworkConnectionStatus) => void>();
+  private voiceSignalListeners = new Set<(payload: VoiceRelayPayload) => void>();
+  private voiceMuteListeners = new Set<(payload: VoicePeerMutePayload) => void>();
+  private voicePeerJoinedListeners = new Set<(payload: VoicePeerNotificationPayload) => void>();
+  private voicePeerLeftListeners = new Set<(payload: VoicePeerNotificationPayload) => void>();
+  private actionTriggerListeners = new Set<
+    (payload: { playerId: string; character: CharacterName; action: string; timestamp: number }) => void
+  >();
 
   constructor(options: NetworkClientOptions = {}) {
     this.serverUrl = options.serverUrl ?? DEFAULT_SERVER_URL;
@@ -171,6 +214,10 @@ export class NetworkClient {
         this.currentState = state;
         this.notifyStateListeners(state);
       });
+      this.socket.on('eco:state', (state: EcoState | null) => {
+        this.ecoState = state;
+        for (const listener of this.ecoListeners) listener(state);
+      });
 
       this.socket.on('world:snapshot', (snapshot: WorldSnapshotPayload) => {
         this.latestSnapshot = snapshot;
@@ -181,9 +228,48 @@ export class NetworkClient {
         this.notifyErrorListeners(err);
       });
 
+      this.socket.on('voice:signal', (payload: VoiceRelayPayload) => {
+        for (const listener of this.voiceSignalListeners) listener(payload);
+      });
+
+      this.socket.on('voice:peer-mute', (payload: VoicePeerMutePayload) => {
+        for (const listener of this.voiceMuteListeners) listener(payload);
+      });
+
+      this.socket.on('voice:peer-joined', (payload: VoicePeerNotificationPayload) => {
+        for (const listener of this.voicePeerJoinedListeners) listener(payload);
+      });
+
+      this.socket.on('voice:peer-left', (payload: VoicePeerNotificationPayload) => {
+        for (const listener of this.voicePeerLeftListeners) listener(payload);
+      });
+
+      this.socket.on(
+        'action:trigger',
+        (payload: { playerId: string; character: CharacterName; action: string; timestamp: number }) => {
+          for (const listener of this.actionTriggerListeners) listener(payload);
+        },
+      );
+
       this.socket.on('disconnect', () => {
+        this.ecoState = null;
+        for (const listener of this.ecoListeners) listener(null);
+        this.flankiSupported = false;
+        this.flankiLobby = null;
+        for (const listener of this.flankiLobbyListeners) listener(null);
         this.setStatus('disconnected');
       });
+      this.socket.on('flanki:lobby', (lobby: FlankiLobbyState | null) => {
+        this.flankiSupported = true;
+        this.flankiLobby = lobby;
+        for (const listener of this.flankiLobbyListeners) listener(lobby);
+      });
+      this.socket.on('flanki:action', (event: FlankiNetworkEvent) => {
+        for (const listener of this.flankiActionListeners) listener(event);
+      });
+      this.socket.on('flanki:rejected', (payload: { message: string }) =>
+        this.notifyErrorListeners({ code: 'UNAUTHORIZED', message: payload.message }),
+      );
 
       this.socket.on('connect_error', () => {
         this.setStatus('error');
@@ -247,8 +333,14 @@ export class NetworkClient {
     });
   }
 
-  disconnect(): void {
+  disconnect(releaseOwnedCharacter = false): void {
     if (this.socket) {
+      if (releaseOwnedCharacter) {
+        const owned = Object.values(this.currentState?.slots ?? {}).find(
+          (slot) => slot.playerId === this.myPlayerId,
+        );
+        if (owned) this.releaseCharacter(owned.character);
+      }
       this.socket.disconnect();
       this.socket = undefined;
     }
@@ -270,6 +362,101 @@ export class NetworkClient {
     this.statusListeners.add(listener);
     listener(this.status);
     return () => this.statusListeners.delete(listener);
+  }
+
+  sendVoiceSignal(targetPeerId: string, signal: unknown): void {
+    if (!this.socket || this.status !== 'connected') return;
+    this.socket.emit('voice:signal', { targetPeerId, signal } as VoiceSignalPayload);
+  }
+
+  sendVoiceMute(isMuted: boolean): void {
+    if (!this.socket || this.status !== 'connected') return;
+    this.socket.emit('voice:mute', { isMuted } as VoiceMutePayload);
+  }
+
+  onVoiceSignal(listener: (payload: VoiceRelayPayload) => void): () => void {
+    this.voiceSignalListeners.add(listener);
+    return () => this.voiceSignalListeners.delete(listener);
+  }
+
+  onVoicePeerMute(listener: (payload: VoicePeerMutePayload) => void): () => void {
+    this.voiceMuteListeners.add(listener);
+    return () => this.voiceMuteListeners.delete(listener);
+  }
+
+  onVoicePeerJoined(listener: (payload: VoicePeerNotificationPayload) => void): () => void {
+    this.voicePeerJoinedListeners.add(listener);
+    return () => this.voicePeerJoinedListeners.delete(listener);
+  }
+
+  onVoicePeerLeft(listener: (payload: VoicePeerNotificationPayload) => void): () => void {
+    this.voicePeerLeftListeners.add(listener);
+    return () => this.voicePeerLeftListeners.delete(listener);
+  }
+
+  sendAction(action: string): void {
+    if (!this.socket || this.status !== 'connected') return;
+    this.socket.emit('action:trigger', { action, timestamp: Date.now() });
+  }
+
+  getFlankiLobby() {
+    return this.flankiLobby;
+  }
+  requestFlankiLobby(
+    operation: 'join' | 'start' | 'leave' | 'runner',
+    selection?: { team: 'A' | 'B'; runnerId: string },
+  ): Promise<boolean> {
+    if (!this.isOnline() || !this.socket) return Promise.resolve(false);
+    if (operation === 'join') {
+      const slot = Object.values(this.currentState?.slots ?? {}).find((s) => s.playerId === this.myPlayerId);
+      if (slot?.status === 'reserving') this.confirmCharacter(slot.character);
+    }
+    return new Promise((resolve) => {
+      this.socket!.timeout(4000).emit(
+        'flanki:lobby_request',
+        { operation, ...selection },
+        (error: Error | null, accepted: boolean) => {
+          if (error)
+            this.notifyErrorListeners({
+              code: 'UNAUTHORIZED',
+              message:
+                'Serwer nie potwierdził operacji Flanek. Zrestartuj npm run dev; obaj gracze muszą korzystać z tego samego aktualnego serwera.',
+            });
+          if (error || !accepted)
+            for (const listener of this.flankiLobbyListeners) listener(this.flankiLobby);
+          resolve(!error && accepted === true);
+        },
+      );
+    });
+  }
+  sendFlankiAction(action: string, payload: Record<string, unknown>) {
+    if (this.isOnline() && this.flankiLobby?.phase === 'playing')
+      this.socket?.emit('flanki:action', { action, payload, sessionId: this.flankiLobby.sessionId });
+  }
+  onFlankiLobby(listener: (lobby: FlankiLobbyState | null) => void): () => void {
+    this.flankiLobbyListeners.add(listener);
+    listener(this.flankiLobby);
+    return () => {
+      this.flankiLobbyListeners.delete(listener);
+    };
+  }
+  onFlankiAction(listener: (event: FlankiNetworkEvent) => void): () => void {
+    this.flankiActionListeners.add(listener);
+    return () => {
+      this.flankiActionListeners.delete(listener);
+    };
+  }
+
+  onActionTrigger(
+    listener: (payload: {
+      playerId: string;
+      character: CharacterName;
+      action: string;
+      timestamp: number;
+    }) => void,
+  ): () => void {
+    this.actionTriggerListeners.add(listener);
+    return () => this.actionTriggerListeners.delete(listener);
   }
 
   private setStatus(status: NetworkConnectionStatus): void {

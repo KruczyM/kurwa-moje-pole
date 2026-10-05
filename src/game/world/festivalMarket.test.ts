@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it, vi } from 'vitest';
 import catalog from '../assets/assetCatalog.json';
+import signs from './festivalSigns.json';
 import { environmentAssets } from '../assets/assetManifest';
 import { disposeObjectTree } from '../lifecycle/disposeThree';
 import { allTentLayout, tentColliderBounds } from './campLayout';
@@ -24,7 +25,8 @@ async function load() {
   const data = readFileSync(
     new URL(`../../../public/game-assets/${catalog.environment.marketStalls}`, import.meta.url),
   );
-  expect(data.length).toBeLessThan(6500000);
+  // Eighteen variants plus embedded CC0 PBR maps and the original facade photograph.
+  expect(data.length).toBeLessThan(9500000);
   const loader = new GLTFLoader();
   loader.register(() => ({ name: 'test-images', loadTexture: () => Promise.resolve(new THREE.Texture()) }));
   return loader.parseAsync(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength), '');
@@ -57,14 +59,16 @@ describe('modular festival market', () => {
         new URL(`../../../public/game-assets/${catalog.environment.marketStalls}`, import.meta.url),
       );
       const json = JSON.parse(data.toString('utf8', 20, 20 + data.readUInt32LE(12)));
-      const exported = json.materials.find((m: { name: string }) => m.name === 'Market_Concrete');
+      const exported = json.materials.find(
+        (m: { name: string }) => m.name === 'Market_Concrete' || m.name === 'Market_Asphalt',
+      );
       const sampler =
         json.samplers[json.textures[exported.pbrMetallicRoughness.baseColorTexture.index].sampler];
       expect(sampler.wrapS ?? 10497).toBe(10497);
       expect(sampler.wrapT ?? 10497).toBe(10497);
       const disposal = vi.spyOn(material, 'dispose');
       const colliders = placeFestivalMarket(parent, marketTemplates(source), terrainHeight, material);
-      expect(colliders).toHaveLength(7);
+      expect(colliders).toHaveLength(MARKET_STALL_LAYOUT.length);
       const lane = parent.getObjectByName('Market_Paved_Lane') as THREE.Mesh;
       expect(lane.material).toBe(material);
       expect(lane.receiveShadow).toBe(true);
@@ -196,7 +200,38 @@ describe('modular festival market', () => {
     }
   });
 
-  it('grounds six instances, keeps service openings clear and leaves the cached library unchanged', async () => {
+  it('maps one full-width SiemaShop banner without mirroring or repeated artwork', async () => {
+    const source = await load();
+    try {
+      const root = marketTemplates(source).get('siemaShop')!.clone(true);
+      expect(root.userData.frontArtwork).toBe('user-photo-UV-visible-crop');
+      root.position.set(0, 0, 0);
+      root.updateMatrixWorld(true);
+      const banner = materialMesh(root, 'SiemaShop_Front_Banner');
+      expect(banner.userData.siemaShopFront).toBe(true);
+      const positions = banner.geometry.attributes.position;
+      const uv = banner.geometry.attributes.uv;
+      expect(banner.geometry.index!.count / 3).toBe(4);
+      expect((banner.material as THREE.MeshStandardMaterial).map).toBeTruthy();
+      const point = new THREE.Vector3();
+      for (let i = 0; i < positions.count; i++) {
+        point.fromBufferAttribute(positions, i).applyMatrix4(banner.matrixWorld);
+        const photo =
+          Math.abs(point.x) < 0.1
+            ? [812, point.y > 6 ? 390 : 783]
+            : point.x < 0
+              ? [179, point.y < 3.3 ? 811 : 789]
+              : [1918, point.y < 3.3 ? 742 : 607];
+        expect(uv.getX(i)).toBeCloseTo(photo[0] / 1920, 5);
+        expect(uv.getY(i)).toBeCloseTo(photo[1] / 1280, 5);
+        expect(point.z).toBeCloseTo(9.025, 4);
+      }
+    } finally {
+      disposeObjectTree(source.scene);
+    }
+  });
+
+  it('grounds seven instances, keeps service openings clear and leaves the cached library unchanged', async () => {
     const source = await load();
     const parent = new THREE.Group();
     try {
@@ -204,10 +239,10 @@ describe('modular festival market', () => {
       const before = [...templates.values()].map((t) => t.matrix.toArray());
       const colliders = placeFestivalMarket(parent, templates, terrainHeight);
       const mask = createMarketGrassMask(new Set(templates.keys()));
-      expect(colliders).toHaveLength(7);
+      expect(colliders).toHaveLength(MARKET_STALL_LAYOUT.length);
       expect(parent.children).toHaveLength(1);
       const stalls = parent.children[0].children;
-      expect(stalls).toHaveLength(7);
+      expect(stalls).toHaveLength(MARKET_STALL_LAYOUT.length);
       parent.updateMatrixWorld(true);
       for (const [index, root] of stalls.entries()) {
         const config = MARKET_STALL_LAYOUT[index];
@@ -224,6 +259,9 @@ describe('modular festival market', () => {
           expect(root.userData.marketArchitecture).toBe('segmentHall');
           expect(root.userData.vendor.presence).toBe('user-photo-year-not-independently-verified');
           expect(root.userData.vendorSource).toBe(root.userData.vendor.source);
+        } else if (signs.some((sign) => sign.id === config.variant)) {
+          expect(root.userData.vendor.label).toBe(signs.find((sign) => sign.id === config.variant)!.label);
+          expect(root.userData.signArtwork).toBe('photo-led-typographic-reconstruction-not-extracted-logo');
         } else expect(root.userData.vendor).toBeUndefined();
         const floor = new THREE.Box3().setFromObject(materialMesh(root, 'Market_Floor'));
         for (let x = floor.min.x; x <= floor.max.x; x += 0.25) {
@@ -234,11 +272,11 @@ describe('modular festival market', () => {
         }
         const ray = new THREE.Raycaster(
           new THREE.Vector3(
-            config.x + (config.variant === 'siemaShop' ? 10 : 3.2),
+            config.x - (config.variant === 'siemaShop' ? 4.5 : 0),
             root.position.y + 1.6,
-            config.z + (config.variant === 'siemaShop' ? 4.5 : 0),
+            config.z + (config.variant === 'siemaShop' ? 10 : 3.2),
           ),
-          new THREE.Vector3(-1, 0, 0),
+          new THREE.Vector3(0, 0, -1),
           0,
           1.5,
         );
@@ -274,13 +312,13 @@ describe('modular festival market', () => {
         if (other.id !== stall.id) expect(overlaps(b, marketColliderBounds(other))).toBe(false);
       for (const tent of allTentLayout) expect(overlaps(b, tentColliderBounds(tent)), tent.id).toBe(false);
       for (const landmark of fixed) expect(overlaps(b, landmark)).toBe(false);
-      expect(b.maxX + 0.45).toBeLessThan(MARKET_LANE.minX);
+      expect(b.maxZ + 0.45).toBeLessThan(MARKET_LANE.minZ);
     }
     expect(MARKET_LANE.maxX - MARKET_LANE.minX).toBeGreaterThan(4);
     const mask = createMarketGrassMask(new Set(MARKET_VARIANTS));
-    expect(mask(-32, 0)).toBe(0);
-    expect(mask(MARKET_LANE.maxX + 0.125, 0)).toBeCloseTo(0.5);
-    expect(mask(-28, 0)).toBe(1);
+    expect(mask(0, -35)).toBe(0);
+    expect(mask(0, MARKET_LANE.maxZ + 0.125)).toBeCloseTo(0.5);
+    expect(mask(0, MARKET_LANE.maxZ + 1)).toBe(1);
   });
 
   it('handles missing or partial libraries without invisible colliders or grass holes at absent stalls', async () => {

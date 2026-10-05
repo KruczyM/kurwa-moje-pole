@@ -61,9 +61,12 @@ export class PlayerNametag {
   readonly element?: HTMLDivElement;
   private nickname: string;
   private characterName: string;
+  private isSpeaking = false;
   private readonly maxDistance: number;
   private readonly fadeStartDistance: number;
   private readonly heightOffset: number;
+  private textElement?: HTMLSpanElement;
+  private speakingElement?: HTMLSpanElement;
 
   constructor(options: PlayerNametagOptions, container?: HTMLElement) {
     this.nickname = options.nickname;
@@ -93,13 +96,70 @@ export class PlayerNametag {
   setNickname(nickname: string): void {
     if (this.nickname === nickname) return;
     this.nickname = nickname;
-    this.renderContent();
+    if (this.textElement) {
+      this.textElement.textContent = nickname;
+      if (this.element) {
+        this.element.title = `${this.nickname} (${this.characterName})`;
+      }
+    } else {
+      this.renderContent();
+    }
+  }
+
+  getIsSpeaking(): boolean {
+    return this.isSpeaking;
+  }
+
+  isSpeakingPlayer(): boolean {
+    return this.isSpeaking;
+  }
+
+  setSpeaking(isSpeaking: boolean): void {
+    const next = Boolean(isSpeaking);
+    if (this.isSpeaking === next) return;
+    this.isSpeaking = next;
+    if (this.speakingElement) {
+      this.speakingElement.style.display = next ? 'inline-block' : 'none';
+    }
+    this.applySpeakingStyles();
+  }
+
+  private applySpeakingStyles(): void {
+    if (!this.element) return;
+    if (this.isSpeaking) {
+      this.element.classList.add('speaking');
+      this.element.style.borderColor = '#9dff4e';
+      this.element.style.boxShadow = '0 0 8px rgba(157, 255, 78, 0.6)';
+    } else {
+      this.element.classList.remove('speaking');
+      this.element.style.borderColor = '';
+      this.element.style.boxShadow = '';
+    }
   }
 
   private renderContent(): void {
     if (!this.element) return;
-    this.element.textContent = this.nickname;
+    this.element.textContent = '';
+
+    const textSpan = document.createElement('span');
+    textSpan.className = 'nametag-nickname';
+    textSpan.textContent = this.nickname;
+    this.textElement = textSpan;
+
+    const voiceIcon = document.createElement('span');
+    voiceIcon.className = 'nametag-voice-indicator';
+    voiceIcon.textContent = ' 🔊';
+    voiceIcon.style.display = this.isSpeaking ? 'inline-block' : 'none';
+    voiceIcon.style.marginLeft = '4px';
+    voiceIcon.style.color = '#9dff4e';
+    voiceIcon.style.fontSize = '10px';
+    voiceIcon.style.verticalAlign = 'middle';
+    this.speakingElement = voiceIcon;
+
+    this.element.appendChild(textSpan);
+    this.element.appendChild(voiceIcon);
     this.element.title = `${this.nickname} (${this.characterName})`;
+    this.applySpeakingStyles();
   }
 
   update(worldPosition: THREE.Vector3, camera: THREE.Camera): void {

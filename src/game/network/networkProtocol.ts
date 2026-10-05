@@ -1,3 +1,5 @@
+import { WORLD_LIMIT } from '../world/festivalLayout.js';
+
 export const PROTOCOL_VERSION = '1.0.0';
 
 export const CANONICAL_CHARACTERS = [
@@ -9,7 +11,17 @@ export const CANONICAL_CHARACTERS = [
   'Pień',
   'Pierścień',
   'Zawór',
+  'Ambona',
+  'Chlebak',
+  'Dziąsło',
+  'Hemoroid',
+  'Jęczmień',
+  'Kobra',
+  'Korba',
+  'Szerszeń',
 ] as const;
+
+export const MAX_PLAYERS_PER_ROOM = CANONICAL_CHARACTERS.length; // 16
 
 export type CharacterName = (typeof CANONICAL_CHARACTERS)[number];
 
@@ -54,6 +66,29 @@ export interface ConfirmCharacterPayload {
 export interface ReleaseCharacterPayload {
   character: CharacterName;
   sessionToken?: string;
+}
+
+export interface VoiceSignalPayload {
+  targetPeerId: string;
+  signal: unknown;
+}
+
+export interface VoiceRelayPayload {
+  senderPeerId: string;
+  signal: unknown;
+}
+
+export interface VoiceMutePayload {
+  isMuted: boolean;
+}
+
+export interface VoicePeerMutePayload {
+  peerId: string;
+  isMuted: boolean;
+}
+
+export interface VoicePeerNotificationPayload {
+  peerId: string;
 }
 
 export interface NetworkErrorPayload {
@@ -143,7 +178,7 @@ export interface WorldSnapshotPayload {
   players: PlayerSnapshot[];
 }
 
-export const MAP_POSITION_LIMIT = 60.0;
+export const MAP_POSITION_LIMIT = WORLD_LIMIT;
 export const MAX_ALLOWED_PLAYER_SPEED = 25.0; // m/s (sanity check limit)
 
 /**

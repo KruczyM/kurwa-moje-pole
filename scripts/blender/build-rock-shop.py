@@ -71,7 +71,43 @@ for side in (-1,1):
         bar('Side_X_Brace',(side*11.97,y,.15),(side*11.97,y+3,3.5),.024)
         bar('Side_X_Brace',(side*11.97,y,3.5),(side*11.97,y+3,.15),.024)
 T.mesh('Rear_Wall',[(-12,9,.08),(12,9,.08),(12,9,3.6),(0,9,7),(-12,9,3.6)],[(0,1,2,3,4)],white)
-T.mesh('Front_Fascia',[(-12,-9.01,3.6),(12,-9.01,3.6),(0,-9.01,7)],[(0,1,2)],blue)
+# Facade material with high-res Lidl Rock Shop graphic
+facade_tex_path = ROOT / 'public/game-assets/world/festival/textures/lidl_rock_shop_facade.png'
+facade_mat = bpy.data.materials.new('RockShop_Facade_PBR')
+facade_mat.use_nodes = True
+bsdf_f = facade_mat.node_tree.nodes.get('Principled BSDF')
+bsdf_f.inputs['Roughness'].default_value = 0.45
+bsdf_f.inputs['Metallic'].default_value = 0.05
+if facade_tex_path.exists():
+    tex_node = facade_mat.node_tree.nodes.new(type='ShaderNodeTexImage')
+    tex_node.image = bpy.data.images.load(str(facade_tex_path))
+    facade_mat.node_tree.links.new(tex_node.outputs['Color'], bsdf_f.inputs['Base Color'])
+
+# Warm interior shop lighting material
+light_mat = bpy.data.materials.new('RockShop_Interior_Lights')
+light_mat.use_nodes = True
+bsdf_l = light_mat.node_tree.nodes.get('Principled BSDF')
+bsdf_l.inputs['Emission Color'].default_value = (1.0, 0.95, 0.85, 1.0)
+bsdf_l.inputs['Emission Strength'].default_value = 4.0
+
+def make_front_fascia():
+    points = [(-12.0, -9.01, 3.6), (12.0, -9.01, 3.6), (0.0, -9.01, 7.0)]
+    uvs = [(0.0, 0.0), (1.0, 0.0), (0.5, 1.0)]
+    faces = [(0, 1, 2)]
+    mesh = bpy.data.meshes.new('Front_Fascia_Mesh')
+    mesh.from_pydata(points, [], faces)
+    mesh.update()
+    uv_layer = mesh.uv_layers.new(name='UVMap')
+    for poly in mesh.polygons:
+        for loop_idx in poly.loop_indices:
+            vert_idx = mesh.loops[loop_idx].vertex_index
+            uv_layer.data[loop_idx].uv = uvs[vert_idx]
+    obj = bpy.data.objects.new('Front_Fascia', mesh)
+    bpy.context.collection.objects.link(obj)
+    obj.data.materials.append(facade_mat)
+    return obj
+
+make_front_fascia()
 box('RockShop_Floor',(0,0,.045),(24,18,.08),floor)
 
 # Glass frontage, two unobstructed door bays and rolled canvas above them.
@@ -90,57 +126,24 @@ for i in range(8):
 bar('Front_Mullion',(12,-9.04,.1),(12,-9.04,3.58),.045)
 bar('Front_Head',(-12,-9.05,3.52),(12,-9.05,3.52),.04)
 
-# Original vector/mesh lettering and emblem, not photographs copied into textures.
-font_path=Path('C:/Windows/Fonts/arialbd.ttf')
-font=bpy.data.fonts.load(str(font_path)) if font_path.exists() else None
-def label(text,x,z,size,mat):
-    curve=bpy.data.curves.new('Lettering_'+text,'FONT')
-    curve.body=text
-    curve.size=size
-    curve.extrude=.002
-    curve.resolution_u=4
-    if font:
-        curve.font=font
-    obj=bpy.data.objects.new('Lettering_'+text,curve)
-    bpy.context.collection.objects.link(obj)
-    obj.location=(x,-9.15,z)
-    obj.rotation_euler.x=math.pi/2
-    curve.materials.append(mat)
-    bpy.ops.object.select_all(action='DESELECT')
-    obj.select_set(True);bpy.context.view_layer.objects.active=obj
-    bpy.ops.object.convert(target='MESH')
-    U.cloth_detail_uv(bpy.context.object,1)
+# Interior ceiling lights
+for ly in (-6, -3, 0, 3, 6):
+    box(f'Ceiling_Light_{ly}', (0, ly, 5.2), (6.0, 0.25, 0.08), light_mat)
 
-box('Logo_Backplate',(-4.9,-9.065,4.7),(1.92,.035,1.92),logo_blue)
-def disc(name,x,y,z,r,mat):
-    vertices=[(x,y,z)]+[(x+r*math.cos(i*math.tau/64),y,z+r*math.sin(i*math.tau/64)) for i in range(64)]
-    return T.mesh(name,vertices,[(0,1+i,1+(i+1)%64) for i in range(64)],mat)
-disc('Logo_Red_Rim',-4.9,-9.09,4.7,.88,red)
-disc('Logo_Yellow',-4.9,-9.10,4.7,.82,yellow)
-label('LIDL',-5.61,4.48,.58,logo_blue)
-label('Rock',-2.9,5.05,1.06,ink)
-label('Shop',-2.9,3.98,1.06,ink)
-for x,z,r in ((3.4,4.9,.43),(4.4,5.25,.49),(5.35,4.75,.4)):
-    T.tube('Sunflower_Stem',[(x,-9.07,z),(x+.15,-9.07,3.88)],.025,green)
-    for i in range(14):
-        a=i*math.tau/14
-        cx,cz=x+math.cos(a)*r*.9,z+math.sin(a)*r*.9
-        petal=[]
-        for j in range(10):
-            t=j*math.tau/10
-            long=r*.55*math.cos(t);short=r*.18*math.sin(t)
-            petal.append((cx+long*math.cos(a)-short*math.sin(a),-9.12,cz+long*math.sin(a)+short*math.cos(a)))
-        T.mesh('Sunflower_Petal',petal,[tuple(range(10))],yellow)
-    disc('Sunflower_Centre',x,-9.135,z,r*.48,seeds)
-
-# Sparse interior silhouettes: no gameplay shop/inventory interaction is implied.
-for x in (-8,-2,4,9):
-    for y in (-3,2,6):
-        box('Shelf_Base',(x,y,.15),(1.4,2,.2),steel)
-        for z in (.5,1.0,1.5):
-            box('Shelf',(x,y,z),(1.4,2,.035),steel)
-        for dx in (-.65,.65):
-            bar('Shelf_Upright',(x+dx,y,.2),(x+dx,y,1.65),.022)
+# Interior merchandise shelving stocked with colorful festival products
+merch_mats = [red, yellow, logo_blue, ink]
+for s_idx, (x, y) in enumerate([(-8, -3), (-8, 2), (-8, 6),
+                                (-2, -3), (-2, 2), (-2, 6),
+                                (4, -3), (4, 2), (4, 6),
+                                (9, -3), (9, 2), (9, 6)]):
+    box(f'Shelf_Base_{s_idx}', (x, y, 0.15), (1.4, 2.0, 0.2), steel)
+    for z_idx, z in enumerate((0.5, 1.0, 1.5)):
+        box(f'Shelf_{s_idx}_{z_idx}', (x, y, z), (1.4, 2.0, 0.035), steel)
+        for row_i, row in enumerate((-0.6, 0.0, 0.6)):
+            m_mat = merch_mats[(s_idx + z_idx + row_i) % len(merch_mats)]
+            box(f'Merch_{s_idx}_{z_idx}_{row_i}', (x, y + row, z + 0.12), (1.1, 0.45, 0.18), m_mat)
+    for dx in (-0.65, 0.65):
+        bar(f'Shelf_Upright_{s_idx}_{dx}', (x + dx, y, 0.2), (x + dx, y, 1.65), 0.022)
 T.batch_by_material()
 root=bpy.data.objects.new('Lidl_Rock_Shop',None)
 bpy.context.collection.objects.link(root)

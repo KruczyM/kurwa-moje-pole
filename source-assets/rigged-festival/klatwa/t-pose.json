@@ -1,0 +1,15 @@
+{
+  "input": "E:\\kodowanie\\gra\\Hunyuan3D-2GP\\output\\characters_mv\\klatwa\\textured.glb",
+  "output": "C:\\Users\\krucz\\.gemini\\antigravity\\brain\\d81ba138-3200-4466-b868-2f212dff67d0\\klatwa_test_rig\\t-pose.glb",
+  "bones": 22,
+  "clips": [
+    "Idle",
+    "Run",
+    "Walk"
+  ],
+  "firstViewExtracted": false,
+  "quality": "automatic-draft-needs-visual-review",
+  "vertices": 25600,
+  "fallbackVertices": 25600,
+  "heatWarning": "Bone heat left unweighted vertices; geometric fallback used"
+}

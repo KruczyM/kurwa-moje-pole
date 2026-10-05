@@ -47,6 +47,11 @@ export class Room {
     );
   }
 
+  get isFull(): boolean {
+    const nonFreeCount = Object.values(this.slots).filter((slot) => slot.status !== 'free').length;
+    return nonFreeCount >= CANONICAL_CHARACTERS.length;
+  }
+
   getPublicState(): RoomState {
     const publicSlots = {} as Record<CharacterName, CharacterSlot>;
     let count = 0;
@@ -201,6 +206,7 @@ export class Room {
     if (slot.status === 'occupied') {
       // Grace period na ponowne połączenie:
       slot.playerId = undefined;
+      this.playerTransforms.delete(charName);
       this.clearDisconnectTimer(charName);
 
       const timer = setTimeout(() => {

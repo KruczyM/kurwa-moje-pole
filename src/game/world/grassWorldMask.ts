@@ -1,6 +1,7 @@
 import * as THREE from 'three';
+import { WORLD_LIMIT } from './festivalLayout';
 
-export const WORLD_GRASS_MASK_EXTENT = 58.8;
+export const WORLD_GRASS_MASK_EXTENT = WORLD_LIMIT;
 export const WORLD_GRASS_MASK_SIZE = 512;
 
 /** World-space mask shared by moving near grass and the static distant layer. */

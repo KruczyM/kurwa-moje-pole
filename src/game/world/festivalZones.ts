@@ -7,36 +7,18 @@ export type FestivalZoneId = 'pomorze' | 'redBull' | 'iqos';
 export const FESTIVAL_ZONE_IDS: readonly FestivalZoneId[] = ['pomorze', 'redBull', 'iqos'];
 /** Asset-review sites, not georeferenced festival positions. Native dimensions in metres. */
 export const FESTIVAL_ZONE_SITES = [
-  { id: 'pomorze', instanceId: 'pomorze', x: 0, z: 43, rotationY: Math.PI, halfWidth: 8.5, halfDepth: 3.2 },
+  { id: 'pomorze', instanceId: 'pomorze', x: -122, z: -44, rotationY: 0, halfWidth: 8.5, halfDepth: 3.2 },
   {
     id: 'redBull',
     instanceId: 'redBull_1',
-    x: -22,
-    z: 0,
-    rotationY: -Math.PI / 2,
-    halfWidth: 4.9,
-    halfDepth: 5.65,
-  },
-  { id: 'iqos', instanceId: 'iqos', x: 23, z: 13, rotationY: Math.PI, halfWidth: 4.5, halfDepth: 2.85 },
-  { id: 'redBull', instanceId: 'redBull_2', x: 0, z: -21, rotationY: 0, halfWidth: 5.65, halfDepth: 4.9 },
-  {
-    id: 'redBull',
-    instanceId: 'redBull_3',
-    x: 0,
-    z: 33,
-    rotationY: Math.PI,
+    x: -140 + 280 / 3,
+    z: -46,
+    rotationY: 0,
     halfWidth: 5.65,
     halfDepth: 4.9,
   },
-  {
-    id: 'redBull',
-    instanceId: 'redBull_4',
-    x: 45,
-    z: 13,
-    rotationY: -Math.PI / 2,
-    halfWidth: 4.9,
-    halfDepth: 5.65,
-  },
+  { id: 'iqos', instanceId: 'iqos', x: 94, z: -44, rotationY: 0, halfWidth: 4.5, halfDepth: 2.85 },
+  { id: 'redBull', instanceId: 'redBull_2', x: 133, z: -46, rotationY: 0, halfWidth: 5.65, halfDepth: 4.9 },
 ] as const;
 
 export function zoneBounds(site: (typeof FESTIVAL_ZONE_SITES)[number]) {

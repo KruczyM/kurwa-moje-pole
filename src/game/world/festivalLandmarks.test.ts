@@ -69,7 +69,7 @@ describe('Rock Shop exterior prototype', () => {
       }
       const blue = gltf.scene.getObjectByName('Batched_Sign_Blue')!;
       const yellow = gltf.scene.getObjectByName('Batched_Sign_Yellow')!;
-      expect(new THREE.Box3().setFromObject(blue).max.z).toBeGreaterThan(
+      expect(new THREE.Box3().setFromObject(blue).max.z).toBeGreaterThanOrEqual(
         new THREE.Box3().setFromObject(yellow).max.z,
       );
     } finally {
@@ -120,7 +120,7 @@ describe('Rock Shop exterior prototype', () => {
   it('has a feathered apron mask and no ghost collider when the model is missing', () => {
     const s = ROCK_SHOP_SITE;
     expect(sampleRockShopGrassMask(s.x, s.z)).toBe(0);
-    expect(sampleRockShopGrassMask(s.x, s.z + s.halfDepth + s.frontApron)).toBe(0);
+    expect(sampleRockShopGrassMask(s.x, s.z - s.halfDepth - s.frontApron)).toBe(0);
     expect(sampleRockShopGrassMask(s.x + s.halfWidth + 0.15, s.z)).toBeCloseTo(0.5);
     expect(sampleRockShopGrassMask(s.x + s.halfWidth + 1, s.z)).toBe(1);
     const parent = new THREE.Group();

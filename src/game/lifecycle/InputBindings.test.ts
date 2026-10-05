@@ -18,6 +18,10 @@ describe('InputBindings', () => {
     expect(resolveGameInput('paused', 'Escape')).toBe('escape');
     expect(resolveGameInput('playing', 'Tab')).toBe('toggle-inventory');
     expect(resolveGameInput('inventory', 'Tab')).toBe('toggle-inventory');
+    expect(resolveGameInput('playing', 'i')).toBe('toggle-inventory');
+    expect(resolveGameInput('inventory', 'I')).toBe('toggle-inventory');
+    expect(resolveGameInput('playing', 'b')).toBe('toggle-inventory');
+    expect(resolveGameInput('inventory', 'B')).toBe('toggle-inventory');
     expect(resolveGameInput('playing', 'e')).toBe('primary-action');
     expect(resolveGameInput('inspecting', 'E')).toBe('primary-action');
     expect(resolveGameInput('seated', 'E')).toBe('primary-action');

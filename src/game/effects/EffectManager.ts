@@ -8,7 +8,8 @@ import { EffectTimeline } from './EffectTimeline';
 import { DEFAULT_GRASS_PRESET, type GrassQualityPreset } from '../world/grassQuality';
 import type { MatrixPhaseMode } from './MatrixPhaseController';
 import type { MatrixQualityPreset } from './MatrixRainOverlay';
-export type EffectId = 'Piwo' | 'Papieros' | 'Joint' | 'Kreska' | 'Grzyb' | 'MDMA' | 'LSD';
+export type EffectId =
+  'Piwo' | 'Papieros' | 'Joint' | 'Kreska' | 'Grzyb' | 'MDMA' | 'LSD' | 'Woda' | 'Okulary';
 export type EffectPhase = 'inactive' | 'fadeIn' | 'active' | 'fadeOut';
 export type VisualSettings = {
   intensity: number;
@@ -21,6 +22,7 @@ export type VisualSettings = {
   matrixMode: MatrixPhaseMode;
   matrixQuality: MatrixQualityPreset;
   grassQuality: GrassQualityPreset;
+  preloadCrowd: boolean;
 };
 export const defaultVisualSettings: VisualSettings = {
   intensity: 1,
@@ -33,6 +35,7 @@ export const defaultVisualSettings: VisualSettings = {
   matrixMode: 'auto',
   matrixQuality: 'medium',
   grassQuality: DEFAULT_GRASS_PRESET,
+  preloadCrowd: true,
 };
 export type EffectConfig = {
   fadeIn: number;
@@ -241,6 +244,54 @@ export const effectConfigs: Record<EffectId, EffectConfig> = {
     audioVolume: 0.9,
     visualLanguage: 'prismatic',
   },
+  Woda: {
+    fadeIn: 0.2,
+    active: 1,
+    fadeOut: 0.2,
+    speed: 1,
+    fov: 65,
+    bloom: 0,
+    saturation: 1,
+    warp: 0,
+    afterimage: 0,
+    sway: 0,
+    shake: 0,
+    bob: 1,
+    hue: 0,
+    chroma: 0,
+    contrast: 1,
+    brightness: 0,
+    vignette: 0,
+    blur: 0,
+    pulse: 0,
+    audioRate: 1,
+    audioVolume: 1,
+    visualLanguage: 'subtle',
+  },
+  Okulary: {
+    fadeIn: 0.2,
+    active: 60,
+    fadeOut: 0.5,
+    speed: 1,
+    fov: 65,
+    bloom: 0,
+    saturation: 0.95,
+    warp: 0,
+    afterimage: 0,
+    sway: 0,
+    shake: 0,
+    bob: 1,
+    hue: 0,
+    chroma: 0,
+    contrast: 1.05,
+    brightness: -0.12,
+    vignette: 0.15,
+    blur: 0,
+    pulse: 0,
+    audioRate: 1,
+    audioVolume: 1,
+    visualLanguage: 'subtle',
+  },
 };
 
 export type AudioEffectState = { volume: number; playbackRate: number };
@@ -361,12 +412,13 @@ export class EffectManager {
   private timeline = new EffectTimeline();
   private snapshot?: EffectSnapshot;
   private disposed = false;
+  private sunglassesRemaining = 0;
   settings: VisualSettings = { ...defaultVisualSettings };
   constructor(
-    renderer: THREE.WebGLRenderer,
-    scene: THREE.Scene,
-    private camera: THREE.PerspectiveCamera,
-    private audio?: EffectAudioTarget,
+    private readonly renderer: THREE.WebGLRenderer,
+    private readonly scene: THREE.Scene,
+    private readonly camera: THREE.PerspectiveCamera,
+    private readonly audio?: EffectAudioTarget,
   ) {
     this.composer = new EffectComposer(renderer);
     this.composer.addPass(new RenderPass(scene, camera));
@@ -382,9 +434,51 @@ export class EffectManager {
     this.composer.addPass(this.shader);
   }
 
-  /** Uruchamia wybrany efekt i zaczyna jego łagodne pojawianie się. */
+  /** Wykonuje próbny przebieg kompozytora efektów, aby skompilować shadery post-processingu przed startem gry. */
+  warmUp() {
+    try {
+      this.composer.render(0.001);
+    } catch {
+      // Bezpieczny fallback dla środowisk bez pełnego WebGL (np. jsdom/testy)
+    }
+  }
+
+  /** Informuje, czy filtr okularów przeciwsłonecznych jest aktywny. */
+  get sunglassesActive(): boolean {
+    return this.sunglassesRemaining > 0;
+  }
+
+  /** Zwraca pozostały czas działania okularów przeciwsłonecznych w sekundach. */
+  get sunglassesTimeRemaining(): number {
+    return Math.max(0, this.sunglassesRemaining);
+  }
+
+  /** Włącza okulary przeciwsłoneczne redukując bloom i ekspozycję na podany czas (domyślnie 60s). */
+  applySunglasses(durationSeconds = 60) {
+    this.sunglassesRemaining = Math.max(this.sunglassesRemaining, durationSeconds);
+  }
+
+  /** Zdejmuje okulary przeciwsłoneczne i przywraca standardową ekspozycję. */
+  removeSunglasses() {
+    this.sunglassesRemaining = 0;
+  }
+
+  /** Skraca czas trwania aktywnego tripu/efektu o wskazany ułamek (domyślnie 40%). */
+  shortenActiveEffect(fraction = 0.4): boolean {
+    return this.timeline.shorten(fraction);
+  }
+
+  /** Uruchamia wybrany efekt i zaczyna jego łagodne pojawianie się lub aplikuje przedmiot użytkowy. */
   use(id: EffectId) {
     if (this.disposed) return;
+    if (id === 'Woda') {
+      this.shortenActiveEffect(0.4);
+      return;
+    }
+    if (id === 'Okulary') {
+      this.applySunglasses(60);
+      return;
+    }
     if (!this.timeline.active) this.snapshot = this.captureSnapshot();
     if (this.timeline.active && this.timeline.active !== id) this.afterimage.uniforms.damp.value = 0;
     this.timeline.use(id, effectConfigs[id]);
@@ -403,6 +497,10 @@ export class EffectManager {
   /** Przelicza fazę efektu, shader, post-processing oraz pole widzenia kamery. */
   update(dt: number) {
     if (this.disposed) return;
+    const delta = Math.max(0, dt);
+    if (this.sunglassesRemaining > 0) {
+      this.sunglassesRemaining = Math.max(0, this.sunglassesRemaining - delta);
+    }
     const beforeUpdate = this.timeline.active;
     const completed = this.timeline.update(dt, beforeUpdate ? effectConfigs[beforeUpdate] : null);
     if (completed) {
@@ -415,9 +513,18 @@ export class EffectManager {
       allowFlashes = !this.settings.disableFlashes && allowMotion,
       allowAberration = !this.settings.disableAberration && allowMotion,
       pulse = c && allowFlashes ? 1 + Math.sin(this.shader.uniforms.time.value * c.pulse) * 0.08 * level : 1;
-    if (!c || !this.snapshot) return;
+    if (!c || !this.snapshot) {
+      if (this.sunglassesActive) {
+        this.bloom.strength = 0;
+        this.shader.uniforms.brightness.value = -0.12;
+        this.shader.uniforms.time.value += delta;
+      }
+      return;
+    }
+    const bloomScale = this.sunglassesActive ? 0.5 : 1.0;
     this.bloom.enabled = !this.settings.disableBloom && (this.snapshot.bloom.enabled || c.bloom > 0);
-    this.bloom.strength = THREE.MathUtils.lerp(this.snapshot.bloom.strength, c.bloom, level) * pulse;
+    this.bloom.strength =
+      THREE.MathUtils.lerp(this.snapshot.bloom.strength, c.bloom, level) * pulse * bloomScale;
     this.afterimage.enabled =
       allowMotion && (this.snapshot.afterimage.enabled || (c.afterimage > 0 && level > 0.02));
     this.afterimage.uniforms.damp.value = THREE.MathUtils.lerp(
@@ -432,7 +539,8 @@ export class EffectManager {
     u.hue.value = THREE.MathUtils.lerp(base.hue, c.hue, level);
     u.chroma.value = allowAberration ? THREE.MathUtils.lerp(base.chroma, c.chroma, level) : base.chroma;
     u.contrast.value = THREE.MathUtils.lerp(base.contrast, c.contrast, level);
-    u.brightness.value = THREE.MathUtils.lerp(base.brightness, c.brightness, level);
+    const baseBrightness = THREE.MathUtils.lerp(base.brightness, c.brightness, level);
+    u.brightness.value = this.sunglassesActive ? baseBrightness * 0.5 - 0.08 : baseBrightness;
     u.vignette.value = THREE.MathUtils.lerp(base.vignette, c.vignette, level);
     u.blur.value = THREE.MathUtils.lerp(base.blur, c.blur, level);
     u.melt.value = THREE.MathUtils.lerp(base.melt, allowMotion ? c.melt || 0 : 0, level);
@@ -539,9 +647,22 @@ export class EffectManager {
     };
   }
 
-  /** Renderuje scenę przez łańcuch efektów post-processingu. */
+  /** Zwraca true, jeśli aktywny jest postprocessing wymagający EffectComposera. */
+  get isPostProcessingActive(): boolean {
+    if (this.sunglassesActive) return true;
+    if (this.active && this.phase !== 'inactive') return true;
+    if (this.bloom.enabled && this.bloom.strength > 0.01) return true;
+    if (this.afterimage.enabled && (this.afterimage.uniforms.damp?.value ?? 0) > 0) return true;
+    return false;
+  }
+
+  /** Renderuje scenę bezpośrednio lub przez EffectComposer, gdy aktywny jest efekt. */
   render() {
-    this.composer.render();
+    if (this.isPostProcessingActive) {
+      this.composer.render();
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
   }
 
   /** Dopasowuje bufory post-processingu do nowego rozmiaru widoku. */

@@ -1,5 +1,6 @@
 import { createFestivalCamp, type CampPalette } from './festivalCamping';
 import { MARKET_LANE, MARKET_STALL_LAYOUT, marketColliderBounds } from './festivalMarket';
+import { SOUTH_CONCRETE_LANE } from './festivalLayout';
 
 export type TentModelId =
   | 'main'
@@ -314,8 +315,8 @@ export const prototypeTentLayout: readonly TentConfig[] = [
     id: 'T16',
     label: 'Kopułowy namiot trekkingowy',
     model: 'trekkingDome',
-    position: [-11, 0, 24],
-    rotationY: Math.PI,
+    position: [-114, 0, -136],
+    rotationY: 0,
     physicalSize: [3.4, 1.42, 3.5],
     fit: 'uniform-height',
     collider: { type: 'box', size: [2.3, 2.8] },
@@ -324,8 +325,8 @@ export const prototypeTentLayout: readonly TentConfig[] = [
     id: 'T17',
     label: 'Wysoki przedsionek kempingowy',
     model: 'baseShelter',
-    position: [0, 0, 24],
-    rotationY: Math.PI,
+    position: [-107, 0, -136],
+    rotationY: 0,
     physicalSize: [4.1, 2.389, 4.1],
     fit: 'uniform-height',
     // 15 mm clearance for the local terrain slope beneath the wide groundsheet.
@@ -336,8 +337,8 @@ export const prototypeTentLayout: readonly TentConfig[] = [
     id: 'T18',
     label: 'Namiot kopułowy z przedsionkiem',
     model: 'domeVestibule',
-    position: [11, 0, 24],
-    rotationY: Math.PI,
+    position: [-100, 0, -136],
+    rotationY: 0,
     physicalSize: [3.8, 1.72, 3.8],
     fit: 'uniform-height',
     collider: { type: 'box', size: [2.55, 3.7] },
@@ -346,8 +347,8 @@ export const prototypeTentLayout: readonly TentConfig[] = [
     id: 'T19',
     label: 'Rodzinny namiot tunelowy',
     model: 'familyTunnel',
-    position: [22, 0, 24],
-    rotationY: Math.PI,
+    position: [-93, 0, -136],
+    rotationY: 0,
     physicalSize: [5.3, 2.36, 5.2],
     fit: 'uniform-height',
     groundOffset: 0.04,
@@ -358,6 +359,7 @@ export const prototypeTentLayout: readonly TentConfig[] = [
 export const festivalTentLayout = createFestivalCamp(prototypeTentLayout, [
   ...[...tentLayout, ...prototypeTentLayout].map(tentColliderBounds),
   MARKET_LANE,
+  SOUTH_CONCRETE_LANE,
   ...MARKET_STALL_LAYOUT.map(marketColliderBounds),
 ]);
 export const allTentLayout: readonly TentConfig[] = [
@@ -412,20 +414,8 @@ export function sampleTentGrassMask(x: number, z: number): number {
  * - 1.0: gęsta trawa na kwadratowych/prostokątnych połaciach kempingowych (w tym pojedyncza duża parcela obejmująca cały obóz).
  * - 0.0: w pełni wydeptana droga pożarowa / szlak komunikacyjny z widoczną teksturą gleby.
  */
-export function sampleCampGrassCoverage(x: number, z: number): number {
-  const period = 35.0;
-  const halfParcel = 15.5;
-
-  const modX = Math.abs(((((x + 35000.0 + 17.5) % period) + period) % period) - 17.5);
-  const modZ = Math.abs(((((z + 35000.0 + 17.5) % period) + period) % period) - 17.5);
-
-  if (modX > halfParcel || modZ > halfParcel) {
-    return 0.0;
-  }
-
-  const distToEdgeX = halfParcel - modX;
-  const distToEdgeZ = halfParcel - modZ;
-  const distToEdge = Math.min(distToEdgeX, distToEdgeZ);
-
-  return 0.4 + 0.6 * smoothstep(0.0, 0.6, distToEdge);
+export function sampleCampGrassCoverage(_x: number, _z: number): number {
+  // Parcel and road masks are authoritative; no unrelated repeating checkerboard.
+  const edge = Math.max(Math.abs(_x), Math.abs(_z));
+  return edge >= 16 && edge <= 20 ? 0 : 1;
 }
