@@ -27,6 +27,12 @@ export class StageLiveScreens {
   private material: THREE.MeshBasicMaterial;
   private elapsed = 0;
   private frameTime = 1 / STAGE_FEED_FPS;
+  private feedFps = STAGE_FEED_FPS;
+  renderScope?: (render: () => void) => void;
+  setQuality(width: number, fps: number): void {
+    this.target.setSize(width, Math.round((width * 9) / 16));
+    this.feedFps = fps;
+  }
   private shot = -1;
   private playerId?: string;
   private fixedShots: { eye: THREE.Vector3; look: THREE.Vector3 }[];
@@ -155,7 +161,7 @@ export class StageLiveScreens {
     }
     for (const screen of this.screens) screen.userData.liveFeed = { shot: this.shot, label };
     this.frameTime += Math.max(0, dt);
-    if (this.frameTime < 1 / STAGE_FEED_FPS) return;
+    if (this.frameTime < 1 / this.feedFps) return;
     // Do not pay for an offscreen TV when the viewer is far away.
     const position = new THREE.Vector3();
     viewer.getWorldPosition(position);
@@ -183,7 +189,9 @@ export class StageLiveScreens {
       renderer.setRenderTarget(this.target);
       renderer.setScissorTest(false);
       renderer.clear();
-      renderer.render(this.scene, this.camera);
+      const render = () => renderer.render(this.scene, this.camera);
+      if (this.renderScope) this.renderScope(render);
+      else render();
     } finally {
       if (this.localAvatar) this.localAvatar.root.visible = false;
       this.screens.forEach((s, i) => (s.visible = visible[i]));

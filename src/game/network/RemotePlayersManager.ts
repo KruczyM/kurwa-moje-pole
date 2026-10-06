@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CharacterVisibility } from '../rendering/CharacterVisibility';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createFlankiActor } from '../interactions/FlankiActors';
 import {
@@ -35,6 +36,7 @@ export interface RemotePlayerEntity {
 }
 
 export class RemotePlayersManager {
+  readonly visibility = new CharacterVisibility();
   readonly remotePlayers = new Map<string, RemotePlayerEntity>();
   private unsubscribeSnapshot?: () => void;
   private unsubscribeSpeaking?: () => void;
@@ -266,12 +268,13 @@ export class RemotePlayersManager {
       entity.root.rotation.set(0, entity.currentYaw, 0, 'YXZ');
 
       // 3. Aktualizacja animacji:
-      if (entity.animator) {
+      const animate = this.visibility.update(entity.root, camera.position);
+      if (entity.animator && animate) {
         entity.animator.setMovementSpeed(entity.speed);
         entity.animator.play(entity.locomotion);
         entity.animator.update(dt);
       }
-      entity.groundFeet?.();
+      if (animate) entity.groundFeet?.();
 
       // 4. Aktualizacja pozycji nametaga na ekranie oraz wskaźnika mówienia:
       if (this.spatialVoice) {

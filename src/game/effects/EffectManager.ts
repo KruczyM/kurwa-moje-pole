@@ -407,6 +407,7 @@ void main(){
 export class EffectManager {
   composer: EffectComposer;
   bloom: UnrealBloomPass;
+  bloomResolutionScale = 1;
   afterimage: AfterimagePass;
   shader: ShaderPass;
   private timeline = new EffectTimeline();
@@ -667,7 +668,10 @@ export class EffectManager {
 
   /** Dopasowuje bufory post-processingu do nowego rozmiaru widoku. */
   resize(w: number, h: number) {
+    this.composer.setPixelRatio(this.renderer.getPixelRatio());
     this.composer.setSize(w, h);
+    const bloomDpr = this.renderer.getPixelRatio() * this.bloomResolutionScale;
+    this.bloom.setSize(Math.round(w * bloomDpr), Math.round(h * bloomDpr));
     this.shader.uniforms.resolution.value.set(w, h);
   }
 

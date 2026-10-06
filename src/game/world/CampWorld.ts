@@ -168,6 +168,13 @@ export class CampWorld {
   private stageEffects: FestivalStageEffects | null = null;
   private landmarksRoot: THREE.Group | null = null;
   private sun!: THREE.DirectionalLight;
+  authoredRoot!: THREE.Object3D;
+  setShadowResolution(size: number): void {
+    this.sun.shadow.mapSize.set(size, size);
+    this.sun.shadow.map?.dispose();
+    this.sun.shadow.map = null;
+    this.sun.shadow.needsUpdate = true;
+  }
   private hemiLight!: THREE.HemisphereLight;
   private readonly colliderGrid = new ColliderSpatialGrid(16);
   private readonly canMeshes = new Map<string, THREE.Object3D>();
@@ -237,6 +244,7 @@ export class CampWorld {
     scene.add(ground);
 
     const authored = new AuthoredFestivalWorld(models.authoredFestival);
+    this.authoredRoot = authored.root;
     this.mapScenery = authored.mapScenery;
     scene.add(authored.root);
     const toilet = authored.placements.get('CampToilet');

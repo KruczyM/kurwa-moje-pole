@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { browserGraphicsProfile, savedMobileQuality } from '../rendering/graphicsProfile';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { characterAssets } from '../assets/assetManifest';
 import { cloneDisposableSkinnedModel, disposeObjectTree } from '../lifecycle/disposeThree';
@@ -23,6 +24,7 @@ export class CharacterPreview {
   private currentName = '';
   private mixer?: THREE.AnimationMixer;
   private cache = new Map<string, Cached>();
+  private pending = new Map<string, Promise<Cached>>();
   private token = 0;
   private clock = new THREE.Clock();
   private frame = 0;
@@ -42,7 +44,9 @@ export class CharacterPreview {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.setClearAlpha(0);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio || 1, browserGraphicsProfile(savedMobileQuality()).dprCap),
+    );
     configureColorPipeline(this.renderer, 'characterPreview');
     this.scene.background = null;
     this.camera.position.z = 1_000;
@@ -79,31 +83,16 @@ export class CharacterPreview {
     const key = `${asset.id}:${asset.previewUrl || asset.url}`;
 
     try {
-      let source = this.cache.get(key);
-      if (!source) {
-        source = await this.loadWithTimeout(asset.previewUrl || asset.url);
-        if (this.disposed || token !== this.token) {
-          disposeObjectTree(source.scene);
-          return;
-        }
-        this.cache.set(key, source);
-      }
+      const source = await this.cachedSource(key, asset.previewUrl || asset.url);
       if (this.disposed || token !== this.token) return;
       let reference: Cached | undefined;
       // Korba keeps the static donor pose in the main menu.
       if (asset.id === 'korba') {
         const amper = characterAssets.find((character) => character.id === 'amper')!;
         const referenceKey = `${amper.id}:${amper.previewUrl || amper.url}`;
-        reference = this.cache.get(referenceKey);
-        if (!reference) {
-          reference = await this.loadWithTimeout(amper.previewUrl || amper.url);
-          if (this.disposed || token !== this.token) {
-            disposeObjectTree(reference.scene);
-            return;
-          }
-          this.cache.set(referenceKey, reference);
-        }
+        reference = await this.cachedSource(referenceKey, amper.previewUrl || amper.url);
       }
+      if (this.disposed || token !== this.token) return;
       this.replaceModel(name, source, reference);
       this.onStatus({ state: 'ready' });
     } catch (error) {
@@ -118,6 +107,26 @@ export class CharacterPreview {
   }
 
   /** Ładuje GLB z limitem czasu oraz sprzątaniem spóźnionej odpowiedzi. */
+  private cachedSource(key: string, url: string): Promise<Cached> {
+    const cached = this.cache.get(key);
+    if (cached) return Promise.resolve(cached);
+    let pending = this.pending.get(key);
+    if (!pending) {
+      pending = this.loadWithTimeout(url)
+        .then((source) => {
+          if (this.disposed) {
+            disposeObjectTree(source.scene);
+            throw new Error('Preview disposed');
+          }
+          this.cache.set(key, source);
+          return source;
+        })
+        .finally(() => this.pending.delete(key));
+      this.pending.set(key, pending);
+    }
+    return pending;
+  }
+
   private loadWithTimeout(url: string): Promise<Cached> {
     return new Promise((resolve, reject) => {
       let settled = false;
@@ -251,7 +260,9 @@ export class CharacterPreview {
     const rect = this.layer.getBoundingClientRect();
     const width = Math.max(1, Math.round(rect.width));
     const height = Math.max(1, Math.round(rect.height));
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio || 1, browserGraphicsProfile(savedMobileQuality()).dprCap),
+    );
     this.renderer.setSize(width, height, false);
     this.fitToLayer();
   }
