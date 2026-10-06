@@ -1,0 +1,247 @@
+/* Last-layer layout corrections; preserve desktop styling and existing hidden rules. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (max-width: 900px), (pointer: coarse) {
+  #pause,
+  #inventory,
+  #dialog,
+  #effect-warning {
+    z-index: 1500;
+  }
+  #inspect {
+    z-index: 1500;
+  }
+  #ui {
+    height: 100dvh;
+  }
+  #start {
+    height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: max(20px, var(--safe-top)) 20px max(20px, var(--safe-bottom));
+    justify-content: flex-start;
+  }
+  #start > * {
+    flex-shrink: 0;
+    max-width: 100%;
+  }
+  #start h1 {
+    font-size: clamp(40px, 10vw, 78px);
+    line-height: 0.92;
+  }
+  #start p {
+    margin: 18px 0;
+    font-size: 13px;
+  }
+  #character-select {
+    width: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  #character-select button {
+    min-width: 0;
+    padding: 10px 4px;
+    overflow-wrap: anywhere;
+  }
+  .start-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+  button,
+  select,
+  input[type='text'] {
+    min-height: 44px;
+  }
+  .character-preview-layer {
+    z-index: auto;
+    height: 240px;
+    max-height: 30dvh;
+  }
+  #loading {
+    padding: 20px;
+    overflow: auto;
+  }
+  #pause,
+  #inventory,
+  #dialog {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px - var(--safe-top) - var(--safe-bottom));
+    overflow: auto;
+    padding: 18px;
+  }
+  #pause h2,
+  #inventory h2,
+  #dialog h2 {
+    font-size: 22px;
+  }
+  .pause-settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pause-settings-grid label,
+  .pause-settings-grid select {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .festival-map-header,
+  .festival-guide-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
+  }
+  .festival-map-header h2,
+  .festival-guide-header h2 {
+    font-size: 18px;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+  .festival-map-container,
+  .festival-guide-container {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - 24px - var(--safe-top) - var(--safe-bottom));
+    overflow-y: auto;
+  }
+  .festival-map-controls {
+    flex-wrap: wrap;
+    margin-left: 0;
+  }
+  #festival-map-canvas {
+    max-width: 100%;
+    height: auto;
+    touch-action: none;
+  }
+  .festival-map-legend {
+    gap: 8px;
+    font-size: 11px;
+  }
+  .guide-tabs {
+    flex-wrap: wrap;
+  }
+  .guide-body {
+    min-height: 0;
+  }
+  .guide-table-wrap {
+    overflow-x: auto;
+  }
+  .flanki-roster-content {
+    width: calc(100vw - 24px);
+    max-width: 760px;
+    max-height: calc(100dvh - 24px);
+    padding: 16px;
+    overflow: auto;
+  }
+  .flanki-roster-content h2 {
+    font-size: 19px;
+  }
+  .flanki-teams-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .flanki-roster-actions {
+    flex-wrap: wrap;
+  }
+  .eco-panel {
+    width: calc(100vw - 24px);
+    max-width: 620px;
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
+  }
+  .guitar-hud {
+    width: min(460px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
+  }
+  .guitar-song-select-modal {
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
+    padding: 14px;
+  }
+  .guitar-songs-list {
+    min-height: 0;
+    overflow: auto;
+  }
+  #prompt {
+    max-width: calc(100vw - 24px);
+    white-space: normal;
+    text-align: center;
+  }
+  .mobile-top-actions {
+    top: max(8px, var(--safe-top));
+    flex-wrap: wrap;
+  }
+  .mobile-movement {
+    bottom: max(12px, var(--safe-bottom));
+  }
+  #mobile-interact {
+    bottom: calc(20px + var(--safe-bottom));
+  }
+  #mobile-jump {
+    position: absolute;
+    pointer-events: auto;
+    touch-action: none;
+    right: 18px;
+    bottom: calc(116px + var(--safe-bottom));
+    min-height: 44px;
+    border-radius: 8px;
+  }
+  #hud-bottom-right {
+    bottom: calc(178px + var(--safe-bottom));
+    max-width: 50vw;
+  }
+}
+@media (max-width: 480px) {
+  .dialog-header,
+  .dialog-header-actions,
+  .dialog-input-row,
+  .dialog-gemini-row {
+    flex-wrap: wrap;
+  }
+  .dialog-header > *,
+  .dialog-input-row > *,
+  .dialog-gemini-row > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .dialog-voice-status {
+    white-space: normal;
+  }
+  #dialog-text-input {
+    width: 100%;
+    flex-basis: 100%;
+  }
+  #effect-hud {
+    top: 82px;
+    font-size: 11px;
+  }
+  #brand {
+    font-size: 10px;
+  }
+  #character-select {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #player-nickname {
+    width: 100%;
+  }
+  .guitar-fretboard {
+    height: min(280px, 38dvh);
+  }
+  .flanki-hud {
+    max-width: calc(100vw - 24px);
+    font-size: 11px;
+  }
+}
+@media (max-height: 500px) and (pointer: coarse) {
+  .character-preview-layer {
+    height: 160px;
+    max-height: none;
+  }
+  .guitar-fretboard {
+    height: 32dvh;
+  }
+  #effect-hud {
+    font-size: 10px;
+  }
+}

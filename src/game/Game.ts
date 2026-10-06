@@ -1,4 +1,6 @@
 import { FestivalMap } from './ui/FestivalMap';
+import { browserGraphicsProfile, savedMobileQuality, isMobileQuality } from './rendering/graphicsProfile';
+import { DistanceVisibility } from './rendering/DistanceVisibility';
 import { StageLiveScreens } from './world/StageLiveScreens';
 import * as THREE from 'three';
 import { AssetLoader } from './assets/AssetLoader';
@@ -150,6 +152,8 @@ export class Game {
   private speakerReactionPlayed = false;
   private pointerLockPause = new PointerLockPauseGate();
   private readonly mobileInput = isMobileInputDevice();
+  private graphics = browserGraphicsProfile(savedMobileQuality());
+  private distanceVisibility?: DistanceVisibility;
   private mobileControls?: MobileControls;
   private readonly inventory = new ConsumableInventory(DEFAULT_STARTER_INVENTORY);
   private useSequence?: ItemUseSequence;
@@ -237,7 +241,7 @@ export class Game {
     } catch {
       throw new Error('Ta przeglądarka nie obsługuje WebGL.');
     }
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.graphics.dprCap));
     this.renderer.setSize(innerWidth, innerHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -245,6 +249,27 @@ export class Game {
     this.scene.background = new THREE.Color(0x9bb9d0);
     this.scene.fog = new THREE.Fog(0x8da1b5, 100, 380);
     this.events.listen(window, 'resize', () => this.resize());
+    const quality = document.querySelector<HTMLSelectElement>('#setting-mobile-quality');
+    if (quality) {
+      quality.value = savedMobileQuality();
+      this.events.listen(quality, 'change', () => {
+        if (!isMobileQuality(quality.value)) return;
+        try {
+          localStorage.setItem('festival-mobile-quality', quality.value);
+        } catch {
+          /* Optional preference. */
+        }
+        this.graphics = browserGraphicsProfile(quality.value);
+        this.distanceVisibility?.setProfile(this.graphics);
+        if (this.npcs) this.npcs.visibility.profile = this.graphics;
+        if (this.remotePlayersManager) this.remotePlayersManager.visibility.profile = this.graphics;
+        this.world?.setShadowResolution(this.graphics.shadowMapSize);
+        this.stageLiveScreens?.setQuality(this.graphics.tvFeedWidth, this.graphics.tvFeedFps);
+        if (this.effects) this.effects.bloomResolutionScale = this.graphics.bloomScale;
+        this.resize();
+      });
+    }
+    if (window.visualViewport) this.events.listen(window.visualViewport, 'resize', () => this.resize());
     this.events.listen(window, 'keydown', (event) => this.key(event as KeyboardEvent));
     this.events.listen(window, 'keyup', (event) => this.keyUp(event as KeyboardEvent));
     this.events.listen(this.canvas, 'pointerdown', (event) => this.pointerDown(event as PointerEvent));
@@ -307,6 +332,9 @@ export class Game {
         throw new Error('Nie udało się załadować żadnej postaci. Sprawdź Git LFS i pliki game-assets.');
       assets.interactables.forEach((asset, id) => this.propModels.set(id, asset.scene));
       this.world = new CampWorld(this.scene, assets);
+      this.world.setShadowResolution(this.graphics.shadowMapSize);
+      if (this.graphics.mobile)
+        this.distanceVisibility = new DistanceVisibility(this.world.authoredRoot, this.graphics);
       try {
         this.ecoBest = Math.max(0, Number(localStorage.getItem('eco-best-v1')) || 0);
       } catch {
@@ -335,6 +363,25 @@ export class Game {
           }),
         );
       this.stageLiveScreens = new StageLiveScreens(this.scene, this.world.mapScenery);
+      this.stageLiveScreens.setQuality(this.graphics.tvFeedWidth, this.graphics.tvFeedFps);
+      this.stageLiveScreens.renderScope = (render) => {
+        const roots = [
+          ...(this.npcs?.npcs.filter((npc) => !npc.isHidden).map((npc) => npc.root) ?? []),
+          ...Array.from(this.remotePlayersManager?.remotePlayers.values() ?? []).map((entity) => entity.root),
+        ];
+        const visibility = roots.map((root) => root.visible);
+        roots.forEach((root) => {
+          root.visible = true;
+        });
+        try {
+          if (this.distanceVisibility) this.distanceVisibility.withFullVisibility(render);
+          else render();
+        } finally {
+          roots.forEach((root, index) => {
+            root.visible = visibility[index];
+          });
+        }
+      };
       const audioStage = this.world.mapScenery.find((item) => item.id === 'Main_Stage_Deck_Plinth');
       if (audioStage) this.stageAcoustics.setStagePosition(audioStage);
       this.syncStageAudio();
@@ -360,6 +407,8 @@ export class Game {
         Math.floor(Math.random() * 0x100000000),
       );
       this.remotePlayersManager = new RemotePlayersManager(this.scene, assets.characters, this.networkClient);
+      this.npcs.visibility.profile = this.graphics;
+      this.remotePlayersManager.visibility.profile = this.graphics;
       this.npcs.setFestivalLayout(this.world.mapScenery);
       if (isNpcDebugAllowed() && this.world) {
         this.npcDebugOverlay = new NpcDebugOverlay({
@@ -380,12 +429,18 @@ export class Game {
           move: (forward, right, run) => this.player?.setMobileMove(forward, right, run),
           look: (deltaX, deltaY) => this.player?.lookBy(deltaX, deltaY),
           interact: () => this.interact(),
+          press: (key) =>
+            this.key(new KeyboardEvent('keydown', { key, code: key === ' ' ? 'Space' : 'KeyE' })),
+          release: (key) =>
+            this.keyUp(new KeyboardEvent('keyup', { key, code: key === ' ' ? 'Space' : 'KeyE' })),
           menu: () => this.setPause(true),
           inventory: () => this.toggleInventory(),
         });
         this.mobileControls.setState(this.state.current);
       }
       this.effects = new EffectManager(this.renderer, this.scene, this.camera, this.speakerAudio);
+      this.effects.bloomResolutionScale = this.graphics.bloomScale;
+      this.effects.resize(innerWidth, innerHeight);
       this.effects.setSettings(this.settings);
       this.interactions = new InteractionManager(this.camera, () => [
         ...(this.npcs!.speakerAnchor ? [this.npcs!.speakerAnchor] : []),
@@ -549,7 +604,7 @@ export class Game {
         };
       }
 
-      if (this.settings.preloadCrowd !== false) {
+      if (this.settings.preloadCrowd !== false && !this.graphics.mobile) {
         text.textContent = `Wczytywanie postaci festiwalowiczów (0/${festivalNpcAssets.length})…`;
         if (progressBar) progressBar.style.width = '20%';
         await loader.loadFestivalNpcs(
@@ -579,7 +634,7 @@ export class Game {
         this.toggleFreeCamera(true);
       }
 
-      if (skippedCrowd || this.settings.preloadCrowd === false) {
+      if (skippedCrowd || this.settings.preloadCrowd === false || this.graphics.mobile) {
         this.toast('Festiwalowicze doczytują się w tle: pod dużą sceną i na obu pasażach.');
         void loader
           .loadFestivalNpcs(
@@ -1469,6 +1524,7 @@ export class Game {
   private async warmUpGpu() {
     try {
       this.scene.updateMatrixWorld(true);
+      this.distanceVisibility?.update(1, this.camera.position);
       if (typeof this.renderer.compileAsync === 'function') {
         try {
           await this.renderer.compileAsync(this.scene, this.camera);
@@ -1479,7 +1535,7 @@ export class Game {
         this.renderer.compile(this.scene, this.camera);
       }
 
-      this.scene.traverse((obj) => {
+      this.scene.traverseVisible((obj) => {
         if ((obj as THREE.Mesh).isMesh) {
           const mesh = obj as THREE.Mesh;
           const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
@@ -1651,6 +1707,7 @@ export class Game {
       this.matrixWireframe.update(false, 0, false);
     }
     this.npcDebugOverlay?.update(this.camera);
+    this.distanceVisibility?.update(dt, this.camera.position);
     this.stageLiveScreens?.update(
       dt,
       this.renderer,
@@ -1850,6 +1907,7 @@ export class Game {
   /** Dopasowuje kamerę i postprocessing do aktualnego rozmiaru okna. */
   resize() {
     if (this.disposed) return;
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.graphics.dprCap));
     this.camera.aspect = innerWidth / innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(innerWidth, innerHeight);
@@ -1982,6 +2040,7 @@ export class Game {
   }
 
   dispose() {
+    this.distanceVisibility?.dispose();
     if (this.activeFlankiSession) this.networkClient?.requestFlankiLobby('leave');
     this.flankiNetworkCleanup.forEach((cleanup) => cleanup());
     if (this.disposed) return;

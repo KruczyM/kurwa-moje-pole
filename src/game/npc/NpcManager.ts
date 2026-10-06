@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CharacterVisibility } from '../rendering/CharacterVisibility';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { characterAssets } from '../assets/assetManifest';
@@ -90,6 +91,7 @@ function addNpcInteractionHitbox(root: THREE.Group) {
 }
 
 export class NpcManager {
+  readonly visibility = new CharacterVisibility();
   readonly npcs: Npc[] = [];
   private flankiPitch?: THREE.Vector3;
   private crowdRoads: Record<'upper' | 'lower', { minX: number; maxX: number; minZ: number; maxZ: number }> =
@@ -828,6 +830,10 @@ export class NpcManager {
     isActivity = false,
   ) {
     if (!npc.animator) return;
+    if (npc.root.userData.distanceAnimationPaused) {
+      npc.animLodAccumulator = 0;
+      return;
+    }
     if (!playerPosition) {
       if (isActivity) npc.animator.update(dt);
       else this.updateAnimation(npc, dt);
@@ -904,6 +910,9 @@ export class NpcManager {
     for (let index = 0; index < this.npcs.length; index++) {
       const npc = this.npcs[index];
       if (npc.isHidden) continue;
+      npc.root.userData.distanceAnimationPaused = playerPosition
+        ? !this.visibility.update(npc.root, playerPosition)
+        : false;
       const flankiTarget = npc.root.userData.flankiTarget as THREE.Vector3 | undefined;
       if (flankiTarget) {
         if (!npc.root.userData.flankiActive) {
@@ -964,7 +973,7 @@ export class NpcManager {
           }
           npc.animator?.play(moving ? 'Walk' : 'Idle');
           npc.animator?.setMovementSpeed(moving ? 2.5 : 0);
-          npc.animator?.update(dt);
+          if (!npc.root.userData.distanceAnimationPaused) npc.animator?.update(dt);
         }
         continue;
       }
@@ -995,7 +1004,7 @@ export class NpcManager {
         npc.root.position.x += sign * dt * 2.5;
         npc.root.position.y = terrainHeight(npc.root.position.x, npc.root.position.z);
         npc.animator?.play('Walk');
-        npc.animator?.update(dt);
+        if (!npc.root.userData.distanceAnimationPaused) npc.animator?.update(dt);
         continue;
       }
 

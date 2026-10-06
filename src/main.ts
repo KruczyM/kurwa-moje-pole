@@ -2,6 +2,8 @@ import './style.css';
 import './ui-additions.css';
 import './preview.css';
 import './lifecycle.css';
+import './mobile-responsive.css';
+import { preparePersistentAssetCache } from './game/assets/persistentAssetCache';
 import { Game } from './game/Game';
 import { CharacterPreview } from './game/ui/CharacterPreview';
 import { FestivalMap } from './game/ui/FestivalMap';
@@ -21,6 +23,14 @@ import {
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
 const names: readonly CharacterName[] = CANONICAL_CHARACTERS;
 const state = new AppStateMachine();
+const assetCacheReady = preparePersistentAssetCache();
+void assetCacheReady.then((ready) => {
+  const status = document.querySelector('#asset-cache-status');
+  if (status)
+    status.textContent = ready
+      ? 'Cache dyskowy gotowy. Wczytane wcześniej pliki mogą być użyte lokalnie; modele nadal wymagają przygotowania.'
+      : 'Cache dyskowy niedostępny. Gra korzysta ze zwykłego pobierania plików.';
+});
 let game: Game | undefined;
 let preview: CharacterPreview | undefined;
 const savedSessionChar =
@@ -92,7 +102,7 @@ names.forEach((name) => {
     if (button.disabled) return;
     selected = name;
     sessionStorage.setItem('camp-player-character', selected);
-    void preview?.show(name);
+    void assetCacheReady.then(() => preview?.show(name));
     selection
       .querySelectorAll('button')
       .forEach((item) => item.classList.toggle('selected', item.textContent === name));
@@ -152,7 +162,7 @@ networkClient.onStateChange((roomState) => {
     if (freeName) {
       selected = freeName;
       sessionStorage.setItem('camp-player-character', selected);
-      void preview?.show(selected);
+      void assetCacheReady.then(() => preview?.show(selected));
       characterButtons.forEach((btn, name) => {
         btn.classList.toggle('selected', name === selected);
       });
@@ -201,7 +211,7 @@ function createPreview() {
       message.hidden = status.state !== 'error';
       message.textContent = status.message || '';
     });
-    void preview.show(selected);
+    void assetCacheReady.then(() => preview?.show(selected));
   } catch (error) {
     preview = undefined;
     const message = qs('#character-preview-status');
@@ -213,6 +223,8 @@ function createPreview() {
 
 /** Zwalnia podgląd menu, zapisuje wybór postaci i uruchamia właściwą scenę gry. */
 async function startGame(freeCamera = false) {
+  if (state.current !== 'start' && state.current !== 'error') return;
+  await assetCacheReady;
   if (state.current !== 'start' && state.current !== 'error') return;
 
   if (freeCamera) {

@@ -7,6 +7,8 @@ export type MobileControlActions = {
   interact: () => void;
   menu: () => void;
   inventory: () => void;
+  press?: (key: 'e' | ' ') => void;
+  release?: (key: 'e' | ' ') => void;
 };
 
 export type JoystickInput = {
@@ -84,8 +86,33 @@ export class MobileControls {
     this.events.listen(this.lookZone, 'pointercancel', (event) => this.finishLook(event as PointerEvent));
     this.events.listen(this.menuButton, 'click', () => this.actions.menu());
     this.events.listen(this.inventoryButton, 'click', () => this.actions.inventory());
-    this.events.listen(this.interactButton, 'click', () => this.actions.interact());
+    if (this.actions.press) this.bindHold(this.interactButton, 'e');
+    else this.events.listen(this.interactButton, 'click', () => this.actions.interact());
+    const jump = this.root.querySelector<HTMLButtonElement>('#mobile-jump');
+    if (jump) this.bindHold(jump, ' ');
     document.body.classList.add('mobile-input');
+  }
+
+  private bindHold(button: HTMLButtonElement, key: 'e' | ' ') {
+    let pressed = false;
+    this.events.listen(button, 'pointerdown', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (pressed) return;
+      pressed = true;
+      button.setPointerCapture?.((event as PointerEvent).pointerId);
+      this.actions.press?.(key);
+    });
+    const release = (event: Event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!pressed) return;
+      pressed = false;
+      this.actions.release?.(key);
+    };
+    this.events.listen(button, 'pointerup', release);
+    this.events.listen(button, 'pointercancel', release);
+    this.events.listen(button, 'lostpointercapture', release);
   }
 
   /** Wymaga elementu należącego do warstwy mobilnej i zachowuje jego typ. */
@@ -98,6 +125,8 @@ export class MobileControls {
   /** Pokazuje tylko te przyciski, które mają sens w aktualnym stanie aplikacji. */
   setState(state: AppState) {
     this.playing = state === 'playing';
+    const jump = this.root.querySelector<HTMLButtonElement>('#mobile-jump');
+    if (jump) jump.hidden = !this.playing;
     const seated = state === 'seated';
     const inventoryOpen = state === 'inventory';
     this.root.hidden = !this.playing && !seated && !inventoryOpen;
@@ -110,6 +139,7 @@ export class MobileControls {
     this.inventoryButton.textContent = inventoryOpen ? 'ZAMKNIJ' : 'EKWIPUNEK';
     this.inventoryButton.setAttribute('aria-pressed', String(inventoryOpen));
     if (!this.playing) {
+      this.actions.release?.('e');
       this.resetMove();
       this.resetLook();
     }
@@ -192,6 +222,7 @@ export class MobileControls {
 
   /** Usuwa listenery i przywraca neutralny stan interfejsu. */
   dispose() {
+    this.actions.release?.('e');
     this.resetMove();
     this.resetLook();
     this.events.dispose();
