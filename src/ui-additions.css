@@ -1648,8 +1648,8 @@
    POPRAWKA NAKŁADANIA SIĘ BUTTONÓW UI (G4)
    ========================================================================== */
 .mobile-input .hud-bottom-right {
-  bottom: calc(max(22px, env(safe-area-inset-bottom)) + 96px) !important;
-  right: max(20px, env(safe-area-inset-right)) !important;
+  bottom: calc(max(22px, env(safe-area-inset-bottom)) + 96px);
+  right: max(20px, env(safe-area-inset-right));
 }
 
 @media (max-width: 1024px) {

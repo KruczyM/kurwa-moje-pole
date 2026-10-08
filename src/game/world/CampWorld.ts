@@ -472,7 +472,7 @@ export class CampWorld {
           presentation.tablePosition[1],
         );
         interactionRoot.userData.interaction = { kind: 'item', itemId: item.id };
-        interactionRoot.userData.interactionFacing = [0, 0, 1];
+        // A tabletop item can be picked up from any side, unlike a directional door.
         interactionRoot.add(model);
 
         const size = box.getSize(new THREE.Vector3());

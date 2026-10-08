@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { browserGraphicsProfile, savedMobileQuality } from '../rendering/graphicsProfile';
+import { limitTextureResolution } from '../assets/mobileAssetPolicy';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { characterAssets } from '../assets/assetManifest';
 import { cloneDisposableSkinnedModel, disposeObjectTree } from '../lifecycle/disposeThree';
@@ -29,6 +30,10 @@ export class CharacterPreview {
   private clock = new THREE.Clock();
   private frame = 0;
   private observer: ResizeObserver;
+  private resizePending = false;
+  private viewportWidth = 0;
+  private viewportHeight = 0;
+  private viewportDpr = 0;
   private bounds?: THREE.Box3;
   private boundsCheckElapsed = 0;
   private disposed = false;
@@ -41,7 +46,11 @@ export class CharacterPreview {
     const canvas = document.createElement('canvas');
     canvas.setAttribute('aria-hidden', 'true');
     layer.append(canvas);
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    this.renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: !browserGraphicsProfile().mobile,
+      alpha: true,
+    });
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.setClearAlpha(0);
     this.renderer.setPixelRatio(
@@ -69,7 +78,11 @@ export class CharacterPreview {
       });
     };
     canvas.addEventListener('webglcontextlost', this.onContextLost);
-    this.observer = new ResizeObserver(() => this.resize());
+    // Writing canvas size inside the observer can trigger a Safari ResizeObserver loop.
+    // Coalesce into the existing preview loop, without adding another animation frame loop.
+    this.observer = new ResizeObserver(() => {
+      this.resizePending = true;
+    });
     this.observer.observe(layer);
     this.resize();
     this.draw();
@@ -143,6 +156,7 @@ export class CharacterPreview {
           }
           settled = true;
           window.clearTimeout(timeout);
+          if (browserGraphicsProfile().mobile) limitTextureResolution(gltf.scene, 256);
           repairSkinSeams(gltf.scene);
           applyPbrMaterialPolicy(gltf.scene, 'character');
           resolve({ scene: gltf.scene, animations: gltf.animations });
@@ -260,9 +274,12 @@ export class CharacterPreview {
     const rect = this.layer.getBoundingClientRect();
     const width = Math.max(1, Math.round(rect.width));
     const height = Math.max(1, Math.round(rect.height));
-    this.renderer.setPixelRatio(
-      Math.min(window.devicePixelRatio || 1, browserGraphicsProfile(savedMobileQuality()).dprCap),
-    );
+    const dpr = Math.min(window.devicePixelRatio || 1, browserGraphicsProfile(savedMobileQuality()).dprCap);
+    if (width === this.viewportWidth && height === this.viewportHeight && dpr === this.viewportDpr) return;
+    this.viewportWidth = width;
+    this.viewportHeight = height;
+    this.viewportDpr = dpr;
+    this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(width, height, false);
     this.fitToLayer();
   }
@@ -270,6 +287,10 @@ export class CharacterPreview {
   /** Aktualizuje Idle, kontroluje bounds i renderuje następną klatkę podglądu. */
   private draw = () => {
     if (this.disposed) return;
+    if (this.resizePending) {
+      this.resizePending = false;
+      this.resize();
+    }
     this.frame = requestAnimationFrame(this.draw);
     const delta = Math.min(this.clock.getDelta(), 0.05);
     this.mixer?.update(delta);

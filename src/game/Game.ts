@@ -154,6 +154,10 @@ export class Game {
   private readonly mobileInput = isMobileInputDevice();
   private graphics = browserGraphicsProfile(savedMobileQuality());
   private distanceVisibility?: DistanceVisibility;
+  private contextLost = false;
+  private viewportWidth = 0;
+  private viewportHeight = 0;
+  private viewportDpr = 0;
   private mobileControls?: MobileControls;
   private readonly inventory = new ConsumableInventory(DEFAULT_STARTER_INVENTORY);
   private useSequence?: ItemUseSequence;
@@ -237,18 +241,31 @@ export class Game {
   ) {
     this.scene.add(this.camera);
     try {
-      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
+      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: !this.graphics.mobile });
     } catch {
       throw new Error('Ta przeglądarka nie obsługuje WebGL.');
     }
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.graphics.dprCap));
     this.renderer.setSize(innerWidth, innerHeight);
-    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.enabled = !this.graphics.mobile || this.graphics.shadows > 0;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     configureColorPipeline(this.renderer, 'world');
     this.scene.background = new THREE.Color(0x9bb9d0);
     this.scene.fog = new THREE.Fog(0x8da1b5, 100, 380);
+    if (this.graphics.mobile)
+      this.scene.fog = new THREE.Fog(0x8da1b5, this.graphics.decorations, this.graphics.landmarks);
     this.events.listen(window, 'resize', () => this.resize());
+    this.events.listen(this.canvas, 'webglcontextlost', (event) => {
+      event.preventDefault();
+      if (this.disposed) return;
+      this.contextLost = true;
+      this.animationLoop.stop();
+      this.state.transition('error');
+      const message = qs('#load-error');
+      message.textContent =
+        'Telefon utracił kontekst grafiki WebGL. Zamknij inne ciężkie karty i spróbuj ponownie w trybie Oszczędnym.';
+      message.hidden = false;
+    });
     const quality = document.querySelector<HTMLSelectElement>('#setting-mobile-quality');
     if (quality) {
       quality.value = savedMobileQuality();
@@ -260,13 +277,18 @@ export class Game {
           /* Optional preference. */
         }
         this.graphics = browserGraphicsProfile(quality.value);
+        this.renderer.shadowMap.enabled = !this.graphics.mobile || this.graphics.shadows > 0;
+        if (this.scene.fog instanceof THREE.Fog && this.graphics.mobile) {
+          this.scene.fog.near = this.graphics.decorations;
+          this.scene.fog.far = this.graphics.landmarks;
+        }
         this.distanceVisibility?.setProfile(this.graphics);
         if (this.npcs) this.npcs.visibility.profile = this.graphics;
         if (this.remotePlayersManager) this.remotePlayersManager.visibility.profile = this.graphics;
         this.world?.setShadowResolution(this.graphics.shadowMapSize);
         this.stageLiveScreens?.setQuality(this.graphics.tvFeedWidth, this.graphics.tvFeedFps);
         if (this.effects) this.effects.bloomResolutionScale = this.graphics.bloomScale;
-        this.resize();
+        this.resize(true);
       });
     }
     if (window.visualViewport) this.events.listen(window.visualViewport, 'resize', () => this.resize());
@@ -325,9 +347,12 @@ export class Game {
           error.textContent = message;
           error.hidden = false;
         },
+        undefined,
+        this.graphics.mobile,
       );
       const assets = await loader.loadAll();
       if (this.disposed) return;
+      if (this.contextLost) throw new Error('WebGL utracony podczas ładowania modeli.');
       if (assets.characters.size === 0)
         throw new Error('Nie udało się załadować żadnej postaci. Sprawdź Git LFS i pliki game-assets.');
       assets.interactables.forEach((asset, id) => this.propModels.set(id, asset.scene));
@@ -385,7 +410,7 @@ export class Game {
       const audioStage = this.world.mapScenery.find((item) => item.id === 'Main_Stage_Deck_Plinth');
       if (audioStage) this.stageAcoustics.setStagePosition(audioStage);
       this.syncStageAudio();
-      this.stageLiveScreens.setVideoPlaylist(this.stageAcoustics);
+      if (!this.graphics.mobile) this.stageLiveScreens.setVideoPlaylist(this.stageAcoustics);
       this.festivalMap?.setAuthoredLayout(this.world.mapScenery);
       this.world.setGrassQuality(this.settings.grassQuality);
       const npcNavigation = new NpcNavigationGrid(
@@ -522,9 +547,9 @@ export class Game {
       this.ui.populateMotionSelect(this.seatController.animationNames);
       this.campAmbient.start();
       this.grzybekAudio.init();
-      if (this.audioSettings.speakerEnabled) {
-        void this.speakerAudio.play();
-      }
+      // Every visit starts silent, even if the last session persisted speakerEnabled=true.
+      // Only an explicit interaction with the camp speaker may start this music.
+      this.updateAudioSettings({ speakerEnabled: false });
 
       // Przestrzenny czat głosowy WebRTC:
       this.spatialVoice = new SpatialVoiceManager(this.networkClient, {
@@ -624,17 +649,31 @@ export class Game {
       if (progressBar) progressBar.style.width = '85%';
       text.textContent = 'Rozgrzewka grafiki i shaderów…';
       await this.warmUpGpu();
+      if (this.contextLost) throw new Error('WebGL utracony podczas przygotowania grafiki.');
       if (progressBar) progressBar.style.width = '100%';
 
       this.startLoop();
       this.state.transition('playing');
+      // Defer mobile video decoding/audio graph until the large world has finished loading.
+      if (this.graphics.mobile) this.stageLiveScreens?.setVideoPlaylist(this.stageAcoustics);
 
       if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('camp-free-camera') === '1') {
         sessionStorage.removeItem('camp-free-camera');
         this.toggleFreeCamera(true);
       }
 
-      if (skippedCrowd || this.settings.preloadCrowd === false || this.graphics.mobile) {
+      if (this.graphics.mobile) {
+        // Reuse the already-loaded, rigged player models instead of decoding 91 unique textures/meshes.
+        const models = [...assets.characters.entries()];
+        const count = 24;
+        this.npcs?.setCrowdDistribution(8, 8);
+        for (let index = 0; index < count && models.length; index++) {
+          const [id, model] = models[index % models.length];
+          const name = characterAssets.find((asset) => asset.id === id)?.name ?? id;
+          this.npcs?.addFestivalNpc({ ...festivalNpcAssets[index], name }, model);
+        }
+        this.toast('Tryb telefonu: lżejsze tekstury i mniejszy tłum na scenie oraz obu pasażach.');
+      } else if (skippedCrowd || this.settings.preloadCrowd === false) {
         this.toast('Festiwalowicze doczytują się w tle: pod dużą sceną i na obu pasażach.');
         void loader
           .loadFestivalNpcs(
@@ -1522,6 +1561,8 @@ export class Game {
 
   /** Prekompiluje shadery sceny oraz inicjalizuje tekstury na GPU, eliminując przycięcia klatek po starcie gry. */
   private async warmUpGpu() {
+    // Mobile warms only naturally visible assets over normal frames, without a whole-scene upload spike.
+    if (this.graphics.mobile) return;
     try {
       this.scene.updateMatrixWorld(true);
       this.distanceVisibility?.update(1, this.camera.position);
@@ -1905,9 +1946,20 @@ export class Game {
   }
 
   /** Dopasowuje kamerę i postprocessing do aktualnego rozmiaru okna. */
-  resize() {
+  resize(force = false) {
     if (this.disposed) return;
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.graphics.dprCap));
+    const dpr = Math.min(devicePixelRatio, this.graphics.dprCap);
+    if (
+      !force &&
+      this.viewportWidth === innerWidth &&
+      this.viewportHeight === innerHeight &&
+      this.viewportDpr === dpr
+    )
+      return;
+    this.viewportWidth = innerWidth;
+    this.viewportHeight = innerHeight;
+    this.viewportDpr = dpr;
+    this.renderer.setPixelRatio(dpr);
     this.camera.aspect = innerWidth / innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(innerWidth, innerHeight);
@@ -2090,6 +2142,7 @@ export class Game {
     disposeObjectTree(this.scene);
     this.renderer.renderLists.dispose();
     this.renderer.dispose();
+    this.renderer.forceContextLoss();
     this.propModels.clear();
   }
 }

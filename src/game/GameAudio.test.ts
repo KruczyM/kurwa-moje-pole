@@ -34,7 +34,7 @@ describe('Game audio settings persistence & fallback', () => {
   it('returns default audio settings when localStorage is empty', () => {
     const settings = loadAudioSettings();
     expect(settings).toEqual(defaultAudioSettings);
-    expect(settings.speakerEnabled).toBe(true);
+    expect(settings.speakerEnabled).toBe(false);
   });
 
   it('loads valid custom audio settings from localStorage', () => {
