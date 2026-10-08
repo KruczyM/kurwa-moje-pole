@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CharacterVisibility } from '../rendering/CharacterVisibility';
+import { SpeakerIndicator } from './SpeakerIndicator';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { characterAssets } from '../assets/assetManifest';
@@ -92,6 +93,12 @@ function addNpcInteractionHitbox(root: THREE.Group) {
 
 export class NpcManager {
   readonly visibility = new CharacterVisibility();
+  private stageDancerCount = 20;
+  private lowerWalkerCount = 20;
+  setCrowdDistribution(stage: number, lower: number): void {
+    this.stageDancerCount = stage;
+    this.lowerWalkerCount = lower;
+  }
   readonly npcs: Npc[] = [];
   private flankiPitch?: THREE.Vector3;
   private crowdRoads: Record<'upper' | 'lower', { minX: number; maxX: number; minZ: number; maxZ: number }> =
@@ -143,6 +150,7 @@ export class NpcManager {
   }
   speakerAnchor: THREE.Object3D | null = null;
   speakerPlaying = false;
+  private speakerIndicator?: SpeakerIndicator;
   readonly occupiedSeats = new Map<string, Npc>();
   private disposed = false;
   private readonly ids = new Set<string>();
@@ -150,6 +158,7 @@ export class NpcManager {
 
   setSpeakerPlaying(playing: boolean): void {
     this.speakerPlaying = playing;
+    this.speakerIndicator?.update(playing);
   }
 
   isSeatOccupied(seatId: string): boolean {
@@ -323,8 +332,8 @@ export class NpcManager {
         this.seed + index * 977,
       );
     const festivalIndex = this.npcs.filter((n) => !n.isCampMember).length;
-    const passageWalker = festival && festivalIndex >= 20;
-    const passageLane = festivalIndex >= 20 && festivalIndex < 40 ? 'lower' : 'upper';
+    const passageWalker = festival && festivalIndex >= this.stageDancerCount;
+    const passageLane = festivalIndex < this.stageDancerCount + this.lowerWalkerCount ? 'lower' : 'upper';
     const isCampMember = !festival;
     let festivalRole: 'stage_dancer' | 'asp_listener' | 'food_queue' | 'chiller' | 'walker' | undefined;
     if (passageWalker) {
@@ -419,6 +428,8 @@ export class NpcManager {
       const accessory = clone(speaker.scene);
       this.fit(accessory, 0.55);
       anchor.add(accessory);
+      this.speakerIndicator = new SpeakerIndicator();
+      anchor.add(this.speakerIndicator);
       anchor.name = 'Static_Camp_Speaker';
       anchor.traverse((object) => (object.userData.interactionRoot = anchor));
       enableInteractionLayer(anchor);
@@ -873,8 +884,9 @@ export class NpcManager {
     if (this.flankiPitch && !this.npcs.some((n) => n.root.userData.flankiTarget))
       this.flankiPitch = undefined;
     if (isSpeakerPlaying !== undefined) {
-      this.speakerPlaying = isSpeakerPlaying;
+      this.setSpeakerPlaying(isSpeakerPlaying);
     }
+    this.speakerIndicator?.update(this.speakerPlaying, playerPosition);
     this.updateFrameIndex++;
 
     if (playerPosition) {

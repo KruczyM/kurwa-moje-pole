@@ -17,7 +17,7 @@ export type AudioSettings = {
 export const defaultAudioSettings: AudioSettings = {
   speakerVolume: 0.7,
   ambientVolume: 0.35,
-  speakerEnabled: true,
+  speakerEnabled: false,
 };
 
 /** Wykrywa systemową preferencję ograniczenia ruchu (prefers-reduced-motion). */

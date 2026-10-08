@@ -7,10 +7,12 @@ import {
   environmentAssets,
   interactiveAssets,
   authoredFestivalUrl,
+  mobileAuthoredFestivalUrl,
   textureAssets,
   ecoPickupModelsUrl,
 } from './assetManifest';
 import { FestivalMotionBank } from '../animation/FestivalMotionBank';
+import { loadInBatches, limitTextureResolution } from './mobileAssetPolicy';
 import { repairSkinSeams } from '../animation/repairSkinSeams';
 import { disposeObjectTree } from '../lifecycle/disposeThree';
 import {
@@ -46,6 +48,7 @@ export class AssetLoader {
     private progress: (message: string) => void,
     private error: (message: string) => void,
     private motionBankUrl: string | null = festivalMotionBankUrl,
+    private mobile = false,
   ) {}
 
   private loadMotionBank() {
@@ -107,6 +110,7 @@ export class AssetLoader {
         this.loader
           .loadAsync(url)
           .then((value) => {
+            if (this.mobile) limitTextureResolution(value.scene, 256);
             if (profile === 'character') repairSkinSeams(value.scene);
             applyPbrMaterialPolicy(value.scene, profile);
             this.progress(`Załadowano: ${label}`);
@@ -159,20 +163,24 @@ export class AssetLoader {
     const characters = new Map<string, GLTF>(),
       interactables = new Map<string, GLTF>();
     const motionBank = await this.loadMotionBank();
-    await Promise.all(
-      characterAssets.map(async (asset) => {
-        const gltf = await this.load(asset.url, asset.name, 'character');
-        if (gltf) characters.set(asset.id, motionBank?.apply(gltf) ?? gltf);
-      }),
-    );
-    await Promise.all(
-      Object.entries(interactiveAssets).map(async ([id, url]) => {
+    await loadInBatches(characterAssets, this.mobile ? 1 : characterAssets.length, async (asset) => {
+      const gltf = await this.load(asset.url, asset.name, 'character');
+      if (gltf) characters.set(asset.id, motionBank?.apply(gltf) ?? gltf);
+    });
+    await loadInBatches(
+      Object.entries(interactiveAssets),
+      this.mobile ? 1 : Object.keys(interactiveAssets).length,
+      async ([id, url]) => {
         const gltf = await this.load(url, id, interactivePbrProfile(id));
         if (gltf) interactables.set(id, gltf);
-      }),
+      },
     );
     const [authoredFestival, speaker, beerCan, ecoPickups] = await Promise.all([
-      this.load(authoredFestivalUrl, 'Świat festiwalu z Blendera', 'mixed'),
+      this.load(
+        this.mobile ? mobileAuthoredFestivalUrl : authoredFestivalUrl,
+        'Świat festiwalu z Blendera',
+        'mixed',
+      ),
       this.load(environmentAssets.speaker, 'głośnik', 'plastic'),
       this.load(environmentAssets.beerCan, 'puszka piwa Woodstock', 'mixed'),
       this.load(ecoPickupModelsUrl, 'Modele Eko i przekąsek', 'mixed'),
