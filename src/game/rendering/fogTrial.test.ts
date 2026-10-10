@@ -1,8 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { DESKTOP_GRAPHICS } from './graphicsProfile';
-import { fogTrialEnabled, fogTrialProfile } from './fogTrial';
+import { fogTrialEnabled, fogTrialProfile, fogDistance, fogRanges, savedFogDistance } from './fogTrial';
+import { vi } from 'vitest';
 
 describe('mobile fog trial', () => {
+  it('bounds user distance, keeps streaming buffers in sync and survives unavailable storage', () => {
+    expect([null, '', undefined, 'bad', Infinity].map(fogDistance)).toEqual([15, 15, 15, 15, 15]);
+    expect([-5, 8, 22.4, 60].map(fogDistance)).toEqual([8, 8, 22, 30]);
+    expect(fogRanges(10)).toEqual({ near: 6, far: 10, prefetch: 13, retain: 21, prime: 12 });
+    expect(fogTrialProfile(DESKTOP_GRAPHICS, true, 24).animation).toBe(24);
+    vi.stubGlobal('localStorage', { getItem: () => '22' });
+    expect(savedFogDistance()).toBe(22);
+    vi.stubGlobal('localStorage', {
+      getItem: () => {
+        throw new Error('Denied');
+      },
+    });
+    expect(savedFogDistance()).toBe(15);
+    vi.unstubAllGlobals();
+  });
   it('defaults only on touch/mobile, with explicit opt in/out', () => {
     expect(fogTrialEnabled(true, '')).toBe(true);
     expect(fogTrialEnabled(false, '')).toBe(false);

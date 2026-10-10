@@ -82,7 +82,7 @@
           </div>
           <div class="mobile-look-hint" aria-hidden="true">PRZECIĄGNIJ PO EKRANIE<br />ABY SIĘ ROZEJRZEĆ</div>
           <button id="mobile-interact" type="button">UŻYJ</button>
-          <button id="mobile-jump" type="button" aria-label="Skok lub rzut piłką">SKOK / RZUT</button>
+          <button id="mobile-jump" type="button" aria-label="Skok">SKOK</button>
         </div>
         <div id="effect-hud">Brak aktywnego efektu</div>
         <div id="controls-hud"></div>
@@ -851,6 +851,14 @@
             <option value="high">Wysoka</option>
           </select>
         </label>
+        <label id="setting-fog-control" hidden>
+          Zasięg mgły: <output id="setting-fog-value" for="setting-fog-distance">15 m</output>
+          <input id="setting-fog-distance" type="range" min="8" max="30" step="1" value="15" />
+          <small
+            >Mniejszy zasięg odciąża telefon. Większy doczytuje więcej modeli i zużywa więcej pamięci.</small
+          >
+        </label>
+        <p id="mobile-performance-readout" aria-live="off">Pomiar FPS…</p>
         <p>Kursor jest zwolniony.</p>
         <div class="pause-motion-section">
           <label for="player-motion">Gesty i odpoczynek</label>

@@ -13,6 +13,56 @@ function keyEvent(type: 'keydown' | 'keyup', key: string) {
 }
 
 describe('PlayerController mouse look', () => {
+  it('covers the same ground at 10/15/30/60 FPS with bounded collision steps', () => {
+    vi.stubGlobal('window', new EventTarget());
+    vi.stubGlobal('document', new EventTarget());
+    const distances = [10, 15, 30, 60].map((fps) => {
+      const camera = new THREE.PerspectiveCamera();
+      let previous = 0;
+      const canMove = (x: number, z: number) => {
+        expect(Math.abs(z - previous)).toBeLessThan(0.12);
+        previous = z;
+        return true;
+      };
+      const player = new PlayerController(
+        camera,
+        new EventTarget() as unknown as HTMLCanvasElement,
+        canMove,
+        false,
+        { position: [0, 0], yaw: 0 },
+        () => 0,
+      );
+      player.enabled = true;
+      player.setMobileMove(1, 0, false);
+      for (let i = 0; i < fps * 3; i++)
+        player.updateElapsed(1 / fps, { speed: 1, sway: 0, shake: 0, bob: 0 });
+      player.dispose();
+      return -camera.position.z;
+    });
+    expect(Math.max(...distances) - Math.min(...distances)).toBeLessThan(0.02);
+    expect(distances[0]).toBeGreaterThan(9.5);
+  });
+  it('does not teleport after a suspended tab or a bad elapsed time', () => {
+    vi.stubGlobal('window', new EventTarget());
+    vi.stubGlobal('document', new EventTarget());
+    const camera = new THREE.PerspectiveCamera();
+    const player = new PlayerController(
+      camera,
+      new EventTarget() as unknown as HTMLCanvasElement,
+      () => true,
+      false,
+      { position: [0, 0], yaw: 0 },
+      () => 0,
+    );
+    player.enabled = true;
+    player.keys.add('w');
+    player.updateElapsed(60, { speed: 1, sway: 0, shake: 0, bob: 0 });
+    expect(Math.abs(camera.position.z)).toBeLessThan(0.83);
+    const z = camera.position.z;
+    for (const dt of [-1, NaN, Infinity]) player.updateElapsed(dt, { speed: 1, sway: 0, shake: 0, bob: 0 });
+    expect(camera.position.z).toBe(z);
+    player.dispose();
+  });
   it('jumps once, keeps running horizontally, lands and cannot jump while locked', () => {
     vi.stubGlobal('window', new EventTarget());
     vi.stubGlobal('document', new EventTarget());

@@ -12,6 +12,26 @@ const sector = (id: string, x = 0): FogSector => ({
   ],
 });
 describe('FogSectorStreamer', () => {
+  it('expands streaming live and releases sectors after the user reduces the distance', async () => {
+    const root = new THREE.Group(),
+      release = vi.fn();
+    const stream = new FogSectorStreamer(
+      new THREE.Group(),
+      { schema: 1, sourceSha256: '', sectors: [sector('a', 24)] },
+      async () => root,
+      release,
+      vi.fn(),
+    );
+    await stream.prime(new THREE.Vector3());
+    expect(stream.stats.loaded).toBe(0);
+    stream.setViewDistance(30);
+    await stream.prime(new THREE.Vector3());
+    expect(root.visible).toBe(true);
+    stream.setViewDistance(8);
+    stream.update(0, new THREE.Vector3());
+    expect(release).toHaveBeenCalledOnce();
+    expect(stream.stats.loaded).toBe(0);
+  });
   it('measures the nearest bounds edge, not origin or height', () => {
     expect(sectorDistance(sector('a'), new THREE.Vector3(1, 100, 1))).toBe(0);
     expect(sectorDistance(sector('a'), new THREE.Vector3(5, 0, 6))).toBe(5);

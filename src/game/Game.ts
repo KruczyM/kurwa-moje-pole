@@ -3,7 +3,13 @@ import { browserGraphicsProfile, savedMobileQuality, isMobileQuality } from './r
 import { DistanceVisibility } from './rendering/DistanceVisibility';
 import { StageLiveScreens } from './world/StageLiveScreens';
 import * as THREE from 'three';
-import { fogTrialEnabled, fogTrialProfile, FOG_TRIAL_NEAR, FOG_TRIAL_FAR } from './rendering/fogTrial';
+import {
+  fogTrialEnabled,
+  fogTrialProfile,
+  fogDistance,
+  fogRanges,
+  savedFogDistance,
+} from './rendering/fogTrial';
 import { FogSectorStreamer, type FogSectorManifest } from './world/FogSectorStreamer';
 import { fogWorldManifestUrl, fogWorldSectorUrl } from './assets/assetManifest';
 import { AssetLoader } from './assets/AssetLoader';
@@ -156,7 +162,14 @@ export class Game {
   private pointerLockPause = new PointerLockPauseGate();
   private readonly mobileInput = isMobileInputDevice();
   private readonly fogTrial = fogTrialEnabled(this.mobileInput);
-  private graphics = fogTrialProfile(browserGraphicsProfile(savedMobileQuality()), this.fogTrial);
+  private fogViewDistance = savedFogDistance();
+  private graphics = fogTrialProfile(
+    browserGraphicsProfile(savedMobileQuality()),
+    this.fogTrial,
+    this.fogViewDistance,
+  );
+  private fpsElapsed = 0;
+  private fpsFrames = 0;
   private sectorStreamer?: FogSectorStreamer;
   private sectorLoader?: AssetLoader;
   private distanceVisibility?: DistanceVisibility;
@@ -259,9 +272,10 @@ export class Game {
     this.scene.background = new THREE.Color(0x9bb9d0);
     this.scene.fog = new THREE.Fog(0x8da1b5, 100, 380);
     if (this.fogTrial) {
-      this.scene.fog = new THREE.Fog(0x8da1b5, FOG_TRIAL_NEAR, FOG_TRIAL_FAR);
+      const range = fogRanges(this.fogViewDistance);
+      this.scene.fog = new THREE.Fog(0x8da1b5, range.near, range.far);
       this.scene.background = new THREE.Color(0x8da1b5);
-      this.camera.far = FOG_TRIAL_FAR;
+      this.camera.far = range.far;
       this.camera.updateProjectionMatrix();
     }
     this.events.listen(window, 'resize', () => this.resize());
@@ -286,7 +300,11 @@ export class Game {
         } catch {
           /* Optional preference. */
         }
-        this.graphics = fogTrialProfile(browserGraphicsProfile(quality.value), this.fogTrial);
+        this.graphics = fogTrialProfile(
+          browserGraphicsProfile(quality.value),
+          this.fogTrial,
+          this.fogViewDistance,
+        );
         this.distanceVisibility?.setProfile(this.graphics);
         if (this.npcs) this.npcs.visibility.profile = this.graphics;
         if (this.remotePlayersManager) this.remotePlayersManager.visibility.profile = this.graphics;
@@ -296,6 +314,15 @@ export class Game {
         this.resize(true);
       });
     }
+    const fogControl = document.querySelector<HTMLElement>('#setting-fog-control');
+    const fogSlider = document.querySelector<HTMLInputElement>('#setting-fog-distance');
+    if (fogControl) fogControl.hidden = !this.fogTrial;
+    if (fogSlider) {
+      fogSlider.value = String(this.fogViewDistance);
+      this.events.listen(fogSlider, 'input', () => this.setFogDistance(Number(fogSlider.value)));
+    }
+    const fogValue = document.querySelector('#setting-fog-value');
+    if (fogValue) fogValue.textContent = `${this.fogViewDistance} m`;
     if (window.visualViewport) this.events.listen(window.visualViewport, 'resize', () => this.resize());
     this.events.listen(window, 'keydown', (event) => this.key(event as KeyboardEvent));
     this.events.listen(window, 'keyup', (event) => this.keyUp(event as KeyboardEvent));
@@ -388,6 +415,7 @@ export class Game {
           },
           (message) => this.toast(message),
         );
+        this.sectorStreamer.setViewDistance(this.fogViewDistance);
       }
       this.world.setShadowResolution(this.graphics.shadowMapSize);
       if (this.graphics.mobile)
@@ -706,7 +734,7 @@ export class Game {
 
       if (this.fogTrial) {
         this.toast(
-          'Próba telefonu: mgła 15 m, sektory świata, oryginalne tekstury. Dodatkowy tłum wyłączony.',
+          `Próba telefonu: mgła ${this.fogViewDistance} m, sektory świata, oryginalne tekstury. Dodatkowy tłum wyłączony.`,
         );
       } else if (skippedCrowd || this.settings.preloadCrowd === false || this.graphics.mobile) {
         this.toast('Festiwalowicze doczytują się w tle: pod dużą sceną i na obu pasażach.');
@@ -1652,11 +1680,48 @@ export class Game {
     this.clock.start();
     this.animationLoop.start();
   }
+  private setFogDistance(value: number) {
+    if (!this.fogTrial) return;
+    this.fogViewDistance = fogDistance(value);
+    const range = fogRanges(this.fogViewDistance);
+    const fog = this.scene.fog;
+    if (fog instanceof THREE.Fog) {
+      fog.near = range.near;
+      fog.far = range.far;
+    }
+    this.camera.far = range.far;
+    this.camera.updateProjectionMatrix();
+    this.graphics = fogTrialProfile(this.graphics, true, range.far);
+    this.distanceVisibility?.setProfile(this.graphics);
+    if (this.npcs) this.npcs.visibility.profile = this.graphics;
+    if (this.remotePlayersManager) this.remotePlayersManager.visibility.profile = this.graphics;
+    this.sectorStreamer?.setViewDistance(range.far);
+    this.sectorStreamer?.update(0, this.camera.position);
+    const output = document.querySelector('#setting-fog-value');
+    if (output) output.textContent = `${range.far} m`;
+    try {
+      localStorage.setItem('festival-fog-distance', String(range.far));
+    } catch {
+      /* Optional preference. */
+    }
+  }
 
   /** Aktualizuje wszystkie systemy symulacji i renderuje jedną klatkę. */
   private updateFrame() {
     if (this.disposed) return;
-    const dt = Math.min(this.clock.getDelta(), 0.05),
+    const frameElapsed = this.clock.getDelta();
+    if (this.state.current === 'playing') {
+      this.fpsElapsed += frameElapsed;
+      this.fpsFrames++;
+    }
+    if (this.fpsElapsed >= 1) {
+      const output = document.querySelector('#mobile-performance-readout');
+      if (output)
+        output.textContent = `Ostatni pomiar w grze: ${Math.round(this.fpsFrames / this.fpsElapsed)} FPS • ${Math.round((this.fpsElapsed * 1000) / this.fpsFrames)} ms/klatkę`;
+      this.fpsElapsed = 0;
+      this.fpsFrames = 0;
+    }
+    const dt = Math.min(frameElapsed, 0.05),
       state = this.state.current;
     if (state !== 'playing' && this.world?.flankiGame?.getHudState().isChugging)
       this.world.flankiGame.setPlayerDrinking(false);
@@ -1673,7 +1738,7 @@ export class Game {
         const speedBoost = this.canCollector.getSpeedBoostMultiplier();
         const baseMods = this.effects?.modifiers || { speed: 1, sway: 0, shake: 0, bob: 1 };
         const activeMods = speedBoost > 1.0 ? { ...baseMods, speed: baseMods.speed * speedBoost } : baseMods;
-        this.player?.update(dt, activeMods);
+        this.player?.updateElapsed(frameElapsed, activeMods);
         this.world?.flankiGame?.updateLocalRunnerPosition(this.camera.position);
         this.updateInteractionPrompt();
       }
@@ -1803,6 +1868,7 @@ export class Game {
     this.effects?.render();
     this.updateEffectHud();
     this.ui.updateFlankiHud(this.world?.flankiGame?.getHudState() ?? null);
+    this.mobileControls?.setFlankiPhase(this.world?.flankiGame?.getPhase());
     this.canCollector.update(dt);
     if (this.ui.isEcoPanelOpen()) this.updateEcoPanel();
     this.campfireGuitarGame.update(dt);

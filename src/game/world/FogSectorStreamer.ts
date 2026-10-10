@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FOG_TRIAL_FAR, FOG_TRIAL_PREFETCH, FOG_TRIAL_RETAIN } from '../rendering/fogTrial';
+import { fogRanges, FOG_TRIAL_FAR } from '../rendering/fogTrial';
 
 export type FogSector = { id: string; path: string; bounds: [number[], number[]]; bytes: number };
 export type FogSectorManifest = { schema: number; sourceSha256: string; sectors: FogSector[] };
@@ -19,6 +19,11 @@ export class FogSectorStreamer {
   private elapsed = Infinity;
   private pending?: Promise<void>;
   private disposed = false;
+  private ranges = fogRanges(FOG_TRIAL_FAR);
+  setViewDistance(distance: number): void {
+    this.ranges = fogRanges(distance);
+    this.elapsed = Infinity;
+  }
   constructor(
     private scene: THREE.Object3D,
     private manifest: FogSectorManifest,
@@ -38,10 +43,10 @@ export class FogSectorStreamer {
       const root = this.loaded.get(sector.id);
       if (!root) continue;
       const distance = sectorDistance(sector, viewer);
-      if (distance > FOG_TRIAL_RETAIN) {
+      if (distance > this.ranges.retain) {
         this.loaded.delete(sector.id);
         this.release(sector, root);
-      } else root.visible = distance <= FOG_TRIAL_FAR;
+      } else root.visible = distance <= this.ranges.far;
     }
     void this.pump();
   }
@@ -58,18 +63,18 @@ export class FogSectorStreamer {
         (s) =>
           !this.loaded.has(s.id) &&
           !this.failed.has(s.id) &&
-          sectorDistance(s, this.viewer) <= FOG_TRIAL_PREFETCH,
+          sectorDistance(s, this.viewer) <= this.ranges.prefetch,
       )
       .sort((a, b) => sectorDistance(a, this.viewer) - sectorDistance(b, this.viewer))[0];
     if (!sector || this.disposed) return;
     try {
       const root = await this.load(sector);
       if (!root) throw new Error('Nie udało się wczytać sektora');
-      if (this.disposed || sectorDistance(sector, this.viewer) > FOG_TRIAL_RETAIN) {
+      if (this.disposed || sectorDistance(sector, this.viewer) > this.ranges.retain) {
         this.release(sector, root);
         return;
       }
-      root.visible = sectorDistance(sector, this.viewer) <= FOG_TRIAL_FAR;
+      root.visible = sectorDistance(sector, this.viewer) <= this.ranges.far;
       this.scene.add(root);
       this.loaded.set(sector.id, root);
     } catch {
@@ -82,7 +87,8 @@ export class FogSectorStreamer {
     while (
       !this.disposed &&
       this.manifest.sectors.some(
-        (s) => !this.loaded.has(s.id) && !this.failed.has(s.id) && sectorDistance(s, viewer) <= 17,
+        (s) =>
+          !this.loaded.has(s.id) && !this.failed.has(s.id) && sectorDistance(s, viewer) <= this.ranges.prime,
       )
     )
       await this.pump();

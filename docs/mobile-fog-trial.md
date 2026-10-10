@@ -11,13 +11,19 @@ po wybraniu postaci. Na komputerze dopisz `?fogTrial=1` do adresu gry.
 `?fogTrial=0` przywraca zwykły, pełny świat po odświeżeniu strony.
 Z istniejącym query string użyj `&fogTrial=1` zamiast `?`.
 
+Menu → **Zasięg mgły**: 8–30 m, zmiana na żywo i zapis w localStorage.
+Steruje również kamerą, zasięgiem postaci/animacji oraz buforami streamingu
+(doczytywanie +3 m, zatrzymanie w pamięci +11 m, start +2 m).
+Pod spodem jest ostatni pomiar FPS i czasu klatki z normalnej gry, nie z pauzy.
+Większy zasięg zwiększa zużycie pamięci; na telefonie warto zacząć od 10–15 m.
+
 ## Co zmieniono
 
-- Mgła zaczyna się na 9 m, na 15 m jest pełna; kamera kończy rysowanie na 15 m.
+- Domyślnie mgła zaczyna się na 9 m, na 15 m jest pełna; kamera kończy rysowanie na 15 m.
   Tło pasuje do koloru mgły, bez pobierania niewidocznej cubemapy i panoramy.
 - 207 sektorów, nominalna komórka 16 m. Odległość jest liczona od granicy sektora,
   a nie jego środka, więc duże obiekty nie znikają za wcześnie.
-- Jedno ładowanie sektora naraz: doczytywanie do 18 m, wyświetlanie do 15 m,
+- Domyślnie jedno ładowanie sektora naraz: doczytywanie do 18 m, wyświetlanie do 15 m,
   usuwanie powyżej 26 m. Mały bufor ogranicza ciągłe pobieranie na granicy sektorów.
   Przy starcie wczytywane są sektory do 17 m przed wpuszczeniem gracza do świata.
 - Usuwane są wpisy cache GLTF, geometrie, materiały, tekstury GPU i nieużywane
@@ -37,6 +43,13 @@ Z istniejącym query string użyj `&fogTrial=1` zamiast `?`.
   Filmy i przestrzenny dźwięk sceny pozostają; odtwarzacz startuje po wejściu do gry.
   Desktop bez włączonej próby zachowuje dotychczasowe działanie.
 - Bez nowego renderera, nowej pętli RAF ani nowego kontrolera ruchu.
+- Poprawiono dodatkowe spowalnianie gracza przy mniej niż 20 FPS: wcześniejsze
+  obcięcie czasu klatki do 50 ms zmniejszało pokonywany dystans. Ruch gracza
+  korzysta teraz z czasu rzeczywistego w małych krokach maks. 1/60 s; maksymalne
+  nadrabianie to 250 ms, aby powrót po zawieszeniu karty nie teleportował gracza.
+  Nie zwiększa to samo w sobie FPS; pozostałe systemy zachowują swoje limity czasu.
+- Mobilny przycisk pokazuje SKOK poza flankami, RZUT w aktywnym meczu. W trakcie
+  tury bota/lotu piłki/picia jest nieaktywny. Nie dodano rzucania przedmiotami świata.
 
 ## Eksport i utrzymanie
 
@@ -65,8 +78,15 @@ przeniesienie pod scenę i rzeczywistą ewikcję dawnych sektorów, otwarcie men
 błędy JavaScript. Wymaga klienta na 5184 i serwera na 3104. Raporty i obrazy:
 `reports/fog-trial/`. Zrzuty obozu sprawdzono wizualnie.
 
+`python scripts/verify-mobile-fog-controls.py` sprawdza menu w dotykowym Chromium
+i WebKit: wartości 30/8/10 m, synchronizację profilu i streamera, zapamiętanie
+10 m po ponownym wejściu oraz SKOK → RZUT → SKOK przy start/stop flanek.
+Oba silniki przeszły bez błędów JavaScript; obrazy menu sprawdzono wizualnie.
+Raporty: `reports/mobile-fog-controls/`. Test kontrolera ruchu porównuje rzeczywisty
+dystans przez 3 s przy 10/15/30/60 FPS, różnica mniejsza niż 2 cm.
+
 W obu silnikach gra weszła do świata bez błędów JavaScript i usuwała stare sektory.
-Walidacja końcowa: `ci:code` (1393 testy jednostkowe i 6 narzędziowych),
+Walidacja końcowa: `ci:code` (1399 testów jednostkowych i 6 narzędziowych),
 `ci:assets`, produkcyjny build oraz `git diff --check` przeszły.
 W jednym pomiarze WebKit było ~1,26 mln trójkątów/87 draw calls w obozie i
 ~48 tys./23 pod sceną. To pomiary komputera, nie wyniki wydajności iPhone'a.

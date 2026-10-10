@@ -150,6 +150,13 @@ export class PlayerController {
     this.freeCamSpeed = THREE.MathUtils.clamp(this.freeCamSpeed + delta, 4, 120);
     return this.freeCamSpeed;
   }
+  /** Preserve real walking speed at low FPS without large collision/jump steps or tab-resume teleports. */
+  updateElapsed(elapsed: number, mod: PlayerModifiers) {
+    const duration = Number.isFinite(elapsed) ? Math.max(0, Math.min(elapsed, 0.25)) : 0;
+    const steps = Math.ceil(duration * 60);
+    for (let step = 0; step < steps; step++) this.update(duration / steps, mod);
+  }
+
   /** Aktualizuje ruch FPS, kolizje, kołysanie, drganie oraz pozycję kamery. */
   update(dt: number, mod: PlayerModifiers) {
     // Pointer Lock jest potrzebny tylko do rozglądania. Po zamknięciu pauzy

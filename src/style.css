@@ -318,6 +318,9 @@ h1 i {
   width: 100%;
   margin-top: 6px;
 }
+#setting-fog-distance {
+  accent-color: #a5ff37;
+}
 #pause select {
   display: block;
   width: 100%;

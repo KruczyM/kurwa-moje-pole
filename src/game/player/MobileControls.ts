@@ -40,6 +40,14 @@ export function joystickInput(deltaX: number, deltaY: number, radius: number): J
 export function shouldUseMobileControls(coarsePointer: boolean, maxTouchPoints: number) {
   return coarsePointer || maxTouchPoints > 0;
 }
+export function mobileJumpAction(phase?: string) {
+  const flanki = Boolean(phase && !['idle', 'game_over'].includes(phase));
+  return {
+    label: flanki ? 'RZUT' : 'SKOK',
+    ariaLabel: flanki ? 'Rzut piłką we flankach' : 'Skok',
+    disabled: flanki && phase !== 'aiming',
+  };
+}
 
 /** Odczytuje możliwości dotykowe aktualnej przeglądarki. */
 export function isMobileInputDevice() {
@@ -63,6 +71,8 @@ export class MobileControls {
   private lookX = 0;
   private lookY = 0;
   private playing = false;
+  private jumpContext?: string;
+  private jumpContextInitialized = false;
 
   constructor(
     private readonly root: HTMLElement,
@@ -123,6 +133,18 @@ export class MobileControls {
   }
 
   /** Pokazuje tylko te przyciski, które mają sens w aktualnym stanie aplikacji. */
+  setFlankiPhase(phase?: string) {
+    if (this.jumpContextInitialized && phase === this.jumpContext) return;
+    this.jumpContextInitialized = true;
+    this.jumpContext = phase;
+    const button = this.root.querySelector<HTMLButtonElement>('#mobile-jump');
+    if (!button) return;
+    const action = mobileJumpAction(phase);
+    if (button.textContent !== action.label) button.textContent = action.label;
+    button.setAttribute('aria-label', action.ariaLabel);
+    button.disabled = action.disabled;
+  }
+
   setState(state: AppState) {
     this.playing = state === 'playing';
     const jump = this.root.querySelector<HTMLButtonElement>('#mobile-jump');
