@@ -84,6 +84,7 @@ const environmentPbrProfiles = {
   gastroUmbrella: 'fabric',
 };
 const interactivePbrProfiles = {
+  sunglasses: 'plastic',
   water: 'plastic',
   table: 'wood',
   cigarette: 'paper',
@@ -445,6 +446,7 @@ function inspectPbrDefinitions(gltf, problems, assetId) {
   // Missing factors are legal glTF defaults (white); factor ranges are validated above.
   const approvedFactorModel = [
     'interactive:water',
+    'interactive:sunglasses',
     'environment:delayTower',
     'environment:delayTowerHeavy',
   ].includes(assetId);

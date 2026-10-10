@@ -94,6 +94,7 @@ export const interactiveAssets = {
   mushrooms: gameAsset(catalog.interactives.mushrooms),
   lsd: gameAsset(catalog.interactives.lsd),
   water: gameAsset(catalog.interactives.water),
+  sunglasses: gameAsset(catalog.interactives.sunglasses),
 };
 
 export const textureAssets = {

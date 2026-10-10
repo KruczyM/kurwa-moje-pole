@@ -37,5 +37,5 @@ export const itemPresentation: Record<InspectableItemId, ItemPresentation> = {
   mushrooms: lying(0.18, [0.41, 0.18]),
   lsd: lying(0.16, [0.68, 0.12]),
   water: { ...lying(0.38, [-0.62, 0.14]), tableRotation: [0, 0, 0] },
-  sunglasses: lying(0.18, [0.22, -0.14]),
+  sunglasses: { ...lying(0.18, [0.22, -0.14]), tableRotation: [-Math.PI / 2, 0, 0] },
 };

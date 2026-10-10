@@ -1,13 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { inspectableItems } from './itemConfig';
 import { itemPresentation } from './itemPresentationConfig';
+import { interactiveAssets } from '../assets/assetManifest';
 
 describe('itemPresentation', () => {
+  it('registers a real model for every inspectable item, including sunglasses', () => {
+    for (const item of inspectableItems) {
+      expect(interactiveAssets[item.id]).toMatch(/\.glb(?:\?|$)/);
+    }
+    expect(interactiveAssets.sunglasses).toContain('interactables/sunglasses.glb');
+  });
   it('defines separate table and inspection transforms for every item', () => {
     for (const item of inspectableItems) {
       const presentation = itemPresentation[item.id];
       expect(presentation.tableSize).toBeGreaterThan(0);
-      expect(presentation.tableRotation[0]).toBeCloseTo(item.id === 'water' ? 0 : Math.PI / 2);
+      expect(presentation.tableRotation[0]).toBeCloseTo(
+        item.id === 'water' ? 0 : item.id === 'sunglasses' ? -Math.PI / 2 : Math.PI / 2,
+      );
       expect(Math.abs(presentation.tablePosition[0])).toBeLessThanOrEqual(0.82);
       expect(Math.abs(presentation.tablePosition[1])).toBeLessThanOrEqual(0.18);
       expect(presentation.inspectRotation).toEqual([0, 0, 0]);
