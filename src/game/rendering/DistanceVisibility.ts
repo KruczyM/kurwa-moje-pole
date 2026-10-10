@@ -20,7 +20,13 @@ export class DistanceVisibility {
   ) {
     root.updateMatrixWorld(true);
     root.traverse((object) => {
-      if (!(object instanceof THREE.Mesh) || !object.visible || object instanceof THREE.SkinnedMesh) return;
+      if (
+        !(object instanceof THREE.Mesh) ||
+        object.userData.fogProxy ||
+        !object.visible ||
+        object instanceof THREE.SkinnedMesh
+      )
+        return;
       let node: THREE.Object3D | null = object;
       let category: Entry['category'] = 'decorations';
       while (node) {

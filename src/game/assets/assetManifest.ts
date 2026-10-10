@@ -14,6 +14,10 @@ const gameAsset = (path: string) => {
   return version ? `${url}?v=${encodeURIComponent(version)}` : url;
 };
 
+export const fogWorldBaseUrl = gameAsset('world/festival/fog-trial/base.glb');
+export const fogWorldManifestUrl = gameAsset('world/festival/fog-trial/manifest.json');
+export const fogWorldSectorUrl = (path: string) => gameAsset(`world/festival/fog-trial/${path}`);
+
 /** Jedyny rejestr adresów binarnych zasobów używanych przez klienta. */
 export const authoredFestivalUrl = gameAsset(catalog.environment.authoredFestival);
 

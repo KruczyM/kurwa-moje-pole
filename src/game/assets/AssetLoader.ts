@@ -7,10 +7,12 @@ import {
   environmentAssets,
   interactiveAssets,
   authoredFestivalUrl,
+  fogWorldBaseUrl,
   textureAssets,
   ecoPickupModelsUrl,
 } from './assetManifest';
 import { FestivalMotionBank } from '../animation/FestivalMotionBank';
+import { SectorResources } from './SectorResources';
 import { repairSkinSeams } from '../animation/repairSkinSeams';
 import { disposeObjectTree } from '../lifecycle/disposeThree';
 import {
@@ -27,6 +29,7 @@ export type WorldTextures = {
 };
 
 export type LoadedAssets = {
+  fogTrial?: boolean;
   ecoPickups?: GLTF | null;
   characters: Map<string, GLTF>;
   authoredFestival: GLTF;
@@ -42,11 +45,34 @@ export class AssetLoader {
   private cache = new Map<string, Promise<GLTF | null>>();
   private textureCache = new Map<string, Promise<THREE.Texture | null>>();
   private motionBank?: Promise<FestivalMotionBank | null>;
+  readonly sectorResources = new SectorResources();
+  private fogDisposed = false;
   constructor(
     private progress: (message: string) => void,
     private error: (message: string) => void,
     private motionBankUrl: string | null = festivalMotionBankUrl,
+    private fogTrial = false,
   ) {}
+
+  async loadWorldSector(url: string): Promise<THREE.Object3D | null> {
+    const model = await this.load(url, 'Sektor festiwalu', 'mixed');
+    if (model) {
+      this.sectorResources.acquire(model.scene);
+      if (this.fogDisposed) {
+        this.releaseWorldSector(url, model.scene);
+        return null;
+      }
+    }
+    return model?.scene ?? null;
+  }
+  releaseWorldSector(url: string, root: THREE.Object3D): void {
+    this.cache.delete(url);
+    this.sectorResources.release(root);
+  }
+  disposeFogWorld(): void {
+    this.fogDisposed = true;
+    this.sectorResources.dispose();
+  }
 
   private loadMotionBank() {
     if (!this.motionBank)
@@ -159,12 +185,12 @@ export class AssetLoader {
     const characters = new Map<string, GLTF>(),
       interactables = new Map<string, GLTF>();
     const motionBank = await this.loadMotionBank();
-    await Promise.all(
-      characterAssets.map(async (asset) => {
-        const gltf = await this.load(asset.url, asset.name, 'character');
-        if (gltf) characters.set(asset.id, motionBank?.apply(gltf) ?? gltf);
-      }),
-    );
+    const loadCharacter = async (asset: (typeof characterAssets)[number]) => {
+      const gltf = await this.load(asset.url, asset.name, 'character');
+      if (gltf) characters.set(asset.id, motionBank?.apply(gltf) ?? gltf);
+    };
+    if (this.fogTrial) for (const asset of characterAssets) await loadCharacter(asset);
+    else await Promise.all(characterAssets.map(loadCharacter));
     await Promise.all(
       Object.entries(interactiveAssets).map(async ([id, url]) => {
         const gltf = await this.load(url, id, interactivePbrProfile(id));
@@ -172,7 +198,7 @@ export class AssetLoader {
       }),
     );
     const [authoredFestival, speaker, beerCan, ecoPickups] = await Promise.all([
-      this.load(authoredFestivalUrl, 'Świat festiwalu z Blendera', 'mixed'),
+      this.load(this.fogTrial ? fogWorldBaseUrl : authoredFestivalUrl, 'Świat festiwalu z Blendera', 'mixed'),
       this.load(environmentAssets.speaker, 'głośnik', 'plastic'),
       this.load(environmentAssets.beerCan, 'puszka piwa Woodstock', 'mixed'),
       this.load(ecoPickupModelsUrl, 'Modele Eko i przekąsek', 'mixed'),
@@ -181,13 +207,20 @@ export class AssetLoader {
       throw new Error(
         'Nie udało się załadować świata z Blendera. Ponownie wyeksportuj authored-festival.glb.',
       );
+    if (this.fogTrial) {
+      this.sectorResources.acquire(authoredFestival.scene);
+      if (this.fogDisposed) this.releaseWorldSector(fogWorldBaseUrl, authoredFestival.scene);
+    }
     const [grassColor, grassNormal, grassRoughness, horizon] = await Promise.all([
       this.loadTexture(textureAssets.grass.color, 'tekstura trawy (kolor)', THREE.SRGBColorSpace),
       this.loadTexture(textureAssets.grass.normal, 'tekstura trawy (normal)', THREE.NoColorSpace),
       this.loadTexture(textureAssets.grass.roughness, 'tekstura trawy (roughness)', THREE.NoColorSpace),
-      this.loadTexture(textureAssets.horizon, 'panorama horyzontu', THREE.SRGBColorSpace),
+      this.fogTrial
+        ? null
+        : this.loadTexture(textureAssets.horizon, 'panorama horyzontu', THREE.SRGBColorSpace),
     ]);
     return {
+      fogTrial: this.fogTrial,
       characters,
       authoredFestival,
       speaker,

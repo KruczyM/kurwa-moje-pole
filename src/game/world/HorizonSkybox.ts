@@ -34,6 +34,7 @@ export class TimeOfDaySkybox {
     private readonly now: () => Date = () => new Date(),
     private readonly random: () => number = Math.random,
     private readonly fixedPeriod?: SkyboxPeriod,
+    private readonly renderBackground = true,
   ) {
     this.update(true);
   }
@@ -47,7 +48,7 @@ export class TimeOfDaySkybox {
     const period = this.fixedPeriod ?? skyboxPeriodForHour(now.getHours());
     if (period === this.period) return;
     this.period = period;
-    this.load(period);
+    if (this.renderBackground) this.load(period);
   }
 
   /** Podmienia tło dopiero po pełnym wczytaniu cubemapy, aby uniknąć czarnej klatki. */

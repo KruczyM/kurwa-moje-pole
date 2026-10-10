@@ -42,4 +42,9 @@ if (result.status === 0) {
   );
   if (mapResult.error) console.error('Eksport rzutu mapy nie powiódł się:', mapResult.error.message);
   process.exitCode = mapResult.status ?? 1;
+  if (mapResult.status === 0) {
+    const fog = spawnSync('python', ['scripts/build-fog-sectors.py'], { cwd: root, stdio: 'inherit' });
+    if (fog.error) console.error('Eksport sektorów mgły nie powiódł się:', fog.error.message);
+    process.exitCode = fog.status ?? 1;
+  }
 }

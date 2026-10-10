@@ -25,13 +25,14 @@ export class AuthoredFestivalWorld {
   private readonly grassCells = new Map<string, THREE.Box3[]>();
 
   constructor(source: GLTF) {
-    this.root = source.scene.clone(true);
+    this.root = source.scene.userData.fogStreamScaffold ? source.scene : source.scene.clone(true);
     this.root.name = 'AuthoredFestivalWorld';
     this.root.updateMatrixWorld(true);
     this.root.traverse((obj) => {
       if (typeof obj.userData.runtimePlacement === 'string')
         this.placements.set(obj.userData.runtimePlacement, obj);
       if (obj instanceof THREE.Mesh) {
+        if (obj.userData.fogProxy) obj.layers.disable(0); // Hide only its geometry, not interactive descendants.
         if (
           /^Wing_Single_Telebim_(Left|Right)$/.test(
             String(obj.userData.runtimeNode ?? obj.userData.runtimePlacement ?? obj.name),
@@ -292,12 +293,14 @@ export class AuthoredFestivalWorld {
   }
 
   /** Share draw calls for repeated scenery, but never batch animated or interactive nodes. */
-  private batchStaticMeshes() {
+  batchStaticMeshes(root: THREE.Object3D = this.root) {
     const buckets = new Map<string, THREE.Mesh[]>();
-    this.root.updateMatrixWorld(true);
-    this.root.traverse((obj) => {
+    root.updateMatrixWorld(true);
+    root.traverse((obj) => {
       if (
         !(obj instanceof THREE.Mesh) ||
+        obj.userData.fogProxy ||
+        !obj.visible ||
         obj instanceof THREE.InstancedMesh ||
         obj instanceof THREE.SkinnedMesh
       )
@@ -320,7 +323,7 @@ export class AuthoredFestivalWorld {
       bucket.push(obj);
       buckets.set(key, bucket);
     });
-    const inverse = this.root.matrixWorld.clone().invert();
+    const inverse = root.matrixWorld.clone().invert();
     const mergeBuckets = new Map<string, THREE.Mesh[]>();
     for (const meshes of buckets.values()) {
       if (meshes.length < 2) {
@@ -347,7 +350,7 @@ export class AuthoredFestivalWorld {
       batch.castShadow = true;
       batch.receiveShadow = true;
       batch.computeBoundingSphere();
-      this.root.add(batch);
+      root.add(batch);
     }
     // Unique truss parts otherwise require thousands of separate draw calls.
     // Merge only compatible opaque meshes in small cells; animated parts stay untouched.
@@ -367,7 +370,7 @@ export class AuthoredFestivalWorld {
       meshes.forEach((mesh) => {
         mesh.visible = false;
       });
-      this.root.add(merged);
+      root.add(merged);
     }
   }
 }

@@ -19,6 +19,24 @@ function fixture() {
 }
 
 describe('authored festival migration', () => {
+  it('keeps fog proxies out of render batches without hiding interactive children or losing collision bounds', () => {
+    const f = fixture();
+    f.scene.userData.fogStreamScaffold = true;
+    const tent = f.add('T01', 80, 90, 'Camping');
+    const proxy = tent.children[0] as THREE.Mesh;
+    proxy.userData.fogProxy = true;
+    const child = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+    child.userData.authoredDynamic = true;
+    proxy.add(child);
+    const world = new AuthoredFestivalWorld(f.source);
+    expect(world.root).toBe(f.scene);
+    expect(proxy.visible).toBe(true);
+    expect(proxy.layers.isEnabled(0)).toBe(false);
+    expect(child.visible && child.layers.isEnabled(0)).toBe(true);
+    expect(world.colliders).toHaveLength(1);
+    expect(world.mapScenery[0].x).toBeCloseTo(80);
+    expect(world.mapScenery[0].z).toBeCloseTo(90);
+  });
   it('never statically batches either live stage screen', () => {
     const f = fixture();
     for (const side of ['Left', 'Right']) {

@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "world:export": "node scripts/export-authored-world.mjs",
+    "world:fog": "python scripts/build-fog-sectors.py && node scripts/validate-fog-sectors.mjs",
+    "check:fog": "node scripts/validate-fog-sectors.mjs",
     "dev": "concurrently -n \"server,client\" -c \"cyan,magenta\" \"npm:server\" \"npm:dev:client\"",
     "dev:client": "vite",
     "server": "tsx server/roomServer.ts",
@@ -21,7 +23,7 @@
     "test:unit": "vitest run",
     "test": "npm run check:encoding && npm run check:assets && npm run check:rigs && npm run test:tools && npm run test:unit",
     "ci:code": "npm run check:encoding && npm run format:check && npm run lint && npm run typecheck && npm run test:tools && npm run test:unit",
-    "ci:assets": "npm run check:assets && npm run check:rigs"
+    "ci:assets": "npm run check:assets && npm run check:rigs && npm run check:fog"
   },
   "dependencies": {
     "socket.io": "^4.8.3",

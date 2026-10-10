@@ -3,6 +3,9 @@ import { browserGraphicsProfile, savedMobileQuality, isMobileQuality } from './r
 import { DistanceVisibility } from './rendering/DistanceVisibility';
 import { StageLiveScreens } from './world/StageLiveScreens';
 import * as THREE from 'three';
+import { fogTrialEnabled, fogTrialProfile, FOG_TRIAL_NEAR, FOG_TRIAL_FAR } from './rendering/fogTrial';
+import { FogSectorStreamer, type FogSectorManifest } from './world/FogSectorStreamer';
+import { fogWorldManifestUrl, fogWorldSectorUrl } from './assets/assetManifest';
 import { AssetLoader } from './assets/AssetLoader';
 import { characterAssets, effectAssets, festivalNpcAssets, musicAsset } from './assets/assetManifest';
 import { CampWorld, WORLD_LIMIT, terrainHeight } from './world/CampWorld';
@@ -152,7 +155,10 @@ export class Game {
   private speakerReactionPlayed = false;
   private pointerLockPause = new PointerLockPauseGate();
   private readonly mobileInput = isMobileInputDevice();
-  private graphics = browserGraphicsProfile(savedMobileQuality());
+  private readonly fogTrial = fogTrialEnabled(this.mobileInput);
+  private graphics = fogTrialProfile(browserGraphicsProfile(savedMobileQuality()), this.fogTrial);
+  private sectorStreamer?: FogSectorStreamer;
+  private sectorLoader?: AssetLoader;
   private distanceVisibility?: DistanceVisibility;
   private contextLost = false;
   private viewportWidth = 0;
@@ -252,6 +258,12 @@ export class Game {
     configureColorPipeline(this.renderer, 'world');
     this.scene.background = new THREE.Color(0x9bb9d0);
     this.scene.fog = new THREE.Fog(0x8da1b5, 100, 380);
+    if (this.fogTrial) {
+      this.scene.fog = new THREE.Fog(0x8da1b5, FOG_TRIAL_NEAR, FOG_TRIAL_FAR);
+      this.scene.background = new THREE.Color(0x8da1b5);
+      this.camera.far = FOG_TRIAL_FAR;
+      this.camera.updateProjectionMatrix();
+    }
     this.events.listen(window, 'resize', () => this.resize());
     this.events.listen(this.canvas, 'webglcontextlost', (event) => {
       event.preventDefault();
@@ -274,7 +286,7 @@ export class Game {
         } catch {
           /* Optional preference. */
         }
-        this.graphics = browserGraphicsProfile(quality.value);
+        this.graphics = fogTrialProfile(browserGraphicsProfile(quality.value), this.fogTrial);
         this.distanceVisibility?.setProfile(this.graphics);
         if (this.npcs) this.npcs.visibility.profile = this.graphics;
         if (this.remotePlayersManager) this.remotePlayersManager.visibility.profile = this.graphics;
@@ -340,7 +352,10 @@ export class Game {
           error.textContent = message;
           error.hidden = false;
         },
+        undefined,
+        this.fogTrial,
       );
+      if (this.fogTrial) this.sectorLoader = loader;
       const assets = await loader.loadAll();
       if (this.disposed) return;
       if (this.contextLost) throw new Error('WebGL utracony podczas ładowania modeli.');
@@ -348,6 +363,32 @@ export class Game {
         throw new Error('Nie udało się załadować żadnej postaci. Sprawdź Git LFS i pliki game-assets.');
       assets.interactables.forEach((asset, id) => this.propModels.set(id, asset.scene));
       this.world = new CampWorld(this.scene, assets);
+      if (this.fogTrial) {
+        const response = await fetch(fogWorldManifestUrl);
+        if (!response.ok) throw new Error('Nie udało się wczytać manifestu sektorów festiwalu.');
+        const manifest = (await response.json()) as FogSectorManifest;
+        if (this.disposed) return;
+        this.sectorStreamer = new FogSectorStreamer(
+          this.scene,
+          manifest,
+          async (sector) => {
+            const root = await loader.loadWorldSector(fogWorldSectorUrl(sector.path));
+            try {
+              if (root) this.world?.prepareSector(root);
+            } catch (cause) {
+              if (root) loader.releaseWorldSector(fogWorldSectorUrl(sector.path), root);
+              throw cause;
+            }
+            return root;
+          },
+          (sector, root) => {
+            this.matrixWireframe.releaseSubtree(root);
+            this.mushroomWireframe.releaseSubtree(root);
+            loader.releaseWorldSector(fogWorldSectorUrl(sector.path), root);
+          },
+          (message) => this.toast(message),
+        );
+      }
       this.world.setShadowResolution(this.graphics.shadowMapSize);
       if (this.graphics.mobile)
         this.distanceVisibility = new DistanceVisibility(this.world.authoredRoot, this.graphics);
@@ -379,8 +420,13 @@ export class Game {
           }),
         );
       this.stageLiveScreens = new StageLiveScreens(this.scene, this.world.mapScenery);
+      this.stageLiveScreens.liveCameraEnabled = !this.fogTrial;
       this.stageLiveScreens.setQuality(this.graphics.tvFeedWidth, this.graphics.tvFeedFps);
       this.stageLiveScreens.renderScope = (render) => {
+        if (this.fogTrial) {
+          render();
+          return;
+        }
         const roots = [
           ...(this.npcs?.npcs.filter((npc) => !npc.isHidden).map((npc) => npc.root) ?? []),
           ...Array.from(this.remotePlayersManager?.remotePlayers.values() ?? []).map((entity) => entity.root),
@@ -401,7 +447,7 @@ export class Game {
       const audioStage = this.world.mapScenery.find((item) => item.id === 'Main_Stage_Deck_Plinth');
       if (audioStage) this.stageAcoustics.setStagePosition(audioStage);
       this.syncStageAudio();
-      this.stageLiveScreens.setVideoPlaylist(this.stageAcoustics);
+      if (!this.fogTrial) this.stageLiveScreens.setVideoPlaylist(this.stageAcoustics);
       this.festivalMap?.setAuthoredLayout(this.world.mapScenery);
       this.world.setGrassQuality(this.settings.grassQuality);
       const npcNavigation = new NpcNavigationGrid(
@@ -470,7 +516,7 @@ export class Game {
       const selectedCharacter =
         (selectedAsset ? assets.characters.get(selectedAsset.id) : undefined) ??
         assets.characters.values().next().value;
-      if (selectedCharacter) this.stageLiveScreens?.setLocalAvatar(selectedCharacter);
+      if (selectedCharacter && !this.fogTrial) this.stageLiveScreens?.setLocalAvatar(selectedCharacter);
       this.useSequence = new ItemUseSequence(
         this.scene,
         this.camera,
@@ -639,19 +685,30 @@ export class Game {
       if (skipCrowdBtn) skipCrowdBtn.hidden = true;
       if (progressBar) progressBar.style.width = '85%';
       text.textContent = 'Rozgrzewka grafiki i shaderów…';
+      if (this.sectorStreamer) {
+        text.textContent = 'Wczytywanie najbliższych sektorów festiwalu…';
+        await this.sectorStreamer.prime(this.camera.position);
+        if (this.disposed) return;
+        this.distanceVisibility?.update(1, this.camera.position);
+      }
       await this.warmUpGpu();
       if (this.contextLost) throw new Error('WebGL utracony podczas przygotowania grafiki.');
       if (progressBar) progressBar.style.width = '100%';
 
       this.startLoop();
       this.state.transition('playing');
+      if (this.fogTrial) this.stageLiveScreens?.setVideoPlaylist(this.stageAcoustics);
 
       if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('camp-free-camera') === '1') {
         sessionStorage.removeItem('camp-free-camera');
         this.toggleFreeCamera(true);
       }
 
-      if (skippedCrowd || this.settings.preloadCrowd === false || this.graphics.mobile) {
+      if (this.fogTrial) {
+        this.toast(
+          'Próba telefonu: mgła 15 m, sektory świata, oryginalne tekstury. Dodatkowy tłum wyłączony.',
+        );
+      } else if (skippedCrowd || this.settings.preloadCrowd === false || this.graphics.mobile) {
         this.toast('Festiwalowicze doczytują się w tle: pod dużą sceną i na obu pasażach.');
         void loader
           .loadFestivalNpcs(
@@ -1539,6 +1596,7 @@ export class Game {
 
   /** Prekompiluje shadery sceny oraz inicjalizuje tekstury na GPU, eliminując przycięcia klatek po starcie gry. */
   private async warmUpGpu() {
+    if (this.fogTrial) return; // Do not upload the entire bounds scaffold/scene at startup.
     try {
       this.scene.updateMatrixWorld(true);
       this.distanceVisibility?.update(1, this.camera.position);
@@ -1725,6 +1783,7 @@ export class Game {
     }
     this.npcDebugOverlay?.update(this.camera);
     this.distanceVisibility?.update(dt, this.camera.position);
+    this.sectorStreamer?.update(dt, this.camera.position);
     this.stageLiveScreens?.update(
       dt,
       this.renderer,
@@ -2068,6 +2127,9 @@ export class Game {
   }
 
   dispose() {
+    this.sectorStreamer?.dispose();
+    // In-flight sector results still return to the streamer, which evicts them after disposal.
+    this.sectorLoader?.disposeFogWorld();
     this.distanceVisibility?.dispose();
     if (this.activeFlankiSession) this.networkClient?.requestFlankiLobby('leave');
     this.flankiNetworkCleanup.forEach((cleanup) => cleanup());

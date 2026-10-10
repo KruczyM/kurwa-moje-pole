@@ -5,6 +5,18 @@ import { StageLiveScreens, stageShotIndex, chooseStagePlayer } from './StageLive
 import { isStageAudienceCut, STAGE_VIDEO_FILES } from './StageVideoPlaylist';
 
 describe('stage live camera feed', () => {
+  it('does not perform a second scene render when live cuts are disabled for sector streaming', () => {
+    const scene = new THREE.Scene();
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(), new THREE.MeshStandardMaterial());
+    mesh.userData.runtimeNode = 'Wing_Single_Telebim_Left';
+    scene.add(mesh);
+    const feed = new StageLiveScreens(scene, []);
+    feed.liveCameraEnabled = false;
+    const render = vi.fn();
+    feed.update(31, { render } as unknown as THREE.WebGLRenderer, new THREE.PerspectiveCamera(), []);
+    expect(render).not.toHaveBeenCalled();
+    feed.dispose();
+  });
   it('interrupts video every 30 seconds for exactly three seconds', () => {
     expect([0, 29.999, 30, 32.999, 33, 59.999, 60, 62.999, 63].map(isStageAudienceCut)).toEqual([
       false,

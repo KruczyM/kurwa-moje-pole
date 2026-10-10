@@ -4,9 +4,14 @@ type MeshMaterial = THREE.Material | THREE.Material[];
 
 /** Sprawdza, czy obiekt lub jego przodek jest wykluczony z cyfrowego wireframe Matrix. */
 function isExcluded(object: THREE.Object3D): boolean {
+  if (object.userData.fogProxy) return true;
   let current: THREE.Object3D | null = object;
   while (current) {
-    if (current.userData.excludeMatrixWireframe || current.userData.excludeMushroomWireframe) {
+    if (
+      !current.visible ||
+      current.userData.excludeMatrixWireframe ||
+      current.userData.excludeMushroomWireframe
+    ) {
       return true;
     }
     current = current.parent;
@@ -83,6 +88,19 @@ export class MatrixWireframeEffect {
       });
 
       mesh.material = Array.isArray(mesh.material) ? replacements : replacements[0];
+    });
+  }
+
+  releaseSubtree(root: THREE.Object3D) {
+    root.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      const original = this.originals.get(mesh);
+      if (!original) return;
+      for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+        if (this.wireMaterials.delete(material)) material.dispose();
+      }
+      mesh.material = original;
+      this.originals.delete(mesh);
     });
   }
 
