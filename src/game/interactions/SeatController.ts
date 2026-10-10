@@ -26,14 +26,31 @@ export function findSittingClip(clips: THREE.AnimationClip[]) {
 }
 
 /** Wyznacza czytelny kadr przed siedzącą postacią, aby patrzyła w stronę kamery. */
-export function seatCameraPosition(position: THREE.Vector3, rotationY: number) {
+export function seatCameraPosition(
+  position: THREE.Vector3,
+  rotationY: number,
+  forwardDistance = 3.1,
+  sideDistance = 0.65,
+  heightOffset = 1.85,
+) {
   const forward = new THREE.Vector3(Math.sin(rotationY), 0, Math.cos(rotationY));
   const side = new THREE.Vector3(forward.z, 0, -forward.x);
   return position
     .clone()
-    .addScaledVector(forward, 3.1)
-    .addScaledVector(side, 0.65)
-    .add(new THREE.Vector3(0, 1.85, 0));
+    .addScaledVector(forward, forwardDistance)
+    .addScaledVector(side, sideDistance)
+    .add(new THREE.Vector3(0, heightOffset, 0));
+}
+
+/** Wyznacza czytelny, bardziej oddalony kadr dla animacji/gestów postaci wybranych z menu. */
+export function motionCameraPosition(
+  position: THREE.Vector3,
+  rotationY: number,
+  forwardDistance = 5.4,
+  sideDistance = 0.8,
+  heightOffset = 1.85,
+) {
+  return seatCameraPosition(position, rotationY, forwardDistance, sideDistance, heightOffset);
 }
 
 /** Pokazuje wybraną postać na krześle i odtwarza zapętloną animację siedzenia. */
@@ -147,13 +164,17 @@ export class SeatController {
     this.exitRequested = !loop;
     this.scene.add(this.root);
 
+    const isMotion = pose.seatId === 'player-motion';
     const charFacing = pose.rotationY + Math.PI;
-    const charOffset = new THREE.Vector3(0, 1.25, -0.5).applyAxisAngle(
+    const charOffset = new THREE.Vector3(0, isMotion ? 1.15 : 1.25, -0.5).applyAxisAngle(
       new THREE.Vector3(0, 1, 0),
       pose.rotationY,
     );
     const target = this.root.position.clone().add(charOffset);
-    this.camera.position.copy(seatCameraPosition(this.root.position, charFacing));
+    const cameraPosition = isMotion
+      ? motionCameraPosition(this.root.position, charFacing)
+      : seatCameraPosition(this.root.position, charFacing);
+    this.camera.position.copy(cameraPosition);
     this.camera.lookAt(target);
     this.camera.fov = 54;
     this.camera.updateProjectionMatrix();

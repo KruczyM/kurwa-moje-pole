@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { type VisualSettings, defaultVisualSettings, type EffectId } from '../effects/EffectManager';
 import { DEFAULT_GRASS_PRESET, isGrassQualityPreset } from '../world/grassQuality';
+import { isAspectRatioPreset } from '../rendering/viewportAspect';
 
 export const INTENSE_EFFECTS: readonly EffectId[] = ['Grzyb', 'MDMA', 'LSD', 'Kreska'];
 
@@ -67,6 +68,9 @@ export function loadVisualSettings(): VisualSettings {
       loaded.matrixQuality !== 'high'
     ) {
       loaded.matrixQuality = defaultVisualSettings.matrixQuality;
+    }
+    if (!isAspectRatioPreset(loaded.aspectRatio)) {
+      loaded.aspectRatio = defaultVisualSettings.aspectRatio;
     }
     if (typeof loaded.intensity !== 'number' || Number.isNaN(loaded.intensity)) {
       loaded.intensity = defaultVisualSettings.intensity;

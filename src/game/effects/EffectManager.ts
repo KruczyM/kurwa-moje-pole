@@ -8,6 +8,7 @@ import { EffectTimeline } from './EffectTimeline';
 import { DEFAULT_GRASS_PRESET, type GrassQualityPreset } from '../world/grassQuality';
 import type { MatrixPhaseMode } from './MatrixPhaseController';
 import type { MatrixQualityPreset } from './MatrixRainOverlay';
+import type { AspectRatioPreset } from '../rendering/viewportAspect';
 export type EffectId =
   'Piwo' | 'Papieros' | 'Joint' | 'Kreska' | 'Grzyb' | 'MDMA' | 'LSD' | 'Woda' | 'Okulary';
 export type EffectPhase = 'inactive' | 'fadeIn' | 'active' | 'fadeOut';
@@ -23,6 +24,7 @@ export type VisualSettings = {
   matrixQuality: MatrixQualityPreset;
   grassQuality: GrassQualityPreset;
   preloadCrowd: boolean;
+  aspectRatio: AspectRatioPreset;
 };
 export const defaultVisualSettings: VisualSettings = {
   intensity: 1,
@@ -36,6 +38,7 @@ export const defaultVisualSettings: VisualSettings = {
   matrixQuality: 'medium',
   grassQuality: DEFAULT_GRASS_PRESET,
   preloadCrowd: true,
+  aspectRatio: 'auto',
 };
 export type EffectConfig = {
   fadeIn: number;

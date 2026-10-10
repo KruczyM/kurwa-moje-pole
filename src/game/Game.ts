@@ -50,6 +50,7 @@ import { itemUseSequenceConfig } from './interactions/itemUseSequenceConfig';
 import { ItemUseSfxPlayer } from './audio/ItemUseSfx';
 import { SeatController, type SeatPose } from './interactions/SeatController';
 import { configureColorPipeline } from './rendering/colorPipeline';
+import { calculateViewportDimensions, type ViewportBounds } from './rendering/viewportAspect';
 import { RemotePlayersManager } from './network/RemotePlayersManager';
 import type { NetworkClient } from './network/NetworkClient';
 import type { FlankiLobbyState } from './network/flankiProtocol';
@@ -176,6 +177,8 @@ export class Game {
   private contextLost = false;
   private viewportWidth = 0;
   private viewportHeight = 0;
+  private viewportLeft = 0;
+  private viewportTop = 0;
   private viewportDpr = 0;
   private mobileControls?: MobileControls;
   private readonly inventory = new ConsumableInventory(DEFAULT_STARTER_INVENTORY);
@@ -249,6 +252,9 @@ export class Game {
     },
   });
   campfireGuitarGame = new CampfireGuitarGame();
+  private readonly startGuitarSong = (songId: string) => this.campfireGuitarGame.startSong(songId);
+  private readonly hitGuitarLane = (lane: number) => this.campfireGuitarGame.hitLane(lane);
+  private readonly exitGuitar = () => this.campfireGuitarGame.stopSong();
   readonly concertState = new ConcertState();
   readonly concertLibrary = new ConcertLibrary();
   readonly stageAcoustics = new SpatialStageAcoustics();
@@ -334,6 +340,7 @@ export class Game {
       if (this.world && visual.grassQuality) this.world.setGrassQuality(visual.grassQuality);
       if (visual.matrixMode) this.matrixController.setMode(visual.matrixMode);
       if (visual.matrixQuality) this.matrixRain.setQuality(visual.matrixQuality);
+      if (visual.aspectRatio) this.resize(true);
       this.syncSettingsUi();
     });
     this.unsubscribeState = this.state.subscribe(({ to }) => this.syncState(to));
@@ -357,6 +364,7 @@ export class Game {
       () => this.toggleMap(false),
     );
     this.syncState(this.state.current);
+    this.resize(true);
   }
 
   get paused() {
@@ -530,7 +538,7 @@ export class Game {
       }
       this.effects = new EffectManager(this.renderer, this.scene, this.camera, this.speakerAudio);
       this.effects.bloomResolutionScale = this.graphics.bloomScale;
-      this.effects.resize(innerWidth, innerHeight);
+      this.resize(true);
       this.effects.setSettings(this.settings);
       this.interactions = new InteractionManager(this.camera, () => [
         ...(this.npcs!.speakerAnchor ? [this.npcs!.speakerAnchor] : []),
@@ -864,10 +872,11 @@ export class Game {
     if (this.campfireGuitarGame && this.campfireGuitarGame.getPhase() === 'playing') {
       const k = event.key.toLowerCase();
       let lane = -1;
-      if (k === 'd' || k === '1') lane = 0;
-      else if (k === 'f' || k === '2') lane = 1;
-      else if (k === 'j' || k === '3') lane = 2;
-      else if (k === 'k' || k === '4') lane = 3;
+      if (k === 'a' || k === '1') lane = 0;
+      else if (k === 's' || k === '2') lane = 1;
+      else if (k === 'd' || k === '3') lane = 2;
+      else if (k === 'f' || k === '4') lane = 3;
+      else if (k === 'g' || k === '5') lane = 4;
 
       if (lane >= 0) {
         event.preventDefault();
@@ -1263,7 +1272,7 @@ export class Game {
           this.pointerLockPause.reset();
           if (document.pointerLockElement) document.exitPointerLock?.();
           this.player?.stop();
-          this.toast('🎸 Gitara przy ognisku! Wybierz piosenkę i graj klawiszami [D, F, J, K].');
+          this.toast('🎸 Gitara przy ognisku! Wybierz piosenkę i graj klawiszami [A, S, D, F, G].');
         }
       }
       return;
@@ -1871,12 +1880,12 @@ export class Game {
     this.mobileControls?.setFlankiPhase(this.world?.flankiGame?.getPhase());
     this.canCollector.update(dt);
     if (this.ui.isEcoPanelOpen()) this.updateEcoPanel();
-    this.campfireGuitarGame.update(dt);
+    if (state === 'playing' || state === 'seated') this.campfireGuitarGame.update(dt);
     this.ui.updateGuitarHud(
       this.campfireGuitarGame.getHudState(),
-      (songId) => this.campfireGuitarGame.startSong(songId),
-      (lane) => this.campfireGuitarGame.hitLane(lane),
-      () => this.campfireGuitarGame.stopSong(),
+      this.startGuitarSong,
+      this.hitGuitarLane,
+      this.exitGuitar,
     );
     this.ui.updateCanRushHud(
       this.canCollector.isRushActive(),
@@ -2046,27 +2055,63 @@ export class Game {
     this.toast('Gotowe.');
   }
 
-  /** Dopasowuje kamerę i postprocessing do aktualnego rozmiaru okna. */
+  /** Dopasowuje kamerę i postprocessing do aktualnego rozmiaru okna oraz wybranego formatu kadru. */
   resize(force = false) {
     if (this.disposed) return;
     const dpr = Math.min(devicePixelRatio, this.graphics.dprCap);
+    const bounds = calculateViewportDimensions(innerWidth, innerHeight, this.settings.aspectRatio ?? 'auto');
     if (
       !force &&
-      this.viewportWidth === innerWidth &&
-      this.viewportHeight === innerHeight &&
+      this.viewportWidth === bounds.width &&
+      this.viewportHeight === bounds.height &&
+      this.viewportLeft === bounds.left &&
+      this.viewportTop === bounds.top &&
       this.viewportDpr === dpr
     )
       return;
-    this.viewportWidth = innerWidth;
-    this.viewportHeight = innerHeight;
+    this.viewportWidth = bounds.width;
+    this.viewportHeight = bounds.height;
+    this.viewportLeft = bounds.left;
+    this.viewportTop = bounds.top;
     this.viewportDpr = dpr;
+
+    this.applyViewportStyles(bounds);
+
     this.renderer.setPixelRatio(dpr);
-    this.camera.aspect = innerWidth / innerHeight;
+    this.camera.aspect = bounds.aspect;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(innerWidth, innerHeight);
-    this.effects?.resize(innerWidth, innerHeight);
-    this.matrixRain.resize(innerWidth, innerHeight);
+    this.renderer.setSize(bounds.width, bounds.height);
+    this.effects?.resize(bounds.width, bounds.height);
+    this.matrixRain.resize(bounds.width, bounds.height);
     if (this.state.current === 'inspecting') this.inspectController.resize();
+  }
+
+  private applyViewportStyles(bounds: ViewportBounds) {
+    this.canvas.style.position = 'fixed';
+    this.canvas.style.width = `${bounds.width}px`;
+    this.canvas.style.height = `${bounds.height}px`;
+    this.canvas.style.left = `${bounds.left}px`;
+    this.canvas.style.top = `${bounds.top}px`;
+    this.canvas.style.right = 'auto';
+    this.canvas.style.bottom = 'auto';
+
+    const matrixRainCanvas = document.querySelector<HTMLCanvasElement>('#matrix-rain');
+    if (matrixRainCanvas) {
+      matrixRainCanvas.style.position = 'fixed';
+      matrixRainCanvas.style.width = `${bounds.width}px`;
+      matrixRainCanvas.style.height = `${bounds.height}px`;
+      matrixRainCanvas.style.left = `${bounds.left}px`;
+      matrixRainCanvas.style.top = `${bounds.top}px`;
+      matrixRainCanvas.style.right = 'auto';
+      matrixRainCanvas.style.bottom = 'auto';
+    }
+
+    if (typeof document !== 'undefined' && document.documentElement?.style) {
+      document.documentElement.style.setProperty('--game-viewport-width', `${bounds.width}px`);
+      document.documentElement.style.setProperty('--game-viewport-height', `${bounds.height}px`);
+      document.documentElement.style.setProperty('--game-viewport-left', `${bounds.left}px`);
+      document.documentElement.style.setProperty('--game-viewport-top', `${bounds.top}px`);
+    }
   }
 
   /** Pokazuje krótką wiadomość HUD i odnawia jej czas wygaszenia. */

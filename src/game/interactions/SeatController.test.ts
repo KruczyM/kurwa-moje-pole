@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
-import { findSittingClip, seatCameraPosition, SeatController } from './SeatController';
+import { findSittingClip, motionCameraPosition, seatCameraPosition, SeatController } from './SeatController';
 import { alignChairPelvis } from './chairPose';
 
 describe('SeatController helpers', () => {
@@ -64,6 +64,40 @@ describe('SeatController helpers', () => {
     expect(camera.y).toBeGreaterThan(seat.y);
     expect(camera.z).toBeGreaterThan(seat.z);
     expect(camera.distanceTo(seat)).toBeGreaterThan(3);
+  });
+
+  it('places the third-person camera further back for standing menu motions to frame the full character', () => {
+    const origin = new THREE.Vector3(0, 0, 0);
+    const chairCam = seatCameraPosition(origin, 0);
+    const motionCam = motionCameraPosition(origin, 0);
+    expect(motionCam.distanceTo(origin)).toBeGreaterThan(chairCam.distanceTo(origin) + 2);
+    expect(motionCam.distanceTo(origin)).toBeGreaterThan(5);
+  });
+
+  it('uses motionCameraPosition specifically when seatId is player-motion', () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
+    const model = new THREE.Group();
+    model.add(new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial()));
+    const character = {
+      scene: model,
+      animations: [new THREE.AnimationClip('Cheering', 1), new THREE.AnimationClip('SittingLaughing', 1)],
+    } as GLTF;
+    const controller = new SeatController(scene, camera, character);
+
+    // 1. Regular chair seat
+    controller.start({ seatId: 'chair-01', position: [0, 0, 0], rotationY: 0 });
+    const chairCamPos = camera.position.clone();
+    controller.stop();
+
+    // 2. Menu motion
+    controller.start({ seatId: 'player-motion', position: [0, 0, 0], rotationY: 0 }, 'Cheering');
+    const motionCamPos = camera.position.clone();
+    controller.stop();
+
+    expect(motionCamPos.distanceTo(new THREE.Vector3(0, 0, 0))).toBeGreaterThan(
+      chairCamPos.distanceTo(new THREE.Vector3(0, 0, 0)) + 2,
+    );
   });
 
   it('restores the exact camera after leaving a seat', () => {

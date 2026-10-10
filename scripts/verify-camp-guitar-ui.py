@@ -9,7 +9,7 @@ async def main():
         page=await browser.new_page(viewport={'width':1280,'height':900})
         errors=[]
         page.on('pageerror',lambda e:errors.append(str(e)))
-        await page.goto('http://localhost:5173/')
+        await page.goto('http://localhost:5173/', wait_until='domcontentloaded')
         await page.wait_for_function('()=>typeof document.querySelector("#play")?.onclick==="function"')
         await page.locator('#character-select button:not([disabled])').first.click()
         await page.locator('#player-nickname').fill('GuitarQA')

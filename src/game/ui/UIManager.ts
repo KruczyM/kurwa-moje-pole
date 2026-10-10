@@ -46,6 +46,9 @@ export class UIManager {
     }
   }
   private toastTimer = 0;
+  private guitarButtonsBound = false;
+  private lastGuitarOnHitLane?: (lane: number) => void;
+  private lastGuitarOnExit?: () => void;
 
   constructor() {
     this.initGuideTabs();
@@ -325,47 +328,64 @@ export class UIManager {
   ): void {
     const hud = this.qs<HTMLElement>('#guitar-hud');
     if (!hud) return;
-    hud.dataset.phase = state.phase;
+    if (hud.dataset.phase !== state.phase) {
+      hud.dataset.phase = state.phase;
+    }
 
     if (!state.active) {
-      hud.hidden = true;
+      if (!hud.hidden) hud.hidden = true;
       return;
     }
 
-    hud.hidden = false;
+    if (hud.hidden) hud.hidden = false;
 
     const scoreVal = this.qs<HTMLElement>('#guitar-score-val');
-    if (scoreVal) scoreVal.textContent = String(state.score);
+    if (scoreVal && scoreVal.textContent !== String(state.score)) {
+      scoreVal.textContent = String(state.score);
+    }
 
     const comboVal = this.qs<HTMLElement>('#guitar-combo-val');
-    if (comboVal) comboVal.textContent = String(state.combo);
+    if (comboVal && comboVal.textContent !== String(state.combo)) {
+      comboVal.textContent = String(state.combo);
+    }
 
+    const cheerPercent = `${Math.round(state.cheerLevel * 100)}%`;
     const cheerVal = this.qs<HTMLElement>('#guitar-cheer-val');
-    if (cheerVal) cheerVal.textContent = `${Math.round(state.cheerLevel * 100)}%`;
+    if (cheerVal && cheerVal.textContent !== cheerPercent) {
+      cheerVal.textContent = cheerPercent;
+    }
 
     const multiplierBadge = this.qs<HTMLElement>('#guitar-multiplier-badge');
     if (multiplierBadge) {
-      multiplierBadge.textContent = `x${state.multiplier}`;
+      const multText = `x${state.multiplier}`;
+      if (multiplierBadge.textContent !== multText) {
+        multiplierBadge.textContent = multText;
+      }
       if (state.multiplier >= 4) {
-        multiplierBadge.classList.add('fever');
+        if (!multiplierBadge.classList.contains('fever')) multiplierBadge.classList.add('fever');
       } else {
-        multiplierBadge.classList.remove('fever');
+        if (multiplierBadge.classList.contains('fever')) multiplierBadge.classList.remove('fever');
       }
     }
 
     const songInfo = this.qs<HTMLElement>('#guitar-song-info');
     if (songInfo) {
-      songInfo.textContent = state.currentSong
+      const expectedText = state.currentSong
         ? `🎵 ${state.currentSong.title} — ${state.currentSong.artist}`
         : 'Wybierz utwór z repertuaru';
+      if (songInfo.textContent !== expectedText) {
+        songInfo.textContent = expectedText;
+      }
     }
 
     const feedback = this.qs<HTMLElement>('#guitar-feedback');
     if (feedback) {
       if (state.lastFeedback) {
-        feedback.textContent = state.lastFeedback.text;
-        feedback.style.color = state.lastFeedback.color;
-      } else {
+        if (feedback.textContent !== state.lastFeedback.text) {
+          feedback.textContent = state.lastFeedback.text;
+          feedback.style.color = state.lastFeedback.color;
+        }
+      } else if (feedback.textContent !== '') {
         feedback.textContent = '';
       }
     }
@@ -373,7 +393,8 @@ export class UIManager {
     // Modal wyboru utworu
     const modal = this.qs<HTMLElement>('#guitar-song-select-modal');
     if (modal) {
-      modal.hidden = state.phase !== 'song_select';
+      const modalHidden = state.phase !== 'song_select';
+      if (modal.hidden !== modalHidden) modal.hidden = modalHidden;
       if (state.phase === 'song_select') {
         const list = this.qs<HTMLElement>('#guitar-songs-list');
         if (list && list.children.length === 0) {
@@ -395,35 +416,48 @@ export class UIManager {
       }
     }
 
-    // Spadające nuty na gryfie
+    // Spadające nuty na gryfie (5 torów: 0..4 -> (lane + 0.5) * 20%)
     const container = this.qs<HTMLElement>('#guitar-notes-container');
     if (container) {
-      container.innerHTML = state.activeNotes
+      const notesHtml = state.activeNotes
         .map((note) => {
-          const leftPercent = note.lane * 25 + 12.5;
+          const leftPercent = (note.lane + 0.5) * 20;
           const topPercent = Math.min(95, note.progress * 86);
           return `<div class="guitar-note-gem lane-${note.lane}" style="left: ${leftPercent}%; top: ${topPercent}%;">${note.chordName}</div>`;
         })
         .join('');
+      if (container.innerHTML !== notesHtml) {
+        container.innerHTML = notesHtml;
+      }
     }
 
-    // Klawisze dotykowe
-    const hitButtons =
-      typeof hud.querySelectorAll === 'function'
-        ? hud.querySelectorAll<HTMLButtonElement>('.guitar-hit-btn')
-        : [];
-    hitButtons.forEach((btn) => {
-      btn.onclick = () => {
-        const lane = Number(btn.getAttribute('data-lane'));
-        if (!isNaN(lane) && onHitLane) onHitLane(lane);
-      };
-    });
+    // Klawisze dotykowe — binduj tylko raz lub gdy zmieniły się callbacki
+    if (
+      !this.guitarButtonsBound ||
+      this.lastGuitarOnHitLane !== onHitLane ||
+      this.lastGuitarOnExit !== onExit
+    ) {
+      this.guitarButtonsBound = true;
+      this.lastGuitarOnHitLane = onHitLane;
+      this.lastGuitarOnExit = onExit;
 
-    const exitBtn = this.qs<HTMLButtonElement>('#guitar-exit-btn');
-    if (exitBtn) {
-      exitBtn.onclick = () => {
-        if (onExit) onExit();
-      };
+      const hitButtons =
+        typeof hud.querySelectorAll === 'function'
+          ? hud.querySelectorAll<HTMLButtonElement>('.guitar-hit-btn')
+          : [];
+      hitButtons.forEach((btn) => {
+        btn.onclick = () => {
+          const lane = Number(btn.getAttribute('data-lane'));
+          if (!isNaN(lane) && onHitLane) onHitLane(lane);
+        };
+      });
+
+      const exitBtn = this.qs<HTMLButtonElement>('#guitar-exit-btn');
+      if (exitBtn) {
+        exitBtn.onclick = () => {
+          if (onExit) onExit();
+        };
+      }
     }
   }
 
@@ -487,6 +521,8 @@ export class UIManager {
     if (matrixModeSelect) matrixModeSelect.value = visual.matrixMode;
     const matrixQualitySelect = this.qs<HTMLSelectElement>('#setting-matrix-quality');
     if (matrixQualitySelect) matrixQualitySelect.value = visual.matrixQuality;
+    const aspectSelect = this.qs<HTMLSelectElement>('#setting-aspect-ratio');
+    if (aspectSelect) aspectSelect.value = visual.aspectRatio;
   }
 
   syncState(state: AppState, mobileInput: boolean): void {

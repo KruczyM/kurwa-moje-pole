@@ -50,6 +50,7 @@ describe('SettingsService', () => {
     const settings = loadVisualSettings();
     expect(settings.intensity).toBe(defaultVisualSettings.intensity);
     expect(settings.matrixMode).toBe(defaultVisualSettings.matrixMode);
+    expect(settings.aspectRatio).toBe('ultrawide');
   });
 
   it('loads default audio settings when storage is empty', () => {
@@ -64,14 +65,16 @@ describe('SettingsService', () => {
       if (updated.intensity === 0.42) notified = true;
     });
 
-    service.updateVisual({ intensity: 0.42, reduceMotion: true });
+    service.updateVisual({ intensity: 0.42, reduceMotion: true, aspectRatio: '16:9' });
     expect(service.visual.intensity).toBe(0.42);
     expect(service.visual.reduceMotion).toBe(true);
+    expect(service.visual.aspectRatio).toBe('16:9');
     expect(notified).toBe(true);
 
     const stored = JSON.parse(localStorage.getItem('camp-visual-settings') || '{}');
     expect(stored.intensity).toBe(0.42);
     expect(stored.reduceMotion).toBe(true);
+    expect(stored.aspectRatio).toBe('16:9');
     service.dispose();
   });
 
