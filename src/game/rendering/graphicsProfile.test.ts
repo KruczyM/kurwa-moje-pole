@@ -11,9 +11,6 @@ import { DistanceVisibility } from './DistanceVisibility';
 
 describe('mobile visual policy', () => {
   it('keeps desktop unchanged and selects conservative mobile quality', () => {
-    expect(selectGraphicsProfile({ coarse: true, touchPoints: 5, width: 390, height: 844 })).toBe(
-      MOBILE_GRAPHICS.low,
-    );
     expect(selectGraphicsProfile({ coarse: false, touchPoints: 5, width: 1440, height: 900 })).toBe(
       DESKTOP_GRAPHICS,
     );

@@ -241,19 +241,17 @@ export class Game {
   ) {
     this.scene.add(this.camera);
     try {
-      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: !this.graphics.mobile });
+      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     } catch {
       throw new Error('Ta przeglądarka nie obsługuje WebGL.');
     }
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.graphics.dprCap));
     this.renderer.setSize(innerWidth, innerHeight);
-    this.renderer.shadowMap.enabled = !this.graphics.mobile || this.graphics.shadows > 0;
+    this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     configureColorPipeline(this.renderer, 'world');
     this.scene.background = new THREE.Color(0x9bb9d0);
     this.scene.fog = new THREE.Fog(0x8da1b5, 100, 380);
-    if (this.graphics.mobile)
-      this.scene.fog = new THREE.Fog(0x8da1b5, this.graphics.decorations, this.graphics.landmarks);
     this.events.listen(window, 'resize', () => this.resize());
     this.events.listen(this.canvas, 'webglcontextlost', (event) => {
       event.preventDefault();
@@ -277,11 +275,6 @@ export class Game {
           /* Optional preference. */
         }
         this.graphics = browserGraphicsProfile(quality.value);
-        this.renderer.shadowMap.enabled = !this.graphics.mobile || this.graphics.shadows > 0;
-        if (this.scene.fog instanceof THREE.Fog && this.graphics.mobile) {
-          this.scene.fog.near = this.graphics.decorations;
-          this.scene.fog.far = this.graphics.landmarks;
-        }
         this.distanceVisibility?.setProfile(this.graphics);
         if (this.npcs) this.npcs.visibility.profile = this.graphics;
         if (this.remotePlayersManager) this.remotePlayersManager.visibility.profile = this.graphics;
@@ -347,8 +340,6 @@ export class Game {
           error.textContent = message;
           error.hidden = false;
         },
-        undefined,
-        this.graphics.mobile,
       );
       const assets = await loader.loadAll();
       if (this.disposed) return;
@@ -410,7 +401,7 @@ export class Game {
       const audioStage = this.world.mapScenery.find((item) => item.id === 'Main_Stage_Deck_Plinth');
       if (audioStage) this.stageAcoustics.setStagePosition(audioStage);
       this.syncStageAudio();
-      if (!this.graphics.mobile) this.stageLiveScreens.setVideoPlaylist(this.stageAcoustics);
+      this.stageLiveScreens.setVideoPlaylist(this.stageAcoustics);
       this.festivalMap?.setAuthoredLayout(this.world.mapScenery);
       this.world.setGrassQuality(this.settings.grassQuality);
       const npcNavigation = new NpcNavigationGrid(
@@ -654,26 +645,13 @@ export class Game {
 
       this.startLoop();
       this.state.transition('playing');
-      // Defer mobile video decoding/audio graph until the large world has finished loading.
-      if (this.graphics.mobile) this.stageLiveScreens?.setVideoPlaylist(this.stageAcoustics);
 
       if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('camp-free-camera') === '1') {
         sessionStorage.removeItem('camp-free-camera');
         this.toggleFreeCamera(true);
       }
 
-      if (this.graphics.mobile) {
-        // Reuse the already-loaded, rigged player models instead of decoding 91 unique textures/meshes.
-        const models = [...assets.characters.entries()];
-        const count = 24;
-        this.npcs?.setCrowdDistribution(8, 8);
-        for (let index = 0; index < count && models.length; index++) {
-          const [id, model] = models[index % models.length];
-          const name = characterAssets.find((asset) => asset.id === id)?.name ?? id;
-          this.npcs?.addFestivalNpc({ ...festivalNpcAssets[index], name }, model);
-        }
-        this.toast('Tryb telefonu: lżejsze tekstury i mniejszy tłum na scenie oraz obu pasażach.');
-      } else if (skippedCrowd || this.settings.preloadCrowd === false) {
+      if (skippedCrowd || this.settings.preloadCrowd === false || this.graphics.mobile) {
         this.toast('Festiwalowicze doczytują się w tle: pod dużą sceną i na obu pasażach.');
         void loader
           .loadFestivalNpcs(
@@ -1561,8 +1539,6 @@ export class Game {
 
   /** Prekompiluje shadery sceny oraz inicjalizuje tekstury na GPU, eliminując przycięcia klatek po starcie gry. */
   private async warmUpGpu() {
-    // Mobile warms only naturally visible assets over normal frames, without a whole-scene upload spike.
-    if (this.graphics.mobile) return;
     try {
       this.scene.updateMatrixWorld(true);
       this.distanceVisibility?.update(1, this.camera.position);

@@ -16,7 +16,6 @@ const gameAsset = (path: string) => {
 
 /** Jedyny rejestr adresów binarnych zasobów używanych przez klienta. */
 export const authoredFestivalUrl = gameAsset(catalog.environment.authoredFestival);
-export const mobileAuthoredFestivalUrl = gameAsset('world/festival/authored-festival-mobile.glb');
 
 export const characterAssets: CharacterAsset[] = catalog.characters.map(({ id, name }) => ({
   id,

@@ -1,5 +1,10 @@
 # Audyt telefonu i ładowania modeli — 2026-10-08
 
+> ARCHIWUM: 2026-10-10 użytkownik zlecił cofnięcie tego pakietu optymalizacji,
+> ponieważ pogorszył wygląd i nie zapewnił wystarczającej płynności. Poniżej
+> zachowano historyczne pomiary, nie opis bieżącego działania. Szczegóły cofnięcia:
+> `docs/mobile-rollback.md`. Skrypty dotyczące usuniętego wariantu mobilnego również usunięto.
+
 Gałąź: `fix/iphone-memory`, worktree `.ai/worktrees/iphone-memory`.
 Pierwsza część prac została wykonana bez zmiany `main`. Następna, wyraźna prośba
 użytkownika obejmuje publikację całości na GitHub i merge do `main` po walidacji.

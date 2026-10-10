@@ -93,12 +93,6 @@ function addNpcInteractionHitbox(root: THREE.Group) {
 
 export class NpcManager {
   readonly visibility = new CharacterVisibility();
-  private stageDancerCount = 20;
-  private lowerWalkerCount = 20;
-  setCrowdDistribution(stage: number, lower: number): void {
-    this.stageDancerCount = stage;
-    this.lowerWalkerCount = lower;
-  }
   readonly npcs: Npc[] = [];
   private flankiPitch?: THREE.Vector3;
   private crowdRoads: Record<'upper' | 'lower', { minX: number; maxX: number; minZ: number; maxZ: number }> =
@@ -332,8 +326,8 @@ export class NpcManager {
         this.seed + index * 977,
       );
     const festivalIndex = this.npcs.filter((n) => !n.isCampMember).length;
-    const passageWalker = festival && festivalIndex >= this.stageDancerCount;
-    const passageLane = festivalIndex < this.stageDancerCount + this.lowerWalkerCount ? 'lower' : 'upper';
+    const passageWalker = festival && festivalIndex >= 20;
+    const passageLane = festivalIndex >= 20 && festivalIndex < 40 ? 'lower' : 'upper';
     const isCampMember = !festival;
     let festivalRole: 'stage_dancer' | 'asp_listener' | 'food_queue' | 'chiller' | 'walker' | undefined;
     if (passageWalker) {
