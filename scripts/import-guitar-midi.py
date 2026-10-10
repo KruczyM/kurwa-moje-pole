@@ -1,4 +1,4 @@
-"""Import licensed MIDI melodies into complete, deterministic four-lane charts.
+"""Import licensed MIDI melodies into complete, deterministic five-lane charts.
 Requires mido. Original MIDI/LilyPond files are retained alongside the game assets.
 """
 import json
@@ -46,12 +46,13 @@ for key, title, artist, license_name, url in SOURCES:
     if not melody:
         raise ValueError(f'No melody in {key}')
     unique = sorted(set(pitch for _, pitch in melody))
+    start_offset = melody[0][0]
     names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
     notes = [{'id': f'{key}-{i}', 'lane': min(4, unique.index(pitch)*5//len(unique)),
-              'time': round(time+2.5, 6), 'chordName': f'{names[pitch%12]}{pitch//12-1}'}
+              'time': round(time-start_offset+2.5, 6), 'chordName': f'{names[pitch%12]}{pitch//12-1}'}
              for i, (time, pitch) in enumerate(melody)]
     charts.append({'id': key, 'title': title, 'artist': artist, 'license': license_name, 'source': url,
-                   'bpm': round(mido.tempo2bpm(tempo)), 'duration': max(elapsed+4, notes[-1]['time']+3),
+                   'bpm': round(mido.tempo2bpm(tempo)), 'duration': notes[-1]['time']+3,
                    'difficulty': 'Średni', 'chords': sorted(set(n['chordName'] for n in notes)), 'notes': notes})
 target = ROOT / 'src/game/interactions/guitarMidiCharts.json'
 target.write_text(json.dumps(charts, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')

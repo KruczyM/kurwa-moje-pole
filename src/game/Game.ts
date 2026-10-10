@@ -119,7 +119,6 @@ export class Game {
   interactions?: InteractionManager;
   toiletTimer = 0;
   private networkSyncTimer = 0;
-  private guitarNpcThrottleTimer = 0;
   readonly settingsService = new SettingsService();
   get settings(): VisualSettings {
     return this.settingsService.visual;
@@ -159,6 +158,8 @@ export class Game {
   private contextLost = false;
   private viewportWidth = 0;
   private viewportHeight = 0;
+  private viewportLeft = 0;
+  private viewportTop = 0;
   private viewportDpr = 0;
   private mobileControls?: MobileControls;
   private readonly inventory = new ConsumableInventory(DEFAULT_STARTER_INVENTORY);
@@ -232,6 +233,9 @@ export class Game {
     },
   });
   campfireGuitarGame = new CampfireGuitarGame();
+  private readonly startGuitarSong = (songId: string) => this.campfireGuitarGame.startSong(songId);
+  private readonly hitGuitarLane = (lane: number) => this.campfireGuitarGame.hitLane(lane);
+  private readonly exitGuitar = () => this.campfireGuitarGame.stopSong();
   readonly concertState = new ConcertState();
   readonly concertLibrary = new ConcertLibrary();
   readonly stageAcoustics = new SpatialStageAcoustics();
@@ -1649,22 +1653,7 @@ export class Game {
         this.updateInteractionPrompt();
       }
       if (state === 'playing' || state === 'seated') {
-        const isGuitarActive = this.campfireGuitarGame.getPhase() !== 'idle';
-        if (isGuitarActive) {
-          this.guitarNpcThrottleTimer += dt;
-          if (this.guitarNpcThrottleTimer >= 0.12) {
-            this.npcs?.update(
-              this.guitarNpcThrottleTimer,
-              this.clock.elapsedTime,
-              this.camera.position,
-              this.speakerAudio.isPlaying,
-            );
-            this.guitarNpcThrottleTimer = 0;
-          }
-        } else {
-          this.guitarNpcThrottleTimer = 0;
-          this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position, this.speakerAudio.isPlaying);
-        }
+        this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position, this.speakerAudio.isPlaying);
       }
       if ((state === 'playing' || state === 'seated') && this.networkClient?.isOnline()) {
         this.networkSyncTimer += dt;
@@ -1767,38 +1756,35 @@ export class Game {
       this.mushroomWireframe.update(false, 0, 0, false);
       this.matrixWireframe.update(false, 0, false);
     }
-    const isGuitarActive = this.campfireGuitarGame.getPhase() !== 'idle';
-    if (!isGuitarActive) {
-      this.npcDebugOverlay?.update(this.camera);
-      this.distanceVisibility?.update(dt, this.camera.position);
-      this.stageLiveScreens?.update(
-        dt,
-        this.renderer,
-        this.camera,
-        this.remotePlayersManager?.getPlayerMarkers() ?? [],
-        this.networkClient?.isOnline() && this.player
-          ? {
-              id: this.networkClient?.getMyPlayerId() ?? 'local',
-              name: 'Ty',
-              x: this.camera.position.x,
-              z: this.camera.position.z,
-              yaw: this.player.yaw,
-              y: this.player.isAirborne() ? this.camera.position.y - 1.9 : 0,
-            }
-          : undefined,
-      );
-    }
+    this.npcDebugOverlay?.update(this.camera);
+    this.distanceVisibility?.update(dt, this.camera.position);
+    this.stageLiveScreens?.update(
+      dt,
+      this.renderer,
+      this.camera,
+      this.remotePlayersManager?.getPlayerMarkers() ?? [],
+      this.networkClient?.isOnline() && this.player
+        ? {
+            id: this.networkClient?.getMyPlayerId() ?? 'local',
+            name: 'Ty',
+            x: this.camera.position.x,
+            z: this.camera.position.z,
+            yaw: this.player.yaw,
+            y: this.player.isAirborne() ? this.camera.position.y - 1.9 : 0,
+          }
+        : undefined,
+    );
     this.effects?.render();
     this.updateEffectHud();
     this.ui.updateFlankiHud(this.world?.flankiGame?.getHudState() ?? null);
     this.canCollector.update(dt);
     if (this.ui.isEcoPanelOpen()) this.updateEcoPanel();
-    this.campfireGuitarGame.update(dt);
+    if (state === 'playing' || state === 'seated') this.campfireGuitarGame.update(dt);
     this.ui.updateGuitarHud(
       this.campfireGuitarGame.getHudState(),
-      (songId) => this.campfireGuitarGame.startSong(songId),
-      (lane) => this.campfireGuitarGame.hitLane(lane),
-      () => this.campfireGuitarGame.stopSong(),
+      this.startGuitarSong,
+      this.hitGuitarLane,
+      this.exitGuitar,
     );
     this.ui.updateCanRushHud(
       this.canCollector.isRushActive(),
@@ -1972,20 +1958,20 @@ export class Game {
   resize(force = false) {
     if (this.disposed) return;
     const dpr = Math.min(devicePixelRatio, this.graphics.dprCap);
-    const bounds = calculateViewportDimensions(
-      innerWidth,
-      innerHeight,
-      this.settings.aspectRatio ?? 'ultrawide',
-    );
+    const bounds = calculateViewportDimensions(innerWidth, innerHeight, this.settings.aspectRatio ?? 'auto');
     if (
       !force &&
       this.viewportWidth === bounds.width &&
       this.viewportHeight === bounds.height &&
+      this.viewportLeft === bounds.left &&
+      this.viewportTop === bounds.top &&
       this.viewportDpr === dpr
     )
       return;
     this.viewportWidth = bounds.width;
     this.viewportHeight = bounds.height;
+    this.viewportLeft = bounds.left;
+    this.viewportTop = bounds.top;
     this.viewportDpr = dpr;
 
     this.applyViewportStyles(bounds);

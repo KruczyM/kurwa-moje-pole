@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  calculateViewportDimensions,
-  isAspectRatioPreset,
-  ASPECT_RATIO_PRESETS,
-} from './viewportAspect';
+import { calculateViewportDimensions, isAspectRatioPreset } from './viewportAspect';
 
 describe('viewportAspect', () => {
   it('recognizes valid presets', () => {
@@ -14,6 +10,18 @@ describe('viewportAspect', () => {
     expect(isAspectRatioPreset('32:9')).toBe(true);
     expect(isAspectRatioPreset('invalid')).toBe(false);
     expect(isAspectRatioPreset(null)).toBe(false);
+    expect(isAspectRatioPreset('toString')).toBe(false);
+    expect(isAspectRatioPreset('__proto__')).toBe(false);
+  });
+
+  it('defaults to the whole portrait phone viewport', () => {
+    expect(calculateViewportDimensions(390, 844)).toEqual({
+      width: 390,
+      height: 844,
+      left: 0,
+      top: 0,
+      aspect: 390 / 844,
+    });
   });
 
   it('calculates ultrawide (21:9) letterbox on 16:9 screen', () => {
@@ -69,4 +77,3 @@ describe('viewportAspect', () => {
     expect(bounds.height).toBeGreaterThanOrEqual(1);
   });
 });
-

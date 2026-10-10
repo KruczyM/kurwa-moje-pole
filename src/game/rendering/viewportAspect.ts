@@ -17,7 +17,7 @@ export const ASPECT_RATIO_PRESETS: Record<AspectRatioPreset, { label: string; ra
 };
 
 export function isAspectRatioPreset(value: unknown): value is AspectRatioPreset {
-  return typeof value === 'string' && value in ASPECT_RATIO_PRESETS;
+  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(ASPECT_RATIO_PRESETS, value);
 }
 
 /**
@@ -27,7 +27,7 @@ export function isAspectRatioPreset(value: unknown): value is AspectRatioPreset 
 export function calculateViewportDimensions(
   windowWidth: number,
   windowHeight: number,
-  preset: AspectRatioPreset = 'ultrawide',
+  preset: AspectRatioPreset = 'auto',
 ): ViewportBounds {
   const safeW = Math.max(1, Math.round(windowWidth));
   const safeH = Math.max(1, Math.round(windowHeight));
@@ -44,8 +44,8 @@ export function calculateViewportDimensions(
   }
 
   const windowRatio = safeW / safeH;
-  let renderWidth = safeW;
-  let renderHeight = safeH;
+  let renderWidth: number;
+  let renderHeight: number;
 
   if (windowRatio < targetRatio) {
     // Okno jest węższe niż docelowy kadr -> pasy u góry i u dołu (letterbox)
@@ -68,4 +68,3 @@ export function calculateViewportDimensions(
     aspect: targetRatio,
   };
 }
-

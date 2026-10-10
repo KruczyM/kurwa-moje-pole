@@ -2141,11 +2141,26 @@
   transition: all 0.08s ease;
 }
 
-.guitar-hit-btn.lane-btn-0 { border-color: #22c55e; color: #86efac; }
-.guitar-hit-btn.lane-btn-1 { border-color: #ef4444; color: #fca5a5; }
-.guitar-hit-btn.lane-btn-2 { border-color: #eab308; color: #fde047; }
-.guitar-hit-btn.lane-btn-3 { border-color: #3b82f6; color: #93c5fd; }
-.guitar-hit-btn.lane-btn-4 { border-color: #f97316; color: #fdba74; }
+.guitar-hit-btn.lane-btn-0 {
+  border-color: #22c55e;
+  color: #86efac;
+}
+.guitar-hit-btn.lane-btn-1 {
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+.guitar-hit-btn.lane-btn-2 {
+  border-color: #eab308;
+  color: #fde047;
+}
+.guitar-hit-btn.lane-btn-3 {
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+.guitar-hit-btn.lane-btn-4 {
+  border-color: #f97316;
+  color: #fdba74;
+}
 
 .guitar-hit-btn:active,
 .guitar-hit-btn.pressed {
@@ -2161,31 +2176,41 @@
 .guitar-hit-btn.lane-btn-0.pressed {
   background: #22c55e;
   color: #052e16;
-  box-shadow: 0 1px 0 #180b06, 0 0 14px #22c55e;
+  box-shadow:
+    0 1px 0 #180b06,
+    0 0 14px #22c55e;
 }
 .guitar-hit-btn.lane-btn-1:active,
 .guitar-hit-btn.lane-btn-1.pressed {
   background: #ef4444;
   color: #450a0a;
-  box-shadow: 0 1px 0 #180b06, 0 0 14px #ef4444;
+  box-shadow:
+    0 1px 0 #180b06,
+    0 0 14px #ef4444;
 }
 .guitar-hit-btn.lane-btn-2:active,
 .guitar-hit-btn.lane-btn-2.pressed {
   background: #eab308;
   color: #422006;
-  box-shadow: 0 1px 0 #180b06, 0 0 14px #eab308;
+  box-shadow:
+    0 1px 0 #180b06,
+    0 0 14px #eab308;
 }
 .guitar-hit-btn.lane-btn-3:active,
 .guitar-hit-btn.lane-btn-3.pressed {
   background: #3b82f6;
   color: #082f49;
-  box-shadow: 0 1px 0 #180b06, 0 0 14px #3b82f6;
+  box-shadow:
+    0 1px 0 #180b06,
+    0 0 14px #3b82f6;
 }
 .guitar-hit-btn.lane-btn-4:active,
 .guitar-hit-btn.lane-btn-4.pressed {
   background: #f97316;
   color: #431407;
-  box-shadow: 0 1px 0 #180b06, 0 0 14px #f97316;
+  box-shadow:
+    0 1px 0 #180b06,
+    0 0 14px #f97316;
 }
 
 .guitar-feedback {

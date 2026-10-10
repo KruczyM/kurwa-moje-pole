@@ -3,7 +3,7 @@ import midiCharts from './guitarMidiCharts.json';
 /**
  * CampfireGuitarGame — Rytmiczna mini-gra na gitarze akustycznej przy ognisku
  * („Guitar Hero Pol'and'Rock Edition”).
- * Gracz uderza w struny (klawisze D, F, J, K / 1, 2, 3, 4) w rytm klasycznych
+ * Gracz uderza w struny (klawisze A, S, D, F, G / 1, 2, 3, 4, 5) w rytm klasycznych
  * festiwalowych utworów (Dżem, Kult, Budka Suflera, Tadeusz Woźniak).
  */
 
@@ -106,6 +106,14 @@ export const GUITAR_CHORD_FREQUENCIES: Record<string, number[]> = {
   Dm: [146.83, 220.0, 293.66, 349.23],
 };
 
+export function guitarFrequencies(name: string): number[] {
+  const pitch = /^([A-G])(#?)(-?\d)$/.exec(name);
+  if (!pitch) return GUITAR_CHORD_FREQUENCIES[name] || [220, 330, 440];
+  const semitones: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  const midi = (Number(pitch[3]) + 1) * 12 + semitones[pitch[1]] + (pitch[2] ? 1 : 0);
+  return [440 * Math.pow(2, (midi - 69) / 12)];
+}
+
 /**
  * Web Audio syntezator gitary akustycznej Karplus-Strong / addytywnego wybrzmiewania
  */
@@ -115,6 +123,8 @@ export class CampfireGuitarSynth {
   private backingGain: GainNode | null = null;
   private backingActive = false;
   private lastBackingStep = -1;
+  private readonly backingVoices = new Set<AudioScheduledSourceNode>();
+  private shakerBuffer: AudioBuffer | null = null;
 
   constructor(audioContext?: AudioContext) {
     if (audioContext) {
@@ -153,7 +163,7 @@ export class CampfireGuitarSynth {
   /**
    * Rozpoczyna ciągły akompaniament (podkład w stylu Guitar Hero)
    */
-  public startBackingTrack(_bpm: number, _chords: string[]): void {
+  public startBackingTrack(): void {
     if (!this.ctx || !this.masterGain) {
       this.init();
       if (!this.ctx || !this.masterGain) return;
@@ -171,14 +181,39 @@ export class CampfireGuitarSynth {
   public stopBackingTrack(): void {
     this.backingActive = false;
     this.lastBackingStep = -1;
+    for (const voice of this.backingVoices) {
+      try {
+        voice.stop();
+      } catch {
+        /* Already ended. */
+      }
+      voice.onended?.(new Event('ended'));
+    }
+    this.backingVoices.clear();
+  }
+
+  private trackBackingVoice(source: AudioScheduledSourceNode, ...nodes: AudioNode[]): void {
+    this.backingVoices.add(source);
+    source.onended = () => {
+      source.disconnect();
+      nodes.forEach((node) => node.disconnect());
+      this.backingVoices.delete(source);
+      source.onended = null;
+    };
   }
 
   /**
    * Aktualizuje podkład muzyczny zsynchronizowany z rytmem utworu
    */
-  public updateBackingTrack(currentTime: number, bpm: number, chords: string[]): void {
+  public updateBackingTrack(
+    currentTime: number,
+    bpm: number,
+    chords: string[],
+    melody?: readonly GuitarNote[],
+  ): void {
     if (!this.backingActive || !this.ctx || !this.backingGain || chords.length === 0) return;
     if (this.ctx.state === 'suspended') return;
+    if (!Number.isFinite(currentTime) || currentTime < 0 || !Number.isFinite(bpm) || bpm <= 0) return;
 
     const beatDuration = 60 / bpm;
     const stepDuration = beatDuration * 0.5; // Krok ósemkowy
@@ -190,11 +225,22 @@ export class CampfireGuitarSynth {
 
     if (currentStep <= this.lastBackingStep) return;
 
-    const stepsToPlay = Math.min(currentStep - this.lastBackingStep, 8);
+    // Skip stale beats after a stalled frame instead of stacking eight sounds at once.
+    const stepsToPlay = 1;
+    this.lastBackingStep = currentStep - 1;
     for (let i = 1; i <= stepsToPlay; i++) {
       const step = this.lastBackingStep + i;
       const barIndex = Math.floor(step / 8);
-      const chord = chords[barIndex % chords.length] || 'A';
+      let chord = melody ? undefined : chords[barIndex % chords.length];
+      if (melody) {
+        for (let j = melody.length - 1; j >= 0; j--) {
+          if (melody[j].time <= currentTime) {
+            chord = melody[j].chordName;
+            break;
+          }
+        }
+      }
+      if (!chord) continue;
       const stepInBar = step % 8; // 0..7
       const now = this.ctx.currentTime + (step * stepDuration - currentTime);
       const scheduleTime = Math.max(this.ctx.currentTime, now);
@@ -210,7 +256,7 @@ export class CampfireGuitarSynth {
     try {
       // 1. Bas akustyczny na mocne części taktu (kroki 0 i 4 = bity 1 i 3)
       if (stepInBar === 0 || stepInBar === 4) {
-        const freqs = GUITAR_CHORD_FREQUENCIES[chord] || [110, 164, 220];
+        const freqs = guitarFrequencies(chord);
         const bassFreq = Math.max(55, freqs[0] * 0.5);
 
         const osc = this.ctx.createOscillator();
@@ -229,6 +275,7 @@ export class CampfireGuitarSynth {
         osc.connect(filter);
         filter.connect(gain);
         gain.connect(this.backingGain);
+        this.trackBackingVoice(osc, filter, gain);
 
         osc.start(time);
         osc.stop(time + 0.4);
@@ -236,7 +283,7 @@ export class CampfireGuitarSynth {
 
       // 2. Ciepły akompaniament akordowy na bicie (kroki 2 i 6)
       if (stepInBar === 2 || stepInBar === 6) {
-        const freqs = GUITAR_CHORD_FREQUENCIES[chord] || [220, 277, 330];
+        const freqs = guitarFrequencies(chord);
         const strumFreqs = freqs.slice(0, 3);
 
         strumFreqs.forEach((freq, idx) => {
@@ -258,6 +305,7 @@ export class CampfireGuitarSynth {
           osc.connect(filter);
           filter.connect(gain);
           gain.connect(this.backingGain!);
+          this.trackBackingVoice(osc, filter, gain);
 
           osc.start(strumTime);
           osc.stop(strumTime + 0.26);
@@ -266,25 +314,26 @@ export class CampfireGuitarSynth {
 
       // 3. Delikatny shaker/tupanie rytmiczne przy ognisku na każdej ósemce
       const bufSize = Math.floor(this.ctx.sampleRate * 0.035);
-      const buffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let j = 0; j < bufSize; j++) {
-        data[j] = (Math.random() * 2 - 1) * (stepInBar % 2 === 0 ? 0.25 : 0.14);
+      if (!this.shakerBuffer) {
+        this.shakerBuffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+        const data = this.shakerBuffer.getChannelData(0);
+        for (let j = 0; j < bufSize; j++) data[j] = Math.random() * 2 - 1;
       }
       const noise = this.ctx.createBufferSource();
-      noise.buffer = buffer;
+      noise.buffer = this.shakerBuffer;
 
       const pFilter = this.ctx.createBiquadFilter();
       pFilter.type = 'highpass';
       pFilter.frequency.setValueAtTime(3200, time);
 
       const pGain = this.ctx.createGain();
-      pGain.gain.setValueAtTime(0.025, time);
+      pGain.gain.setValueAtTime(0.025 * (stepInBar % 2 === 0 ? 0.25 : 0.14), time);
       pGain.gain.exponentialRampToValueAtTime(0.001, time + 0.032);
 
       noise.connect(pFilter);
       pFilter.connect(pGain);
       pGain.connect(this.backingGain);
+      this.trackBackingVoice(noise, pFilter, pGain);
 
       noise.start(time);
       noise.stop(time + 0.035);
@@ -305,20 +354,8 @@ export class CampfireGuitarSynth {
       void this.ctx.resume();
     }
 
-    const pitch = /^([A-G])(#?)(\d)$/.exec(chordName);
-    const semitones: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
-    const midi = pitch ? (Number(pitch[3]) + 1) * 12 + semitones[pitch[1]] + (pitch[2] ? 1 : 0) : undefined;
-    let freqs: number[];
-    if (midi !== undefined) {
-      freqs = [440 * Math.pow(2, (midi - 69) / 12)];
-    } else {
-      const chordFreqs = GUITAR_CHORD_FREQUENCIES[chordName] || [220, 330, 440];
-      if (lane !== undefined && lane >= 0 && lane < chordFreqs.length) {
-        freqs = [chordFreqs[lane]];
-      } else {
-        freqs = chordFreqs;
-      }
-    }
+    const chordFreqs = guitarFrequencies(chordName);
+    const freqs = lane === undefined ? chordFreqs : [chordFreqs[lane % chordFreqs.length]];
     const now = this.ctx.currentTime;
 
     freqs.forEach((freq, idx) => {
@@ -451,6 +488,7 @@ export class CampfireGuitarSynth {
       this.ctx = null;
       this.masterGain = null;
       this.backingGain = null;
+      this.shakerBuffer = null;
     }
   }
 }
@@ -507,7 +545,16 @@ function createSongNotes(
 }
 
 export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = [
-  ...(midiCharts as GuitarSong[]),
+  ...(midiCharts as GuitarSong[]).map((song) => {
+    // MIDI vocal tracks can begin minutes into the source. Keep their relative
+    // rhythm, but provide the same short, playable count-in for every chart.
+    const offset = song.notes[0].time - 2.5;
+    return {
+      ...song,
+      duration: song.notes[song.notes.length - 1].time - offset + 3,
+      notes: song.notes.map((note) => ({ ...note, time: note.time - offset })),
+    };
+  }),
   {
     id: 'wehikul',
     title: 'Ogniskowy rock — ćwiczenie akordów',
@@ -617,8 +664,10 @@ export class CampfireGuitarGame {
     this.misses = 0;
     this.lastFeedback = undefined;
 
-    this.callbacks?.onToast?.(`🎸 ZACZYNAMY: „${song.title}”! Uderzaj klawisze [A, S, D, F, G] na linii ognia!`);
-    this.synth.startBackingTrack(song.bpm, song.chords);
+    this.callbacks?.onToast?.(
+      `🎸 ZACZYNAMY: „${song.title}”! Uderzaj klawisze [A, S, D, F, G] na linii ognia!`,
+    );
+    this.synth.startBackingTrack();
     return true;
   }
 
@@ -740,7 +789,12 @@ export class CampfireGuitarGame {
     if (this.phase !== 'playing' || !this.currentSong) return;
 
     this.currentTime += dt;
-    this.synth.updateBackingTrack(this.currentTime, this.currentSong.bpm, this.currentSong.chords);
+    this.synth.updateBackingTrack(
+      this.currentTime,
+      this.currentSong.bpm,
+      this.currentSong.chords,
+      this.currentSong.source ? this.currentSong.notes : undefined,
+    );
 
     // Sprawdzanie nut, które minęły linię uderzenia bez reakcji gracza
     for (const note of this.currentSong.notes) {

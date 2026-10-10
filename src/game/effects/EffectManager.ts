@@ -38,7 +38,7 @@ export const defaultVisualSettings: VisualSettings = {
   matrixQuality: 'medium',
   grassQuality: DEFAULT_GRASS_PRESET,
   preloadCrowd: true,
-  aspectRatio: 'ultrawide',
+  aspectRatio: 'auto',
 };
 export type EffectConfig = {
   fadeIn: number;

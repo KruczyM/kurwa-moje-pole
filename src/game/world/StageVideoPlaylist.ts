@@ -54,7 +54,10 @@ export class StageVideoPlaylist {
     return STAGE_VIDEO_FILES[this.index];
   }
 
-  constructor(private acoustics: SpatialStageAcoustics, initialIndex?: number) {
+  constructor(
+    private acoustics: SpatialStageAcoustics,
+    initialIndex?: number,
+  ) {
     const totalFiles = STAGE_VIDEO_FILES.length;
     this.index =
       initialIndex !== undefined

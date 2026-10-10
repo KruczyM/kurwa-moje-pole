@@ -1,7 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CampfireGuitarGame, PERFECT_WINDOW } from './CampfireGuitarGame';
+import { CampfireGuitarGame, PERFECT_WINDOW, guitarFrequencies } from './CampfireGuitarGame';
 
 describe('CampfireGuitarGame', () => {
+  it('recognizes MIDI pitches, including octave -1, instead of falling back to A minor', () => {
+    expect(guitarFrequencies('A4')).toEqual([440]);
+    expect(guitarFrequencies('C-1')[0]).toBeCloseTo(8.1758);
+    expect(guitarFrequencies('C#4')[0]).toBeCloseTo(277.1826);
+    expect(guitarFrequencies('Dm')).toHaveLength(4);
+  });
   it('includes five supplied MIDI arrangements with sorted playable notes', () => {
     const songs = new CampfireGuitarGame().getAvailableSongs();
     for (const id of [
@@ -14,7 +20,8 @@ describe('CampfireGuitarGame', () => {
       const song = songs.find((s) => s.id === id)!;
       expect(song).toBeDefined();
       expect(song.notes.length).toBeGreaterThan(50);
-      expect(song.duration).toBeGreaterThan(180);
+      expect(song.duration).toBeGreaterThan(60);
+      expect(song.notes[0].time).toBeCloseTo(2.5);
       song.notes.forEach((note, i) => {
         expect(note.lane).toBeGreaterThanOrEqual(0);
         expect(note.lane).toBeLessThan(5);
