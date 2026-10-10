@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { browserGraphicsProfile, savedMobileQuality } from '../rendering/graphicsProfile';
-import { limitTextureResolution } from '../assets/mobileAssetPolicy';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { characterAssets } from '../assets/assetManifest';
 import { cloneDisposableSkinnedModel, disposeObjectTree } from '../lifecycle/disposeThree';
@@ -48,7 +47,7 @@ export class CharacterPreview {
     layer.append(canvas);
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: !browserGraphicsProfile().mobile,
+      antialias: true,
       alpha: true,
     });
     this.renderer.setClearColor(0x000000, 0);
@@ -156,7 +155,6 @@ export class CharacterPreview {
           }
           settled = true;
           window.clearTimeout(timeout);
-          if (browserGraphicsProfile().mobile) limitTextureResolution(gltf.scene, 256);
           repairSkinSeams(gltf.scene);
           applyPbrMaterialPolicy(gltf.scene, 'character');
           resolve({ scene: gltf.scene, animations: gltf.animations });

@@ -142,7 +142,8 @@
     "mdma": "interactables/mdma.glb",
     "mushrooms": "interactables/mushrooms.glb",
     "lsd": "interactables/lsd.glb",
-    "water": "interactables/water.glb"
+    "water": "interactables/water.glb",
+    "sunglasses": "interactables/sunglasses.glb"
   },
   "textures": {
     "grass": {

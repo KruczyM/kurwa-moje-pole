@@ -51,6 +51,7 @@ export type GroundTextures = {
 };
 
 type WorldModels = {
+  fogTrial?: boolean;
   ecoPickups?: GLTF | null;
   authoredFestival: GLTF;
   characters?: Map<string, GLTF>;
@@ -161,6 +162,7 @@ export function physicalSizeIsValid(actual: THREE.Vector3, target: PhysicalSize,
 
 /** Buduje teren, oświetlenie, obiekty obozu, kolizje i punkty interakcji. */
 export class CampWorld {
+  readonly prepareSector: (root: THREE.Object3D) => void;
   private wheel: FestivalWheel | null = null;
   public infrastructure: FestivalInfrastructureInstance | null = null;
   public festivalProps: FestivalPropsInstance | null = null;
@@ -220,7 +222,7 @@ export class CampWorld {
     this.ecoModelSource = models.ecoPickups?.scene;
     this.debugInteractions = debugInteractions;
     this.grassQuality = grassQuality;
-    this.skybox = new TimeOfDaySkybox(scene);
+    this.skybox = new TimeOfDaySkybox(scene, undefined, undefined, undefined, !models.fogTrial);
     this.panorama = new HorizonPanorama(models.textures?.horizon);
     this.panorama.mesh.userData.excludeMushroomWireframe = true;
     scene.add(this.panorama.mesh);
@@ -244,6 +246,15 @@ export class CampWorld {
     scene.add(ground);
 
     const authored = new AuthoredFestivalWorld(models.authoredFestival);
+    this.prepareSector = (root) => {
+      root.traverse((object) => {
+        if (object instanceof THREE.Mesh) {
+          object.castShadow = true;
+          object.receiveShadow = true;
+        }
+      });
+      authored.batchStaticMeshes(root);
+    };
     this.authoredRoot = authored.root;
     this.mapScenery = authored.mapScenery;
     scene.add(authored.root);

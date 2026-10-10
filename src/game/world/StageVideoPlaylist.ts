@@ -20,11 +20,23 @@ export function isStageAudienceCut(seconds: number): boolean {
 
 /** A single media element feeds both screens and the existing spatial audio graph. */
 export class StageVideoPlaylist {
-  readonly video = document.createElement('video');
+  readonly video: HTMLVideoElement =
+    typeof document !== 'undefined'
+      ? document.createElement('video')
+      : ({
+          playsInline: false,
+          preload: '',
+          addEventListener: () => {},
+          removeEventListener: () => {},
+          load: () => {},
+          play: async () => {},
+          pause: () => {},
+          removeAttribute: () => {},
+        } as unknown as HTMLVideoElement);
   readonly texture = new THREE.VideoTexture(this.video);
   private context?: AudioContext;
   private source?: MediaElementAudioSourceNode;
-  private index = 0;
+  private index: number;
   private disposed = false;
   private failures = 0;
   private resume = () => {
@@ -42,7 +54,15 @@ export class StageVideoPlaylist {
     return STAGE_VIDEO_FILES[this.index];
   }
 
-  constructor(private acoustics: SpatialStageAcoustics) {
+  constructor(
+    private acoustics: SpatialStageAcoustics,
+    initialIndex?: number,
+  ) {
+    const totalFiles = STAGE_VIDEO_FILES.length;
+    this.index =
+      initialIndex !== undefined
+        ? ((initialIndex % totalFiles) + totalFiles) % totalFiles
+        : Math.floor(Math.random() * totalFiles);
     this.video.playsInline = true;
     this.video.preload = 'metadata';
     this.texture.colorSpace = THREE.SRGBColorSpace;
@@ -52,8 +72,10 @@ export class StageVideoPlaylist {
     this.texture.updateMatrix();
     this.video.addEventListener('ended', this.ended);
     this.video.addEventListener('error', this.error);
-    window.addEventListener('pointerdown', this.resume);
-    window.addEventListener('keydown', this.resume);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pointerdown', this.resume);
+      window.addEventListener('keydown', this.resume);
+    }
     this.load();
   }
 
@@ -95,8 +117,10 @@ export class StageVideoPlaylist {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
-    window.removeEventListener('pointerdown', this.resume);
-    window.removeEventListener('keydown', this.resume);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('pointerdown', this.resume);
+      window.removeEventListener('keydown', this.resume);
+    }
     this.video.removeEventListener('ended', this.ended);
     this.video.removeEventListener('error', this.error);
     this.video.pause();

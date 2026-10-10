@@ -2,9 +2,21 @@ import { describe, it, expect, vi } from 'vitest';
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { StageLiveScreens, stageShotIndex, chooseStagePlayer } from './StageLiveScreens';
-import { isStageAudienceCut, STAGE_VIDEO_FILES } from './StageVideoPlaylist';
+import { isStageAudienceCut, STAGE_VIDEO_FILES, StageVideoPlaylist } from './StageVideoPlaylist';
 
 describe('stage live camera feed', () => {
+  it('does not perform a second scene render when live cuts are disabled for sector streaming', () => {
+    const scene = new THREE.Scene();
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(), new THREE.MeshStandardMaterial());
+    mesh.userData.runtimeNode = 'Wing_Single_Telebim_Left';
+    scene.add(mesh);
+    const feed = new StageLiveScreens(scene, []);
+    feed.liveCameraEnabled = false;
+    const render = vi.fn();
+    feed.update(31, { render } as unknown as THREE.WebGLRenderer, new THREE.PerspectiveCamera(), []);
+    expect(render).not.toHaveBeenCalled();
+    feed.dispose();
+  });
   it('interrupts video every 30 seconds for exactly three seconds', () => {
     expect([0, 29.999, 30, 32.999, 33, 59.999, 60, 62.999, 63].map(isStageAudienceCut)).toEqual([
       false,
@@ -100,5 +112,24 @@ describe('stage live camera feed', () => {
     expect(feed.screens[0].material).toBe(original);
     expect(scene.getObjectByName('StageLiveLocalAvatar')).toBeUndefined();
     previous.dispose();
+  });
+
+  it('initializes StageVideoPlaylist with random track or deterministic initialIndex', () => {
+    const acoustics = {
+      initGraph: vi.fn(),
+      connectOutput: vi.fn(),
+      dispose: vi.fn(),
+    } as any;
+    const playlist1 = new StageVideoPlaylist(acoustics, 2);
+    expect(playlist1.currentFile).toBe(STAGE_VIDEO_FILES[2]);
+    playlist1.dispose();
+
+    const playlist2 = new StageVideoPlaylist(acoustics, 0);
+    expect(playlist2.currentFile).toBe(STAGE_VIDEO_FILES[0]);
+    playlist2.dispose();
+
+    const playlistRandom = new StageVideoPlaylist(acoustics);
+    expect(STAGE_VIDEO_FILES).toContain(playlistRandom.currentFile);
+    playlistRandom.dispose();
   });
 });

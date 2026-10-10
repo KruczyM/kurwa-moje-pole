@@ -29,6 +29,7 @@ export class StageLiveScreens {
   private frameTime = 1 / STAGE_FEED_FPS;
   private feedFps = STAGE_FEED_FPS;
   renderScope?: (render: () => void) => void;
+  liveCameraEnabled = true;
   setQuality(width: number, fps: number): void {
     this.target.setSize(width, Math.round((width * 9) / 16));
     this.feedFps = fps;
@@ -122,10 +123,10 @@ export class StageLiveScreens {
     localPlayer?: RemotePlayerMarker,
   ): void {
     if (this.disposed || !this.screens.length) return;
-    this.localAvatar?.animator?.update(Math.max(0, dt));
+    if (this.liveCameraEnabled) this.localAvatar?.animator?.update(Math.max(0, dt));
     const players = localPlayer ? [...remotePlayers, localPlayer] : remotePlayers;
     this.elapsed += Math.max(0, dt);
-    if (this.videoPlaylist && !isStageAudienceCut(this.elapsed)) {
+    if (this.videoPlaylist && (!this.liveCameraEnabled || !isStageAudienceCut(this.elapsed))) {
       if (this.material.map !== this.videoPlaylist.texture) {
         this.material.map = this.videoPlaylist.texture;
         this.material.needsUpdate = true;
@@ -134,6 +135,7 @@ export class StageLiveScreens {
         screen.userData.liveFeed = { shot: 'video', label: this.videoPlaylist.currentFile };
       return;
     }
+    if (!this.liveCameraEnabled) return;
     if (this.material.map !== this.target.texture) {
       this.material.map = this.target.texture;
       this.material.needsUpdate = true;

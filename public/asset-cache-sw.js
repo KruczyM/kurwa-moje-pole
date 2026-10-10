@@ -35,8 +35,6 @@ self.addEventListener('message', (event) => {
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
-  // Large mobile world: use native HTTP cache, avoid teeing another 100 MB response for CacheStorage.
-  if (url.pathname.endsWith('/authored-festival-mobile.glb')) return;
   if (request.method !== 'GET' || url.origin !== self.location.origin || !url.pathname.includes('/game-assets/') || request.headers.has('range')) return;
   event.respondWith((async () => {
     await restoreConfiguration();

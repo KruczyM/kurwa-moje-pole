@@ -12,9 +12,10 @@ export function mushroomWireframePulseAt(time: number) {
 
 /** Sprawdza, czy obiekt lub jego rodzic jest wyłączony z wizji wireframe. */
 function isExcluded(object: THREE.Object3D) {
+  if (object.userData.fogProxy) return true;
   let current: THREE.Object3D | null = object;
   while (current) {
-    if (current.userData.excludeMushroomWireframe) return true;
+    if (!current.visible || current.userData.excludeMushroomWireframe) return true;
     current = current.parent;
   }
   return object.name.startsWith('InteractionHitbox_');
@@ -78,6 +79,19 @@ export class MushroomWireframeEffect {
   }
 
   /** Przywraca dokładne materiały źródłowe i zwalnia tymczasowe wireframe. */
+  releaseSubtree(root: THREE.Object3D) {
+    root.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      const original = this.originals.get(mesh);
+      if (!original) return;
+      for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+        if (this.wireMaterials.delete(material)) material.dispose();
+      }
+      mesh.material = original;
+      this.originals.delete(mesh);
+    });
+  }
+
   private restore() {
     this.originals.forEach((material, mesh) => {
       mesh.material = material;

@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { joystickInput, shouldUseMobileControls } from './MobileControls';
+import { joystickInput, shouldUseMobileControls, mobileJumpAction } from './MobileControls';
+
+describe('mobile jump context', () => {
+  it('shows jump normally, throw in active flanki and disables it outside the aiming turn', () => {
+    for (const phase of [undefined, 'idle', 'game_over'])
+      expect(mobileJumpAction(phase)).toMatchObject({ label: 'SKOK', disabled: false });
+    expect(mobileJumpAction('aiming')).toMatchObject({ label: 'RZUT', disabled: false });
+    for (const phase of ['bot_turn', 'projectile_flying', 'player_drinking'])
+      expect(mobileJumpAction(phase)).toMatchObject({ label: 'RZUT', disabled: true });
+  });
+});
 
 describe('joystickInput', () => {
   it('mapuje górę na ruch do przodu i prawą stronę na strafing', () => {

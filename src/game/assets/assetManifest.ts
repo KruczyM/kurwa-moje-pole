@@ -14,9 +14,12 @@ const gameAsset = (path: string) => {
   return version ? `${url}?v=${encodeURIComponent(version)}` : url;
 };
 
+export const fogWorldBaseUrl = gameAsset('world/festival/fog-trial/base.glb');
+export const fogWorldManifestUrl = gameAsset('world/festival/fog-trial/manifest.json');
+export const fogWorldSectorUrl = (path: string) => gameAsset(`world/festival/fog-trial/${path}`);
+
 /** Jedyny rejestr adresów binarnych zasobów używanych przez klienta. */
 export const authoredFestivalUrl = gameAsset(catalog.environment.authoredFestival);
-export const mobileAuthoredFestivalUrl = gameAsset('world/festival/authored-festival-mobile.glb');
 
 export const characterAssets: CharacterAsset[] = catalog.characters.map(({ id, name }) => ({
   id,
@@ -91,6 +94,7 @@ export const interactiveAssets = {
   mushrooms: gameAsset(catalog.interactives.mushrooms),
   lsd: gameAsset(catalog.interactives.lsd),
   water: gameAsset(catalog.interactives.water),
+  sunglasses: gameAsset(catalog.interactives.sunglasses),
 };
 
 export const textureAssets = {

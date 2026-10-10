@@ -94,6 +94,7 @@ describe('UIManager', () => {
       '#setting-grass-quality',
       '#setting-matrix-mode',
       '#setting-matrix-quality',
+      '#setting-aspect-ratio',
       '#festival-guide',
       '#festival-map',
       '#guide-step-indicator',
@@ -209,6 +210,7 @@ describe('UIManager', () => {
 
     ui.syncSettings({ ...defaultVisualSettings, intensity: 0.75 }, defaultAudioSettings);
     expect(intensity.value).toBe('75');
+    expect(elements.get('#setting-aspect-ratio')!.value).toBe('auto');
   });
 
   it('controls free camera badge visibility', () => {

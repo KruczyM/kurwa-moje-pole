@@ -26,19 +26,6 @@ function create(seed = 73) {
 }
 
 describe('streamed festival crowd', () => {
-  it('supports a smaller mobile crowd with dancers and walkers on both passages', () => {
-    const { scene, manager } = create();
-    const baseline = manager.npcs.length;
-    manager.setCrowdDistribution(8, 8);
-    const model = fixture();
-    for (const asset of festivalNpcAssets.slice(0, 24)) manager.addFestivalNpc(asset, model);
-    const crowd = manager.npcs.slice(baseline);
-    expect(crowd.filter((npc) => npc.festivalRole === 'stage_dancer')).toHaveLength(8);
-    expect(crowd.filter((npc) => npc.passageWalker && npc.passageLane === 'lower')).toHaveLength(8);
-    expect(crowd.filter((npc) => npc.passageWalker && npc.passageLane === 'upper')).toHaveLength(8);
-    manager.dispose();
-    disposeObjectTree(scene);
-  });
   it('adds all 91 catalog models without the eight-spawn limit, with safe separate positions', () => {
     const { scene, manager, navigation } = create();
     const model = fixture();
