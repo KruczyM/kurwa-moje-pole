@@ -1,4 +1,5 @@
 import asyncio
+import os
 from pathlib import Path
 from playwright.async_api import async_playwright
 
@@ -18,7 +19,7 @@ async def main():
         errors = []
         page.on('pageerror', lambda e: errors.append(str(e)))
 
-        await page.goto('http://localhost:5173/', wait_until='domcontentloaded')
+        await page.goto(os.environ.get('GAME_QA_URL', 'http://127.0.0.1:5185/?fogTrial=1&server=http://127.0.0.1:3104'), wait_until='domcontentloaded')
         await page.wait_for_function('() => typeof document.querySelector("#play")?.onclick === "function"')
         await page.locator('#character-select button:not([disabled])').first.click()
         await page.locator('#player-nickname').fill('FramingQA')
@@ -40,7 +41,8 @@ async def main():
             g.camera.updateMatrixWorld(true);
         }''')
 
-        artifact_dir = Path(r"C:\Users\krucz\.gemini\antigravity\brain\0f469478-5ced-4cb0-85a6-506fc5188eb0")
+        artifact_dir = Path(__file__).resolve().parents[1] / 'reports/motion-camera'
+        artifact_dir.mkdir(parents=True, exist_ok=True)
 
         # Test 1: Standard 16:9 viewport (1280x720) - Cheering
         await page.evaluate('''() => {
@@ -92,6 +94,7 @@ async def main():
             };
         }''')
         print(f"Exit animation result: {exit_result}")
+        await page.wait_for_function('()=>window.__camp_game.state.current==="playing"')
 
         await browser.close()
         assert len(errors) == 0, f"Errors: {errors}"

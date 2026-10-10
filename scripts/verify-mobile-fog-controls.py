@@ -23,6 +23,42 @@ async def run(engine, name, options):
         await page.wait_for_function('()=>window.__camp_game?.state.current==="playing"', timeout=300000)
     await enter()
     await page.wait_for_timeout(2000)
+    viewport = await page.evaluate('''()=>{const g=window.__camp_game;return {
+      aspect:g.camera.aspect,expected:innerWidth/innerHeight,setting:g.settings.aspectRatio};}''')
+    assert viewport['setting']=='auto' and abs(viewport['aspect']-viewport['expected'])<0.001, viewport
+    # Use the existing world interaction, then actual DOM controls (no forced clicks).
+    interaction = await page.evaluate('''()=>{
+      const g=window.__camp_game;
+      const trigger=g.world.interactables.find(i=>i.action==='campfire_guitar').object;
+      const point=trigger.getWorldPosition(g.camera.position.clone());
+      g.camera.position.set(point.x,point.y+.3,point.z+1);
+      g.camera.lookAt(point);g.camera.updateMatrixWorld(true);
+      const i=g.interactions.update();
+      g.key(new KeyboardEvent('keydown',{key:'e',code:'KeyE'}));return i?.kind;
+    }''')
+    assert interaction=='campfire_guitar', interaction
+    await page.locator('[data-song-id="czarny-chleb-midi"]').tap()
+    await page.wait_for_function('()=>window.__camp_game.campfireGuitarGame.getPhase()==="playing"')
+    assert await page.locator('.guitar-hit-btn').count()==5
+    guitar_bounds = await page.locator('#guitar-hud').bounding_box()
+    screen = page.viewport_size
+    assert guitar_bounds['x']>=0 and guitar_bounds['y']>=0 and guitar_bounds['x']+guitar_bounds['width']<=screen['width']+1 and guitar_bounds['y']+guitar_bounds['height']<=screen['height']+1, guitar_bounds
+    # Freeze only the minigame's clock to make the input assertion independent of headless FPS.
+    lane = await page.evaluate('''()=>{
+      const g=window.__camp_game.campfireGuitarGame;
+      g.__qaUpdate=g.update;g.update=()=>{};
+      const n=g.currentSong.notes[0];g.currentTime=n.time;return n.lane;
+    }''')
+    await page.locator(f'.guitar-hit-btn[data-lane="{lane}"]').tap()
+    await page.wait_for_function('()=>window.__camp_game.campfireGuitarGame.getHudState().score===100')
+    await page.wait_for_function('()=>document.querySelector("#guitar-score-val").textContent==="100"')
+    await page.screenshot(path=str(OUT/f'{name}-guitar.png'))
+    await page.locator('#guitar-exit-btn').tap()
+    guitar = await page.evaluate('''()=>{
+      const g=window.__camp_game.campfireGuitarGame;g.update=g.__qaUpdate;delete g.__qaUpdate;
+      return {phase:g.getPhase(),voices:g.synth.backingVoices.size};
+    }''')
+    assert guitar=={'phase':'idle','voices':0}, guitar
     assert await page.locator('#mobile-jump').inner_text()=='SKOK'
     await page.evaluate('window.__camp_game.world.flankiGame.startMatch()')
     await page.wait_for_function('()=>document.querySelector("#mobile-jump").textContent==="RZUT"')
@@ -47,7 +83,7 @@ async def run(engine, name, options):
     restored = await page.evaluate('window.__camp_game.camera.far')
     assert restored==10, restored
     assert not errors, errors
-    report = {'engine':name,'settings':values,'restoredFar':restored,'fpsReadout':fps,'jumpLabels':['SKOK','RZUT','SKOK'],'pageErrors':errors,'caveat':'Not a physical iPhone performance measurement'}
+    report = {'engine':name,'viewport':viewport,'guitar':guitar,'guitarBounds':guitar_bounds,'settings':values,'restoredFar':restored,'fpsReadout':fps,'jumpLabels':['SKOK','RZUT','SKOK'],'pageErrors':errors,'caveat':'Not a physical iPhone performance measurement'}
     (OUT/f'{name}.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     print(json.dumps(report,indent=2))
     await browser.close()

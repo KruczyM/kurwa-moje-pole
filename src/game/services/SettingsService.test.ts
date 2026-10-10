@@ -50,7 +50,7 @@ describe('SettingsService', () => {
     const settings = loadVisualSettings();
     expect(settings.intensity).toBe(defaultVisualSettings.intensity);
     expect(settings.matrixMode).toBe(defaultVisualSettings.matrixMode);
-    expect(settings.aspectRatio).toBe('ultrawide');
+    expect(settings.aspectRatio).toBe('auto');
   });
 
   it('loads default audio settings when storage is empty', () => {

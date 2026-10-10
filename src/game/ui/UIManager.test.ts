@@ -210,7 +210,7 @@ describe('UIManager', () => {
 
     ui.syncSettings({ ...defaultVisualSettings, intensity: 0.75 }, defaultAudioSettings);
     expect(intensity.value).toBe('75');
-    expect(elements.get('#setting-aspect-ratio')!.value).toBe('ultrawide');
+    expect(elements.get('#setting-aspect-ratio')!.value).toBe('auto');
   });
 
   it('controls free camera badge visibility', () => {

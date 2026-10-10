@@ -1,12 +1,14 @@
 """Browser verification for 5-lane guitar minigame (A,S,D,F,G), backing track, and randomized stage video."""
 import asyncio
 import json
+import os
 from pathlib import Path
 from playwright.async_api import async_playwright
 
-ARTIFACTS_DIR = Path(r"C:\Users\krucz\.gemini\antigravity\brain\0f469478-5ced-4cb0-85a6-506fc5188eb0")
+ARTIFACTS_DIR = Path(__file__).resolve().parents[1] / 'reports/guitar-5lanes'
 
 async def main():
+    ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
     async with async_playwright() as p:
         browser = await p.chromium.launch(
             headless=True,
@@ -22,7 +24,7 @@ async def main():
         page_errors = []
         page.on('pageerror', lambda e: page_errors.append(str(e)))
 
-        await page.goto('http://localhost:5173/', wait_until='domcontentloaded')
+        await page.goto(os.environ.get('GAME_QA_URL', 'http://127.0.0.1:5185/?fogTrial=1&server=http://127.0.0.1:3104'), wait_until='domcontentloaded')
         await page.wait_for_function('() => typeof document.querySelector("#play")?.onclick === "function"')
         await page.locator('#character-select button:not([disabled])').first.click()
         await page.locator('#player-nickname').fill('GuitarHero')
@@ -47,7 +49,7 @@ async def main():
         await page.locator('.guitar-song-option').first.wait_for(state='visible')
 
         # 3. Wybór utworu i start
-        await page.locator('[data-song-id="wehikul"]').click(force=True)
+        await page.locator('[data-song-id="wehikul"]').click()
         await page.wait_for_function('() => window.__camp_game.campfireGuitarGame.getPhase() === "playing"')
 
         # 4. Sprawdzenie 5 torów i przycisków A, S, D, F, G
@@ -97,7 +99,7 @@ async def main():
         print("Game state after key inputs:", json.dumps(game_state, indent=2))
 
         # 7. Wyjście z minigry
-        await page.locator('#guitar-exit-btn').click(force=True)
+        await page.locator('#guitar-exit-btn').click()
         await page.wait_for_function('() => window.__camp_game.campfireGuitarGame.getPhase() === "idle"')
 
         final_check = await page.evaluate('''() => {

@@ -1,10 +1,11 @@
 import asyncio
 import json
+import os
 from pathlib import Path
 from playwright.async_api import async_playwright
 
 async def main():
-    artifact_dir = Path(r"C:\Users\krucz\.gemini\antigravity\brain\0f469478-5ced-4cb0-85a6-506fc5188eb0")
+    artifact_dir = Path(__file__).resolve().parents[1] / 'reports/aspect-ratio'
     artifact_dir.mkdir(parents=True, exist_ok=True)
 
     async with async_playwright() as p:
@@ -24,7 +25,7 @@ async def main():
         page.on('pageerror', lambda e: errors.append(str(e)))
 
         # Clear any old stored visual settings so we test default behavior
-        await page.goto('http://localhost:5173/', wait_until='domcontentloaded')
+        await page.goto(os.environ.get('GAME_QA_URL', 'http://127.0.0.1:5185/?fogTrial=1&server=http://127.0.0.1:3104'), wait_until='domcontentloaded')
         await page.evaluate('''() => {
             localStorage.removeItem('camp-visual-settings');
         }''')
@@ -55,7 +56,10 @@ async def main():
         }''')
         await asyncio.sleep(1.0)
 
-        # 1. Verify default Ultrawide (21:9)
+        # Default must use the full display; cinematic formats remain opt-in.
+        assert await page.evaluate('window.__camp_game.settings.aspectRatio') == 'auto'
+        await page.evaluate('window.__camp_game.updateSettings({aspectRatio:"ultrawide"})')
+        # 1. Verify explicit Ultrawide (21:9)
         info_ultrawide = await page.evaluate('''() => {
             const g = window.__camp_game;
             const canvas = g.canvas;
@@ -74,9 +78,9 @@ async def main():
                 cssVarH: getComputedStyle(document.documentElement).getPropertyValue('--game-viewport-height').trim()
             };
         }''')
-        print(f"Default Ultrawide Info: {json.dumps(info_ultrawide, indent=2)}")
+        print(f"Explicit Ultrawide Info: {json.dumps(info_ultrawide, indent=2)}")
 
-        assert info_ultrawide["settingVal"] == "ultrawide", f"Expected default 'ultrawide', got {info_ultrawide['settingVal']}"
+        assert info_ultrawide["settingVal"] == "ultrawide", f"Expected selected 'ultrawide', got {info_ultrawide['settingVal']}"
         assert info_ultrawide["selectVal"] == "ultrawide", f"Expected select value 'ultrawide', got {info_ultrawide['selectVal']}"
         # 1280 / (21/9) = ~548.57px -> height around 549, top around 85 or 86
         assert abs(info_ultrawide["width"] - 1280) <= 2, f"Unexpected width {info_ultrawide['width']}"
