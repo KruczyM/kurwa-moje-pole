@@ -2097,31 +2097,40 @@
 }
 
 .guitar-note-gem.lane-0 {
-  background: #3b82f6;
+  background: #22c55e;
   color: #fff;
+  box-shadow: 0 0 10px #22c55e;
 }
 .guitar-note-gem.lane-1 {
-  background: #10b981;
-  color: #fff;
-}
-.guitar-note-gem.lane-2 {
-  background: #f59e0b;
-  color: #fff;
-}
-.guitar-note-gem.lane-3 {
   background: #ef4444;
   color: #fff;
+  box-shadow: 0 0 10px #ef4444;
+}
+.guitar-note-gem.lane-2 {
+  background: #eab308;
+  color: #fff;
+  box-shadow: 0 0 10px #eab308;
+}
+.guitar-note-gem.lane-3 {
+  background: #3b82f6;
+  color: #fff;
+  box-shadow: 0 0 10px #3b82f6;
+}
+.guitar-note-gem.lane-4 {
+  background: #f97316;
+  color: #fff;
+  box-shadow: 0 0 10px #f97316;
 }
 
 .guitar-buttons-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .guitar-hit-btn {
   flex: 1;
-  height: 42px;
-  font-size: 1.1rem;
+  height: 44px;
+  font-size: 1.15rem;
   font-weight: 900;
   border-radius: 8px;
   border: 2px solid #f97316;
@@ -2132,6 +2141,12 @@
   transition: all 0.08s ease;
 }
 
+.guitar-hit-btn.lane-btn-0 { border-color: #22c55e; color: #86efac; }
+.guitar-hit-btn.lane-btn-1 { border-color: #ef4444; color: #fca5a5; }
+.guitar-hit-btn.lane-btn-2 { border-color: #eab308; color: #fde047; }
+.guitar-hit-btn.lane-btn-3 { border-color: #3b82f6; color: #93c5fd; }
+.guitar-hit-btn.lane-btn-4 { border-color: #f97316; color: #fdba74; }
+
 .guitar-hit-btn:active,
 .guitar-hit-btn.pressed {
   transform: translateY(2px);
@@ -2140,6 +2155,37 @@
   box-shadow:
     0 1px 0 #180b06,
     0 0 14px #f97316;
+}
+
+.guitar-hit-btn.lane-btn-0:active,
+.guitar-hit-btn.lane-btn-0.pressed {
+  background: #22c55e;
+  color: #052e16;
+  box-shadow: 0 1px 0 #180b06, 0 0 14px #22c55e;
+}
+.guitar-hit-btn.lane-btn-1:active,
+.guitar-hit-btn.lane-btn-1.pressed {
+  background: #ef4444;
+  color: #450a0a;
+  box-shadow: 0 1px 0 #180b06, 0 0 14px #ef4444;
+}
+.guitar-hit-btn.lane-btn-2:active,
+.guitar-hit-btn.lane-btn-2.pressed {
+  background: #eab308;
+  color: #422006;
+  box-shadow: 0 1px 0 #180b06, 0 0 14px #eab308;
+}
+.guitar-hit-btn.lane-btn-3:active,
+.guitar-hit-btn.lane-btn-3.pressed {
+  background: #3b82f6;
+  color: #082f49;
+  box-shadow: 0 1px 0 #180b06, 0 0 14px #3b82f6;
+}
+.guitar-hit-btn.lane-btn-4:active,
+.guitar-hit-btn.lane-btn-4.pressed {
+  background: #f97316;
+  color: #431407;
+  box-shadow: 0 1px 0 #180b06, 0 0 14px #f97316;
 }
 
 .guitar-feedback {

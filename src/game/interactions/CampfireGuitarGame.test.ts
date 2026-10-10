@@ -17,9 +17,9 @@ describe('CampfireGuitarGame', () => {
       expect(song.duration).toBeGreaterThan(180);
       song.notes.forEach((note, i) => {
         expect(note.lane).toBeGreaterThanOrEqual(0);
-        expect(note.lane).toBeLessThan(4);
+        expect(note.lane).toBeLessThan(5);
         expect(note.time).toBeLessThan(song.duration);
-        if (i) expect(note.time - song.notes[i - 1].time).toBeGreaterThanOrEqual(0.249999);
+        if (i) expect(note.time - song.notes[i - 1].time).toBeGreaterThanOrEqual(0.179999);
       });
     }
   });
@@ -57,6 +57,9 @@ describe('CampfireGuitarGame', () => {
       // Mock synthezera bez fizycznego AudioContext w środowisku Node/Vitest
       {
         init: () => {},
+        startBackingTrack: () => {},
+        stopBackingTrack: () => {},
+        updateBackingTrack: () => {},
         playChord: () => {},
         playMissBuzz: () => {},
         playCrowdCheer: () => crowdCheers++,
@@ -123,7 +126,7 @@ describe('CampfireGuitarGame', () => {
     expect(game.getHudState().combo).toBe(1);
 
     // Następnie uderzamy w inną ścieżkę z dala od nuty
-    const wrongLane = (firstNote.lane + 1) % 4;
+    const wrongLane = (firstNote.lane + 1) % 5;
     const result = game.hitLane(wrongLane, 99.0);
     expect(result.rating).toBe('miss');
     expect(game.getHudState().combo).toBe(0);
@@ -185,6 +188,52 @@ describe('CampfireGuitarGame', () => {
     expect(activeNote).toBeDefined();
     expect(activeNote!.progress).toBeGreaterThan(0);
     expect(activeNote!.progress).toBeLessThanOrEqual(1.0);
+  });
+
+  it('rozpoczyna, aktualizuje i wyłącza podkład muzyczny przy rozpoczęciu i zakończeniu utworu', () => {
+    let backingStarted = false;
+    let backingUpdates = 0;
+    let backingStopped = false;
+
+    const synthMock = {
+      init: () => {},
+      startBackingTrack: () => {
+        backingStarted = true;
+      },
+      updateBackingTrack: () => {
+        backingUpdates++;
+      },
+      stopBackingTrack: () => {
+        backingStopped = true;
+      },
+      playChord: () => {},
+      playMissBuzz: () => {},
+      playCrowdCheer: () => {},
+      dispose: () => {},
+    };
+
+    const g = new CampfireGuitarGame({}, synthMock as any);
+    g.startSong('arahja');
+    expect(backingStarted).toBe(true);
+
+    g.update(0.1);
+    expect(backingUpdates).toBe(1);
+
+    g.stopSong();
+    expect(backingStopped).toBe(true);
+  });
+
+  it('obsługuje 5 torów (0..4) i różnorodne poziomy trudności w utworach', () => {
+    const songs = game.getAvailableSongs();
+    const difficultSongs = songs.filter((s) => s.difficulty === 'Trudny');
+    expect(difficultSongs.length).toBeGreaterThanOrEqual(2);
+
+    // Sprawdzamy czy utwory korzystają ze wszystkich 5 torów 0, 1, 2, 3, 4
+    for (const song of songs) {
+      const lanes = new Set(song.notes.map((n) => n.lane));
+      expect(lanes.has(0)).toBe(true);
+      expect(lanes.has(4)).toBe(true);
+    }
   });
 
   it('dispose() bezpiecznie zwalnia zasoby', () => {

@@ -41,6 +41,7 @@ import { itemUseSequenceConfig } from './interactions/itemUseSequenceConfig';
 import { ItemUseSfxPlayer } from './audio/ItemUseSfx';
 import { SeatController, type SeatPose } from './interactions/SeatController';
 import { configureColorPipeline } from './rendering/colorPipeline';
+import { calculateViewportDimensions, type ViewportBounds } from './rendering/viewportAspect';
 import { RemotePlayersManager } from './network/RemotePlayersManager';
 import type { NetworkClient } from './network/NetworkClient';
 import type { FlankiLobbyState } from './network/flankiProtocol';
@@ -118,6 +119,7 @@ export class Game {
   interactions?: InteractionManager;
   toiletTimer = 0;
   private networkSyncTimer = 0;
+  private guitarNpcThrottleTimer = 0;
   readonly settingsService = new SettingsService();
   get settings(): VisualSettings {
     return this.settingsService.visual;
@@ -302,6 +304,7 @@ export class Game {
       if (this.world && visual.grassQuality) this.world.setGrassQuality(visual.grassQuality);
       if (visual.matrixMode) this.matrixController.setMode(visual.matrixMode);
       if (visual.matrixQuality) this.matrixRain.setQuality(visual.matrixQuality);
+      if (visual.aspectRatio) this.resize(true);
       this.syncSettingsUi();
     });
     this.unsubscribeState = this.state.subscribe(({ to }) => this.syncState(to));
@@ -325,6 +328,7 @@ export class Game {
       () => this.toggleMap(false),
     );
     this.syncState(this.state.current);
+    this.resize(true);
   }
 
   get paused() {
@@ -465,7 +469,7 @@ export class Game {
       }
       this.effects = new EffectManager(this.renderer, this.scene, this.camera, this.speakerAudio);
       this.effects.bloomResolutionScale = this.graphics.bloomScale;
-      this.effects.resize(innerWidth, innerHeight);
+      this.resize(true);
       this.effects.setSettings(this.settings);
       this.interactions = new InteractionManager(this.camera, () => [
         ...(this.npcs!.speakerAnchor ? [this.npcs!.speakerAnchor] : []),
@@ -801,10 +805,11 @@ export class Game {
     if (this.campfireGuitarGame && this.campfireGuitarGame.getPhase() === 'playing') {
       const k = event.key.toLowerCase();
       let lane = -1;
-      if (k === 'd' || k === '1') lane = 0;
-      else if (k === 'f' || k === '2') lane = 1;
-      else if (k === 'j' || k === '3') lane = 2;
-      else if (k === 'k' || k === '4') lane = 3;
+      if (k === 'a' || k === '1') lane = 0;
+      else if (k === 's' || k === '2') lane = 1;
+      else if (k === 'd' || k === '3') lane = 2;
+      else if (k === 'f' || k === '4') lane = 3;
+      else if (k === 'g' || k === '5') lane = 4;
 
       if (lane >= 0) {
         event.preventDefault();
@@ -1200,7 +1205,7 @@ export class Game {
           this.pointerLockPause.reset();
           if (document.pointerLockElement) document.exitPointerLock?.();
           this.player?.stop();
-          this.toast('🎸 Gitara przy ognisku! Wybierz piosenkę i graj klawiszami [D, F, J, K].');
+          this.toast('🎸 Gitara przy ognisku! Wybierz piosenkę i graj klawiszami [A, S, D, F, G].');
         }
       }
       return;
@@ -1644,7 +1649,22 @@ export class Game {
         this.updateInteractionPrompt();
       }
       if (state === 'playing' || state === 'seated') {
-        this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position, this.speakerAudio.isPlaying);
+        const isGuitarActive = this.campfireGuitarGame.getPhase() !== 'idle';
+        if (isGuitarActive) {
+          this.guitarNpcThrottleTimer += dt;
+          if (this.guitarNpcThrottleTimer >= 0.12) {
+            this.npcs?.update(
+              this.guitarNpcThrottleTimer,
+              this.clock.elapsedTime,
+              this.camera.position,
+              this.speakerAudio.isPlaying,
+            );
+            this.guitarNpcThrottleTimer = 0;
+          }
+        } else {
+          this.guitarNpcThrottleTimer = 0;
+          this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position, this.speakerAudio.isPlaying);
+        }
       }
       if ((state === 'playing' || state === 'seated') && this.networkClient?.isOnline()) {
         this.networkSyncTimer += dt;
@@ -1747,24 +1767,27 @@ export class Game {
       this.mushroomWireframe.update(false, 0, 0, false);
       this.matrixWireframe.update(false, 0, false);
     }
-    this.npcDebugOverlay?.update(this.camera);
-    this.distanceVisibility?.update(dt, this.camera.position);
-    this.stageLiveScreens?.update(
-      dt,
-      this.renderer,
-      this.camera,
-      this.remotePlayersManager?.getPlayerMarkers() ?? [],
-      this.networkClient?.isOnline() && this.player
-        ? {
-            id: this.networkClient?.getMyPlayerId() ?? 'local',
-            name: 'Ty',
-            x: this.camera.position.x,
-            z: this.camera.position.z,
-            yaw: this.player.yaw,
-            y: this.player.isAirborne() ? this.camera.position.y - 1.9 : 0,
-          }
-        : undefined,
-    );
+    const isGuitarActive = this.campfireGuitarGame.getPhase() !== 'idle';
+    if (!isGuitarActive) {
+      this.npcDebugOverlay?.update(this.camera);
+      this.distanceVisibility?.update(dt, this.camera.position);
+      this.stageLiveScreens?.update(
+        dt,
+        this.renderer,
+        this.camera,
+        this.remotePlayersManager?.getPlayerMarkers() ?? [],
+        this.networkClient?.isOnline() && this.player
+          ? {
+              id: this.networkClient?.getMyPlayerId() ?? 'local',
+              name: 'Ty',
+              x: this.camera.position.x,
+              z: this.camera.position.z,
+              yaw: this.player.yaw,
+              y: this.player.isAirborne() ? this.camera.position.y - 1.9 : 0,
+            }
+          : undefined,
+      );
+    }
     this.effects?.render();
     this.updateEffectHud();
     this.ui.updateFlankiHud(this.world?.flankiGame?.getHudState() ?? null);
@@ -1945,27 +1968,63 @@ export class Game {
     this.toast('Gotowe.');
   }
 
-  /** Dopasowuje kamerę i postprocessing do aktualnego rozmiaru okna. */
+  /** Dopasowuje kamerę i postprocessing do aktualnego rozmiaru okna oraz wybranego formatu kadru. */
   resize(force = false) {
     if (this.disposed) return;
     const dpr = Math.min(devicePixelRatio, this.graphics.dprCap);
+    const bounds = calculateViewportDimensions(
+      innerWidth,
+      innerHeight,
+      this.settings.aspectRatio ?? 'ultrawide',
+    );
     if (
       !force &&
-      this.viewportWidth === innerWidth &&
-      this.viewportHeight === innerHeight &&
+      this.viewportWidth === bounds.width &&
+      this.viewportHeight === bounds.height &&
       this.viewportDpr === dpr
     )
       return;
-    this.viewportWidth = innerWidth;
-    this.viewportHeight = innerHeight;
+    this.viewportWidth = bounds.width;
+    this.viewportHeight = bounds.height;
     this.viewportDpr = dpr;
+
+    this.applyViewportStyles(bounds);
+
     this.renderer.setPixelRatio(dpr);
-    this.camera.aspect = innerWidth / innerHeight;
+    this.camera.aspect = bounds.aspect;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(innerWidth, innerHeight);
-    this.effects?.resize(innerWidth, innerHeight);
-    this.matrixRain.resize(innerWidth, innerHeight);
+    this.renderer.setSize(bounds.width, bounds.height);
+    this.effects?.resize(bounds.width, bounds.height);
+    this.matrixRain.resize(bounds.width, bounds.height);
     if (this.state.current === 'inspecting') this.inspectController.resize();
+  }
+
+  private applyViewportStyles(bounds: ViewportBounds) {
+    this.canvas.style.position = 'fixed';
+    this.canvas.style.width = `${bounds.width}px`;
+    this.canvas.style.height = `${bounds.height}px`;
+    this.canvas.style.left = `${bounds.left}px`;
+    this.canvas.style.top = `${bounds.top}px`;
+    this.canvas.style.right = 'auto';
+    this.canvas.style.bottom = 'auto';
+
+    const matrixRainCanvas = document.querySelector<HTMLCanvasElement>('#matrix-rain');
+    if (matrixRainCanvas) {
+      matrixRainCanvas.style.position = 'fixed';
+      matrixRainCanvas.style.width = `${bounds.width}px`;
+      matrixRainCanvas.style.height = `${bounds.height}px`;
+      matrixRainCanvas.style.left = `${bounds.left}px`;
+      matrixRainCanvas.style.top = `${bounds.top}px`;
+      matrixRainCanvas.style.right = 'auto';
+      matrixRainCanvas.style.bottom = 'auto';
+    }
+
+    if (typeof document !== 'undefined' && document.documentElement?.style) {
+      document.documentElement.style.setProperty('--game-viewport-width', `${bounds.width}px`);
+      document.documentElement.style.setProperty('--game-viewport-height', `${bounds.height}px`);
+      document.documentElement.style.setProperty('--game-viewport-left', `${bounds.left}px`);
+      document.documentElement.style.setProperty('--game-viewport-top', `${bounds.top}px`);
+    }
   }
 
   /** Pokazuje krótką wiadomość HUD i odnawia jej czas wygaszenia. */

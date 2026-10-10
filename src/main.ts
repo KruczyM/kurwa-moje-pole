@@ -12,6 +12,7 @@ import { AppState, AppStateMachine } from './game/lifecycle/AppStateMachine';
 import { controlHintForState, inputBindings, startControlHint } from './game/lifecycle/InputBindings';
 import { isMobileInputDevice } from './game/player/MobileControls';
 import { isGrassQualityPreset } from './game/world/grassQuality';
+import { isAspectRatioPreset } from './game/rendering/viewportAspect';
 import { NetworkClient } from './game/network/NetworkClient';
 import {
   CANONICAL_CHARACTERS,
@@ -384,6 +385,16 @@ if (matrixQualitySelect) {
     const val = (event.target as HTMLSelectElement).value;
     if (val === 'low' || val === 'medium' || val === 'high') {
       game?.updateSettings({ matrixQuality: val });
+    }
+  };
+}
+
+const aspectRatioSelect = document.querySelector<HTMLSelectElement>('#setting-aspect-ratio');
+if (aspectRatioSelect) {
+  aspectRatioSelect.onchange = (event) => {
+    const val = (event.target as HTMLSelectElement).value;
+    if (isAspectRatioPreset(val)) {
+      game?.updateSettings({ aspectRatio: val });
     }
   };
 }

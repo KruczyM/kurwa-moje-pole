@@ -36,18 +36,18 @@ for key, title, artist, license_name, url in SOURCES:
             starts.setdefault(round(elapsed, 6), []).append(message.note)
     # The upper staff's highest simultaneous voice becomes the guitar melody.
     melody = [(time, max(pitches)) for time, pitches in sorted(starts.items())]
-    # Playable reduction, retaining original pitch/timing: at most four notes/sec.
+    # Playable reduction, retaining original pitch/timing: up to 5.5 notes/sec.
     if key in CHANNELS:
         reduced = []
         for time,pitch in melody:
-            if not reduced or time-reduced[-1][0] >= .25:
+            if not reduced or time-reduced[-1][0] >= .18:
                 reduced.append((time,pitch))
         melody = reduced
     if not melody:
         raise ValueError(f'No melody in {key}')
     unique = sorted(set(pitch for _, pitch in melody))
     names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
-    notes = [{'id': f'{key}-{i}', 'lane': min(3, unique.index(pitch)*4//len(unique)),
+    notes = [{'id': f'{key}-{i}', 'lane': min(4, unique.index(pitch)*5//len(unique)),
               'time': round(time+2.5, 6), 'chordName': f'{names[pitch%12]}{pitch//12-1}'}
              for i, (time, pitch) in enumerate(melody)]
     charts.append({'id': key, 'title': title, 'artist': artist, 'license': license_name, 'source': url,
