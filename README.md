@@ -8,6 +8,26 @@ Osobny grywalny pilot 2D: [otwórz demo](https://kruczym.github.io/kurwa-moje-po
 Na telefonie użyj przycisków ekranowych; na komputerze WASD, Shift i E.
 Demo nie zastępuje festiwalu 3D. Opis, ograniczenia i pliki: [docs/after-demo.md](docs/after-demo.md).
 
+## After: Bongo Rush
+
+Osobna gra logiczno-zręcznościowa 2D inspirowana zasadami Boulder Dash: 12 autorskich plansz,
+cztery biomy, spadające skały, patrole oraz 16 postaci różniących się wyłącznie wyglądem.
+Nie zastępuje After ani gry 3D. Nie uruchamia serwera multiplayer i nie pobiera modeli GLB.
+
+```powershell
+npm run dev:client
+# Otwórz adres wypisany przez Vite z końcówką /bongo-rush.html
+npm run test:unit -- src/games/bongo-rush
+```
+
+Na komputerze: WASD lub strzałki, Escape — pauza/wznowienie, R — restart poziomu.
+Na telefonie: gałka, przycisk pauzy u góry i restart ↻ na dole. Przedmioty zbiera się automatycznie.
+Nie ma limitu czasu ani żyć. Odblokowane poziomy, postać i wyciszenie zapisują się lokalnie.
+Po buildzie strona znajduje się w `dist/bongo-rush.html`; lokalny preview używa prefiksu
+`/kurwa-moje-pole/bongo-rush.html`. Publikacja wymaga osobnego wdrożenia gałęzi.
+
+Opis wszystkich modułów, zasad, formatu plansz i testów: [docs/bongo-rush.md](docs/bongo-rush.md).
+
 ## Uruchomienie
 
 Wymagane są Node.js 20 LTS (lub nowszy), Git i Git LFS.

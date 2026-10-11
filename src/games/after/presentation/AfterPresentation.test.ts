@@ -13,6 +13,16 @@ const meta: SpriteMetadata = {
 };
 
 describe('After presentation', () => {
+  it('snaps a new spawn immediately and ignores invalid targets', () => {
+    const camera = new CameraRig({ width: 100, height: 100 });
+    camera.resize({ width: 320, height: 320, pixelsPerMeter: 64 });
+    camera.snap({ x: 10, y: 10 });
+    expect(camera.project({ x: 10, y: 10 })).toEqual({ x: 160, y: 160 });
+    camera.snap({ x: 80, y: 80 });
+    expect(camera.project({ x: 80, y: 80 })).toEqual({ x: 160, y: 160 });
+    camera.snap({ x: NaN, y: 0 });
+    expect(camera.project({ x: 80, y: 80 })).toEqual({ x: 160, y: 160 });
+  });
   it('maps every simulation direction to the authored atlas rows', () => {
     const animator = new SpriteAnimator(meta);
     for (const [facing, row] of [

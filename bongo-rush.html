@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#171b2b" />
+    <title>After: Bongo Rush</title>
+  </head>
+  <body>
+    <main id="bongo-app">
+      <header class="topbar">
+        <a class="brand" href="./bongo-rush.html"><span>AFTER</span> BONGO RUSH</a>
+        <div class="toolbar">
+          <button id="mute" aria-pressed="false">Dźwięk: wł.</button
+          ><button id="pause" disabled>Pauza</button>
+        </div>
+      </header>
+      <section id="board" aria-label="Plansza gry">
+        <canvas
+          id="cave"
+          tabindex="0"
+          aria-label="Kopalnia — poruszaj się klawiszami WASD lub strzałkami"
+        ></canvas>
+        <div class="hud">
+          <span id="level-title">12 poziomów · 4 biomy</span
+          ><strong id="counter">Zbieraj. Kop. Nie daj się przygnieść.</strong><span id="exit-status"></span>
+        </div>
+        <section id="menu" class="panel menu-panel" aria-label="Menu główne">
+          <span class="eyebrow">ZRĘCZNOŚĆ × ZAGADKI × AFTER</span>
+          <h1>BONGO<br /><em>RUSH</em><span class="dot">.</span></h1>
+          <p class="intro">Dwanaście jaskiń. Cztery dziwne dostawy.<br />Jedno legendarne Bongo Tasiora.</p>
+          <div class="select-row">
+            <label>Twoja postać<select id="hero"></select></label
+            ><span>Wygląd inny.<br />Zasady te same.</span>
+          </div>
+          <div id="levels" class="level-grid" aria-label="Wybierz odblokowany poziom"></div>
+          <p id="selected-level"></p>
+          <button id="begin" class="primary" disabled>Ładowanie…</button>
+          <p id="load-status" role="status">Przygotowuję lekką wersję 2D…</p>
+          <details>
+            <summary>Jak grać?</summary>
+            <p>
+              WASD / strzałki lub gałka — ruch. Kop ziemię, zbierz wymagane przedmioty i znajdź wyjście ↑.
+              Skały pchasz poziomo, tylko na wolne pole. Spadające skały i przedmioty przygniatają. Patrole
+              nie potrafią kopać. Esc — pauza / powrót. R — restart. Bez limitu czasu i żyć.
+            </p>
+          </details>
+          <div class="links">
+            <a href="./after-demo.html">After: ostatnia noc</a><a href="./">Festiwal 3D</a>
+          </div>
+          <small class="disclaimer"
+            >Fikcyjna, satyryczna gra dla dorosłych. Nie jest reklamą ani instrukcją używania
+            substancji.</small
+          >
+        </section>
+        <section id="pause-panel" class="panel compact" hidden aria-label="Pauza">
+          <span class="eyebrow">CHWILA ODDECHU</span>
+          <h2>Pauza</h2>
+          <p>Jaskinia poczeka. Nie ma zegara.</p>
+          <button id="resume" class="primary">Wróć do gry</button
+          ><button id="pause-restart">Restart poziomu</button
+          ><button id="to-menu">Wybór poziomu i postaci</button>
+        </section>
+        <section id="result" class="panel compact" hidden aria-label="Wynik poziomu">
+          <span id="result-label" class="eyebrow"></span>
+          <h2 id="result-title"></h2>
+          <p id="result-text"></p>
+          <button id="next" class="primary">Następny poziom</button><button id="retry">Zagraj ponownie</button
+          ><button id="result-menu">Wybór poziomu</button>
+        </section>
+        <section id="victory" class="panel victory-panel" hidden aria-label="Koniec kampanii">
+          <span class="eyebrow">12 / 12 · CAŁA DOSTAWA ODEBRANA</span>
+          <h2>Bongo<br /><em>Tasiora</em></h2>
+          <p>Wszystkie jaskinie za Tobą. Satyryczny Owsiak opala legendarne bongo — nagroda jest Twoja!</p>
+          <button id="victory-menu" class="primary">Wróć do odblokowanych poziomów</button>
+        </section>
+        <nav id="touch-controls" hidden aria-label="Sterowanie dotykowe">
+          <div id="joystick" role="group" aria-label="Gałka ruchu — przeciągnij palcem">
+            <span id="knob"></span>
+          </div>
+          <button id="touch-restart" aria-label="Restart poziomu">↻</button>
+        </nav>
+      </section>
+      <footer>
+        <p id="hint">Zbieraj przedmioty, unikaj patroli i spadających skał.</p>
+        <span>WASD / ↑↓←→ · Esc pauza · R restart</span>
+      </footer>
+    </main>
+    <script type="module" src="/src/games/bongo-rush/main.ts"></script>
+  </body>
+</html>

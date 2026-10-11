@@ -1,0 +1,71 @@
+export const HEROES = [
+  'amper',
+  'antena',
+  'gruczol',
+  'klatwa',
+  'krwiak',
+  'pien',
+  'pierscien',
+  'zawor',
+  'ambona',
+  'chlebak',
+  'dziaslo',
+  'hemoroid',
+  'jeczmien',
+  'kobra',
+  'korba',
+  'szerszen',
+] as const;
+export const HERO_LABELS = [
+  'Amper',
+  'Antena',
+  'Gruczoł',
+  'Klątwa',
+  'Krwiak',
+  'Pień',
+  'Pierścień',
+  'Zawór',
+  'Ambona',
+  'Chlebak',
+  'Dziąsło',
+  'Hemoroid',
+  'Jęczmień',
+  'Kobra',
+  'Korba',
+  'Szerszeń',
+];
+export interface Progress {
+  version: 1;
+  unlocked: number;
+  hero: string;
+  muted: boolean;
+  completed: boolean;
+}
+const KEY = 'after-bongo-rush:v1';
+
+/** Validates untrusted browser storage and tolerates private-mode/security failures. */
+export function loadProgress(storage: Pick<Storage, 'getItem'>): Progress {
+  const defaults: Progress = { version: 1, unlocked: 1, hero: 'amper', muted: false, completed: false };
+  try {
+    const data = JSON.parse(storage.getItem(KEY) ?? 'null');
+    if (!data || data.version !== 1) return defaults;
+    return {
+      version: 1,
+      unlocked: Number.isInteger(data.unlocked) ? Math.max(1, Math.min(12, data.unlocked)) : 1,
+      hero: HEROES.includes(data.hero) ? data.hero : 'amper',
+      muted: data.muted === true,
+      completed: data.completed === true,
+    };
+  } catch {
+    return defaults;
+  }
+}
+
+/** Saves only campaign preferences, not mutable simulation objects or private data. */
+export function saveProgress(storage: Pick<Storage, 'setItem'>, progress: Progress): void {
+  try {
+    storage.setItem(KEY, JSON.stringify(progress));
+  } catch {
+    /* Playing remains possible without persistent storage. */
+  }
+}
