@@ -3,6 +3,7 @@ import { SpriteAnimator } from '../after/presentation/SpriteAnimator';
 import type { SpriteMetadata } from '../after/presentation/SpriteAnimator';
 import type { Facing } from '../after/simulation/WorldState';
 import { BIOMES } from './Levels';
+import { paintCaveTile } from './CaveVisuals';
 import { same } from './types';
 import type { Body, Enemy, LooseObject, Point } from './types';
 import type { World } from './types';
@@ -18,7 +19,7 @@ const FACINGS: Record<string, Facing> = { up: 'north', right: 'east', down: 'sou
 
 /** One Canvas 2D renderer driven by the shared host RAF, with cached decorative tiles. */
 export class CaveRenderer {
-  private readonly camera = new CameraRig({ width: 24, height: 18 });
+  private camera = new CameraRig({ width: 1, height: 1 });
   private animator?: SpriteAnimator;
   private atlas?: HeroAtlas;
   private bushAtlas?: HeroAtlas;
@@ -30,6 +31,9 @@ export class CaveRenderer {
   private playHeight = 1;
   private readonly topInset = 58;
   private world?: World;
+  showMap = true;
+  private map?: HTMLCanvasElement;
+  private mapTick = -1;
 
   /** Receives an existing canvas context and never owns animation scheduling or asset loading. */
   constructor(private readonly context: CanvasRenderingContext2D) {}
@@ -66,6 +70,8 @@ export class CaveRenderer {
     this.atlas = undefined;
     this.bushAtlas = undefined;
     this.world = undefined;
+    if (this.map) this.map.width = this.map.height = 0;
+    this.map = undefined;
   }
 
   /** Renders the short fictional reward scene in the same canvas and RAF as gameplay. */
@@ -162,9 +168,15 @@ export class CaveRenderer {
         height = background.height * scale;
       ctx.drawImage(background, (this.width - width) / 2, (this.height - height) / 2, width, height);
     }
+    ctx.fillStyle = '#071018a8';
+    ctx.fillRect(0, 0, this.width, this.height);
     const playerPoint = this.interpolate(world.player, alpha);
     if (this.world !== world) {
       this.world = world;
+      // One active instance of the existing camera, with this cave's real bounds rather than 24x18.
+      this.camera = new CameraRig({ width: world.width, height: world.height });
+      this.camera.resize({ width: this.width, height: this.playHeight, pixelsPerMeter: this.tile });
+      this.mapTick = -1;
       this.camera.snap({ x: playerPoint.x + 0.5, y: playerPoint.y + 0.5 });
     }
     this.camera.follow({ x: playerPoint.x + 0.5, y: playerPoint.y + 0.5 }, dt, paused);
@@ -173,8 +185,13 @@ export class CaveRenderer {
     ctx.rect(0, this.topInset, this.width, this.playHeight);
     ctx.clip();
     ctx.translate(0, this.topInset);
-    for (let y = 0; y < world.height; y++)
-      for (let x = 0; x < world.width; x++) {
+    const origin = this.camera.project({ x: 0, y: 0 });
+    const firstX = Math.max(0, Math.floor(-origin.x / this.tile) - 1);
+    const firstY = Math.max(0, Math.floor(-origin.y / this.tile) - 1);
+    const lastX = Math.min(world.width, Math.ceil((this.width - origin.x) / this.tile) + 1);
+    const lastY = Math.min(world.height, Math.ceil((this.playHeight - origin.y) / this.tile) + 1);
+    for (let y = firstY; y < lastY; y++)
+      for (let x = firstX; x < lastX; x++) {
         const position = this.camera.project({ x, y });
         if (
           position.x < -this.tile ||
@@ -193,10 +210,8 @@ export class CaveRenderer {
             this.tile + 0.5,
           );
         } else {
-          ctx.fillStyle = '#0a101b92';
+          ctx.fillStyle = '#090f19c9';
           ctx.fillRect(position.x, position.y, this.tile + 0.5, this.tile + 0.5);
-          ctx.strokeStyle = '#ffffff06';
-          ctx.strokeRect(position.x, position.y, this.tile, this.tile);
           if (cell === 'exit') this.exit(position, game.exitOpen, game.level.id === 12, biome.accent);
         }
         if (
@@ -260,6 +275,72 @@ export class CaveRenderer {
       ctx.restore();
     }
     ctx.restore();
+    this.atmosphere(playerPoint);
+    if (this.showMap) this.minimap(world);
+  }
+
+  /** Adds soft local depth without hiding the readable tiles, obstacles or opponents. */
+  private atmosphere(player: Point): void {
+    const ctx = this.context;
+    const p = this.camera.project({ x: player.x + 0.5, y: player.y + 0.5 });
+    const radius = Math.max(160, Math.min(this.width, this.playHeight) * 0.85);
+    const shade = ctx.createRadialGradient(p.x, p.y + this.topInset, 24, p.x, p.y + this.topInset, radius);
+    shade.addColorStop(0, '#00000000');
+    shade.addColorStop(0.55, '#0209100c');
+    shade.addColorStop(1, '#02091055');
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, this.topInset, this.width, this.playHeight);
+  }
+
+  /** Refreshes a tiny terrain overview at physics rate, then draws a cheap cached image each frame. */
+  private minimap(world: World): void {
+    const ctx = this.context;
+    this.map ??= document.createElement('canvas');
+    if (this.mapTick !== world.tick) {
+      this.map.width = world.width;
+      this.map.height = world.height;
+      const map = this.map.getContext('2d')!;
+      world.cells.forEach((cell, index) => {
+        map.fillStyle =
+          cell === 'wall'
+            ? '#1a2530'
+            : cell === 'soil' || cell === 'buried-bush'
+              ? '#63716b'
+              : cell === 'bush'
+                ? '#69a446'
+                : cell === 'exit'
+                  ? '#fff0aa'
+                  : '#101820';
+        map.fillRect(index % world.width, Math.floor(index / world.width), 1, 1);
+      });
+      for (const body of world.objects) {
+        map.fillStyle = body.kind === 'pickup' ? '#e5c795' : '#384850';
+        map.fillRect(body.x, body.y, 1, 1);
+      }
+      this.mapTick = world.tick;
+    }
+    const width = Math.min(
+      this.width < 650 ? 96 : 156,
+      ((this.playHeight - 26) * world.width) / world.height,
+    );
+    const scale = width / world.width,
+      height = world.height * scale;
+    const x = this.width - width - 14,
+      y = this.topInset + 8;
+    ctx.fillStyle = '#0a111be8';
+    ctx.fillRect(x - 5, y - 5, width + 10, height + 10);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(this.map, x, y, width, height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.fillStyle = '#fff8d8';
+    ctx.fillRect(
+      x + world.player.x * scale - 1,
+      y + world.player.y * scale - 1,
+      Math.max(3, scale),
+      Math.max(3, scale),
+    );
+    ctx.strokeStyle = '#ffffff48';
+    ctx.strokeRect(x - 5, y - 5, width + 10, height + 10);
   }
 
   /** Blends previous/current positions consistently for player, rocks, collectibles and enemies. */
@@ -271,62 +352,14 @@ export class CaveRenderer {
     };
   }
 
-  /** Caches nine small tile images per biome instead of rebuilding gradients every frame. */
+  /** Caches rough cave textures; variants are deterministic and allocated only once per biome. */
   private tileArt(biomeIndex: number, kind: 'wall' | 'soil', variant: number): HTMLCanvasElement {
     const key = `${biomeIndex}:${kind}:${variant}`;
     const cached = this.tiles.get(key);
     if (cached) return cached;
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = 64;
-    const ctx = canvas.getContext('2d')!;
-    const biome = BIOMES[biomeIndex];
-    ctx.fillStyle = '#101725';
-    ctx.fillRect(0, 0, 64, 64);
-    const gradient = ctx.createLinearGradient(0, 0, 48, 64);
-    gradient.addColorStop(0, kind === 'wall' ? biome.wall : biome.soil);
-    gradient.addColorStop(1, '#19202c');
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.roundRect(1, 1, 62, 62, kind === 'wall' ? 8 : 3);
-    ctx.fill();
-    ctx.strokeStyle = kind === 'wall' ? '#ffffff19' : '#ffffff09';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    if (kind === 'wall') {
-      ctx.strokeStyle = '#00000045';
-      ctx.beginPath();
-      ctx.moveTo(0, 32 + variant * 4);
-      ctx.lineTo(64, 32 + variant * 4);
-      ctx.moveTo(24 + variant * 8, 0);
-      ctx.lineTo(24 + variant * 8, 32);
-      ctx.stroke();
-      if (biomeIndex === 1) {
-        ctx.strokeStyle = '#92be5b50';
-        ctx.beginPath();
-        ctx.moveTo(4, 4);
-        ctx.quadraticCurveTo(50, 15, 20, 58);
-        ctx.stroke();
-      }
-      if (biomeIndex === 2) {
-        ctx.strokeStyle = '#a773d94d';
-        ctx.strokeRect(6, 6, 51, 51);
-      }
-      if (biomeIndex === 3) {
-        ctx.fillStyle = '#a9e1de28';
-        ctx.beginPath();
-        ctx.moveTo(8, 45);
-        ctx.lineTo(16, 8);
-        ctx.lineTo(29, 37);
-        ctx.fill();
-      }
-    } else {
-      for (let index = 0; index < 12; index++) {
-        const x = ((index * 17 + variant * 11) % 60) + 2,
-          y = ((index * 29 + variant * 13) % 60) + 2;
-        ctx.fillStyle = index % 2 ? '#ffffff13' : '#00000038';
-        ctx.fillRect(x, y, 3, 2);
-      }
-    }
+    paintCaveTile(canvas.getContext('2d')!, biomeIndex, kind, variant);
     this.tiles.set(key, canvas);
     return canvas;
   }
@@ -495,6 +528,16 @@ export class CaveRenderer {
       ctx.textAlign = 'center';
       ctx.fillText(['♥', '★', '+', '•'][variant], 32, 39);
     } else this.bong(32, 36, 1, variant);
+    // Small mineral glints stay phase-stable in pause and distinguish loot from dull rock silhouettes.
+    const shine = (Math.sin(this.clock * 2.2 + variant * 1.7) + 1) / 2;
+    ctx.strokeStyle = `rgba(231,248,255,${0.25 + shine * 0.55})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(48, 7 - shine * 3);
+    ctx.lineTo(48, 15 + shine * 3);
+    ctx.moveTo(44 - shine * 3, 11);
+    ctx.lineTo(52 + shine * 3, 11);
+    ctx.stroke();
   }
 
   /** Draws a readable glass bong, also used at enlarged scale in the victory sequence. */

@@ -246,7 +246,7 @@ class BongoRush {
       container.append(button);
     });
     element('selected-level').textContent =
-      `${this.selected + 1}. ${LEVELS[this.selected].title} · ${BIOMES[LEVELS[this.selected].biome].name}`;
+      `${this.selected + 1}. ${LEVELS[this.selected].title} · ${LEVELS[this.selected].rows[0].length} × ${LEVELS[this.selected].rows.length} pól · ${BIOMES[LEVELS[this.selected].biome].name}`;
   }
 
   /** Updates textual goals only when state changes, keeping per-frame DOM work minimal. */
@@ -295,6 +295,7 @@ class BongoRush {
       void this.begin();
     });
     click('pause', () => this.togglePause());
+    click('map', () => this.toggleMap());
     click('resume', () => this.togglePause());
     click('pause-restart', () => this.restart());
     click('retry', () => this.restart());
@@ -323,6 +324,11 @@ class BongoRush {
     });
     this.events.listen(window, 'keydown', (event) => {
       const key = event as KeyboardEvent;
+      if (key.code === 'KeyM' && !key.repeat) {
+        key.preventDefault();
+        this.toggleMap();
+        return;
+      }
       if (key.code === 'Escape') {
         key.preventDefault();
         if (!key.repeat) this.togglePause();
@@ -368,6 +374,14 @@ class BongoRush {
         if (this.mode === 'playing') this.setMode('paused');
       } else this.dispose();
     });
+  }
+
+  /** Toggles the same cached overview for keyboard and touch, preserving movement focus. */
+  private toggleMap(): void {
+    if (!this.renderer) return;
+    this.renderer.showMap = !this.renderer.showMap;
+    element('map').setAttribute('aria-pressed', String(this.renderer.showMap));
+    if (this.mode === 'playing') this.canvas.focus({ preventScroll: true });
   }
 
   /** Converts pointer coordinates to existing radial joystick input; foreign fingers are ignored by ownership. */

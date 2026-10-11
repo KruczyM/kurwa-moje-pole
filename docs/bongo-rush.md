@@ -7,7 +7,8 @@ i przejście 12 poziomów. Inspiracją są zasady gier typu Boulder Dash, nie ic
 grafiki ani gotowe układy poziomów. Finał jest fikcyjną, satyryczną scenką.
 
 Istniejące After jest zachowane, również na gałęziach `feat/after-demo` i
-`fix/after-joystick`. Nowa praca znajduje się na `feat/bongo-rush`, w osobnym worktree.
+`fix/after-joystick`. Rozbudowane jaskinie są na `feat/bongo-expanded-caves`, w osobnym worktree;
+wcześniejsze wersje pozostały na `feat/bongo-rush` i `feat/bongo-bush`.
 Nie usunięto wcześniejszych plików ani nie zmieniono lokalnych roboczych grafik Chlebaka.
 
 ## Uruchomienie
@@ -35,14 +36,24 @@ Samo uruchomienie buildu nie publikuje strony na GitHub Pages.
 
 | Poziomy | Biom              | Dostawa                | Przeciwnicy                                     |
 | ------- | ----------------- | ---------------------- | ----------------------------------------------- |
-| 1–3     | Magazyn Amarena   | Różne smaki Amareny    | Czerwony patrol od poziomu 2                    |
+| 1–3     | Magazyn Amarena   | Różne smaki Amareny    | Czerwony patrol                                 |
 | 4–6     | Zielone podziemia | Liście marihuany       | Niebieski patrol                                |
 | 7–9     | Neonowy rave      | Różne cukierki ecstasy | Undercover                                      |
 | 10–12   | Dymna grota       | Bonga                  | Mieszane patrole; satyryczny Owsiak tylko na 12 |
 
-Każdy poziom ma własną definicję i udokumentowaną sekwencję przejścia. Różnią się
-przebiegiem korytarzy, rozstawem pięter, liczbą przepychanych skał i komorami patroli.
-Na ostatnim poziomie, oprócz pięciu bong, trzeba przepchnąć skałę na złote pole
+Plansze 1–6 mają **46×34 pola i 9 komór**, 7–9: **60×34 i 12 komór**,
+10–12: **60×44 i 16 komór**. To około 3,6–6,1 razy większa powierzchnia niż stare 24×18.
+Cele wynoszą odpowiednio 18, 24 i 32 przedmioty. Przedmiotów jest więcej niż cel,
+więc można wybierać pomiędzy bezpieczniejszym objazdem a ryzykownym bocznym złożem.
+
+Komory łączą się w obu osiach, mają odnogi, skróty i pętle. Występują skalne filary,
+przegrody z prześwitami, niskie stropy, puste kieszenie, podparte żyły głazów
+i otwierane przez kopanie komory patroli. Cztery biomy różnią się paletą i minerałami.
+Głazy i przedmioty korzystają z istniejącej grawitacji — podkopanie podpory
+może wywołać lawinę. Nie trzeba chodzić jedną narysowaną ścieżką.
+
+Każdy poziom ma własny stały szkic, geologię i testowaną sekwencję przejścia.
+Na ostatnim poziomie, oprócz 32 bong, trzeba przepchnąć skałę na złote pole
 u wejścia do zagrody. Boss patroluje jej wnętrze; nie walczy się z nim ani nie przygniata.
 Po zamknięciu zagrody dostępna jest nagroda i krótka scenka z Bongo Tasiora.
 
@@ -64,6 +75,8 @@ Po zamknięciu zagrody dostępna jest nagroda i krótka scenka z Bongo Tasiora.
 ## Sterowanie i dostępność
 
 WASD/strzałki poruszają, Escape przełącza pauzę, R restartuje bieżący poziom.
+M lub przycisk **Mapa** przełącza minimapę z ziemią, skałami, przedmiotami,
+wyjściem i jasnym punktem gracza. Mapa pokazuje cały układ, nie jest fog-of-war.
 Escape nigdy nie przenosi automatycznie do głównego menu. Powrót do wyboru postaci
 jest osobnym przyciskiem pauzy. Po wznowieniu canvas odzyskuje fokus.
 
@@ -85,6 +98,8 @@ Sama plansza nie zapewnia pełnej dostępności czytnikom ekranu.
 | `types.ts`                     | Kierunki, typy planszy i ciał, czas kroku `STEP_SECONDS = 0.14`                     |
 | `Simulation.ts`                | Kopanie, ruch, przepychanie, grawitacja, patrole, wygrana i przegrana               |
 | `Levels.ts`                    | Cztery palety biomów, 12 szkiców plansz i sekwencje ich przejścia                   |
+| `CaveBuilder.ts`               | Stałe sieci komór, skróty, geologia, podparte złoża i zapis wejścia do testów       |
+| `CaveVisuals.ts`               | Oryginalne skalne i żwirowe tekstury Canvas, korzenie oraz minerały                 |
 | `Renderer.ts`                  | Interpolacja, współdzielona kamera i animator, kafelki, przedmioty, patrole i finał |
 | `SpriteBounds.ts`              | Wspólny obrys alfa klatek: czytelna wielkość i stabilne kadrowanie postaci          |
 | `Input.ts`                     | Klawiatura i przełożenie istniejącej gałki After na cztery kierunki                 |
@@ -139,8 +154,12 @@ odblokowanych poziomów. Dorosłe krzaki wykorzystują istniejący atlas Kobry
 na zielonym obrysie, a zakopany korzeń ma symbol rośliny.
 Zmiana jest na gałęzi `feat/bongo-bush` i nie usuwa źródłowych grafik Kobry z After.
 
-Szkice w `Levels.ts` określają rzędy korytarzy, lewą/prawą granicę, liczbę sekcji
-z pchaniem skał i komorami przeciwników. Generator tworzy stały układ, nie losuje poziomu.
+`CAVE_SKETCHES` w `Levels.ts` określa liczbę kolumn i rzędów komór (`columns`, `rows`),
+porządek referencyjnego przejścia (`route`: `rows` lub `columns`), gęstość głazów
+(`geology`) i liczbę komór patroli (`patrols`). `CaveBuilder.ts` tworzy stały układ,
+nie losuje poziomu przy restarcie. `grain()` daje powtarzalne rozmieszczenie geologii.
+Trasa w `solution` służy do testowania, nie jest widoczna ani wymagana od gracza.
+Każda komora ma dwie referencyjne dostawy; cel jest wyliczany z ich liczby.
 Można również przekazać bezpośrednią definicję `LevelDefinition` z prostokątnym ASCII:
 
 | Symbol        | Znaczenie                               |
@@ -154,6 +173,7 @@ Można również przekazać bezpośrednią definicję `LevelDefinition` z prosto
 | `O`           | Przedmiot bieżącego biomu               |
 | `C`, `B`, `U` | Czerwony, niebieski patrol i undercover |
 | `J`           | Boss finałowy                           |
+| `K`           | Zakopany Krzak, aktywowany odkopaniem   |
 
 `quota` określa wymaganą liczbę przedmiotów. `solution` to kierunki przekazywane
 do prawdziwej symulacji, bez teleportacji. Po każdej zmianie planszy zaktualizuj nagranie
@@ -168,12 +188,13 @@ npm run build
 # W drugim terminalu, z zainstalowanym lokalnie Python Playwright:
 npm run dev:client -- --host 127.0.0.1 --port 5190 --strictPort
 python scripts/verify-bongo-rush.py
+python scripts/verify-bongo-expanded.py
 # Po buildzie i uruchomieniu preview na porcie 5191:
 npm run preview -- --host 127.0.0.1 --port 5191 --strictPort
 python scripts/verify-bongo-production.py
 ```
 
-Skrypt przeglądarkowy przechodzi kampanię klawiaturą przez rzeczywisty interfejs,
+Skrypt przeglądarkowy przechodzi pierwszy poziom klawiaturą przez rzeczywisty interfejs,
 sprawdza wszystkie atlasy, pauzę bez zatrzymywania RAF, powrót fokusu, zapis i brak żądań GLB/Socket.IO.
 Uruchamia również WebKit z profilem iPhone’a oraz Chromium z dotykiem. Raport i zdjęcia
 zapisuje w ignorowanym `reports/bongo-rush/`. Diagnostyka `?verify=1` istnieje tylko w dev
@@ -181,3 +202,5 @@ i udostępnia odłączony snapshot, nie teleportację ani edycję postępu.
 
 Emulacja nie potwierdza wydajności fizycznego iPhone’a. Test dotyku, ergonomii i FPS
 na rzeczywistym urządzeniu pozostaje osobnym punktem odbioru. Nowa gra nie jest automatycznie publikowana.
+
+Aktualny zakres sprawdzenia: [raport rozbudowanych jaskiń](bongo-expanded-verification.md).

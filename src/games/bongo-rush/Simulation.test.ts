@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { LEVELS } from './Levels';
 import { createWorld, Simulation } from './Simulation';
 import type { LevelDefinition } from './types';
+import { neighbour } from './types';
 
 /** Makes compact physics fixtures with a supported pickup and one exit. */
 function fixture(rows: string[], quota = 1): LevelDefinition {
@@ -20,7 +21,11 @@ describe('Bongo Rush original campaign', () => {
     it(`recorded solution completes ${level.id}: ${level.title} without teleporting`, () => {
       const game = new Simulation(level);
       for (const [tick, input] of level.solution.entries()) {
+        const expected = neighbour(game.world.player, input);
         game.step(input);
+        expect({ x: game.world.player.x, y: game.world.player.y }, `blocked input ${tick}: ${input}`).toEqual(
+          expected,
+        );
         expect(
           game.world.status,
           `input ${tick} ${input}; player ${game.world.player.x},${game.world.player.y}; ${game.world.reason}`,
