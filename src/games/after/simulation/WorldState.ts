@@ -1,7 +1,7 @@
 import type { CharacterName } from '../../../game/network/networkProtocol';
 
 export const AFTER_SCHEMA_VERSION = 1;
-export const AFTER_CONTENT_VERSION = 'pilot-1';
+export const AFTER_CONTENT_VERSION = 'pilot-2';
 export const AFTER_TICK_RATE = 30;
 export const AFTER_STEP_SECONDS = 1 / AFTER_TICK_RATE;
 
@@ -29,6 +29,7 @@ export interface InteractionDefinition {
   radius: number;
   priority: number;
   prompt: string;
+  /** Consumes the target after first use; repeatable targets still record their first interaction flag. */
   once: boolean;
 }
 

@@ -171,7 +171,7 @@ export class AfterSimulation {
     const target = nearestInteraction(this.map, player, this.world.flags, this.interactionAvailable);
     if (!target || target.id !== command.targetId) return;
     const flag = `interaction:${target.id}`;
-    if (target.once) this.world.flags.push(flag);
+    if (!this.world.flags.includes(flag)) this.world.flags.push(flag);
     return {
       id: `${this.world.sessionId}:${player.slotId}:${command.sequence}`,
       tick: this.world.tick,

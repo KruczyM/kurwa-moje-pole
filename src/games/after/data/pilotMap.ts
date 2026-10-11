@@ -31,7 +31,7 @@ export function createPilotMap(): MapDefinition {
         radius: 1.5,
         priority: 10,
         prompt: 'Porozmawiaj ze świadkiem',
-        once: true,
+        once: false,
       },
       {
         id: 'flag',
@@ -63,7 +63,7 @@ export function createPilotMap(): MapDefinition {
         radius: 1.5,
         priority: 10,
         prompt: 'Odnajdź znajomego',
-        once: true,
+        once: false,
       },
       {
         id: 'cable',
@@ -87,6 +87,14 @@ export function createPilotMap(): MapDefinition {
         radius: 1.5,
         priority: 0,
         prompt: 'Wróć do obozu',
+        once: false,
+      },
+      {
+        id: 'technician',
+        position: { x: 14.5, y: 7.5 },
+        radius: 1.5,
+        priority: 10,
+        prompt: 'Porozmawiaj z technicznym',
         once: false,
       },
     ],

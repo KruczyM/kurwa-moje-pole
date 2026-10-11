@@ -73,12 +73,22 @@ describe('After pilot campaign integration', () => {
     expect(
       campaign.interact({ sessionId: 'test', slotId: 'p1', targetId: 'power', sequence: sequence++ }),
     ).toBeUndefined();
-    for (const targetId of ['friend', 'flag', 'cable', 'power']) expect(interact(targetId)).toBeDefined();
+    for (const targetId of ['friend', 'flag', 'cable', 'power']) {
+      expect(interact(targetId)).toBeDefined();
+      campaign.closeDialogue('p1');
+    }
     expect(campaign.snapshot().story.completedQuestIds).toHaveLength(3);
     expect(campaign.snapshot().world.nightPhase).toBe('before-dawn');
     expect(campaign.snapshot().finished).toBe(false);
+    campaign.addPlayer('observer', 'Chlebak');
+    walkTo(campaign, 'friend', 'observer');
+    expect(
+      campaign.interact({ sessionId: 'test', slotId: 'observer', targetId: 'friend', sequence: 0 }),
+    ).toBeDefined();
+    expect(campaign.dialogue('observer')).toBeDefined();
     interact('camp-return');
     expect(campaign.snapshot().finished).toBe(true);
+    expect(campaign.dialogue('observer')).toBeUndefined();
     expect(() => campaign.addPlayer('late', 'Chlebak')).toThrow('already finished');
     const tick = campaign.snapshot().world.tick;
     campaign.setPaused(false);
@@ -106,5 +116,58 @@ describe('After pilot campaign integration', () => {
     const campaign = new AfterCampaign();
     expect(() => campaign.addPlayer('p1', 'Antena')).toThrow();
     expect(campaign.snapshot().world.players).toEqual([]);
+  });
+
+  it('starts a reachable dialogue, stops only its owner and resumes without stale movement', () => {
+    const campaign = new AfterCampaign('test');
+    campaign.addPlayer('p1', 'Amper');
+    campaign.addPlayer('p2', 'Chlebak');
+    expect(
+      campaign.interact({ sessionId: 'test', slotId: 'p1', targetId: 'witness', sequence: 0 }),
+    ).toBeUndefined();
+    expect(campaign.dialogue('p1')).toBeUndefined();
+    walkTo(campaign, 'witness');
+    campaign.setInput('p1', { moveX: 1, moveY: 0, sprint: false });
+    const before = campaign.snapshot().world.players[0].position;
+    expect(
+      campaign.interact({ sessionId: 'test', slotId: 'p1', targetId: 'witness', sequence: 1 }),
+    ).toBeDefined();
+    const view = campaign.dialogue('p1')!;
+    expect(view.nodeId).toBe('greeting');
+    expect(campaign.prompt('p1')).toBeUndefined();
+    campaign.setInput('p1', { moveX: 1, moveY: 0, sprint: true });
+    campaign.setInput('p2', { moveX: 1, moveY: 0, sprint: false });
+    campaign.advance(1 / 30);
+    expect(campaign.snapshot().world.players[0].position).toEqual(before);
+    expect(campaign.snapshot().world.players[1].position.x).toBeGreaterThan(4.5);
+    const command = {
+      sessionId: 'test',
+      slotId: 'p1',
+      conversationId: view.conversationId,
+      revision: view.revision,
+      sequence: 0,
+      choiceId: 'ask',
+    };
+    campaign.setPaused(true);
+    expect(campaign.chooseDialogue(command)).toBeUndefined();
+    campaign.setPaused(false);
+    expect(campaign.chooseDialogue(command)?.effectsApplied).toBe(true);
+    expect(campaign.snapshot().social.relations.find((entry) => entry.npcId === 'witness')?.trust).toBe(1);
+    expect(campaign.closeDialogue('p1')).toBe(true);
+    const hint = campaign.repeatHint('p1')!;
+    expect(hint.text).toContain('północnym wschodzie');
+    expect(hint).not.toHaveProperty('choices');
+    campaign.advance(1 / 30);
+    expect(campaign.snapshot().world.players[0].position).toEqual(before);
+    campaign.setInput('p1', { moveX: 1, moveY: 0, sprint: false });
+    campaign.advance(1 / 30);
+    expect(campaign.snapshot().world.players[0].position.x).toBeGreaterThan(before.x);
+    campaign.setInput('p1', { moveX: 0, moveY: 0, sprint: false });
+    expect(
+      campaign.interact({ sessionId: 'test', slotId: 'p1', targetId: 'witness', sequence: 2 }),
+    ).toBeDefined();
+    expect(campaign.dialogue('p1')?.conversationId).not.toBe(view.conversationId);
+    expect(campaign.chooseDialogue(command)).toBeUndefined();
+    expect(campaign.snapshot().world.flags.filter((flag) => flag === 'interaction:witness')).toHaveLength(1);
   });
 });
