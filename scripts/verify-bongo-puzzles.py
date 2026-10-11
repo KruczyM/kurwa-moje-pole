@@ -49,7 +49,8 @@ async def play(page, directions):
         finally:
             await page.keyboard.up(CHECKS['KEYS'][direction])
         after = await CHECKS['snapshot'](page)
-        assert after['mode'] != 'lost'
+        assert after['mode'] != 'lost', {'level':after['level'],'reason':after['world']['reason'],
+            'tick':after['world']['tick'],'player':after['world']['player']}
         assert after['world']['player']['x'] == target['x'] and after['world']['player']['y'] == target['y'], (target, after['world']['player'])
 
 

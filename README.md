@@ -27,7 +27,11 @@ npm run test:unit -- src/games/bongo-rush
 
 Na komputerze: WASD lub strzałki, Escape — pauza/wznowienie, R — restart poziomu.
 Na telefonie: gałka, przycisk pauzy u góry i restart ↻ na dole. Przedmioty zbiera się automatycznie.
-Nie ma limitu czasu ani żyć. Odblokowane poziomy, postać i wyciszenie zapisują się lokalnie.
+Każdy poziom ma limit czasu (minimum 3 minuty); pauza i pomoc „?” zatrzymują zegar.
+Prób jest dowolnie dużo. Odblokowane poziomy, postać i wyciszenie zapisują się lokalnie.
+Postacie mają osobne atlasy Idle/Walk bez T-pose i uciętych głów. Amareny odwzorowują trzy
+referencje smaków, a w tle gra cichy autorski ambient. Na poziomach 3, 6, 9 i 12 trzeba
+aktywować Kobrę przed komorą wyjściową. Zmiany są na `feat/bongo-gameplay-polish`.
 Po buildzie strona znajduje się w `dist/bongo-rush.html`; lokalny preview używa prefiksu
 `/kurwa-moje-pole/bongo-rush.html`. Publikacja wymaga osobnego wdrożenia gałęzi.
 

@@ -1,4 +1,4 @@
-import { BUSH_GROWTH_TICKS, DIRECTIONS, neighbour, same } from './types';
+import { BUSH_GROWTH_TICKS, DIRECTIONS, STEP_SECONDS, neighbour, same } from './types';
 import type { Cell, Direction, Enemy, LevelDefinition, LooseObject, Point, SoundEvent, World } from './types';
 
 /** Loads an authored ASCII cave into fresh state; restarts never reuse mutated objects. */
@@ -87,6 +87,11 @@ export class Simulation {
 
   /** Creates one isolated run of a level. */
   constructor(readonly level: LevelDefinition) {
+    if (
+      level.timeLimitSeconds !== undefined &&
+      (!Number.isFinite(level.timeLimitSeconds) || level.timeLimitSeconds <= 0)
+    )
+      throw new Error('Nieprawidłowy limit czasu');
     this.world = createWorld(level);
   }
 
@@ -141,7 +146,15 @@ export class Simulation {
       w.status = 'won';
       this.sounds.push('won');
     }
+    if (w.status === 'playing' && this.remainingSeconds === 0)
+      this.lose('Czas minął. Zaplanuj krótszą trasę i spróbuj ponownie.');
     if (w.status === 'playing') this.growBushes();
+  }
+
+  /** Active simulation ticks are the only clock; pausing cannot consume the level budget. */
+  get remainingSeconds(): number | undefined {
+    const limit = this.level.timeLimitSeconds;
+    return limit === undefined ? undefined : Math.max(0, limit - this.world.tick * STEP_SECONDS);
   }
 
   /** Final exit additionally requires sealing the boss pen; other levels only require pickups. */

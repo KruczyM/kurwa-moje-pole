@@ -4,6 +4,7 @@ import type { SpriteMetadata } from '../after/presentation/SpriteAnimator';
 import type { Facing } from '../after/simulation/WorldState';
 import { BIOMES } from './Levels';
 import { paintCaveTile } from './CaveVisuals';
+import { drawAmarena } from './AmarenaArt';
 import { same } from './types';
 import type { Body, Enemy, LooseObject, Point } from './types';
 import type { World } from './types';
@@ -23,6 +24,7 @@ export class CaveRenderer {
   private animator?: SpriteAnimator;
   private atlas?: HeroAtlas;
   private bushAtlas?: HeroAtlas;
+  private enemyAtlases = new Map<string, HeroAtlas>();
   private width = 1;
   private height = 1;
   private tile = 40;
@@ -49,6 +51,12 @@ export class CaveRenderer {
     this.bushAtlas = atlas;
   }
 
+  /** Installs baked views of the generated 3D models without loading heavy GLBs during gameplay. */
+  enemyHeroes(patrol: HeroAtlas, boss: HeroAtlas): void {
+    this.enemyAtlases.set('red', patrol);
+    this.enemyAtlases.set('boss', boss);
+  }
+
   /** Fits desktop caves and keeps mobile tiles large enough to read while the camera follows. */
   resize(width: number, height: number, touch = false): void {
     this.width = width;
@@ -69,6 +77,7 @@ export class CaveRenderer {
     this.animator = undefined;
     this.atlas = undefined;
     this.bushAtlas = undefined;
+    this.enemyAtlases.clear();
     this.world = undefined;
     if (this.map) this.map.width = this.map.height = 0;
     this.map = undefined;
@@ -465,27 +474,7 @@ export class CaveRenderer {
   private pickup(biome: number, variant: number): void {
     const ctx = this.context;
     if (biome === 0) {
-      ctx.fillStyle = ['#a6315e', '#9a3d8f', '#bd7539', '#7f3d74'][variant];
-      ctx.strokeStyle = '#f3c090';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(19, 23, 26, 34, 7);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillRect(26, 8, 12, 20);
-      ctx.fillStyle = '#d6ac82';
-      ctx.fillRect(25, 7, 14, 6);
-      ctx.fillStyle = '#f6e6c8';
-      ctx.fillRect(21, 33, 22, 13);
-      ctx.fillStyle = '#83364e';
-      ctx.font = 'bold 9px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('A', 32, 43);
-      ctx.strokeStyle = '#ffffff77';
-      ctx.beginPath();
-      ctx.moveTo(23, 25);
-      ctx.lineTo(23, 31);
-      ctx.stroke();
+      drawAmarena(ctx, variant);
     } else if (biome === 1) {
       ctx.save();
       ctx.translate(32, 53);
@@ -580,13 +569,36 @@ export class CaveRenderer {
   private patrol(enemy: Enemy, trapped: boolean): void {
     const ctx = this.context,
       boss = enemy.kind === 'boss';
+    const atlas = this.enemyAtlases.get(enemy.kind);
+    if (atlas) {
+      const { crop, image, metadata } = atlas;
+      const row = metadata.rows[enemy.direction];
+      const width = (58 * crop.width) / crop.height;
+      ctx.drawImage(
+        image,
+        crop.x,
+        row * metadata.frameHeight + crop.y,
+        crop.width,
+        crop.height,
+        32 - width / 2,
+        0,
+        width,
+        58,
+      );
+      if (boss && trapped) {
+        ctx.fillStyle = '#ffecab';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText('♪', 52, 10);
+      }
+      return;
+    }
     ctx.fillStyle = '#24263a';
     ctx.beginPath();
     ctx.roundRect(13, 44, 15, 14, 5);
     ctx.roundRect(36, 44, 15, 14, 5);
     ctx.fill();
     ctx.fillStyle = boss
-      ? '#df554e'
+      ? '#20202d'
       : enemy.kind === 'red'
         ? '#cf5465'
         : enemy.kind === 'blue'
@@ -607,7 +619,7 @@ export class CaveRenderer {
     ctx.beginPath();
     ctx.ellipse(32, 8, 18, 6, 0, Math.PI, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = boss ? '#f0dc59' : '#111725';
+    ctx.strokeStyle = boss ? '#ee343e' : '#111725';
     ctx.lineWidth = 3;
     ctx.strokeRect(18, 16, 12, 8);
     ctx.strokeRect(34, 16, 12, 8);

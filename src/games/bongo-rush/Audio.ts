@@ -1,10 +1,14 @@
 import type { SoundEvent } from './types';
+import { ambientPhrase } from './Music';
 
 /** Original WebAudio effects require no copyrighted samples, downloads or paid APIs. */
 export class ArcadeAudio {
   private context?: AudioContext;
   private active = new Set<OscillatorNode>();
   private last: Partial<Record<SoundEvent, number>> = {};
+  private music = new Set<OscillatorNode>();
+  private nextBeat = 0;
+  private beat = 0;
   muted = false;
 
   /** Unlocks iOS audio from a user gesture, never from the render loop. */
@@ -15,6 +19,36 @@ export class ArcadeAudio {
     } catch {
       /* Sound is optional on unsupported devices. */
     }
+  }
+
+  /** Schedules a quiet ambient soundtrack from the existing RAF, with at most a short look-ahead. */
+  updateMusic(biome: number, playing: boolean): void {
+    const context = this.context;
+    if (!playing || this.muted || !context || context.state !== 'running') return;
+    const now = context.currentTime;
+    if (this.nextBeat < now) this.nextBeat = now + 0.025;
+    if (this.nextBeat > now + 0.12 || this.music.size >= 12) return;
+    const start = this.nextBeat;
+    ambientPhrase(biome, this.beat++).forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(frequency, start);
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(index ? 0.025 : 0.018, start + 0.14);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 1.8);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      this.music.add(oscillator);
+      oscillator.onended = () => {
+        this.music.delete(oscillator);
+        oscillator.disconnect();
+        gain.disconnect();
+      };
+      oscillator.start(start);
+      oscillator.stop(start + 1.85);
+    });
+    this.nextBeat += 0.8;
   }
 
   /** Plays short biome-specific motifs with throttling and a bounded voice count. */
@@ -64,7 +98,7 @@ export class ArcadeAudio {
 
   /** Stops queued notes when leaving a run or muting, without closing the unlocked context. */
   silence(): void {
-    for (const oscillator of this.active) {
+    for (const oscillator of [...this.active, ...this.music]) {
       try {
         oscillator.stop();
       } catch {
@@ -72,6 +106,9 @@ export class ArcadeAudio {
       }
     }
     this.active.clear();
+    this.music.clear();
+    this.nextBeat = 0;
+    this.beat = 0;
   }
 
   /** Releases the sole audio context when the game host is removed. */

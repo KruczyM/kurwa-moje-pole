@@ -139,6 +139,27 @@ a {
   box-shadow: 0 20px 80px #0008;
   width: min(440px, calc(100% - 28px));
 }
+.help-panel {
+  z-index: 4;
+  background: #151b2a;
+  font-size: 14px;
+}
+.help-panel #help-close {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: 100%;
+}
+.help-panel h2 {
+  font-size: 28px;
+}
+.help-panel li {
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.hud #timer.urgent {
+  color: #ff9090;
+}
 .menu-panel {
   width: min(580px, calc(100% - 28px));
   padding: 28px 36px;

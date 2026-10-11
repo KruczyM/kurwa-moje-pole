@@ -28,6 +28,7 @@ export interface LevelDefinition {
   rows: readonly string[];
   quota: number;
   solution: readonly Direction[];
+  timeLimitSeconds?: number;
   gate?: Point;
   pen?: readonly Point[];
   vault?: {

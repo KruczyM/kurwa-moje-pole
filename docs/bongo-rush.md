@@ -7,7 +7,8 @@ i przejście 12 poziomów. Inspiracją są zasady gier typu Boulder Dash, nie ic
 grafiki ani gotowe układy poziomów. Finał jest fikcyjną, satyryczną scenką.
 
 Istniejące After jest zachowane, również na gałęziach `feat/after-demo` i
-`fix/after-joystick`. Obecne adaptacje zagadek są na `feat/bongo-reference-puzzles`, w osobnym worktree;
+`fix/after-joystick`. Obecna oprawa i zasady są na `feat/bongo-gameplay-polish`, w osobnym worktree;
+adaptacje zagadek pozostają na `feat/bongo-reference-puzzles`;
 wcześniejsze kompozycje pozostały na `feat/bongo-authored-vaults`;
 wcześniejszy audyt biomów pozostał na `feat/bongo-biomes-puzzles`;
 wcześniejsza rozbudowa jaskiń pozostała na `feat/bongo-expanded-caves`;
@@ -100,7 +101,10 @@ Po zamknięciu zagrody dostępna jest nagroda i krótka scenka z Bongo Tasiora.
   tylko przy widoczności w prostej linii; po jej utracie wraca do patrolowania.
 - Patrole nie kopią ani nie przesuwają skał. Nowe przejście mogą przekroczyć dopiero
   w kolejnym kroku, zapewniając graczowi czas na reakcję.
-- Nie ma zegara, limitu żyć ani walki. Zablokowaną planszę można zawsze zrestartować.
+- Każdy poziom ma limit czasu: minimum 180 sekund lub czterokrotność czasu zapisanej trasy,
+  zaokrągloną w górę do 30 sekund. Pauza, pomoc i nieaktywna karta zatrzymują zegar.
+  Ostatnie 30 sekund jest zaznaczone na czerwono. Koniec czasu oznacza przegraną, nie utratę postępu.
+- Nie ma limitu prób ani walki. Zablokowaną planszę można zawsze zrestartować.
 
 ## Sterowanie i dostępność
 
@@ -117,6 +121,8 @@ Na małym ekranie kamera podąża za graczem, zamiast zmniejszać całą plansz�
 
 Menu i wyniki są zwykłym HTML z opisanymi przyciskami i obsługą klawiatury.
 Sama plansza nie zapewnia pełnej dostępności czytnikom ekranu.
+Przycisk „?” wyjaśnia cel, ruch, przepychanie, niebezpieczeństwa, Kobrę i finał.
+Otwiera pomoc z zatrzymaną grą. Zamknięcie pomocy pozostawia pauzę — wznów osobnym przyciskiem.
 
 ## Gdzie zmieniać kod
 
@@ -136,6 +142,8 @@ Sama plansza nie zapewnia pełnej dostępności czytnikom ekranu.
 | `SpriteBounds.ts`              | Wspólny obrys alfa klatek: czytelna wielkość i stabilne kadrowanie postaci          |
 | `Input.ts`                     | Klawiatura i przełożenie istniejącej gałki After na cztery kierunki                 |
 | `Audio.ts`                     | Własne dźwięki WebAudio, limity głosów, wyciszenie i odblokowanie audio na iOS      |
+| `Music.ts`                     | Cztery autorskie pentatoniczne motywy ambientu, bez zewnętrznych nagrań             |
+| `AmarenaArt.ts`                | Butelki wiśniowe, brzoskwiniowe i jabłkowe według zdjęć użytkownika                 |
 | `Progress.ts`                  | Lista 15 grywalnych postaci, nazwy i bezpieczny zapis postępu w localStorage        |
 | `game.css`                     | Responsywny układ, przyciski, nakładki i gałka                                      |
 | `*.test.ts`                    | Deterministyczne testy fizyki, wszystkich plansz, sterowania i zapisu               |
@@ -150,21 +158,35 @@ nie zastąpione kolejnymi równoległymi kontrolerami. Pauza nie zatrzymuje RAF 
 korzenie, rave i szkło. Kafelki i rekwizyty są rysowane kodem Canvas, a obrazy kafelków
 buforowane. Nie wymagają zewnętrznych generatorów ani kluczy API.
 
-Postacie korzystają z istniejących atlasów `public/game-assets/2d/after/characters/<id>/`.
-Ładowany jest wybrany atlas, atlas Kobry/Krzaka i bieżące tło. Znana inwersja kierunków eksportera
-jest korygowana w loaderze nowej gry, bez modyfikowania źródłowych atlasów After.
+Postacie korzystają z osobnych atlasów `public/game-assets/2d/bongo-rush/characters/<id>/`.
+15 bohaterów i Kobra wyrenderowane są z `npc-animations.glb`, z jedną klatką Idle i czterema Walk
+w każdym z czterech kierunków. Kamera obejmuje sferę zawierającą ocenione wierzchołki wszystkich
+poz, z 12% marginesem. Packer sprawdza niepustą alfę i minimum 2 piksele marginesu każdej klatki.
+Nie zmieniono atlasów After ani lokalnych zmian Chlebaka. Kierunki są jawne w metadanych.
+
+Patrolowy w czerwonej koszulce i Owsiak są wypaleni z nowych, lokalnie wygenerowanych
+teksturowanych modeli GLB. Mają cztery statyczne widoki, **jeszcze bez rigu i animacji kończyn**.
+Zachowanie patrolowania i zagrody bossa jest istniejącą mechaniką, nie nową walką z bossem.
+GLB pozostają w `source-assets/bongo-rush/models/`; przeglądarka pobiera tylko lekkie PNG.
+Źródła referencji, generowanie i ograniczenia: [bongo-art-polish.md](bongo-art-polish.md).
 
 Każdy biom ma własny krótki motyw zbierania. Kopanie, przepychanie, uderzenia,
 otwarcie wyjścia, przegrana i zwycięstwo mają osobne efekty. Audio odblokowuje przycisk
 rozpoczęcia gry, nie automatyczna próba przy ładowaniu strony. Nie używamy cudzych nagrań głosowych.
+Dodatkowo gra cichy autorski ambient: wolny bas i dzwonkowe motywy inne dla każdego biomu.
+Planowanie nut odbywa się w istniejącym RAF, bez dodatkowych timerów. Wyciszenie i pauza
+zatrzymują również zaplanowane nuty; kontekst audio pozostaje ten sam. Przycisk Dźwięk steruje całością.
 
 ## Edycja plansz
 
 ### Krzak — rosnąca przeszkoda
 
 `K` oznacza korzeń zakopany w ziemi, narysowany jako mała roślina z korzeniami.
-Każda plansza ma go na pierwszym polu obok startu. Wejście na to pole odkopuje
-Krzaka i uruchamia wzrost. Co 36 kroków symulacji (5,04 s aktywnej gry) wszystkie
+Nie ma korzenia na pierwszym polu obok startu. Korzenie w bocznych komorach są opcjonalnym ryzykiem.
+Na poziomach 3, 6, 9 i 12 jeden korzeń leży w jedynym wejściu do zagadki wyjściowej:
+trzeba go odkopać, więc dalszy odwrót jest ograniczony wzrostem. Nie wymaga się powrotu przez
+zarośnięty korzeń na poprawnej trasie. Wejście na korzeń uruchamia wzrost.
+Co 36 kroków symulacji (5,04 s aktywnej gry) wszystkie
 aktywne korzenie i dorosłe krzaki zajmują sąsiednie wolne pola w czterech kierunkach.
 Nowe krzaki rozrastają się dopiero w następnej fali, bez natychmiastowego zalania planszy.
 
@@ -224,6 +246,11 @@ python scripts/verify-bongo-expanded.py
 # Dla obecnych kompozycji zagadek uruchom Vite na 5194, następnie:
 npm run dev:client -- --host 127.0.0.1 --port 5194 --strictPort
 python scripts/verify-bongo-puzzles.py
+# Bieżąca wersja oprawy, pomocy, czasu i korzeni:
+npm run dev:client -- --host 127.0.0.1 --port 5198 --strictPort
+python scripts/verify-bongo-polish.py
+python scripts/verify-bongo-puzzles.py --port 5198 --levels 3 6 9 12 --output reports/bongo-polish-vaults
+python scripts/verify-bongo-bush.py
 # Po buildzie i uruchomieniu preview na porcie 5191:
 npm run preview -- --host 127.0.0.1 --port 5191 --strictPort
 python scripts/verify-bongo-production.py

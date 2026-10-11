@@ -1,11 +1,13 @@
 """Verify bush activation, pause, blocking and reset through real browser inputs."""
 import asyncio
 import json
+import runpy
 from pathlib import Path
 from playwright.async_api import async_playwright
 
 OUT = Path(__file__).resolve().parents[1] / 'reports/bongo-bush'
-URL = 'http://127.0.0.1:5190/bongo-rush.html?verify=1'
+URL = 'http://127.0.0.1:5198/bongo-rush.html?verify=1'
+ROOT = Path(__file__).resolve().parents[1]
 
 
 async def state(page):
@@ -30,16 +32,33 @@ async def run(engine, name, profile):
     errors = []
     page.on('pageerror', lambda error: errors.append(str(error)))
     try:
+        await page.add_init_script('localStorage.setItem("after-bongo-rush:v1",JSON.stringify({version:1,unlocked:3,hero:"amper",muted:true,completed:false}))')
         await page.goto(URL)
         await page.wait_for_function('()=>window.__bongoSnapshot && !window.__bongoSnapshot().loading')
         assert await page.locator('#hero option[value="krzak"]').count() == 0
         assert await page.locator('#hero option[value="kobra"]').count() == 0
         assert await page.locator('#hero option').count() == 15
+        await page.locator('#levels button[data-level="2"]').click()
+        await page.wait_for_function('()=>!window.__bongoSnapshot().loading')
         await page.locator('#begin').click()
         await page.wait_for_function('()=>window.__bongoSnapshot().mode==="playing"')
-        initial = await state(page)
-        root_x = initial['world']['player']['x'] + 1
-        await move_right(page, root_x)
+        route = await page.evaluate('''async()=>{
+          const {LEVELS}=await import('/src/games/bongo-rush/Levels.ts');
+          const level=LEVELS[2]; let p;
+          level.rows.forEach((row,y)=>{const x=row.indexOf('P');if(x>=0)p={x,y};});
+          const directions=[];
+          for(const direction of level.solution){
+            const [dx,dy]={up:[0,-1],right:[1,0],down:[0,1],left:[-1,0]}[direction];
+            p={x:p.x+dx,y:p.y+dy}; directions.push(direction);
+            if(level.rows[p.y][p.x]==='K') return {directions,root:p};
+          }
+          throw Error('No mandatory root on the reference route');
+        }''')
+        # Reuse the current real-key replay driver without adding another simulation clock.
+        replay = runpy.run_path(str(ROOT / 'scripts/verify-bongo-puzzles.py'))
+        replay['play'].__globals__['OUT'] = OUT
+        await replay['play'](page, route['directions'])
+        root_x = route['root']['x']
         activated = await state(page)
         assert len(activated['world']['bushRoots']) == 1
         assert 'Krzak rośnie' in await page.locator('#hint').inner_text()

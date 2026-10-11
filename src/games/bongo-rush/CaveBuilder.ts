@@ -1,4 +1,5 @@
 import type { Direction, LevelDefinition, Point } from './types';
+import { STEP_SECONDS } from './types';
 import { exitPuzzleForLevel } from './ExitPuzzles';
 
 export interface CaveSketch {
@@ -212,20 +213,43 @@ export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
     carve(room.x + 6, y, 'R');
   });
   ordered.slice(1, sketch.patrols + 1).forEach((room, n) => {
-    const x = room.x + room.width - 1,
-      y = room.y + 1;
-    if (reserved.has(key({ x, y })) || reserved.has(key({ x: x - 1, y }))) return;
-    // Patrol pockets can be opened through soil, so exploring extra deposits carries a real risk.
-    carve(x, y, index < 3 ? 'C' : index < 6 ? 'B' : index < 9 ? 'U' : ['C', 'B', 'U'][n % 3]);
-    carve(x - 1, y, ' ');
+    // Every pocket has a full soil perimeter outside the reference route. A turn/brief pause
+    // cannot accidentally release it; exploratory digging still opens a genuine patrol hazard.
+    for (let y = room.y + 1; y < room.y + room.height - 1; y++) {
+      for (let x = room.x + 2; x < room.x + room.width - 1; x++) {
+        const perimeter = [
+          { x: x - 2, y },
+          { x: x + 1, y },
+          { x: x - 1, y: y - 1 },
+          { x, y: y - 1 },
+          { x: x - 1, y: y + 1 },
+          { x, y: y + 1 },
+        ];
+        const footprint = [...perimeter, { x, y }, { x: x - 1, y }];
+        if (
+          footprint.some(
+            (p) =>
+              reserved.has(key(p)) ||
+              deposits.has(key(p)) ||
+              finalZone(p.x, p.y) ||
+              ['C', 'B', 'U', 'J'].includes(grid[p.y][p.x]),
+          )
+        )
+          continue;
+        for (const point of perimeter) carve(point.x, point.y, '.');
+        carve(x, y, index < 3 ? 'C' : index < 6 ? 'B' : index < 9 ? 'U' : ['C', 'B', 'U'][n % 3]);
+        carve(x - 1, y, ' ');
+        return;
+      }
+    }
   });
   carve(start.x, start.y, 'P');
-  carve(start.x + 1, start.y, 'K');
+  // Roots live at optional chamber branches, not at the spawn where every first move woke them.
   ordered
     .filter((_, n) => n > 0 && n % 4 === 0)
     .forEach((room) => {
       const p = { x: room.x + 1, y: room.y + 1 };
-      if (!reserved.has(key(p))) carve(p.x, p.y, 'K');
+      if (!reserved.has(key(p)) && grid[p.y][p.x] === '.') carve(p.x, p.y, 'K');
     });
   if (gate && pen) {
     carve(gate.x - 2, gate.y, 'R');
@@ -236,6 +260,9 @@ export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
       carve(puzzleOrigin.x + dx, puzzleOrigin.y + dy, tile === 'P' ? ' ' : tile),
     );
   });
+  // End-of-biome bottlenecks require crossing a visible dormant root to reach the vault.
+  // The vault lies ahead; no return through the expanding root is needed on the acceptance route.
+  if (index % 3 === 2) carve(puzzleOrigin.x - 1, puzzleEntry.y, 'K');
   solution.push(...puzzle.solution);
   return {
     id: index + 1,
@@ -245,6 +272,7 @@ export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
     rows: grid.map((row) => row.join('')),
     quota,
     solution,
+    timeLimitSeconds: Math.max(180, Math.ceil((solution.length * STEP_SECONDS * 4) / 30) * 30),
     gate,
     pen,
     vault: {

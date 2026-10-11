@@ -11,6 +11,7 @@
       <header class="topbar">
         <a class="brand" href="./bongo-rush.html"><span>AFTER</span> BONGO RUSH</a>
         <div class="toolbar">
+          <button id="help" aria-label="Pomoc — zasady gry">?</button>
           <button id="map" aria-pressed="true" title="Pokaż lub ukryj mapę (M)">Mapa</button>
           <button id="mute" aria-pressed="false">Dźwięk: wł.</button
           ><button id="pause" disabled>Pauza</button>
@@ -24,7 +25,8 @@
         ></canvas>
         <div class="hud">
           <span id="level-title">12 poziomów · 4 biomy</span
-          ><strong id="counter">Zbieraj. Kop. Nie daj się przygnieść.</strong><span id="exit-status"></span>
+          ><strong id="counter">Zbieraj. Kop. Nie daj się przygnieść.</strong><strong id="timer"></strong
+          ><span id="exit-status"></span>
         </div>
         <section id="menu" class="panel menu-panel" aria-label="Menu główne">
           <span class="eyebrow">ZRĘCZNOŚĆ × ZAGADKI × AFTER</span>
@@ -47,9 +49,10 @@
               WASD / strzałki lub gałka — ruch. Kop ziemię, zbierz wymagane przedmioty i znajdź wyjście ↑.
               Skały pchasz poziomo, tylko na wolne pole. Spadające skały i przedmioty przygniatają. Patrole
               nie potrafią kopać. Odkopany Krzak zarasta sąsiednie wolne pola co około 5 sekund; dorosłych
-              krzaków nie można przekopać. Nie zwlekaj, bo mogą odciąć wyjście! Esc — pauza / powrót
-              (zatrzymuje także wzrost). R — restart. Bez limitu prób. Szukaj odnóg i skrótów; nie musisz
-              zbierać wszystkich przedmiotów. M / Mapa — minimapa.
+              krzaków nie można przekopać. Poziomy mają limit czasu — pauza go zatrzymuje. Nie zwlekaj, bo
+              krzaki mogą odciąć wyjście! Esc — pauza / powrót (zatrzymuje także wzrost). R — restart. Bez
+              limitu prób. Szukaj odnóg i skrótów; nie musisz zbierać wszystkich przedmiotów. M / Mapa —
+              minimapa.
             </p>
           </details>
           <div class="links">
@@ -59,6 +62,24 @@
             >Fikcyjna, satyryczna gra dla dorosłych. Nie jest reklamą ani instrukcją używania
             substancji.</small
           >
+        </section>
+        <section id="help-panel" class="panel compact help-panel" hidden aria-label="Pomoc">
+          <button id="help-close" class="primary">Zamknij pomoc ×</button>
+          <h2>Jak przejść jaskinię?</h2>
+          <ol>
+            <li>Zbierz liczbę przedmiotów pokazaną u góry. Nie musisz zebrać wszystkich.</li>
+            <li>Kop ziemię WASD, strzałkami lub gałką. M / Mapa pokazuje całą jaskinię.</li>
+            <li>Skały pchasz tylko poziomo na puste pole. Najpierw przygotuj wnękę i odwrót.</li>
+            <li>Omijaj patrole i spadające przedmioty. Zatrzymanie pod skałą nie zatrzymuje jej spadania.</li>
+            <li>
+              Kobra z korzeniami zacznie rosnąć po odkopaniu. Na końcach biomów trzeba ją obudzić, by dojść do
+              zagadki — nie zawracaj bez planu.
+            </li>
+            <li>
+              Rozwiąż komorę przy wyjściu ↑ zanim skończy się czas. W finale zamknij też zagrodę złotą skałą.
+            </li>
+          </ol>
+          <p>Esc — pauza. R / ↻ — restart bez limitu prób. Pauza i pomoc zatrzymują zegar oraz Kobrę.</p>
         </section>
         <section id="pause-panel" class="panel compact" hidden aria-label="Pauza">
           <span class="eyebrow">CHWILA ODDECHU</span>

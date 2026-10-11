@@ -81,18 +81,17 @@ class BongoRush {
     this.loop.start();
   }
 
-  /** Resolves atlas metadata once per hero, including the exporter’s known east/west row inversion. */
+  /** Resolves dedicated Idle/Walk atlases once per hero, using the exporter’s explicit direction rows. */
   private atlas(hero: string): Promise<HeroAtlas> {
     let pending = this.atlases.get(hero);
     if (!pending) {
-      const path = `${BASE}game-assets/2d/after/characters/${hero}`;
+      const path = `${BASE}game-assets/2d/bongo-rush/characters/${hero}`;
       pending = Promise.all([
         loadCachedImage(`${path}/spritesheet.png`),
         fetch(`${path}/meta.json`, { cache: 'no-cache' }).then(async (response) => {
           if (!response.ok) throw new Error(`Nie wczytano postaci: ${hero}`);
           const metadata = (await response.json()) as SpriteMetadata;
-          // The committed pilot metadata already has this correction; other sheets share the same exporter.
-          return { ...metadata, rows: { ...metadata.rows, right: 3, left: 1 } };
+          return metadata;
         }),
       ])
         .then(([image, metadata]) => {
@@ -130,15 +129,18 @@ class BongoRush {
     const hero = element<HTMLSelectElement>('hero').value;
     try {
       const level = LEVELS[index];
-      const [atlas, background, bushAtlas] = await Promise.all([
+      const [atlas, background, bushAtlas, patrolAtlas, bossAtlas] = await Promise.all([
         this.atlas(hero),
         loadCachedImage(`${BASE}game-assets/2d/bongo-rush/${BIOMES[level.biome].background}`),
         this.atlas('kobra'),
+        this.atlas('patrol'),
+        this.atlas('owsiak'),
       ]);
       if (this.disposed || token !== this.loadToken) return false;
       this.backgrounds.set(level.biome, background);
       this.renderer!.hero(atlas);
       this.renderer!.bushHero(bushAtlas);
+      this.renderer!.enemyHeroes(patrolAtlas, bossAtlas);
       this.game = new Simulation(level);
       this.accumulator = 0;
       this.lastTime = 0;
@@ -192,6 +194,7 @@ class BongoRush {
   /** Switches overlays without changing the RAF, duplicating input listeners or triggering nested pause menus. */
   private setMode(mode: Mode): void {
     this.mode = mode;
+    element('help-panel').hidden = true;
     this.input.reset();
     this.updateKnob();
     this.lastTime = 0;
@@ -255,6 +258,10 @@ class BongoRush {
       world = this.game.world;
     element('level-title').textContent = `${level.id} / 12 · ${level.title}`;
     element('counter').textContent = `${BIOMES[level.biome].item}: ${world.collected} / ${level.quota}`;
+    const seconds = Math.ceil(this.game.remainingSeconds ?? 0);
+    element('timer').textContent =
+      `Czas ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+    element('timer').classList.toggle('urgent', seconds <= 30);
     element('exit-status').textContent = this.game.exitOpen
       ? 'Wyjście odblokowane →'
       : level.gate && world.collected >= level.quota
@@ -299,6 +306,13 @@ class BongoRush {
     });
     click('pause', () => this.togglePause());
     click('map', () => this.toggleMap());
+    click('help', () => {
+      if (this.mode === 'playing') this.setMode('paused');
+      if (this.mode === 'paused') element('pause-panel').hidden = true;
+      element('help-panel').hidden = false;
+      element('help-close').focus({ preventScroll: true });
+    });
+    click('help-close', () => this.closeHelp());
     click('resume', () => this.togglePause());
     click('pause-restart', () => this.restart());
     click('retry', () => this.restart());
@@ -334,6 +348,10 @@ class BongoRush {
       }
       if (key.code === 'Escape') {
         key.preventDefault();
+        if (!element('help-panel').hidden) {
+          if (!key.repeat) this.closeHelp();
+          return;
+        }
         if (!key.repeat) this.togglePause();
         return;
       }
@@ -377,6 +395,15 @@ class BongoRush {
         if (this.mode === 'playing') this.setMode('paused');
       } else this.dispose();
     });
+  }
+
+  /** Closes help without accidentally toggling pause twice; a running game remains safely paused. */
+  private closeHelp(): void {
+    element('help-panel').hidden = true;
+    if (this.mode === 'paused') {
+      element('pause-panel').hidden = false;
+      element('resume').focus({ preventScroll: true });
+    } else if (this.mode === 'menu') element('begin').focus({ preventScroll: true });
   }
 
   /** Toggles the same cached overview for keyboard and touch, preserving movement focus. */
@@ -441,6 +468,7 @@ class BongoRush {
     this.frames++;
     const dt = this.lastTime ? Math.min(0.05, Math.max(0, (time - this.lastTime) / 1000)) : 0;
     this.lastTime = time;
+    this.audio.updateMusic(this.game.level.biome, this.mode === 'playing' && !this.loading);
     if (this.mode === 'playing' && !this.loading) {
       this.accumulator += dt;
       while (this.accumulator >= STEP_SECONDS && this.mode === 'playing') {
