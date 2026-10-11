@@ -70,7 +70,11 @@ export const PILOT_FINALE: StoryCondition = {
 };
 
 /** Checks references and the prerequisite graph before story content reaches an engine. */
-export function validatePilotStory(map: MapDefinition, quests: readonly PilotQuest[] = PILOT_QUESTS): void {
+export function validatePilotStory(
+  map: MapDefinition,
+  quests: readonly PilotQuest[] = PILOT_QUESTS,
+  finale?: StoryCondition,
+): void {
   const targets = new Set(map.interactions.map((target) => target.id));
   const questIds = new Set(quests.map((quest) => quest.id));
   const rewardIds = new Set(quests.map((quest) => quest.rewardFlag));
@@ -119,4 +123,5 @@ export function validatePilotStory(map: MapDefinition, quests: readonly PilotQue
     dependencies.get(id)?.forEach((dependency) => visit(dependency, next));
   }
   questIds.forEach((id) => visit(id, new Set()));
+  if (finale) check(finale, new Set());
 }

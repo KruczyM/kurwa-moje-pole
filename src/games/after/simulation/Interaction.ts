@@ -48,10 +48,12 @@ export function nearestInteraction(
   map: MapDefinition,
   player: PlayerState,
   flags: readonly string[],
+  available: (targetId: string, flags: readonly string[]) => boolean = () => true,
 ): InteractionDefinition | undefined {
   let selected: InteractionDefinition | undefined;
   let bestDistance = Infinity;
   for (const target of map.interactions) {
+    if (!available(target.id, flags)) continue;
     if (target.once && flags.includes(`interaction:${target.id}`)) continue;
     const distance = Math.hypot(target.position.x - player.position.x, target.position.y - player.position.y);
     if (distance > target.radius || !hasLineOfSight(map, player.position, target.position)) continue;

@@ -26,7 +26,13 @@ export class AfterSimulation {
   private paused = false;
 
   /** Copies and validates content so external mutation cannot change an active session. */
-  constructor(map: MapDefinition, sessionId = 'after-local', seed = 1) {
+  constructor(
+    map: MapDefinition,
+    sessionId = 'after-local',
+    seed = 1,
+    private readonly interactionAvailable: (targetId: string, flags: readonly string[]) => boolean = () =>
+      true,
+  ) {
     validateMap(map);
     if (!sessionId || !Number.isSafeInteger(seed)) throw new Error('Invalid After session');
     this.map = structuredClone(map);
@@ -137,10 +143,16 @@ export class AfterSimulation {
     return structuredClone(this.world);
   }
 
+  /** Advances narrative time from story progress, not a hidden real-time failure timer. */
+  approachDawn(): void {
+    this.world.nightPhase = 'before-dawn';
+  }
+
   /** Returns the legal prompt for one participant without changing quest/world state. */
   prompt(slotId: string) {
     const player = this.world.players.find((entry) => entry.slotId === slotId);
-    const target = player && nearestInteraction(this.map, player, this.world.flags);
+    const target =
+      player && nearestInteraction(this.map, player, this.world.flags, this.interactionAvailable);
     return target ? structuredClone(target) : undefined;
   }
 
@@ -156,7 +168,7 @@ export class AfterSimulation {
     const player = this.world.players.find((entry) => entry.slotId === command.slotId);
     if (!player || command.sequence <= player.lastSequence) return;
     player.lastSequence = command.sequence;
-    const target = nearestInteraction(this.map, player, this.world.flags);
+    const target = nearestInteraction(this.map, player, this.world.flags, this.interactionAvailable);
     if (!target || target.id !== command.targetId) return;
     const flag = `interaction:${target.id}`;
     if (target.once) this.world.flags.push(flag);
