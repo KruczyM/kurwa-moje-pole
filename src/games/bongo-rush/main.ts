@@ -260,10 +260,9 @@ class BongoRush {
       : level.gate && world.collected >= level.quota
         ? 'Zamknij zagrodę złotą skałą'
         : 'Zbierz dostawę';
-    const hint =
-      level.vault && world.player.x >= level.vault.entry.x - 3
-        ? `${level.vault.name}: ${level.vault.hint}`
-        : level.hint;
+    const stage =
+      level.vault?.stages?.filter((part) => world.player.x >= part.entry.x - 3).pop() ?? level.vault;
+    const hint = stage && world.player.x >= stage.entry.x - 3 ? `${stage.name}: ${stage.hint}` : level.hint;
     element('hint').textContent =
       world.nextBushGrowth === undefined
         ? `${hint} Krzak z korzeniami: odkopanie uruchamia zarastanie przejść.`

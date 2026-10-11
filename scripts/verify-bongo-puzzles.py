@@ -7,10 +7,10 @@ from pathlib import Path
 from playwright.async_api import async_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / 'reports/bongo-puzzles'
+OUT = ROOT / 'reports/bongo-authored-vaults'
 CHECKS = runpy.run_path(str(ROOT / 'scripts/verify-bongo-rush.py'))
 GALLERY = runpy.run_path(str(ROOT / 'scripts/verify-bongo-expanded.py'))
-URL = 'http://127.0.0.1:5192/bongo-rush.html?verify=1'
+URL = 'http://127.0.0.1:5194/bongo-rush.html?verify=1'
 GALLERY['gallery'].__globals__['CHECKS']['URL'] = URL
 GALLERY['gallery'].__globals__['OUT'] = OUT
 
@@ -67,13 +67,14 @@ async def vault(engine, number, profile):
           const {LEVELS}=await import('/src/games/bongo-rush/Levels.ts');
           const {exitPuzzleForLevel}=await import('/src/games/bongo-rush/ExitPuzzles.ts');
           const level=LEVELS[n-1], puzzle=exitPuzzleForLevel(n-1);
-          return {approach:level.solution.slice(0,-puzzle.solution.length), puzzle:puzzle.solution, name:puzzle.name, quota:level.quota};
+          return {approach:level.solution.slice(0,-puzzle.solution.length), puzzle:puzzle.solution, name:puzzle.name,
+            hintName:puzzle.stages?.[0]?.name??puzzle.name, quota:level.quota};
         }''', number)
         await play(page, route['approach'])
         state = await CHECKS['snapshot'](page)
         assert state['mode'] == 'playing'
         assert state['world']['collected'] >= route['quota']
-        assert route['name'] in await page.locator('#hint').inner_text()
+        assert route['hintName'] in await page.locator('#hint').inner_text()
         await page.keyboard.press('Escape')
         await page.wait_for_timeout(150)
         paused = await CHECKS['snapshot'](page)

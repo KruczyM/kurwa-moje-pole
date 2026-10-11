@@ -22,8 +22,9 @@ function grain(x: number, y: number, seed: number): number {
 
 /** Builds connected, looping chamber networks and a deterministic real-input acceptance route. */
 export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
+  const puzzle = exitPuzzleForLevel(index);
   const mainWidth = sketch.columns * 14 + 4,
-    width = mainWidth + 17,
+    width = mainWidth + puzzle.rows[0].length + 2,
     height = sketch.rows * 10 + 4;
   const grid = Array.from({ length: height }, () => Array<string>(width).fill('#'));
   const chambers: Chamber[] = [],
@@ -120,8 +121,10 @@ export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
     exit = { x: cursor.x + 2, y: cursor.y };
     walkTo(exit);
   }
-  const puzzle = exitPuzzleForLevel(index);
-  const puzzleOrigin = { x: mainWidth + 1, y: Math.max(1, Math.min(height - 10, exit.y - 5)) };
+  const puzzleOrigin = {
+    x: mainWidth + 1,
+    y: Math.max(1, Math.min(height - puzzle.rows.length - 1, exit.y - puzzle.entry.y)),
+  };
   const puzzleEntry = { x: puzzleOrigin.x + puzzle.entry.x, y: puzzleOrigin.y + puzzle.entry.y };
   // A single approach gallery reaches a sealed vault; spare deposits cannot bypass its rock gate.
   walkTo({ x: cursor.x, y: puzzleEntry.y });
@@ -244,6 +247,14 @@ export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
     solution,
     gate,
     pen,
-    vault: { entry: puzzleEntry, name: puzzle.name, hint: puzzle.hint },
+    vault: {
+      entry: puzzleEntry,
+      name: puzzle.name,
+      hint: puzzle.hint,
+      stages: puzzle.stages?.map((stage) => ({
+        ...stage,
+        entry: { x: puzzleOrigin.x + stage.entry.x, y: puzzleOrigin.y + stage.entry.y },
+      })),
+    },
   };
 }

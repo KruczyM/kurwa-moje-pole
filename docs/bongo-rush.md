@@ -7,7 +7,8 @@ i przejście 12 poziomów. Inspiracją są zasady gier typu Boulder Dash, nie ic
 grafiki ani gotowe układy poziomów. Finał jest fikcyjną, satyryczną scenką.
 
 Istniejące After jest zachowane, również na gałęziach `feat/after-demo` i
-`fix/after-joystick`. Obecne biomy i zagadki są na `feat/bongo-biomes-puzzles`, w osobnym worktree;
+`fix/after-joystick`. Obecne kompozycje zagadek są na `feat/bongo-authored-vaults`, w osobnym worktree;
+wcześniejszy audyt biomów pozostał na `feat/bongo-biomes-puzzles`;
 wcześniejsza rozbudowa jaskiń pozostała na `feat/bongo-expanded-caves`;
 wcześniejsze wersje pozostały na `feat/bongo-rush` i `feat/bongo-bush`.
 Nie usunięto wcześniejszych plików ani nie zmieniono lokalnych roboczych grafik Chlebaka.
@@ -42,8 +43,8 @@ Samo uruchomienie buildu nie publikuje strony na GitHub Pages.
 | 7–9     | Neonowy rave      | Różne cukierki ecstasy | Undercover                                      |
 | 10–12   | Dymna grota       | Bonga                  | Mieszane patrole; satyryczny Owsiak tylko na 12 |
 
-Plansze 1–6 mają **63×34 pola i 9 komór**, 7–9: **77×34 i 12 komór**,
-10–12: **77×44 i 16 komór**. Rozmiary obejmują osobne skrzydło zagadki wyjściowej;
+Plansze mają **59×34–109×44 pola**: 1–6 mają 9 głównych komór, 7–9: 12,
+10–12: 16. Szerokość zależy od kompozycji skrzydła zagadki wyjściowej;
 główna sieć jaskiń zachowuje poprzednie rozmiary 46×34–60×44.
 Cele wynoszą odpowiednio 18, 24 i 32 przedmioty. Przedmiotów jest więcej niż cel,
 więc można wybierać pomiędzy bezpieczniejszym objazdem a ryzykownym bocznym złożem.
@@ -56,11 +57,29 @@ Każdy biom ma także odrębną powierzchnię przekopywanej ziemi.
 Głazy i przedmioty korzystają z istniejącej grawitacji — podkopanie podpory
 może wywołać lawinę. Nie trzeba chodzić jedną narysowaną ścieżką.
 
-Przed wyjściem jest obowiązkowa komora, której nie omija nadmiar przedmiotów:
-na poziomach 1–3 trzeba najpierw odkopać wnękę na przesuwany głaz,
-4–6 wymagają zwolnienia podpory i odwrotu przed upadkiem głazu, a 7–12 dwóch
-takich operacji kolejno. Podpowiedź komory pojawia się dopiero przy jej wejściu.
-To trzy rodziny zagadek, nie dwanaście całkowicie różnych zagadek.
+Przed wyjściem jest obowiązkowa komora, której nie omija nadmiar przedmiotów.
+Każdy poziom ma inną kompozycję pięciu modułów, nie dwanaście nowych mechanik fizyki:
+
+| Poziom | Kompozycja                                 |
+| ------ | ------------------------------------------ |
+| 1      | Przygotowanie wnęki                        |
+| 2      | Pierwszy spust                             |
+| 3      | Wnęka i szyb                               |
+| 4      | Wspólna podpora dwóch skał                 |
+| 5      | Szyb i wnęka                               |
+| 6      | Dwa szyby korzeni                          |
+| 7      | Kolejność ma znaczenie                     |
+| 8      | Stos i osobny spust                        |
+| 9      | Wnęka pod stosem                           |
+| 10     | Spust przed manewrem                       |
+| 11     | Manewr i stos                              |
+| 12     | Trzy zamki Tasiora: wnęka, kolejność, stos |
+
+Podpowiedź zmienia się przy wejściu do kolejnego modułu. W zagadce kolejności najpierw
+trzeba przygotować miejsce dla górnego głazu, a dopiero później odkopać dolną wnękę.
+Zła kolejność może zaklinować parę skał; użyj R lub ↻. Nie ma jeszcze cofania ruchu
+ani automatycznego wykrywania wszystkich blokad. Odizolowane komory pozwalają
+zatrzymać się między poprawnymi ruchami; patrole i Kobra w głównej jaskini nadal działają.
 
 Każdy poziom ma własny stały szkic, geologię i testowaną sekwencję przejścia.
 Na ostatnim poziomie, oprócz 32 bong, trzeba przepchnąć skałę na złote pole
@@ -111,6 +130,7 @@ Sama plansza nie zapewnia pełnej dostępności czytnikom ekranu.
 | `CaveBuilder.ts`               | Stałe sieci komór, skróty, geologia, podparte złoża i zapis wejścia do testów       |
 | `CaveVisuals.ts`               | Cztery różne konstrukcje ścian i powierzchnie ziemi, rysowane w cache Canvas        |
 | `ExitPuzzles.ts`               | Jednowejściowe komory zagadek, podpowiedzi i sekwencje rzeczywistych ruchów         |
+| `VaultComposer.ts`             | Łączenie modułów w szczelne skrzydła, trasy łączników i pozycje podpowiedzi etapów  |
 | `Renderer.ts`                  | Interpolacja, współdzielona kamera i animator, kafelki, przedmioty, patrole i finał |
 | `SpriteBounds.ts`              | Wspólny obrys alfa klatek: czytelna wielkość i stabilne kadrowanie postaci          |
 | `Input.ts`                     | Klawiatura i przełożenie istniejącej gałki After na cztery kierunki                 |
@@ -200,7 +220,8 @@ npm run build
 npm run dev:client -- --host 127.0.0.1 --port 5190 --strictPort
 python scripts/verify-bongo-rush.py
 python scripts/verify-bongo-expanded.py
-# Dla biomów/zagadek uruchom Vite na 5192, następnie:
+# Dla obecnych kompozycji zagadek uruchom Vite na 5194, następnie:
+npm run dev:client -- --host 127.0.0.1 --port 5194 --strictPort
 python scripts/verify-bongo-puzzles.py
 # Po buildzie i uruchomieniu preview na porcie 5191:
 npm run preview -- --host 127.0.0.1 --port 5191 --strictPort
@@ -217,5 +238,6 @@ Emulacja nie potwierdza wydajności fizycznego iPhone’a. Test dotyku, ergonomi
 na rzeczywistym urządzeniu pozostaje osobnym punktem odbioru. Nowa gra nie jest automatycznie publikowana.
 
 Obecna ocena trudności, zakres sprawdzenia i plan dalszej pracy:
-[audyt biomów i zagadek](bongo-design-audit.md).
+[kompozycje komór](bongo-vaults-verification.md).
+Wcześniejszy [audyt biomów i zagadek](bongo-design-audit.md).
 Wcześniejszy raport: [rozbudowane jaskinie](bongo-expanded-verification.md).

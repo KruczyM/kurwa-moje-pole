@@ -21,7 +21,7 @@ function fixture(index: number): LevelDefinition {
 }
 
 describe('mandatory exit puzzles', () => {
-  it.each([0, 1, 2])('lets the player stop and think between vault %s moves', (index) => {
+  it.each([0, 1, 2, 3, 4])('lets the player stop and think between vault %s moves', (index) => {
     const level = fixture(index),
       game = new Simulation(level);
     for (const direction of level.solution) {
@@ -34,7 +34,7 @@ describe('mandatory exit puzzles', () => {
     expect(game.world.status).toBe('won');
   });
 
-  it.each([0, 1, 2])('solves vault %s using only actual moves and physics', (index) => {
+  it.each([0, 1, 2, 3, 4])('solves vault %s using only actual moves and physics', (index) => {
     const level = fixture(index),
       game = new Simulation(level);
     for (const direction of level.solution) {
@@ -46,7 +46,7 @@ describe('mandatory exit puzzles', () => {
     expect(game.world.status).toBe('won');
   });
 
-  it.each([0, 1, 2])('has no dig-only bypass around the rock gate in vault %s', (index) => {
+  it.each([0, 1, 2, 3, 4])('has no dig-only bypass around the rock gate in vault %s', (index) => {
     const game = new Simulation(fixture(index));
     const queue = [{ ...game.world.player }];
     const seen = new Set<string>();
@@ -92,9 +92,41 @@ describe('mandatory exit puzzles', () => {
       for (const direction of approach) game.step(direction);
       expect(game.world.collected).toBeGreaterThanOrEqual(level.quota);
       expect(game.world.status).toBe('playing');
-      expect(game.world.player.x).toBeGreaterThan(level.rows[0].length - 17);
+      expect(game.world.player).toMatchObject(level.vault!.entry);
       for (const direction of puzzle.solution) game.step(direction);
       expect(game.world.status).toBe('won');
     });
+  });
+
+  it('makes premature excavation visibly jam both rocks, while the correct order remains solvable', () => {
+    const game = new Simulation(fixture(4));
+    const wrong = [
+      'right',
+      'up',
+      'up',
+      'up',
+      'right',
+      'right',
+      'right',
+      'right',
+      'down',
+      'down',
+      'down',
+      'down',
+      'up',
+      'up',
+    ] as const;
+    for (const direction of wrong) game.step(direction);
+    for (let tick = 0; tick < 3; tick++) game.step();
+    expect(game.object({ x: 5, y: 6 })?.kind).toBe('rock');
+    expect(game.object({ x: 6, y: 6 })?.kind).toBe('rock');
+    expect(game.cell({ x: 5, y: 7 })).toBe('exit');
+    expect(game.cell({ x: 6, y: 7 })).toBe('wall');
+    // Adjacent grounded rocks cannot be pushed together or lifted vertically under existing physics.
+    expect(game.world.status).toBe('playing');
+    expect(game.exitOpen).toBe(true);
+    const restarted = new Simulation(fixture(4));
+    for (const direction of restarted.level.solution) restarted.step(direction);
+    expect(restarted.world.status).toBe('won');
   });
 });

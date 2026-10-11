@@ -30,7 +30,12 @@ export interface LevelDefinition {
   solution: readonly Direction[];
   gate?: Point;
   pen?: readonly Point[];
-  vault?: { entry: Point; name: string; hint: string };
+  vault?: {
+    entry: Point;
+    name: string;
+    hint: string;
+    stages?: readonly { entry: Point; name: string; hint: string }[];
+  };
 }
 export interface World {
   width: number;

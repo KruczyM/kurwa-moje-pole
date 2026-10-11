@@ -3,6 +3,10 @@
 Data: 2026-10-11. Gałąź: `feat/bongo-biomes-puzzles`.
 Worktree: `.ai/worktrees/bongo-puzzles`.
 
+To raport historyczny. Kolejna iteracja zastępuje trzy powtarzane zakończenia
+dwunastoma kompozycjami pięciu modułów; aktualny zakres i testy opisuje
+[raport komór](bongo-vaults-verification.md). Pozostałe potrzeby balansu i odbioru są nadal aktualne.
+
 ## Co wykazał przegląd
 
 Poprzednie plansze były duże, ale rozmiar nie oznaczał trudności logicznej.
