@@ -747,7 +747,7 @@ export class Game {
 
       if (this.openMobileWorld) {
         this.toast(
-          'Telefon: świat bez mgły. Obozy za północnym pasażem doczytują się po podejściu. Dodatkowy tłum wyłączony.',
+          'Telefon: świat bez mgły, doczytywanie do 60 m (obozy północne: 48 m). Dodatkowy tłum wyłączony.',
         );
       } else if (this.fogTrial) {
         this.toast(
