@@ -9,10 +9,10 @@ describe('expanded original caves', () => {
     CAVE_SKETCHES.forEach((sketch, index) => expect(buildCave(sketch, index)).toEqual(LEVELS[index]));
   });
 
-  it('grows from 46x34 to 60x44, with substantially larger objectives and optional deposits', () => {
-    expect(LEVELS[0].rows[0].length).toBe(46);
+  it('grows from 63x34 to 77x44 including the exit vault, with larger objectives and optional deposits', () => {
+    expect(LEVELS[0].rows[0].length).toBe(63);
     expect(LEVELS[0].rows).toHaveLength(34);
-    expect(LEVELS[11].rows[0].length).toBe(60);
+    expect(LEVELS[11].rows[0].length).toBe(77);
     expect(LEVELS[11].rows).toHaveLength(44);
     for (const level of LEVELS) {
       const w = createWorld(level);

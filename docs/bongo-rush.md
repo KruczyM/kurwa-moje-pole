@@ -7,7 +7,8 @@ i przejście 12 poziomów. Inspiracją są zasady gier typu Boulder Dash, nie ic
 grafiki ani gotowe układy poziomów. Finał jest fikcyjną, satyryczną scenką.
 
 Istniejące After jest zachowane, również na gałęziach `feat/after-demo` i
-`fix/after-joystick`. Rozbudowane jaskinie są na `feat/bongo-expanded-caves`, w osobnym worktree;
+`fix/after-joystick`. Obecne biomy i zagadki są na `feat/bongo-biomes-puzzles`, w osobnym worktree;
+wcześniejsza rozbudowa jaskiń pozostała na `feat/bongo-expanded-caves`;
 wcześniejsze wersje pozostały na `feat/bongo-rush` i `feat/bongo-bush`.
 Nie usunięto wcześniejszych plików ani nie zmieniono lokalnych roboczych grafik Chlebaka.
 
@@ -41,16 +42,25 @@ Samo uruchomienie buildu nie publikuje strony na GitHub Pages.
 | 7–9     | Neonowy rave      | Różne cukierki ecstasy | Undercover                                      |
 | 10–12   | Dymna grota       | Bonga                  | Mieszane patrole; satyryczny Owsiak tylko na 12 |
 
-Plansze 1–6 mają **46×34 pola i 9 komór**, 7–9: **60×34 i 12 komór**,
-10–12: **60×44 i 16 komór**. To około 3,6–6,1 razy większa powierzchnia niż stare 24×18.
+Plansze 1–6 mają **63×34 pola i 9 komór**, 7–9: **77×34 i 12 komór**,
+10–12: **77×44 i 16 komór**. Rozmiary obejmują osobne skrzydło zagadki wyjściowej;
+główna sieć jaskiń zachowuje poprzednie rozmiary 46×34–60×44.
 Cele wynoszą odpowiednio 18, 24 i 32 przedmioty. Przedmiotów jest więcej niż cel,
 więc można wybierać pomiędzy bezpieczniejszym objazdem a ryzykownym bocznym złożem.
 
 Komory łączą się w obu osiach, mają odnogi, skróty i pętle. Występują skalne filary,
 przegrody z prześwitami, niskie stropy, puste kieszenie, podparte żyły głazów
-i otwierane przez kopanie komory patroli. Cztery biomy różnią się paletą i minerałami.
+i otwierane przez kopanie komory patroli. Cztery biomy różnią się konstrukcją ścian:
+cegła i stalowe klamry, splątane korzenie, neonowe metalowe kasety oraz duże tafle lodu.
+Każdy biom ma także odrębną powierzchnię przekopywanej ziemi.
 Głazy i przedmioty korzystają z istniejącej grawitacji — podkopanie podpory
 może wywołać lawinę. Nie trzeba chodzić jedną narysowaną ścieżką.
+
+Przed wyjściem jest obowiązkowa komora, której nie omija nadmiar przedmiotów:
+na poziomach 1–3 trzeba najpierw odkopać wnękę na przesuwany głaz,
+4–6 wymagają zwolnienia podpory i odwrotu przed upadkiem głazu, a 7–12 dwóch
+takich operacji kolejno. Podpowiedź komory pojawia się dopiero przy jej wejściu.
+To trzy rodziny zagadek, nie dwanaście całkowicie różnych zagadek.
 
 Każdy poziom ma własny stały szkic, geologię i testowaną sekwencję przejścia.
 Na ostatnim poziomie, oprócz 32 bong, trzeba przepchnąć skałę na złote pole
@@ -99,7 +109,8 @@ Sama plansza nie zapewnia pełnej dostępności czytnikom ekranu.
 | `Simulation.ts`                | Kopanie, ruch, przepychanie, grawitacja, patrole, wygrana i przegrana               |
 | `Levels.ts`                    | Cztery palety biomów, 12 szkiców plansz i sekwencje ich przejścia                   |
 | `CaveBuilder.ts`               | Stałe sieci komór, skróty, geologia, podparte złoża i zapis wejścia do testów       |
-| `CaveVisuals.ts`               | Oryginalne skalne i żwirowe tekstury Canvas, korzenie oraz minerały                 |
+| `CaveVisuals.ts`               | Cztery różne konstrukcje ścian i powierzchnie ziemi, rysowane w cache Canvas        |
+| `ExitPuzzles.ts`               | Jednowejściowe komory zagadek, podpowiedzi i sekwencje rzeczywistych ruchów         |
 | `Renderer.ts`                  | Interpolacja, współdzielona kamera i animator, kafelki, przedmioty, patrole i finał |
 | `SpriteBounds.ts`              | Wspólny obrys alfa klatek: czytelna wielkość i stabilne kadrowanie postaci          |
 | `Input.ts`                     | Klawiatura i przełożenie istniejącej gałki After na cztery kierunki                 |
@@ -189,6 +200,8 @@ npm run build
 npm run dev:client -- --host 127.0.0.1 --port 5190 --strictPort
 python scripts/verify-bongo-rush.py
 python scripts/verify-bongo-expanded.py
+# Dla biomów/zagadek uruchom Vite na 5192, następnie:
+python scripts/verify-bongo-puzzles.py
 # Po buildzie i uruchomieniu preview na porcie 5191:
 npm run preview -- --host 127.0.0.1 --port 5191 --strictPort
 python scripts/verify-bongo-production.py
@@ -203,4 +216,6 @@ i udostępnia odłączony snapshot, nie teleportację ani edycję postępu.
 Emulacja nie potwierdza wydajności fizycznego iPhone’a. Test dotyku, ergonomii i FPS
 na rzeczywistym urządzeniu pozostaje osobnym punktem odbioru. Nowa gra nie jest automatycznie publikowana.
 
-Aktualny zakres sprawdzenia: [raport rozbudowanych jaskiń](bongo-expanded-verification.md).
+Obecna ocena trudności, zakres sprawdzenia i plan dalszej pracy:
+[audyt biomów i zagadek](bongo-design-audit.md).
+Wcześniejszy raport: [rozbudowane jaskinie](bongo-expanded-verification.md).

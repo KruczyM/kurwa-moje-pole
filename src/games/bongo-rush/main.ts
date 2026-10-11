@@ -256,14 +256,18 @@ class BongoRush {
     element('level-title').textContent = `${level.id} / 12 · ${level.title}`;
     element('counter').textContent = `${BIOMES[level.biome].item}: ${world.collected} / ${level.quota}`;
     element('exit-status').textContent = this.game.exitOpen
-      ? 'Wyjście otwarte ↑'
+      ? 'Wyjście odblokowane →'
       : level.gate && world.collected >= level.quota
         ? 'Zamknij zagrodę złotą skałą'
         : 'Zbierz dostawę';
+    const hint =
+      level.vault && world.player.x >= level.vault.entry.x - 3
+        ? `${level.vault.name}: ${level.vault.hint}`
+        : level.hint;
     element('hint').textContent =
       world.nextBushGrowth === undefined
-        ? `${level.hint} Krzak z korzeniami: odkopanie uruchamia zarastanie przejść.`
-        : `${level.hint} Krzak rośnie — fala za ${Math.ceil((world.nextBushGrowth - world.tick) * STEP_SECONDS)} s. R / ↻: restart.`;
+        ? `${hint} Krzak z korzeniami: odkopanie uruchamia zarastanie przejść.`
+        : `${hint} Krzak rośnie — fala za ${Math.ceil((world.nextBushGrowth - world.tick) * STEP_SECONDS)} s. R / ↻: restart.`;
   }
 
   /** Unlocks the next cave once and presents loss, normal completion or the final short scene. */
@@ -412,7 +416,9 @@ class BongoRush {
   /** Caps backing-store memory on high-DPI phones and reflows the existing camera rather than recreating it. */
   private resize(): void {
     const rect = element('board').getBoundingClientRect();
-    this.width = Math.max(1, rect.width);
+    const nextWidth = Math.max(1, rect.width);
+    const widthChanged = Math.abs(nextWidth - this.width) > 1;
+    this.width = nextWidth;
     this.height = Math.max(1, rect.height);
     const ratio = Math.min(
       window.devicePixelRatio || 1,
@@ -423,8 +429,12 @@ class BongoRush {
     this.canvas.height = Math.max(1, Math.round(this.height * ratio));
     this.context?.setTransform(ratio, 0, 0, ratio, 0, 0);
     this.renderer?.resize(this.width, this.height, window.matchMedia('(pointer: coarse)').matches);
-    this.input.reset();
-    this.updateKnob();
+    // Contextual hints can reflow the footer. A height-only board resize must not release held movement.
+    // Width/orientation changes still reset pointer ownership; blur/visibility retain their own cleanup.
+    if (widthChanged) {
+      this.input.reset();
+      this.updateKnob();
+    }
   }
 
   /** Uses a fixed physics accumulator and interpolated rendering; pause never stops requestAnimationFrame. */

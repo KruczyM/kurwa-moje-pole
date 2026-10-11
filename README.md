@@ -13,8 +13,10 @@ Demo nie zastępuje festiwalu 3D. Opis, ograniczenia i pliki: [docs/after-demo.m
 Osobna gra logiczno-zręcznościowa 2D inspirowana zasadami Boulder Dash: 12 autorskich plansz,
 cztery biomy, spadające skały, patrole oraz 15 grywalnych postaci różniących się wyłącznie wyglądem.
 Kobra (Krzak) jest niegrywalną przeszkodą: po odkopaniu zarasta wolne sąsiednie pola co około 5 sekund.
-Plansze mają teraz 46×34–60×44 pól, sieci 9–16 komór, boczne złoża, skróty i cel
+Plansze mają teraz 63×34–77×44 pól, sieci 9–16 komór, boczne złoża, skróty i cel
 18–32 przedmiotów. Przycisk Mapa lub M przełącza minimapę. Kamera przewija rozległą jaskinię.
+Przed każdym wyjściem jest obowiązkowa komora zagadki: przygotowanie wnęki na głaz
+lub zwolnienie jednej/dwóch podpór. Biomy mają osobne ściany: cegła, korzenie, metal i lód.
 Nie zastępuje After ani gry 3D. Nie uruchamia serwera multiplayer i nie pobiera modeli GLB.
 
 ```powershell

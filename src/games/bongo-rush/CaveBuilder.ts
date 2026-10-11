@@ -1,4 +1,5 @@
 import type { Direction, LevelDefinition, Point } from './types';
+import { exitPuzzleForLevel } from './ExitPuzzles';
 
 export interface CaveSketch {
   title: string;
@@ -21,7 +22,8 @@ function grain(x: number, y: number, seed: number): number {
 
 /** Builds connected, looping chamber networks and a deterministic real-input acceptance route. */
 export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
-  const width = sketch.columns * 14 + 4,
+  const mainWidth = sketch.columns * 14 + 4,
+    width = mainWidth + 17,
     height = sketch.rows * 10 + 4;
   const grid = Array.from({ length: height }, () => Array<string>(width).fill('#'));
   const chambers: Chamber[] = [],
@@ -54,7 +56,7 @@ export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
   for (const room of chambers) {
     const cx = room.x + 5,
       cy = room.y + 4;
-    if (room.x + 14 < width - 4)
+    if (room.x + 14 < mainWidth - 4)
       for (let x = cx; x <= cx + 14; x++) {
         carve(x, cy);
         if ((index + room.y) % 2) carve(x, cy + 1);
@@ -98,7 +100,7 @@ export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
   });
   let gate: Point | undefined, pen: Point[] | undefined, exit: Point;
   if (index === 11) {
-    const gx = width - 5;
+    const gx = mainWidth - 5;
     walkTo({ x: gx - 3, y: 3 });
     for (let y = 1; y <= 4; y++) for (let x = gx - 2; x <= gx + 2; x++) carve(x, y, '#');
     for (let x = gx - 3; x <= gx; x++) carve(x, 3, ' ');
@@ -118,8 +120,14 @@ export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
     exit = { x: cursor.x + 2, y: cursor.y };
     walkTo(exit);
   }
+  const puzzle = exitPuzzleForLevel(index);
+  const puzzleOrigin = { x: mainWidth + 1, y: Math.max(1, Math.min(height - 10, exit.y - 5)) };
+  const puzzleEntry = { x: puzzleOrigin.x + puzzle.entry.x, y: puzzleOrigin.y + puzzle.entry.y };
+  // A single approach gallery reaches a sealed vault; spare deposits cannot bypass its rock gate.
+  walkTo({ x: cursor.x, y: puzzleEntry.y });
+  walkTo(puzzleEntry);
   const reserved = new Set(path.map(key));
-  const finalZone = (x: number, y: number) => index === 11 && x >= width - 8 && y <= 4;
+  const finalZone = (x: number, y: number) => index === 11 && x >= mainWidth - 8 && y <= 4;
   // Four chamber architectures break up repeated rectangular rooms while preserving deliberate doorways.
   chambers.forEach((room, n) => {
     const shape = (index + n) % 4;
@@ -137,7 +145,7 @@ export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
   });
   // Dense supported veins outside the acceptance route release real cascades when supports are dug.
   for (let y = 2; y < height - 2; y++)
-    for (let x = 2; x < width - 2; x++) {
+    for (let x = 2; x < mainWidth - 2; x++) {
       if (
         grid[y][x] !== '.' ||
         reserved.has(key({ x, y })) ||
@@ -152,7 +160,7 @@ export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
     }
   // Stabilise veins until their support is dug; initial cascades must not clog entrances.
   for (let y = height - 3; y >= 2; y--)
-    for (let x = 2; x < width - 2; x++) {
+    for (let x = 2; x < mainWidth - 2; x++) {
       if (
         (grid[y][x] === 'R' || grid[y][x] === 'O') &&
         !reserved.has(key({ x, y: y + 1 })) &&
@@ -220,7 +228,12 @@ export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
     carve(gate.x - 2, gate.y, 'R');
     carve(gate.x + 1, 1, 'J');
   }
-  carve(exit.x, exit.y, 'E');
+  puzzle.rows.forEach((row, dy) => {
+    [...row].forEach((tile, dx) =>
+      carve(puzzleOrigin.x + dx, puzzleOrigin.y + dy, tile === 'P' ? ' ' : tile),
+    );
+  });
+  solution.push(...puzzle.solution);
   return {
     id: index + 1,
     title: sketch.title,
@@ -231,5 +244,6 @@ export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
     solution,
     gate,
     pen,
+    vault: { entry: puzzleEntry, name: puzzle.name, hint: puzzle.hint },
   };
 }

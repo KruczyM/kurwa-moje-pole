@@ -1,6 +1,8 @@
 # Bongo Rush — raport lokalny
 
-To raport początkowego wdrożenia. Najnowsza rozbudowa plansz i wyniki testów:
+To raport początkowego wdrożenia. Najnowszy audyt biomów, zagadek i wyniki testów:
+[bongo-design-audit.md](bongo-design-audit.md).
+Wcześniejsza rozbudowa plansz i wyniki testów:
 [bongo-expanded-verification.md](bongo-expanded-verification.md).
 Aktualizacja Krzaka/Kobry, obecna lista 15
 grywalnych postaci oraz nowsze wyniki: [bongo-bush-verification.md](bongo-bush-verification.md).

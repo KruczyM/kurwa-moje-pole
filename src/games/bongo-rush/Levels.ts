@@ -144,7 +144,7 @@ export const CAVE_SKETCHES: readonly CaveSketch[] = [
   },
   {
     title: 'Twierdza Tasiora',
-    hint: 'Zbierz dostawę. W północno-wschodniej zagrodzie wepchnij głaz w złote pole, potem cofnij się w lewo do nagrody.',
+    hint: 'Zbierz dostawę. W północno-wschodniej zagrodzie wepchnij głaz w złote pole, cofnij się w lewo i poszukaj komory wyjściowej na wschodzie.',
     columns: 4,
     rows: 4,
     route: 'columns',
