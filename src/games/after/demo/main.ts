@@ -8,6 +8,7 @@ import { AfterPresentation } from '../presentation/AfterPresentation';
 import { CameraRig } from '../presentation/CameraRig';
 import type { SpriteMetadata } from '../presentation/SpriteAnimator';
 import type { Point } from '../simulation/WorldState';
+import { AfterJoystick } from './AfterJoystick';
 
 /** Looks up required demo markup once, failing visibly instead of drawing a blank page. */
 function element<T extends HTMLElement>(id: string): T {
@@ -46,6 +47,7 @@ class AfterDemo {
   private readonly metadata = new Map<string, SpriteMetadata>();
   private readonly keys = new Set<string>();
   private readonly touchKeys = new Map<number, string>();
+  private readonly joystick = new AfterJoystick();
   private readonly loop = new AnimationLoop((time) => this.frame(time));
   private readonly presentation = new AfterPresentation(this.camera, (id) => {
     const meta = this.metadata.get(id);
@@ -81,7 +83,7 @@ class AfterDemo {
     for (const id of ['Amper', 'Chlebak']) {
       const path = `characters/${id.toLowerCase()}`;
       assets.push(`${path}/spritesheet.png`);
-      const response = await fetch(`${BASE}${path}/meta.json`);
+      const response = await fetch(`${BASE}${path}/meta.json`, { cache: 'no-cache' });
       if (!response.ok) throw new Error(`Nie wczytano atlasu: ${id}`);
       this.metadata.set(id, (await response.json()) as SpriteMetadata);
     }
@@ -148,6 +150,22 @@ class AfterDemo {
       const key = (event as KeyboardEvent).key;
       this.keys.delete(key.length === 1 ? key.toLowerCase() : key);
     });
+    const stick = element('joystick');
+    this.events.listen(stick, 'pointerdown', (event) => {
+      const pointer = event as PointerEvent;
+      if (this.paused || !this.campaign || this.campaign.dialogue(SLOT) || this.campaign.snapshot().finished)
+        return;
+      if (!this.joystick.begin(pointer.pointerId)) return;
+      pointer.preventDefault();
+      stick.setPointerCapture(pointer.pointerId);
+      this.moveJoystick(pointer);
+    });
+    this.events.listen(stick, 'pointermove', (event) => this.moveJoystick(event as PointerEvent));
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'])
+      this.events.listen(stick, type, (event) => {
+        this.joystick.end((event as PointerEvent).pointerId);
+        this.paintJoystick();
+      });
     for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>('[data-key]'))) {
       this.events.listen(button, 'pointerdown', (event) => {
         const pointer = event as PointerEvent;
@@ -179,7 +197,28 @@ class AfterDemo {
   private clearInput(): void {
     this.keys.clear();
     this.touchKeys.clear();
+    this.joystick.reset();
+    this.paintJoystick();
     this.campaign?.setInput(SLOT, { moveX: 0, moveY: 0, sprint: false });
+  }
+
+  /** Measures the current control geometry so orientation changes preserve analog accuracy. */
+  private moveJoystick(pointer: PointerEvent): void {
+    const bounds = element('joystick').getBoundingClientRect();
+    const knob = element('joystick-knob').getBoundingClientRect();
+    this.joystick.move(
+      pointer.pointerId,
+      pointer.clientX - bounds.left - bounds.width / 2,
+      pointer.clientY - bounds.top - bounds.height / 2,
+      (bounds.width - knob.width) / 2,
+    );
+    this.paintJoystick();
+  }
+
+  /** Moves only the knob's transform; no layout work or additional animation loop. */
+  private paintJoystick(): void {
+    const { knobX, knobY } = this.joystick.snapshot();
+    element('joystick-knob').style.transform = `translate(${knobX}px, ${knobY}px)`;
   }
 
   /** Escape/back closes only the top conversation, otherwise toggles the local pause panel. */
@@ -222,6 +261,7 @@ class AfterDemo {
 
   /** Sizes only the existing canvas; caps backing-store DPR to limit phone memory. */
   private resize(): void {
+    this.clearInput();
     const bounds = this.canvas.getBoundingClientRect();
     this.width = Math.max(1, bounds.width);
     this.height = Math.max(1, bounds.height);
@@ -238,9 +278,19 @@ class AfterDemo {
     const dt = this.lastTime ? Math.min((time - this.lastTime) / 1000, 0.25) : 0;
     this.lastTime = time;
     const held = (key: string) => this.keys.has(key) || [...this.touchKeys.values()].includes(key);
+    const stick = this.joystick.snapshot();
     this.campaign?.setInput(SLOT, {
-      moveX: Number(held('d') || held('ArrowRight')) - Number(held('a') || held('ArrowLeft')),
-      moveY: Number(held('s') || held('ArrowDown')) - Number(held('w') || held('ArrowUp')),
+      moveX: Math.max(
+        -1,
+        Math.min(
+          1,
+          stick.x + Number(held('d') || held('ArrowRight')) - Number(held('a') || held('ArrowLeft')),
+        ),
+      ),
+      moveY: Math.max(
+        -1,
+        Math.min(1, stick.y + Number(held('s') || held('ArrowDown')) - Number(held('w') || held('ArrowUp'))),
+      ),
       sprint: held('Shift'),
     });
     const alpha = this.campaign?.advance(dt) ?? 1;

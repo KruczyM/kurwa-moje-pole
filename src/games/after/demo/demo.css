@@ -144,20 +144,28 @@ small {
 #controls button:active {
   background: #708b45;
 }
-#dpad {
+#joystick {
+  width: 144px;
+  height: 144px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid #a6bb9199;
+  background: radial-gradient(circle, #a6bb9122 0 30%, #172d29b8 31%);
   display: grid;
-  grid-template-columns: repeat(3, 48px);
-  gap: 5px;
+  place-items: center;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
-#dpad button {
-  padding: 0;
-  font-size: 23px;
-}
-#dpad button:first-child {
-  grid-column: 2;
-}
-#dpad button:nth-child(2) {
-  grid-column: 1;
+#joystick-knob {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid #fff5b5;
+  background: #93ad5ded;
+  pointer-events: none;
+  box-shadow: 0 3px 12px #0005;
 }
 .actions {
   display: grid;
@@ -182,5 +190,13 @@ small {
   }
   #controls {
     padding-bottom: 6px;
+  }
+  #joystick {
+    width: 112px;
+    height: 112px;
+  }
+  #joystick-knob {
+    width: 44px;
+    height: 44px;
   }
 }

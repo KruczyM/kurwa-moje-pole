@@ -11,9 +11,9 @@
   "framesPerDirection": 4,
   "rows": {
     "down": 0,
-    "right": 1,
+    "right": 3,
     "up": 2,
-    "left": 3
+    "left": 1
   },
   "animationColumns": {
     "idle": [

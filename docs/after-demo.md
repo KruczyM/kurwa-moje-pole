@@ -10,7 +10,7 @@ Główna gra pozostaje bez zmian; demo nie wymaga serwera Socket.IO ani modeli 3
 - Wybór Ampera lub Chlebaka, mapa pilota 24×18, animowany ruch i kamera.
 - Trzy zadania: flaga, znajomy, światło; finał po powrocie do obozu.
 - Polskie rozmowy, wybory odpowiedzi i opcjonalne relacje.
-- Klawiatura WASD/strzałki, Shift, E, Escape; ekranowe kierunki, sprint, interakcja,
+- Klawiatura WASD/strzałki, Shift, E, Escape; analogowa gałka ekranowa, sprint, interakcja,
   zamknięcie rozmowy, pauza i restart. Escape najpierw zamyka rozmowę.
 - Offline solo: brak sieciowego lobby, zapisu i kontynuacji po odświeżeniu.
 
@@ -27,6 +27,9 @@ nie osobnej animacji. To demo postępu, nie pełne wydanie ani 10–15 minut kam
 - `src/games/after/demo/main.ts`: izolowany host demo, Canvas 2D, cache obrazów,
   routing wejść, lifecycle i integracja istniejącej kampanii.
 - `src/games/after/demo/demo.css`: responsywny układ, safe-area i kontrolki.
+- `src/games/after/demo/AfterJoystick.ts`: stan gałki, jeden właściciel ruchu,
+  martwa strefa 12%, płynna prędkość, radialny limit i cleanup pointerów.
+  Matematyka wychylenia reużywa istniejący `joystickInput`, bez drugiego kontrolera 3D.
 - `vite.config.ts`: dwa niezależne wejścia produkcyjne; dotychczasowy URL zachowany.
 - `scripts/verify-after-demo.py`: WebKit/iPhone 13 i Chromium; prawdziwe przyciski,
   klawiatura i pointer, deterministyczne przejście questów bez teleportacji.
@@ -65,3 +68,21 @@ osobny od dużego bundla festiwalu.
 `VISUAL_GAMEPLAY_VERIFICATION_PENDING_HUMAN`: fizyczny iPhone, ergonomia multi-touch,
 czytelność finalnej grafiki, balans i czas kampanii. Emulacja WebKit nie jest pomiarem
 FPS/RAM fizycznego telefonu. Sam test integralności assetu nie potwierdza jego wyglądu.
+
+## Aktualizacja: kierunki i gałka
+
+W atlasach pilotowych Amper/Chlebak zawartość wierszy lewego i prawego profilu była
+odwrotna do metadanych. Skorygowano `rows.right = 3` i `rows.left = 1`; osie świata
+i ogólny SpriteAnimator pozostają bez zmian. Testy czytają faktyczne metadane obu postaci.
+Pobranie metadanych wymaga rewalidacji cache, żeby poprawka działała po aktualizacji demo.
+
+Gałka działa w ośmiu kierunkach z płynnym wychyleniem (bez szybszej przekątnej).
+Drugi palec może przytrzymać Sprint, ale nie przejmuje gałki. Puszczenie palca,
+pointercancel, utrata capture, resize, pauza i ukrycie karty zerują ruch.
+Klawiatura pozostaje dostępna. Ruch do 12% promienia jest ignorowany.
+
+Test przeglądarkowy sprawdza przeciągnięcie gałki i powrót do środka w WebKit oraz
+Chromium, a natywny test dwóch kontaktów przez Chromium CDP potwierdza sprint
+przy trzymanej gałce i cleanup po puszczeniu obu palców. Przebieg questów i finału
+pozostaje sprawdzany. Fizyczny iPhone nadal pending — emulacja nie jest odbiorem ergonomii.
+Pełna regresja: 1473 testy jednostkowe, 6 narzędziowych; lint/format/typecheck i build OK.
