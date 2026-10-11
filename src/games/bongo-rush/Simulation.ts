@@ -49,6 +49,7 @@ export function createWorld(level: LevelDefinition): World {
           ...point,
           previous: { ...point },
           kind: symbol === 'O' ? 'pickup' : 'rock',
+          required: symbol === 'O' && level.requiredPickups?.some((required) => same(required, point)),
           falling: false,
           variant: (x + y) % 4,
         });
@@ -70,6 +71,10 @@ export function createWorld(level: LevelDefinition): World {
     world.objects.filter((o) => o.kind === 'pickup').length < level.quota
   )
     throw new Error('Plansza musi mieć start, wyjście i wystarczającą liczbę przedmiotów');
+  if (
+    level.requiredPickups?.some((point) => !world.objects.some((body) => body.required && same(body, point)))
+  )
+    throw new Error('Wymagany łup musi wskazywać przedmiot na planszy');
   for (let x = 0; x < width; x++)
     if (world.cells[x] !== 'wall' || world.cells[(world.height - 1) * width + x] !== 'wall')
       throw new Error('Otwarta granica planszy');
@@ -157,9 +162,18 @@ export class Simulation {
     return limit === undefined ? undefined : Math.max(0, limit - this.world.tick * STEP_SECONDS);
   }
 
-  /** Final exit additionally requires sealing the boss pen; other levels only require pickups. */
+  /** Mandatory mining loot cannot be replaced by spare deposits; the final also requires the boss trap. */
   get exitOpen(): boolean {
-    return this.world.collected >= this.level.quota && (!this.level.gate || this.world.trapped);
+    return (
+      this.world.collected >= this.level.quota &&
+      this.requiredRemaining === 0 &&
+      (!this.level.gate || this.world.trapped)
+    );
+  }
+
+  /** Counts remaining marked bodies, including loot that has moved under gravity. */
+  get requiredRemaining(): number {
+    return this.world.objects.filter((body) => body.required).length;
   }
 
   /** Checks vacant air; exits are reserved for the player and cannot be clogged by rocks. */

@@ -23,7 +23,7 @@ describe('authored campaign vault chains', () => {
   it('has twelve genuinely different layouts rather than twelve names for three maps', () => {
     expect(CAMPAIGN_VAULTS).toHaveLength(12);
     expect(new Set(CAMPAIGN_VAULTS.map((puzzle) => puzzle.rows.join('\n'))).size).toBe(12);
-    expect(CAMPAIGN_VAULTS[11].stages).toHaveLength(3);
+    expect(CAMPAIGN_VAULTS[11].stages).toHaveLength(5);
   });
 
   it.each(Array.from({ length: 12 }, (_, index) => index))(
@@ -69,6 +69,8 @@ describe('authored campaign vault chains', () => {
     CAMPAIGN_VAULTS.forEach((puzzle, index) => {
       const game = new Simulation(fixture(index));
       puzzle.stages!.forEach((stage, stageIndex) => {
+        // These mining sections deliberately offer a bypass; mandatory loot, not a rock gate, locks the exit.
+        if (['Zawał i górne obejście', 'Jednokierunkowa żyła'].includes(stage.name)) return;
         const target = puzzle.stages![stageIndex + 1]?.entry ?? puzzle.exit;
         const queue = [stage.entry];
         const seen = new Set([`${stage.entry.x},${stage.entry.y}`]);

@@ -262,8 +262,16 @@ export class CaveRenderer {
       this.shadow();
       if ('kind' in body) {
         if (body.kind === 'rock') this.rock(body.variant, biome.wall, biome.light);
-        else if (body.kind === 'pickup') this.pickup(game.level.biome, body.variant);
-        else this.patrol(body as Enemy, world.trapped);
+        else if (body.kind === 'pickup') {
+          this.pickup(game.level.biome, body.variant);
+          if (body.required) {
+            ctx.strokeStyle = '#ffdf68';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(32, 31, 27, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        } else this.patrol(body as Enemy, world.trapped);
       } else if (this.atlas && this.animator) {
         const moving = !same(body, body.previous) && world.status === 'playing';
         const frame = this.animator.update(dt, FACINGS[body.direction], moving, false, paused);
@@ -323,7 +331,7 @@ export class CaveRenderer {
         map.fillRect(index % world.width, Math.floor(index / world.width), 1, 1);
       });
       for (const body of world.objects) {
-        map.fillStyle = body.kind === 'pickup' ? '#e5c795' : '#384850';
+        map.fillStyle = body.required ? '#ffdf68' : body.kind === 'pickup' ? '#e5c795' : '#384850';
         map.fillRect(body.x, body.y, 1, 1);
       }
       this.mapTick = world.tick;

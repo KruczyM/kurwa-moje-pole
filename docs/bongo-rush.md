@@ -8,6 +8,7 @@ grafiki ani gotowe układy poziomów. Finał jest fikcyjną, satyryczną scenką
 
 Istniejące After jest zachowane, również na gałęziach `feat/after-demo` i
 `fix/after-joystick`. Obecna oprawa i zasady są na `feat/bongo-gameplay-polish`, w osobnym worktree;
+najnowsze komory wydobywcze są na `feat/bongo-avalanche-puzzles`;
 adaptacje zagadek pozostają na `feat/bongo-reference-puzzles`;
 wcześniejsze kompozycje pozostały na `feat/bongo-authored-vaults`;
 wcześniejszy audyt biomów pozostał na `feat/bongo-biomes-puzzles`;
@@ -45,7 +46,7 @@ Samo uruchomienie buildu nie publikuje strony na GitHub Pages.
 | 7–9     | Neonowy rave      | Różne cukierki ecstasy | Undercover                                      |
 | 10–12   | Dymna grota       | Bonga                  | Mieszane patrole; satyryczny Owsiak tylko na 12 |
 
-Plansze mają **59×34–109×44 pola**: 1–6 mają 9 głównych komór, 7–9: 12,
+Plansze mają **74×34–139×44 pola**: 1–6 mają 9 głównych komór, 7–9: 12,
 10–12: 16. Szerokość zależy od kompozycji skrzydła zagadki wyjściowej;
 główna sieć jaskiń zachowuje poprzednie rozmiary 46×34–60×44.
 Cele wynoszą odpowiednio 18, 24 i 32 przedmioty. Przedmiotów jest więcej niż cel,
@@ -60,22 +61,24 @@ Głazy i przedmioty korzystają z istniejącej grawitacji — podkopanie podpory
 może wywołać lawinę. Nie trzeba chodzić jedną narysowaną ścieżką.
 
 Przed wyjściem jest obowiązkowa komora, której nie omija nadmiar przedmiotów.
-Każdy poziom ma inną kompozycję sześciu modułów, nie dwanaście nowych mechanik fizyki:
+Każdy poziom ma inną kompozycję 12 modułów (6 zasuw i 6 komór wydobywczych),
+nie dwanaście osobnych silników fizyki. Łup ze złotą obwódką jest obowiązkowy,
+niezależnie od zwykłej dostawy. Jego znacznik podąża za przedmiotem także po upadku.
 
-| Poziom | Kompozycja                                 |
-| ------ | ------------------------------------------ |
-| 1      | Przygotowanie wnęki                        |
-| 2      | Pierwszy spust                             |
-| 3      | Wnęka i szyb                               |
-| 4      | Wspólna podpora dwóch skał                 |
-| 5      | Szyb i wnęka                               |
-| 6      | Korzenne obejście — zmiana strony pchania  |
-| 7      | Kolejność ma znaczenie                     |
-| 8      | Stos i osobny spust                        |
-| 9      | Wnęka pod stosem                           |
-| 10     | Spust przed manewrem                       |
-| 11     | Zmiana strony i stos                       |
-| 12     | Trzy zamki Tasiora: wnęka, kolejność, stos |
+| Poziom | Kompozycja                                                |
+| ------ | --------------------------------------------------------- |
+| 1      | Łup spod podpory, potem wnęka na głaz                     |
+| 2      | Dwie kieszenie z łupem, potem spust                       |
+| 3      | Czteropiętrowy zawał, górne obejście, wnęka i szyb        |
+| 4      | Żyła bez powrotu i wspólna podpora stosu                  |
+| 5      | Skarbiec za zasuwą, podkop i przygotowanie wnęki          |
+| 6      | Dwa łupy za przeciwnymi zasuwami, zmiana strony           |
+| 7      | Zawał pod kominem, potem pułapka złej kolejności          |
+| 8      | Dwie kieszenie, skarbiec, stos                            |
+| 9      | Kopalnia lawinowa: żyła, komin, dwa spusty, stos          |
+| 10     | Dwa łupy, przeciwne zasuwy i pułapka kolejności           |
+| 11     | Skarbiec, żyła bez odwrotu, zmiana strony, stos           |
+| 12     | Zagroda bossa, komin, dwie zasuwy, żyła, kolejność i stos |
 
 Podpowiedź zmienia się przy wejściu do kolejnego modułu. W zagadce kolejności najpierw
 trzeba przygotować miejsce dla górnego głazu, a dopiero później odkopać dolną wnękę.
@@ -137,6 +140,7 @@ Otwiera pomoc z zatrzymaną grą. Zamknięcie pomocy pozostawia pauzę — wznó
 | `CaveBuilder.ts`               | Stałe sieci komór, skróty, geologia, podparte złoża i zapis wejścia do testów       |
 | `CaveVisuals.ts`               | Cztery różne konstrukcje ścian i powierzchnie ziemi, rysowane w cache Canvas        |
 | `ExitPuzzles.ts`               | Jednowejściowe komory zagadek, podpowiedzi i sekwencje rzeczywistych ruchów         |
+| `LootPuzzles.ts`               | Sześć autorskich komór z wymaganym łupem pod skałami i zapisanymi rozwiązaniami     |
 | `VaultComposer.ts`             | Łączenie modułów w szczelne skrzydła, trasy łączników i pozycje podpowiedzi etapów  |
 | `Renderer.ts`                  | Interpolacja, współdzielona kamera i animator, kafelki, przedmioty, patrole i finał |
 | `SpriteBounds.ts`              | Wspólny obrys alfa klatek: czytelna wielkość i stabilne kadrowanie postaci          |
@@ -151,6 +155,10 @@ Otwiera pomoc z zatrzymaną grą. Zamknięcie pomocy pozostawia pauzę — wznó
 `src/games/shared/ImageCache.ts` udostępnia jeden cache obrazów dla obu gier 2D.
 `AnimationLoop`, `EventScope`, `CameraRig`, `SpriteAnimator` i gałka są ponownie wykorzystane,
 nie zastąpione kolejnymi równoległymi kontrolerami. Pauza nie zatrzymuje RAF — tylko symulację.
+
+`npx tsx scripts/simulate-bongo-campaign.ts` przechodzi wszystkie poziomy przez produkcyjne
+reguły ruchu i zapisuje `reports/bongo-avalanche/simulation-report.json`.
+Opis zagadek, zakres dowodu i weryfikacja: [bongo-avalanche.md](bongo-avalanche.md).
 
 ## Grafiki i dźwięki
 

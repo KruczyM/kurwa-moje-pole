@@ -9,10 +9,10 @@ describe('expanded original caves', () => {
     CAVE_SKETCHES.forEach((sketch, index) => expect(buildCave(sketch, index)).toEqual(LEVELS[index]));
   });
 
-  it('fits authored exit wings up to 109x44, with larger objectives and optional deposits', () => {
-    expect(LEVELS[0].rows[0].length).toBe(63);
+  it('fits expanded mining wings up to 139x44, with larger objectives and optional deposits', () => {
+    expect(LEVELS[0].rows[0].length).toBe(76);
     expect(LEVELS[0].rows).toHaveLength(34);
-    expect(LEVELS[11].rows[0].length).toBe(109);
+    expect(LEVELS[11].rows[0].length).toBe(139);
     expect(LEVELS[11].rows).toHaveLength(44);
     for (const level of LEVELS) {
       const w = createWorld(level);
@@ -50,16 +50,14 @@ describe('expanded original caves', () => {
     }
   });
 
-  it('requires using real pushes on every recorded solution, not just walking a longer corridor', () => {
-    for (const level of LEVELS) {
-      const game = new Simulation(level);
-      let pushes = 0;
-      for (const input of level.solution) {
-        game.step(input);
-        pushes += game.drainSounds().filter((sound) => sound === 'push').length;
-      }
-      expect(pushes, `no push puzzle in ${level.id}`).toBeGreaterThanOrEqual(3);
-      expect(game.world.status).toBe('won');
+  it.each(LEVELS)('requires real pushes on level $id rather than just a longer corridor', (level) => {
+    const game = new Simulation(level);
+    let pushes = 0;
+    for (const input of level.solution) {
+      game.step(input);
+      pushes += game.drainSounds().filter((sound) => sound === 'push').length;
     }
+    expect(pushes, `no push puzzle in ${level.id}`).toBeGreaterThanOrEqual(3);
+    expect(game.world.status).toBe('won');
   });
 });

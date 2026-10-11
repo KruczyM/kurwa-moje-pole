@@ -264,6 +264,9 @@ export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
   // The vault lies ahead; no return through the expanding root is needed on the acceptance route.
   if (index % 3 === 2) carve(puzzleOrigin.x - 1, puzzleEntry.y, 'K');
   solution.push(...puzzle.solution);
+  const requiredPickups = puzzle.rows.flatMap((row, y) =>
+    [...row].flatMap((tile, x) => (tile === 'O' ? [{ x: puzzleOrigin.x + x, y: puzzleOrigin.y + y }] : [])),
+  );
   return {
     id: index + 1,
     title: sketch.title,
@@ -271,6 +274,7 @@ export function buildCave(sketch: CaveSketch, index: number): LevelDefinition {
     biome: Math.floor(index / 3),
     rows: grid.map((row) => row.join('')),
     quota,
+    requiredPickups,
     solution,
     timeLimitSeconds: Math.max(180, Math.ceil((solution.length * STEP_SECONDS * 4) / 30) * 30),
     gate,

@@ -1,5 +1,6 @@
 import type { Direction, Point } from './types';
 import { composeVault } from './VaultComposer';
+import { LOOT_PUZZLES } from './LootPuzzles';
 
 export interface ExitPuzzle {
   name: string;
@@ -192,18 +193,24 @@ export const EXIT_PUZZLES: readonly ExitPuzzle[] = [
 
 /** Twelve distinct compositions: introduce mechanics, then combine them in different orders. */
 export const CAMPAIGN_VAULTS: readonly ExitPuzzle[] = [
-  composeVault('Przygotowanie wnęki', [EXIT_PUZZLES[0]]),
-  composeVault('Pierwszy spust', [EXIT_PUZZLES[1]]),
-  composeVault('Wnęka i szyb', [EXIT_PUZZLES[0], EXIT_PUZZLES[1]]),
-  composeVault('Wspólna podpora', [EXIT_PUZZLES[3]]),
-  composeVault('Szyb i wnęka', [EXIT_PUZZLES[1], EXIT_PUZZLES[0]]),
-  composeVault('Korzenne obejście', [EXIT_PUZZLES[5]]),
-  composeVault('Kolejność ma znaczenie', [EXIT_PUZZLES[4]]),
-  composeVault('Stos i osobny spust', [EXIT_PUZZLES[3], EXIT_PUZZLES[1]]),
-  composeVault('Wnęka pod stosem', [EXIT_PUZZLES[0], EXIT_PUZZLES[3]]),
-  composeVault('Spust przed manewrem', [EXIT_PUZZLES[1], EXIT_PUZZLES[4]]),
-  composeVault('Zmiana strony i stos', [EXIT_PUZZLES[5], EXIT_PUZZLES[3]]),
-  composeVault('Trzy zamki Tasiora', [EXIT_PUZZLES[0], EXIT_PUZZLES[4], EXIT_PUZZLES[3]]),
+  composeVault('Podkop i pierwsza zasuwa', [LOOT_PUZZLES[0], EXIT_PUZZLES[0]]),
+  composeVault('Dostawa z dwóch szybów', [LOOT_PUZZLES[1], EXIT_PUZZLES[1]]),
+  composeVault('Zwał nad magazynem', [LOOT_PUZZLES[2], EXIT_PUZZLES[0], EXIT_PUZZLES[1]]),
+  composeVault('Korzenna droga bez powrotu', [LOOT_PUZZLES[3], EXIT_PUZZLES[3]]),
+  composeVault('Zielony skarbiec', [LOOT_PUZZLES[4], LOOT_PUZZLES[0], EXIT_PUZZLES[0]]),
+  composeVault('Zasuwy pod korzeniami', [LOOT_PUZZLES[5], EXIT_PUZZLES[5]]),
+  composeVault('Basowy komin', [LOOT_PUZZLES[2], EXIT_PUZZLES[4]]),
+  composeVault('Ładunek między uskokami', [LOOT_PUZZLES[1], LOOT_PUZZLES[4], EXIT_PUZZLES[3]]),
+  composeVault('Lawinowa kopalnia', [LOOT_PUZZLES[3], LOOT_PUZZLES[2], LOOT_PUZZLES[1], EXIT_PUZZLES[3]]),
+  composeVault('Szkło pod dwiema zasuwami', [LOOT_PUZZLES[5], EXIT_PUZZLES[4]]),
+  composeVault('Wyprawa bez odwrotu', [LOOT_PUZZLES[4], LOOT_PUZZLES[3], EXIT_PUZZLES[5], EXIT_PUZZLES[3]]),
+  composeVault('Ostatnia lawina Tasiora', [
+    LOOT_PUZZLES[2],
+    LOOT_PUZZLES[5],
+    LOOT_PUZZLES[3],
+    EXIT_PUZZLES[4],
+    EXIT_PUZZLES[3],
+  ]),
 ];
 
 /** Selects a fixed authored composition; invalid level indices never silently reuse the last puzzle. */

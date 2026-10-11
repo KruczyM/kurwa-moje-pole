@@ -11,6 +11,7 @@ export interface Body extends Point {
   previous: Point;
 }
 export interface LooseObject extends Body {
+  required?: boolean;
   kind: 'rock' | 'pickup';
   falling: boolean;
   variant: number;
@@ -27,6 +28,8 @@ export interface LevelDefinition {
   biome: number;
   rows: readonly string[];
   quota: number;
+  /** Original positions identify mandatory vault loot; the flag follows falling objects by ID. */
+  requiredPickups?: readonly Point[];
   solution: readonly Direction[];
   timeLimitSeconds?: number;
   gate?: Point;

@@ -264,9 +264,11 @@ class BongoRush {
     element('timer').classList.toggle('urgent', seconds <= 30);
     element('exit-status').textContent = this.game.exitOpen
       ? 'Wyjście odblokowane →'
-      : level.gate && world.collected >= level.quota
-        ? 'Zamknij zagrodę złotą skałą'
-        : 'Zbierz dostawę';
+      : this.game.requiredRemaining > 0 && world.collected >= level.quota
+        ? `Łup ze złotą obwódką: pozostało ${this.game.requiredRemaining}`
+        : level.gate && world.collected >= level.quota
+          ? 'Zamknij zagrodę złotą skałą'
+          : 'Zbierz dostawę';
     const stage =
       level.vault?.stages?.filter((part) => world.player.x >= part.entry.x - 3).pop() ?? level.vault;
     const hint = stage && world.player.x >= stage.entry.x - 3 ? `${stage.name}: ${stage.hint}` : level.hint;
