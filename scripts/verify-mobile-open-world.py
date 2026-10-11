@@ -32,33 +32,40 @@ async def run(engine, name, device):
             """Read current stream ownership and classify loaded sectors using the production policy."""
             return await page.evaluate('''async()=>{
               const g=window.__camp_game;
-              const {isDeferredCampSector}=await import('/src/game/world/mobileWorldStreaming.ts');
+              const {isDeferredCampSector,mobileWorldRanges}=await import('/src/game/world/mobileWorldStreaming.ts');
+              const {sectorDistance}=await import('/src/game/world/FogSectorStreamer.ts');
               const s=g.sectorStreamer;
               return {state:g.state.current, fog:g.scene.fog===null, far:g.camera.far,
                 sky:g.scene.background?.isCubeTexture===true,
                 deferredLoaded:s.manifest.sectors.filter(x=>isDeferredCampSector(x)&&s.loaded.has(x.id)).length,
                 residentLoaded:s.manifest.sectors.filter(x=>!isDeferredCampSector(x)&&s.loaded.has(x.id)).length,
                 residentTotal:s.manifest.sectors.filter(x=>!isDeferredCampSector(x)).length,
+                distantLoaded:s.manifest.sectors.filter(x=>s.loaded.has(x.id)&&sectorDistance(x,g.camera.position)>mobileWorldRanges(x).retain).length,
                 sectors:s.stats,calls:g.renderer.info.render.calls,triangles:g.renderer.info.render.triangles};
             }''')
 
         start = await snapshot()
         assert start['fog'] and start['far'] == 500 and start['sky'], start
-        assert start['deferredLoaded'] == 0 and start['residentLoaded'] == start['residentTotal'], start
+        assert start['deferredLoaded'] == 0 and 0 < start['residentLoaded'] < start['residentTotal'], start
+        assert start['distantLoaded'] == 0, start
         assert start['sectors']['failed'] == 0, start
         await page.screenshot(path=str(OUT / f'{name}-camp.png'))
         await page.evaluate('()=>{window.__camp_game.camera.position.set(0,1.9,-130)}')
-        await page.wait_for_function('(count)=>window.__camp_game.sectorStreamer.stats.loaded>count', arg=start['residentTotal'], timeout=60000)
+        await page.wait_for_function('''async()=>{
+          const {isDeferredCampSector}=await import('/src/game/world/mobileWorldStreaming.ts');
+          const s=window.__camp_game.sectorStreamer;
+          return s.manifest.sectors.some(x=>isDeferredCampSector(x)&&s.loaded.has(x.id));
+        }''', timeout=120000)
         await page.wait_for_timeout(3000)
         approach = await snapshot()
         assert approach['deferredLoaded'] > 0, approach
-        assert approach['residentLoaded'] == start['residentLoaded'], approach
+        assert approach['distantLoaded'] == 0, approach
         await page.screenshot(path=str(OUT / f'{name}-north.png'))
         await page.evaluate('()=>{window.__camp_game.camera.position.set(0,1.9,0)}')
         await page.wait_for_timeout(3000)
         returned = await snapshot()
         assert returned['deferredLoaded'] == 0, returned
-        assert returned['residentLoaded'] == start['residentLoaded'], returned
+        assert returned['distantLoaded'] == 0, returned
         await page.locator('#mobile-menu').tap()
         await page.wait_for_function('()=>window.__camp_game.state.current==="paused"')
         assert not await page.locator('#setting-fog-control').is_visible()

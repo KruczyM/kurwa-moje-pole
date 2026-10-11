@@ -4,6 +4,9 @@ import { FogSectorStreamer, type FogSector } from './FogSectorStreamer';
 import {
   CAMP_LOAD_DISTANCE,
   CAMP_RETAIN_DISTANCE,
+  WORLD_LOAD_DISTANCE,
+  WORLD_RETAIN_DISTANCE,
+  WORLD_START_DISTANCE,
   isDeferredCampSector,
   mobileOpenWorldEnabled,
   mobileWorldRanges,
@@ -43,11 +46,16 @@ describe('mobile open world', () => {
         ],
       }),
     ).toBe(false);
-    expect(mobileWorldRanges(sector('main', 0, 0)).retain).toBe(Infinity);
+    expect(mobileWorldRanges(sector('main', 0, 0))).toEqual({
+      far: Infinity,
+      prefetch: WORLD_LOAD_DISTANCE,
+      prime: WORLD_START_DISTANCE,
+      retain: WORLD_RETAIN_DISTANCE,
+    });
     expect(mobileWorldRanges(sector('camp', -112, -144)).prefetch).toBe(CAMP_LOAD_DISTANCE);
   });
 
-  it('primes the rest of the world but fetches a remote camp only after approach', async () => {
+  it('loads only nearby sectors at startup and evicts remote camps after approach', async () => {
     const main = sector('main', 0, 0);
     const stage = sector('stage', 180, 0);
     const camp = sector('camp', 0, -144);
@@ -67,17 +75,46 @@ describe('mobile open world', () => {
     );
     stream.setStreamingPolicy(mobileWorldRanges);
     await stream.prime(new THREE.Vector3());
-    expect(load.mock.calls.map(([entry]) => entry.id)).toEqual(['main', 'stage']);
+    expect(load.mock.calls.map(([entry]) => entry.id)).toEqual(['main']);
     expect(scene.children.every((root) => root.visible)).toBe(true);
-    await stream.prime(new THREE.Vector3(0, 0, -128 + CAMP_LOAD_DISTANCE));
-    expect(load.mock.calls.map(([entry]) => entry.id)).toEqual(['main', 'stage', 'camp']);
+    await stream.prime(new THREE.Vector3(0, 0, -128 + 32));
+    expect(load.mock.calls.map(([entry]) => entry.id)).toEqual(['main', 'camp']);
     stream.update(1, new THREE.Vector3(0, 0, -128 + CAMP_RETAIN_DISTANCE - 1));
     expect(release).not.toHaveBeenCalled();
     stream.update(1, new THREE.Vector3());
     expect(release).toHaveBeenCalledTimes(1);
-    expect(scene.children.map((root) => root.name)).toEqual(['main', 'stage']);
+    expect(scene.children.map((root) => root.name)).toEqual(['main']);
     stream.dispose();
-    expect(release).toHaveBeenCalledTimes(3);
+    expect(release).toHaveBeenCalledTimes(2);
+  });
+
+  it('streams ordinary sectors beyond startup range and releases them past the retention boundary', async () => {
+    const nearby = sector('nearby', 60, 0);
+    const remote = sector('remote', 200, 0);
+    const scene = new THREE.Group();
+    const load = vi.fn(async () => new THREE.Group());
+    const release = vi.fn((_entry: FogSector, root: THREE.Object3D) => root.removeFromParent());
+    const stream = new FogSectorStreamer(
+      scene,
+      { schema: 1, sourceSha256: '', sectors: [nearby, remote] },
+      load,
+      release,
+      vi.fn(),
+    );
+    stream.setStreamingPolicy(mobileWorldRanges);
+    await stream.prime(new THREE.Vector3());
+    expect(load).not.toHaveBeenCalled();
+    stream.update(1, new THREE.Vector3());
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(load).toHaveBeenCalledOnce();
+    expect(stream.stats.loaded).toBe(1);
+    stream.update(1, new THREE.Vector3(-24, 0, 0));
+    expect(release).not.toHaveBeenCalled();
+    stream.update(1, new THREE.Vector3(-25, 0, 0));
+    expect(release).toHaveBeenCalledOnce();
+    expect(stream.stats.loaded).toBe(0);
+    stream.dispose();
   });
 
   it('releases an in-flight camp result after moving away, keeping a single queue', async () => {
