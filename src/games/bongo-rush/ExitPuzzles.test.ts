@@ -21,7 +21,7 @@ function fixture(index: number): LevelDefinition {
 }
 
 describe('mandatory exit puzzles', () => {
-  it.each([0, 1, 2, 3, 4])('lets the player stop and think between vault %s moves', (index) => {
+  it.each([0, 1, 2, 3, 4, 5])('lets the player stop and think between vault %s moves', (index) => {
     const level = fixture(index),
       game = new Simulation(level);
     for (const direction of level.solution) {
@@ -34,7 +34,7 @@ describe('mandatory exit puzzles', () => {
     expect(game.world.status).toBe('won');
   });
 
-  it.each([0, 1, 2, 3, 4])('solves vault %s using only actual moves and physics', (index) => {
+  it.each([0, 1, 2, 3, 4, 5])('solves vault %s using only actual moves and physics', (index) => {
     const level = fixture(index),
       game = new Simulation(level);
     for (const direction of level.solution) {
@@ -46,7 +46,7 @@ describe('mandatory exit puzzles', () => {
     expect(game.world.status).toBe('won');
   });
 
-  it.each([0, 1, 2, 3, 4])('has no dig-only bypass around the rock gate in vault %s', (index) => {
+  it.each([0, 1, 2, 3, 4, 5])('has no dig-only bypass around the rock gate in vault %s', (index) => {
     const game = new Simulation(fixture(index));
     const queue = [{ ...game.world.player }];
     const seen = new Set<string>();
@@ -71,6 +71,27 @@ describe('mandatory exit puzzles', () => {
     expect(game.world.player).toMatchObject(before);
     expect(game.drainSounds()).not.toContain('push');
     expect(game.world.status).toBe('playing');
+  });
+
+  it('requires an opposite-side approach and a cleared second pocket in the reference-inspired maze', () => {
+    const game = new Simulation(fixture(5));
+    const pushes: string[] = [];
+    for (const direction of game.level.solution) {
+      game.step(direction);
+      if (game.drainSounds().includes('push')) pushes.push(direction);
+    }
+    expect(pushes).toEqual(['right', 'left']);
+    expect(game.world.status).toBe('won');
+
+    const unprepared = new Simulation(fixture(5));
+    for (const direction of unprepared.level.solution.slice(0, 26)) unprepared.step(direction);
+    for (const direction of ['right', 'right', 'down', 'down', 'left'] as const) unprepared.step(direction);
+    expect(unprepared.world.player).toMatchObject({ x: 6, y: 9 });
+    unprepared.step('left');
+    expect(unprepared.world.player).toMatchObject({ x: 6, y: 9 });
+    expect(unprepared.object({ x: 5, y: 9 })?.kind).toBe('rock');
+    expect(unprepared.cell({ x: 4, y: 9 })).toBe('soil');
+    expect(unprepared.world.status).toBe('playing');
   });
 
   it('blocks reentry into a moving rock until the chute has fallen clear', () => {

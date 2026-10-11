@@ -1,5 +1,6 @@
 """Real-input vault completions and biome gallery; no world mutation or accelerated simulation."""
 import asyncio
+import argparse
 import itertools
 import json
 import runpy
@@ -7,10 +8,15 @@ from pathlib import Path
 from playwright.async_api import async_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / 'reports/bongo-authored-vaults'
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--port', type=int, default=5194)
+parser.add_argument('--levels', type=int, nargs='+', default=[1, 4, 7, 12], choices=range(1, 13))
+parser.add_argument('--output', default='reports/bongo-authored-vaults')
+ARGS = parser.parse_args()
+OUT = ROOT / ARGS.output
 CHECKS = runpy.run_path(str(ROOT / 'scripts/verify-bongo-rush.py'))
 GALLERY = runpy.run_path(str(ROOT / 'scripts/verify-bongo-expanded.py'))
-URL = 'http://127.0.0.1:5194/bongo-rush.html?verify=1'
+URL = f'http://127.0.0.1:{ARGS.port}/bongo-rush.html?verify=1'
 GALLERY['gallery'].__globals__['CHECKS']['URL'] = URL
 GALLERY['gallery'].__globals__['OUT'] = OUT
 
@@ -102,7 +108,8 @@ async def main():
     async with async_playwright() as p:
         desktop = {'viewport': {'width': 1440, 'height': 960}}
         results = [await GALLERY['gallery'](p.chromium)]
-        for pair in [(1, 4), (7, 12)]:
+        for offset in range(0, len(ARGS.levels), 2):
+            pair = ARGS.levels[offset:offset + 2]
             # At most two active gameplay browsers to limit software-rendering load on the host.
             completed = await asyncio.gather(*[
                 vault(p.webkit if number == 7 else p.chromium, number,

@@ -7,7 +7,8 @@ i przejście 12 poziomów. Inspiracją są zasady gier typu Boulder Dash, nie ic
 grafiki ani gotowe układy poziomów. Finał jest fikcyjną, satyryczną scenką.
 
 Istniejące After jest zachowane, również na gałęziach `feat/after-demo` i
-`fix/after-joystick`. Obecne kompozycje zagadek są na `feat/bongo-authored-vaults`, w osobnym worktree;
+`fix/after-joystick`. Obecne adaptacje zagadek są na `feat/bongo-reference-puzzles`, w osobnym worktree;
+wcześniejsze kompozycje pozostały na `feat/bongo-authored-vaults`;
 wcześniejszy audyt biomów pozostał na `feat/bongo-biomes-puzzles`;
 wcześniejsza rozbudowa jaskiń pozostała na `feat/bongo-expanded-caves`;
 wcześniejsze wersje pozostały na `feat/bongo-rush` i `feat/bongo-bush`.
@@ -58,7 +59,7 @@ Głazy i przedmioty korzystają z istniejącej grawitacji — podkopanie podpory
 może wywołać lawinę. Nie trzeba chodzić jedną narysowaną ścieżką.
 
 Przed wyjściem jest obowiązkowa komora, której nie omija nadmiar przedmiotów.
-Każdy poziom ma inną kompozycję pięciu modułów, nie dwanaście nowych mechanik fizyki:
+Każdy poziom ma inną kompozycję sześciu modułów, nie dwanaście nowych mechanik fizyki:
 
 | Poziom | Kompozycja                                 |
 | ------ | ------------------------------------------ |
@@ -67,12 +68,12 @@ Każdy poziom ma inną kompozycję pięciu modułów, nie dwanaście nowych mech
 | 3      | Wnęka i szyb                               |
 | 4      | Wspólna podpora dwóch skał                 |
 | 5      | Szyb i wnęka                               |
-| 6      | Dwa szyby korzeni                          |
+| 6      | Korzenne obejście — zmiana strony pchania  |
 | 7      | Kolejność ma znaczenie                     |
 | 8      | Stos i osobny spust                        |
 | 9      | Wnęka pod stosem                           |
 | 10     | Spust przed manewrem                       |
-| 11     | Manewr i stos                              |
+| 11     | Zmiana strony i stos                       |
 | 12     | Trzy zamki Tasiora: wnęka, kolejność, stos |
 
 Podpowiedź zmienia się przy wejściu do kolejnego modułu. W zagadce kolejności najpierw
@@ -238,6 +239,7 @@ Emulacja nie potwierdza wydajności fizycznego iPhone’a. Test dotyku, ergonomi
 na rzeczywistym urządzeniu pozostaje osobnym punktem odbioru. Nowa gra nie jest automatycznie publikowana.
 
 Obecna ocena trudności, zakres sprawdzenia i plan dalszej pracy:
+[odniesienia do istniejących gier](bongo-puzzle-references.md),
 [kompozycje komór](bongo-vaults-verification.md).
 Wcześniejszy [audyt biomów i zagadek](bongo-design-audit.md).
 Wcześniejszy raport: [rozbudowane jaskinie](bongo-expanded-verification.md).
