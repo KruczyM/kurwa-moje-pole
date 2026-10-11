@@ -52,6 +52,7 @@ export type GroundTextures = {
 
 type WorldModels = {
   fogTrial?: boolean;
+  skyboxEnabled?: boolean;
   ecoPickups?: GLTF | null;
   authoredFestival: GLTF;
   characters?: Map<string, GLTF>;
@@ -222,7 +223,13 @@ export class CampWorld {
     this.ecoModelSource = models.ecoPickups?.scene;
     this.debugInteractions = debugInteractions;
     this.grassQuality = grassQuality;
-    this.skybox = new TimeOfDaySkybox(scene, undefined, undefined, undefined, !models.fogTrial);
+    this.skybox = new TimeOfDaySkybox(
+      scene,
+      undefined,
+      undefined,
+      undefined,
+      models.skyboxEnabled ?? !models.fogTrial,
+    );
     this.panorama = new HorizonPanorama(models.textures?.horizon);
     this.panorama.mesh.userData.excludeMushroomWireframe = true;
     scene.add(this.panorama.mesh);

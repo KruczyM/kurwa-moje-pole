@@ -11,6 +11,7 @@ import {
   savedFogDistance,
 } from './rendering/fogTrial';
 import { FogSectorStreamer, type FogSectorManifest } from './world/FogSectorStreamer';
+import { mobileOpenWorldEnabled, mobileWorldRanges } from './world/mobileWorldStreaming';
 import { fogWorldManifestUrl, fogWorldSectorUrl } from './assets/assetManifest';
 import { AssetLoader } from './assets/AssetLoader';
 import { characterAssets, effectAssets, festivalNpcAssets, musicAsset } from './assets/assetManifest';
@@ -162,11 +163,12 @@ export class Game {
   private speakerReactionPlayed = false;
   private pointerLockPause = new PointerLockPauseGate();
   private readonly mobileInput = isMobileInputDevice();
-  private readonly fogTrial = fogTrialEnabled(this.mobileInput);
+  private readonly openMobileWorld = mobileOpenWorldEnabled(this.mobileInput);
+  private readonly fogTrial = this.openMobileWorld || fogTrialEnabled(false);
   private fogViewDistance = savedFogDistance();
   private graphics = fogTrialProfile(
     browserGraphicsProfile(savedMobileQuality()),
-    this.fogTrial,
+    this.fogTrial && !this.openMobileWorld,
     this.fogViewDistance,
   );
   private fpsElapsed = 0;
@@ -277,7 +279,8 @@ export class Game {
     configureColorPipeline(this.renderer, 'world');
     this.scene.background = new THREE.Color(0x9bb9d0);
     this.scene.fog = new THREE.Fog(0x8da1b5, 100, 380);
-    if (this.fogTrial) {
+    if (this.openMobileWorld) this.scene.fog = null;
+    else if (this.fogTrial) {
       const range = fogRanges(this.fogViewDistance);
       this.scene.fog = new THREE.Fog(0x8da1b5, range.near, range.far);
       this.scene.background = new THREE.Color(0x8da1b5);
@@ -308,7 +311,7 @@ export class Game {
         }
         this.graphics = fogTrialProfile(
           browserGraphicsProfile(quality.value),
-          this.fogTrial,
+          this.fogTrial && !this.openMobileWorld,
           this.fogViewDistance,
         );
         this.distanceVisibility?.setProfile(this.graphics);
@@ -322,7 +325,7 @@ export class Game {
     }
     const fogControl = document.querySelector<HTMLElement>('#setting-fog-control');
     const fogSlider = document.querySelector<HTMLInputElement>('#setting-fog-distance');
-    if (fogControl) fogControl.hidden = !this.fogTrial;
+    if (fogControl) fogControl.hidden = !this.fogTrial || this.openMobileWorld;
     if (fogSlider) {
       fogSlider.value = String(this.fogViewDistance);
       this.events.listen(fogSlider, 'input', () => this.setFogDistance(Number(fogSlider.value)));
@@ -389,6 +392,7 @@ export class Game {
         },
         undefined,
         this.fogTrial,
+        this.openMobileWorld,
       );
       if (this.fogTrial) this.sectorLoader = loader;
       const assets = await loader.loadAll();
@@ -423,7 +427,8 @@ export class Game {
           },
           (message) => this.toast(message),
         );
-        this.sectorStreamer.setViewDistance(this.fogViewDistance);
+        if (this.openMobileWorld) this.sectorStreamer.setStreamingPolicy(mobileWorldRanges);
+        else this.sectorStreamer.setViewDistance(this.fogViewDistance);
       }
       this.world.setShadowResolution(this.graphics.shadowMapSize);
       if (this.graphics.mobile)
@@ -740,7 +745,11 @@ export class Game {
         this.toggleFreeCamera(true);
       }
 
-      if (this.fogTrial) {
+      if (this.openMobileWorld) {
+        this.toast(
+          'Telefon: świat bez mgły. Obozy za północnym pasażem doczytują się po podejściu. Dodatkowy tłum wyłączony.',
+        );
+      } else if (this.fogTrial) {
         this.toast(
           `Próba telefonu: mgła ${this.fogViewDistance} m, sektory świata, oryginalne tekstury. Dodatkowy tłum wyłączony.`,
         );
@@ -1690,7 +1699,7 @@ export class Game {
     this.animationLoop.start();
   }
   private setFogDistance(value: number) {
-    if (!this.fogTrial) return;
+    if (!this.fogTrial || this.openMobileWorld) return;
     this.fogViewDistance = fogDistance(value);
     const range = fogRanges(this.fogViewDistance);
     const fog = this.scene.fog;
