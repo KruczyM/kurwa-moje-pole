@@ -184,6 +184,8 @@ Predykcyjne sondy przeszkód, separację agentów i ograniczenie prędkości skr
 
 Profile zachowania, sektory wędrówki, spotkania i cooldown powrotu od granicy opisuje `docs/npc-behavior.md`.
 
+Mobilny świat bez mgły i doczytywanie obozów za północnym pasażem opisuje [docs/mobile-open-world.md](docs/mobile-open-world.md).
+
 Detekcję utknięć, oscylacji waypointów, lawin decyzji i stopniowane odzyskiwanie opisuje `docs/npc-watchdog.md`.
 
 Warstwy diagnostyczne 3D/2D, telemetrię HUD oraz 30-minutowy test sesji AI (soak test) opisuje `docs/npc-debug.md`.

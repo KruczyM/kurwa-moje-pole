@@ -30,6 +30,7 @@ export type WorldTextures = {
 
 export type LoadedAssets = {
   fogTrial?: boolean;
+  skyboxEnabled?: boolean;
   ecoPickups?: GLTF | null;
   characters: Map<string, GLTF>;
   authoredFestival: GLTF;
@@ -52,6 +53,7 @@ export class AssetLoader {
     private error: (message: string) => void,
     private motionBankUrl: string | null = festivalMotionBankUrl,
     private fogTrial = false,
+    private streamedSkybox = false,
   ) {}
 
   async loadWorldSector(url: string): Promise<THREE.Object3D | null> {
@@ -221,6 +223,7 @@ export class AssetLoader {
     ]);
     return {
       fogTrial: this.fogTrial,
+      skyboxEnabled: !this.fogTrial || this.streamedSkybox,
       characters,
       authoredFestival,
       speaker,

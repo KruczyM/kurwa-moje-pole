@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { fogRanges, FOG_TRIAL_FAR } from '../rendering/fogTrial';
+import type { SectorRanges } from './mobileWorldStreaming';
 
 export type FogSector = { id: string; path: string; bounds: [number[], number[]]; bytes: number };
 export type FogSectorManifest = { schema: number; sourceSha256: string; sectors: FogSector[] };
@@ -20,7 +21,18 @@ export class FogSectorStreamer {
   private pending?: Promise<void>;
   private disposed = false;
   private ranges = fogRanges(FOG_TRIAL_FAR);
+  private policy?: (sector: FogSector) => SectorRanges;
+  /** Reuses the existing queue and ownership lifecycle with per-sector residence rules. */
+  setStreamingPolicy(policy: (sector: FogSector) => SectorRanges): void {
+    this.policy = policy;
+    this.elapsed = Infinity;
+  }
+  /** Resolves either the legacy fog radius or the selective mobile policy. */
+  private rangesFor(sector: FogSector): SectorRanges {
+    return this.policy?.(sector) ?? this.ranges;
+  }
   setViewDistance(distance: number): void {
+    this.policy = undefined;
     this.ranges = fogRanges(distance);
     this.elapsed = Infinity;
   }
@@ -43,10 +55,11 @@ export class FogSectorStreamer {
       const root = this.loaded.get(sector.id);
       if (!root) continue;
       const distance = sectorDistance(sector, viewer);
-      if (distance > this.ranges.retain) {
+      const ranges = this.rangesFor(sector);
+      if (distance > ranges.retain) {
         this.loaded.delete(sector.id);
         this.release(sector, root);
-      } else root.visible = distance <= this.ranges.far;
+      } else root.visible = distance <= ranges.far;
     }
     void this.pump();
   }
@@ -63,18 +76,19 @@ export class FogSectorStreamer {
         (s) =>
           !this.loaded.has(s.id) &&
           !this.failed.has(s.id) &&
-          sectorDistance(s, this.viewer) <= this.ranges.prefetch,
+          sectorDistance(s, this.viewer) <= this.rangesFor(s).prefetch,
       )
       .sort((a, b) => sectorDistance(a, this.viewer) - sectorDistance(b, this.viewer))[0];
     if (!sector || this.disposed) return;
     try {
       const root = await this.load(sector);
       if (!root) throw new Error('Nie udało się wczytać sektora');
-      if (this.disposed || sectorDistance(sector, this.viewer) > this.ranges.retain) {
+      const ranges = this.rangesFor(sector);
+      if (this.disposed || sectorDistance(sector, this.viewer) > ranges.retain) {
         this.release(sector, root);
         return;
       }
-      root.visible = sectorDistance(sector, this.viewer) <= this.ranges.far;
+      root.visible = sectorDistance(sector, this.viewer) <= ranges.far;
       this.scene.add(root);
       this.loaded.set(sector.id, root);
     } catch {
@@ -88,7 +102,9 @@ export class FogSectorStreamer {
       !this.disposed &&
       this.manifest.sectors.some(
         (s) =>
-          !this.loaded.has(s.id) && !this.failed.has(s.id) && sectorDistance(s, viewer) <= this.ranges.prime,
+          !this.loaded.has(s.id) &&
+          !this.failed.has(s.id) &&
+          sectorDistance(s, viewer) <= this.rangesFor(s).prime,
       )
     )
       await this.pump();
