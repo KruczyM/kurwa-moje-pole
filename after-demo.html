@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#101c23" />
+    <title>After: ostatnia noc — demo</title>
+  </head>
+  <body>
+    <main id="after-app">
+      <canvas id="after-canvas" aria-label="Mapa obozu After"></canvas>
+      <header>
+        <div>
+          <small>GRYWALNY PILOT · SOLO · BEZ 3D</small>
+          <h1>After: ostatnia noc</h1>
+        </div>
+        <button id="pause">Pauza</button>
+      </header>
+      <aside id="journal" aria-label="Zadania">
+        <p id="goals"></p>
+        <p id="status" role="status">Ładowanie grafik…</p>
+      </aside>
+      <section id="start" class="panel">
+        <h2>Koncert się skończył. Noc jeszcze nie.</h2>
+        <p>Odzyskaj flagę, znajdź znajomego i przywróć światło. Potem wróć do obozu.</p>
+        <label
+          >Postać
+          <select id="hero">
+            <option>Amper</option>
+            <option>Chlebak</option>
+          </select></label
+        ><button id="begin" disabled>Wczytywanie…</button>
+        <p>
+          WASD / strzałki — ruch · Shift — sprint · E — interakcja · Esc — zamknij / pauza. Na telefonie użyj
+          przycisków poniżej.
+        </p>
+        <a href="./">Wróć do festiwalu 3D</a>
+      </section>
+      <section id="dialogue" class="panel" hidden aria-label="Rozmowa">
+        <h2 id="speaker"></h2>
+        <p id="speech"></p>
+        <div id="choices"></div>
+        <button id="close-dialogue">Zamknij rozmowę</button>
+      </section>
+      <section id="pause-panel" class="panel" hidden>
+        <h2>Pauza</h2>
+        <button id="resume">Wróć do gry</button><a href="./">Festiwal 3D</a>
+      </section>
+      <section id="finish" class="panel" hidden>
+        <h2>Zdążyliśmy przed świtem.</h2>
+        <p>
+          Flaga odzyskana. Ekipa w komplecie. Światło działa. To koniec pierwszego pilota — kolejna część jest
+          w przygotowaniu.
+        </p>
+        <button id="restart">Zagraj ponownie</button><a href="./">Festiwal 3D</a>
+      </section>
+      <nav id="controls" aria-label="Sterowanie">
+        <div id="dpad">
+          <button data-key="ArrowUp" aria-label="Idź w górę">↑</button
+          ><button data-key="ArrowLeft" aria-label="Idź w lewo">←</button
+          ><button data-key="ArrowDown" aria-label="Idź w dół">↓</button
+          ><button data-key="ArrowRight" aria-label="Idź w prawo">→</button>
+        </div>
+        <div class="actions">
+          <button data-key="Shift" id="sprint">Sprint</button
+          ><button id="interact" disabled>Podejdź do celu</button>
+        </div>
+      </nav>
+    </main>
+    <script type="module" src="/src/games/after/demo/main.ts"></script>
+  </body>
+</html>

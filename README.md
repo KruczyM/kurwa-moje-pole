@@ -2,6 +2,12 @@
 
 Przeglądarkowa gra 3D dążąca do możliwie wiernego odwzorowania Pol’and’Rock: układu terenu, rozpoznawalnych miejsc, stoisk, obozowisk i atmosfery. Prywatny obóz pozostaje częścią większego festiwalu. Projekt używa Three.js, TypeScriptu oraz Vite. Stopień zgodności z referencjami i skróty skali muszą być jawne — prototyp nie jest rekonstrukcją 1:1.
 
+## Demo After: ostatnia noc
+
+Osobny grywalny pilot 2D: [otwórz demo](https://kruczym.github.io/kurwa-moje-pole/after-demo.html).
+Na telefonie użyj przycisków ekranowych; na komputerze WASD, Shift i E.
+Demo nie zastępuje festiwalu 3D. Opis, ograniczenia i pliki: [docs/after-demo.md](docs/after-demo.md).
+
 ## Uruchomienie
 
 Wymagane są Node.js 20 LTS (lub nowszy), Git i Git LFS.
