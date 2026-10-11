@@ -34,15 +34,29 @@ async def run(engine, name, profile):
         await page.wait_for_timeout(150)
         assert await page.evaluate('()=>window.__afterDemo.campaign.snapshot().world.tick') == tick
         await page.locator('#resume').click()
-        button = page.locator('[data-key="ArrowUp"]')
-        box = await button.bounding_box()
+        box = await page.locator('#joystick').bounding_box()
         await page.mouse.move(box['x'] + box['width']/2, box['y'] + box['height']/2)
         touch_before = await page.evaluate('()=>window.__afterDemo.campaign.snapshot().world.players[0].position.y')
         await page.mouse.down()
+        await page.mouse.move(box['x'] + box['width']/2, box['y'] + box['height']/2 - 36)
         await page.wait_for_timeout(200)
         await page.mouse.up()
         touch_after = await page.evaluate('()=>window.__afterDemo.campaign.snapshot().world.players[0].position.y')
         assert touch_after < touch_before
+        assert await page.evaluate('()=>window.__afterDemo.joystick.snapshot().y') == 0
+        if name.startswith('chromium'):
+            cdp = await context.new_cdp_session(page)
+            sprint = await page.locator('#sprint').bounding_box()
+            x, y = box['x'] + box['width']/2, box['y'] + box['height']/2
+            sx, sy = sprint['x'] + sprint['width']/2, sprint['y'] + sprint['height']/2
+            await cdp.send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [{'id': 1, 'x': x, 'y': y}]})
+            await cdp.send('Input.dispatchTouchEvent', {'type': 'touchMove', 'touchPoints': [{'id': 1, 'x': x+30, 'y': y-30}]})
+            stamina = await page.evaluate('()=>window.__afterDemo.campaign.snapshot().world.players[0].stamina')
+            await cdp.send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [{'id': 1, 'x': x+30, 'y': y-30}, {'id': 2, 'x': sx, 'y': sy}]})
+            await page.wait_for_timeout(250)
+            assert await page.evaluate('()=>window.__afterDemo.campaign.snapshot().world.players[0].stamina') < stamina
+            await cdp.send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+            assert await page.evaluate('()=>window.__afterDemo.joystick.snapshot().x') == 0
 
         async def travel(target):
             """Walk legal grid waypoints using the production simulation, never teleport positions."""
@@ -106,7 +120,8 @@ async def run(engine, name, profile):
                   'escapeClosesDialogueOnly': True, 'threeQuestsAndFinale': True,
                   'restartAndLandscape': True, 'pageErrors': errors,
                   'glbOrMultiplayerRequests': False,
-                  'caveat': 'Pointer test uses mouse pointer in mobile profile; physical touch ergonomics pending.'}
+                  'nativeMultitouchSprint': name.startswith('chromium'),
+                  'caveat': 'Native two-finger touch tested through Chromium CDP; physical iPhone ergonomics pending.'}
         (OUT / f'{name}.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
         print(json.dumps(report, indent=2))
     finally:
@@ -118,7 +133,7 @@ async def main():
     OUT.mkdir(parents=True, exist_ok=True)
     async with async_playwright() as p:
         await run(p.webkit, 'webkit-iphone13', p.devices['iPhone 13'])
-        await run(p.chromium, 'chromium-desktop', {'viewport': {'width': 1280, 'height': 800}})
+        await run(p.chromium, 'chromium-desktop', {'viewport': {'width': 1280, 'height': 800}, 'has_touch': True})
 
 
 if __name__ == '__main__':

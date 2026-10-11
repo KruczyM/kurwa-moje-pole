@@ -31,8 +31,8 @@
           </select></label
         ><button id="begin" disabled>Wczytywanie…</button>
         <p>
-          WASD / strzałki — ruch · Shift — sprint · E — interakcja · Esc — zamknij / pauza. Na telefonie użyj
-          przycisków poniżej.
+          WASD / strzałki — ruch · Shift — sprint · E — interakcja · Esc — zamknij / pauza. Na telefonie
+          przeciągnij gałkę; drugim palcem przytrzymaj Sprint.
         </p>
         <a href="./">Wróć do festiwalu 3D</a>
       </section>
@@ -55,11 +55,8 @@
         <button id="restart">Zagraj ponownie</button><a href="./">Festiwal 3D</a>
       </section>
       <nav id="controls" aria-label="Sterowanie">
-        <div id="dpad">
-          <button data-key="ArrowUp" aria-label="Idź w górę">↑</button
-          ><button data-key="ArrowLeft" aria-label="Idź w lewo">←</button
-          ><button data-key="ArrowDown" aria-label="Idź w dół">↓</button
-          ><button data-key="ArrowRight" aria-label="Idź w prawo">→</button>
+        <div id="joystick" aria-label="Gałka ruchu — przeciągnij w wybranym kierunku">
+          <span id="joystick-knob"></span>
         </div>
         <div class="actions">
           <button data-key="Shift" id="sprint">Sprint</button

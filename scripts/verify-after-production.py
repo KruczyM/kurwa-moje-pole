@@ -27,6 +27,15 @@ async def main():
             await page.wait_for_timeout(500)
             assert not await page.locator('#start').is_visible()
             assert await page.locator('#controls').is_visible()
+            assert await page.locator('#joystick').is_visible()
+            assert await page.locator('#dpad').count() == 0
+            rows = await page.evaluate('''async()=>{
+              return Promise.all(['amper','chlebak'].map(async id=>{
+                const response=await fetch(new URL(`game-assets/2d/after/characters/${id}/meta.json`,location.href),{cache:'no-cache'});
+                return (await response.json()).rows;
+              }));
+            }''')
+            assert all(row['right'] == 3 and row['left'] == 1 for row in rows), rows
             await page.locator('#pause').tap()
             assert await page.locator('#pause-panel').is_visible()
             await page.locator('#resume').tap()
@@ -36,6 +45,7 @@ async def main():
             assert not errors and not failed, (errors, failed)
             assert not any('.glb' in u or '/src/' in u or 'socket.io' in u or '.mp4' in u for u in requests)
             report = {'url': url, 'http': 200, 'compiledEntry': True, 'touchStartPauseResume': True,
+                      'analogJoystickVisible': True, 'correctedAtlasDirections': True,
                       'pageErrors': errors, 'httpErrors': failed, 'no3dOrServerRequests': True}
             (out / 'production.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
             print(json.dumps(report, indent=2))
