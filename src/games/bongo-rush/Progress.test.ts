@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { HEROES, loadProgress, saveProgress } from './Progress';
 
 describe('versioned local campaign progress', () => {
-  it('offers sixteen cosmetic heroes without character-specific physics', () => {
-    expect(new Set(HEROES).size).toBe(16);
+  it('offers fifteen cosmetic heroes without character-specific physics', () => {
+    expect(new Set(HEROES).size).toBe(15);
+    expect([...HEROES] as string[]).not.toContain('kobra');
   });
   it('defaults safely on missing, corrupt, incompatible or inaccessible storage', () => {
     for (const value of [null, '{oops', '{}', '{"version":2}'])

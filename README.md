@@ -11,7 +11,8 @@ Demo nie zastępuje festiwalu 3D. Opis, ograniczenia i pliki: [docs/after-demo.m
 ## After: Bongo Rush
 
 Osobna gra logiczno-zręcznościowa 2D inspirowana zasadami Boulder Dash: 12 autorskich plansz,
-cztery biomy, spadające skały, patrole oraz 16 postaci różniących się wyłącznie wyglądem.
+cztery biomy, spadające skały, patrole oraz 15 grywalnych postaci różniących się wyłącznie wyglądem.
+Kobra (Krzak) jest niegrywalną przeszkodą: po odkopaniu zarasta wolne sąsiednie pola co około 5 sekund.
 Nie zastępuje After ani gry 3D. Nie uruchamia serwera multiplayer i nie pobiera modeli GLB.
 
 ```powershell

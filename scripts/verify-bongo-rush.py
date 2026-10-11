@@ -63,10 +63,10 @@ async def run(engine, name, profile, all_levels=False):
         response = await page.goto(URL)
         assert response.status == 200
         await ready(page)
-        assert await page.locator('#hero option').count() == 16
+        assert await page.locator('#hero option').count() == 15
         assert await page.locator('#levels button:disabled').count() == 11
         await page.screenshot(path=str(OUT / f'{name}-menu.png'))
-        for hero in ['amper', 'antena', 'gruczol', 'klatwa', 'krwiak', 'pien', 'pierscien', 'zawor', 'ambona', 'chlebak', 'dziaslo', 'hemoroid', 'jeczmien', 'kobra', 'korba', 'szerszen']:
+        for hero in ['amper', 'antena', 'gruczol', 'klatwa', 'krwiak', 'pien', 'pierscien', 'zawor', 'ambona', 'chlebak', 'dziaslo', 'hemoroid', 'jeczmien', 'korba', 'szerszen']:
             await page.locator('#hero').select_option(hero)
             await ready(page)
             assert 'Nie wczytano' not in await page.locator('#load-status').inner_text()

@@ -21,6 +21,7 @@ export class CaveRenderer {
   private readonly camera = new CameraRig({ width: 24, height: 18 });
   private animator?: SpriteAnimator;
   private atlas?: HeroAtlas;
+  private bushAtlas?: HeroAtlas;
   private width = 1;
   private height = 1;
   private tile = 40;
@@ -37,6 +38,11 @@ export class CaveRenderer {
   hero(atlas: HeroAtlas): void {
     this.atlas = atlas;
     this.animator = new SpriteAnimator(atlas.metadata);
+  }
+
+  /** Uses Kobra's existing artwork exclusively for the non-playable spreading Krzak. */
+  bushHero(atlas: HeroAtlas): void {
+    this.bushAtlas = atlas;
   }
 
   /** Fits desktop caves and keeps mobile tiles large enough to read while the camera follows. */
@@ -58,6 +64,7 @@ export class CaveRenderer {
     this.tiles.clear();
     this.animator = undefined;
     this.atlas = undefined;
+    this.bushAtlas = undefined;
     this.world = undefined;
   }
 
@@ -177,9 +184,9 @@ export class CaveRenderer {
         )
           continue;
         const cell = world.cells[y * world.width + x];
-        if (cell === 'wall' || cell === 'soil') {
+        if (cell === 'wall' || cell === 'soil' || cell === 'buried-bush') {
           ctx.drawImage(
-            this.tileArt(game.level.biome, cell, (x + y * 3) % 3),
+            this.tileArt(game.level.biome, cell === 'wall' ? 'wall' : 'soil', (x + y * 3) % 3),
             position.x,
             position.y,
             this.tile + 0.5,
@@ -191,6 +198,17 @@ export class CaveRenderer {
           ctx.strokeStyle = '#ffffff06';
           ctx.strokeRect(position.x, position.y, this.tile, this.tile);
           if (cell === 'exit') this.exit(position, game.exitOpen, game.level.id === 12, biome.accent);
+        }
+        if (
+          cell === 'bush' ||
+          cell === 'buried-bush' ||
+          world.bushRoots.some((root) => same(root, { x, y }))
+        ) {
+          ctx.save();
+          ctx.translate(position.x, position.y);
+          ctx.scale(this.tile / 64, this.tile / 64);
+          this.bush(cell === 'buried-bush');
+          ctx.restore();
         }
       }
     if (game.level.gate && !world.trapped) {
@@ -319,6 +337,61 @@ export class CaveRenderer {
     this.context.beginPath();
     this.context.ellipse(32, 54, 23, 7, 0, 0, Math.PI * 2);
     this.context.fill();
+  }
+
+  /** Distinguishes a dormant rooted sprout from the solid, impassable adult bush tile. */
+  private bush(buried: boolean): void {
+    const ctx = this.context;
+    ctx.strokeStyle = '#b9cb7e';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(32, 56);
+    ctx.lineTo(32, buried ? 35 : 24);
+    ctx.moveTo(32, 48);
+    ctx.lineTo(19, 58);
+    ctx.moveTo(32, 49);
+    ctx.lineTo(46, 58);
+    ctx.stroke();
+    for (const [x, y, radius] of buried
+      ? [
+          [25, 37, 8],
+          [38, 32, 9],
+        ]
+      : [
+          [15, 36, 13],
+          [49, 36, 13],
+          [23, 21, 15],
+          [42, 20, 15],
+          [32, 36, 20],
+        ]) {
+      ctx.fillStyle = buried ? '#91c45b' : '#427e39';
+      ctx.strokeStyle = '#afe271';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+    if (!buried) {
+      ctx.fillStyle = '#ffe49b';
+      ctx.fillRect(23, 32, 5, 5);
+      ctx.fillRect(37, 32, 5, 5);
+      if (this.bushAtlas) {
+        const { image, metadata, crop } = this.bushAtlas;
+        const width = (58 * crop.width) / crop.height;
+        ctx.drawImage(
+          image,
+          crop.x,
+          metadata.rows.down * metadata.frameHeight + crop.y,
+          crop.width,
+          crop.height,
+          32 - width / 2,
+          0,
+          width,
+          58,
+        );
+      }
+    }
   }
 
   /** Draws a distinct rounded faceted boulder with the biome palette, never resembling dirt. */

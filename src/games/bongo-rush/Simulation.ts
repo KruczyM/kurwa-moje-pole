@@ -1,4 +1,4 @@
-import { DIRECTIONS, neighbour, same } from './types';
+import { BUSH_GROWTH_TICKS, DIRECTIONS, neighbour, same } from './types';
 import type { Cell, Direction, Enemy, LevelDefinition, LooseObject, Point, SoundEvent, World } from './types';
 
 /** Loads an authored ASCII cave into fresh state; restarts never reuse mutated objects. */
@@ -18,15 +18,26 @@ export function createWorld(level: LevelDefinition): World {
     status: 'playing',
     reason: '',
     trapped: false,
+    bushRoots: [],
   };
   let id = 1;
   let players = 0;
   let exits = 0;
   level.rows.forEach((row, y) =>
     [...row].forEach((symbol, x) => {
-      if (!'#. PEORCBUJ'.includes(symbol)) throw new Error(`Nieznany kafelek: ${symbol}`);
+      if (!'#. PEORCBUJK'.includes(symbol)) throw new Error(`Nieznany kafelek: ${symbol}`);
       const point = { x, y };
-      world.cells.push(symbol === '#' ? 'wall' : symbol === '.' ? 'soil' : symbol === 'E' ? 'exit' : 'air');
+      world.cells.push(
+        symbol === '#'
+          ? 'wall'
+          : symbol === '.'
+            ? 'soil'
+            : symbol === 'K'
+              ? 'buried-bush'
+              : symbol === 'E'
+                ? 'exit'
+                : 'air',
+      );
       if (symbol === 'P') {
         world.player = { id: 0, ...point, previous: { ...point }, direction: 'right' };
         players++;
@@ -130,6 +141,7 @@ export class Simulation {
       w.status = 'won';
       this.sounds.push('won');
     }
+    if (w.status === 'playing') this.growBushes();
   }
 
   /** Final exit additionally requires sealing the boss pen; other levels only require pickups. */
@@ -158,7 +170,12 @@ export class Simulation {
     const w = this.world;
     w.player.direction = direction;
     const target = neighbour(w.player, direction);
-    if (this.cell(target) === 'wall' || (this.cell(target) === 'exit' && !this.exitOpen)) return;
+    if (
+      this.cell(target) === 'wall' ||
+      this.cell(target) === 'bush' ||
+      (this.cell(target) === 'exit' && !this.exitOpen)
+    )
+      return;
     if (this.enemy(target)) {
       this.lose('Patrol Cię złapał. Spróbuj innej drogi.');
       return;
@@ -181,12 +198,34 @@ export class Simulation {
       this.opened = target;
       this.sounds.push('pickup');
     }
-    if (this.cell(target) === 'soil') {
+    if (this.cell(target) === 'buried-bush') {
+      w.bushRoots.push({ ...target });
+      w.nextBushGrowth ??= w.tick + BUSH_GROWTH_TICKS;
+    }
+    if (this.cell(target) === 'soil' || this.cell(target) === 'buried-bush') {
       w.cells[target.y * w.width + target.x] = 'air';
       this.opened = target;
       this.sounds.push('dig');
     }
     this.move(w.player, target);
+  }
+
+  /** Expands one simultaneous four-neighbour wave into vacant air, never through soil or bodies. */
+  private growBushes(): void {
+    const w = this.world;
+    if (w.nextBushGrowth === undefined || w.tick < w.nextBushGrowth) return;
+    const sources = [...w.bushRoots];
+    w.cells.forEach((cell, index) => {
+      if (cell === 'bush') sources.push({ x: index % w.width, y: Math.floor(index / w.width) });
+    });
+    const additions = new Set<number>();
+    for (const source of sources) {
+      for (const target of [source, ...DIRECTIONS.map((direction) => neighbour(source, direction))]) {
+        if (this.empty(target)) additions.add(target.y * w.width + target.x);
+      }
+    }
+    for (const index of additions) w.cells[index] = 'bush';
+    w.nextBushGrowth = w.tick + BUSH_GROWTH_TICKS;
   }
 
   /** Bottom-up stable ordering prevents double falls and makes replays independent of array order. */

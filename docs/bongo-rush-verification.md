@@ -1,5 +1,8 @@
 # Bongo Rush — raport lokalny
 
+To raport początkowego wdrożenia. Aktualizacja Krzaka/Kobry, obecna lista 15
+grywalnych postaci oraz nowsze wyniki: [bongo-bush-verification.md](bongo-bush-verification.md).
+
 Data: 2026-10-11. Gałąź: `feat/bongo-rush`. Osobny worktree: `.ai/worktrees/bongo-rush`.
 
 ## Wynik

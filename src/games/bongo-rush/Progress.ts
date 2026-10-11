@@ -12,7 +12,6 @@ export const HEROES = [
   'dziaslo',
   'hemoroid',
   'jeczmien',
-  'kobra',
   'korba',
   'szerszen',
 ] as const;
@@ -30,7 +29,6 @@ export const HERO_LABELS = [
   'Dziąsło',
   'Hemoroid',
   'Jęczmień',
-  'Kobra',
   'Korba',
   'Szerszeń',
 ];

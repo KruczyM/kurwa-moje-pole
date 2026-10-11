@@ -59,7 +59,7 @@ class BongoRush {
   private disposed = false;
   private frames = 0;
 
-  /** Loads only the chosen hero and first backdrop; all other assets are lazy and cached. */
+  /** Loads the chosen hero, Krzak and first backdrop; later selections and biomes reuse the cache. */
   async start(): Promise<void> {
     if (!this.renderer) throw new Error('Ta przeglądarka nie udostępnia Canvas 2D.');
     this.audio.muted = this.progress.muted;
@@ -130,20 +130,22 @@ class BongoRush {
     const hero = element<HTMLSelectElement>('hero').value;
     try {
       const level = LEVELS[index];
-      const [atlas, background] = await Promise.all([
+      const [atlas, background, bushAtlas] = await Promise.all([
         this.atlas(hero),
         loadCachedImage(`${BASE}game-assets/2d/bongo-rush/${BIOMES[level.biome].background}`),
+        this.atlas('kobra'),
       ]);
       if (this.disposed || token !== this.loadToken) return false;
       this.backgrounds.set(level.biome, background);
       this.renderer!.hero(atlas);
+      this.renderer!.bushHero(bushAtlas);
       this.game = new Simulation(level);
       this.accumulator = 0;
       this.lastTime = 0;
       this.progress.hero = hero;
       saveProgress(storage(), this.progress);
       element('load-status').textContent =
-        'Bez zegara. Bez limitu prób. Postęp zapisuje się na tym urządzeniu.';
+        'Bez limitu prób. Uważaj na zarastające przejścia. Postęp zapisuje się na tym urządzeniu.';
       this.updateHud();
       return true;
     } catch (error) {
@@ -258,7 +260,10 @@ class BongoRush {
       : level.gate && world.collected >= level.quota
         ? 'Zamknij zagrodę złotą skałą'
         : 'Zbierz dostawę';
-    element('hint').textContent = level.hint;
+    element('hint').textContent =
+      world.nextBushGrowth === undefined
+        ? `${level.hint} Krzak z korzeniami: odkopanie uruchamia zarastanie przejść.`
+        : `${level.hint} Krzak rośnie — fala za ${Math.ceil((world.nextBushGrowth - world.tick) * STEP_SECONDS)} s. R / ↻: restart.`;
   }
 
   /** Unlocks the next cave once and presents loss, normal completion or the final short scene. */

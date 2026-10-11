@@ -202,6 +202,8 @@ function buildLevel(sketch: CaveSketch, index: number): LevelDefinition {
     }
   });
   grid[sketch.lanes[0]][sketch.left] = 'P';
+  // A buried root on the first corridor introduces time pressure without changing the recorded route.
+  grid[sketch.lanes[0]][sketch.left + 1] = 'K';
   const final = index === 11;
   let gate: Point | undefined;
   let pen: Point[] | undefined;

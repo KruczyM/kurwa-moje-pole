@@ -48,7 +48,7 @@ Po zamknięciu zagrody dostępna jest nagroda i krótka scenka z Bongo Tasiora.
 
 ## Zasady
 
-- Ruch ma cztery kierunki i jest jednakowy dla wszystkich 16 postaci.
+- Ruch ma cztery kierunki i jest jednakowy dla wszystkich 15 grywalnych postaci.
 - Wejście na ziemię przekopuje ją, a na stojący przedmiot — zbiera go.
 - Skałę można pchać tylko poziomo, pojedynczo, na puste pole bez ziemi i innych ciał.
 - Luźne przedmioty spadają o jedno pole na krok; mogą zsunąć się na bok z zaokrąglonej podpory,
@@ -89,7 +89,7 @@ Sama plansza nie zapewnia pełnej dostępności czytnikom ekranu.
 | `SpriteBounds.ts`              | Wspólny obrys alfa klatek: czytelna wielkość i stabilne kadrowanie postaci          |
 | `Input.ts`                     | Klawiatura i przełożenie istniejącej gałki After na cztery kierunki                 |
 | `Audio.ts`                     | Własne dźwięki WebAudio, limity głosów, wyciszenie i odblokowanie audio na iOS      |
-| `Progress.ts`                  | Lista 16 postaci, nazwy i bezpieczny zapis postępu w localStorage                   |
+| `Progress.ts`                  | Lista 15 grywalnych postaci, nazwy i bezpieczny zapis postępu w localStorage        |
 | `game.css`                     | Responsywny układ, przyciski, nakładki i gałka                                      |
 | `*.test.ts`                    | Deterministyczne testy fizyki, wszystkich plansz, sterowania i zapisu               |
 
@@ -104,7 +104,7 @@ korzenie, rave i szkło. Kafelki i rekwizyty są rysowane kodem Canvas, a obrazy
 buforowane. Nie wymagają zewnętrznych generatorów ani kluczy API.
 
 Postacie korzystają z istniejących atlasów `public/game-assets/2d/after/characters/<id>/`.
-Ładowany jest wyłącznie wybrany atlas i bieżące tło. Znana inwersja kierunków eksportera
+Ładowany jest wybrany atlas, atlas Kobry/Krzaka i bieżące tło. Znana inwersja kierunków eksportera
 jest korygowana w loaderze nowej gry, bez modyfikowania źródłowych atlasów After.
 
 Każdy biom ma własny krótki motyw zbierania. Kopanie, przepychanie, uderzenia,
@@ -112,6 +112,32 @@ otwarcie wyjścia, przegrana i zwycięstwo mają osobne efekty. Audio odblokowuj
 rozpoczęcia gry, nie automatyczna próba przy ładowaniu strony. Nie używamy cudzych nagrań głosowych.
 
 ## Edycja plansz
+
+### Krzak — rosnąca przeszkoda
+
+`K` oznacza korzeń zakopany w ziemi, narysowany jako mała roślina z korzeniami.
+Każda plansza ma go na pierwszym polu obok startu. Wejście na to pole odkopuje
+Krzaka i uruchamia wzrost. Co 36 kroków symulacji (5,04 s aktywnej gry) wszystkie
+aktywne korzenie i dorosłe krzaki zajmują sąsiednie wolne pola w czterech kierunkach.
+Nowe krzaki rozrastają się dopiero w następnej fali, bez natychmiastowego zalania planszy.
+
+Wzrost nie zastępuje ziemi, ścian, wyjścia, przedmiotów, patroli ani pola zajętego
+przez gracza. Korzeń na polu gracza pozostaje źródłem i zarasta również swoje pole
+po jego opuszczeniu. Dorosły krzak blokuje ruch gracza, patroli i skał; nie można go
+przekopać. Długie zwlekanie może bezpowrotnie zablokować trasę — użyj R lub ↻,
+aby zacząć od nowa. Pauza zatrzymuje zegar wzrostu. Wszystkie 12 zapisanych tras
+pozostają wykonalne. Osiągnięcie wyjścia kończy poziom przed kolejną falą.
+
+Tempo zmienia się w `src/games/bongo-rush/types.ts`: `BUSH_GROWTH_SECONDS`.
+Reguła jest w `Simulation.growBushes()`, grafika Canvas w `Renderer.bush()`.
+`Bush.test.ts` sprawdza aktywację, terminy fal, przeszkody, blokowanie i restart.
+Nie powstał drugi timer ani dodatkowy RAF.
+
+Krzak to **Kobra**, zgodnie z potwierdzeniem użytkownika. Kobra nie jest już
+grywalna; stary zapis wyboru `kobra` lub `krzak` przełącza na Ampera, bez utraty
+odblokowanych poziomów. Dorosłe krzaki wykorzystują istniejący atlas Kobry
+na zielonym obrysie, a zakopany korzeń ma symbol rośliny.
+Zmiana jest na gałęzi `feat/bongo-bush` i nie usuwa źródłowych grafik Kobry z After.
 
 Szkice w `Levels.ts` określają rzędy korytarzy, lewą/prawą granicę, liczbę sekcji
 z pchaniem skał i komorami przeciwników. Generator tworzy stały układ, nie losuje poziomu.
