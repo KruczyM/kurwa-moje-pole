@@ -84,22 +84,39 @@ def render_portrait(char_id):
     min_z = min(v.z for v in vs)
     max_z = max(v.z for v in vs)
     height = max_z - min_z
-    face_z = max_z - height * 0.14
-    cam_dist = height * 0.64
+
+    head_vs = [v for v in vs if v.z > max_z - height * 0.28]
+    if not head_vs:
+        head_vs = vs
+    hx = (min(v.x for v in head_vs) + max(v.x for v in head_vs)) / 2
+    hy = (min(v.y for v in head_vs) + max(v.y for v in head_vs)) / 2
+    hz = (min(v.z for v in head_vs) + max(v.z for v in head_vs)) / 2
+
+    face_z = hz - height * 0.02
+    cam_dist = height * 0.58
 
     cam_data = bpy.data.cameras.new("PortCam")
-    cam_data.lens = 60
+    cam_data.lens = 65
     cam_obj = bpy.data.objects.new("PortCam", cam_data)
     bpy.context.collection.objects.link(cam_obj)
     scene.camera = cam_obj
 
-    yaw = math.radians(7)
+    yaw = math.radians(6)
     cam_obj.location = (
-        cam_dist * math.sin(yaw),
-        -cam_dist * math.cos(yaw),
+        hx + cam_dist * math.sin(yaw),
+        hy - cam_dist * math.cos(yaw),
         face_z
     )
     cam_obj.rotation_euler = (math.radians(90), 0, yaw)
+
+    for l_name, offset in [
+        ("Key", (0.35, -0.9, 0.45)),
+        ("Fill", (-0.45, -0.8, 0.25)),
+        ("Rim", (0.2, 0.7, 0.45))
+    ]:
+        l_obj = bpy.data.objects.get(l_name)
+        if l_obj:
+            l_obj.location = (hx + offset[0], hy + offset[1], hz + offset[2])
 
     out_file = portraits_dir / f"{char_id}.png"
     scene.render.filepath = str(out_file)
@@ -206,10 +223,9 @@ def render_sprite_frames(char_id):
     print(f"Rendered raw frames for {char_id} -> {char_frames_dir}")
 
 def main():
-    print("=== Checking 16 Character Portraits ===")
+    print("=== Rendering 16 Calibrated Character Portraits ===")
     for char_id in CHARACTERS:
-        if not (portraits_dir / f"{char_id}.png").is_file():
-            render_portrait(char_id)
+        render_portrait(char_id)
 
     print("\n=== Rendering Character Sprite Frames ===")
     for char_id in SPRITE_CHARACTERS:
