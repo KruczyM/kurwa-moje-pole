@@ -751,15 +751,15 @@ export class Game {
         this.toggleFreeCamera(true);
       }
 
-      if (this.openMobileWorld) {
+      if (this.mobileInput) {
+        this.toast('Tryb mobilny: jeden sektor mapy w pamięci. Na granicy potwierdź przejście do kolejnego.');
+      } else if (this.openMobileWorld) {
         this.toast(
           'Telefon: świat bez mgły, doczytywanie do 60 m (obozy północne: 48 m). Dodatkowy tłum wyłączony.',
         );
       } else if (this.fogTrial) {
         this.toast(
-          this.mobileInput
-            ? 'Tryb mobilny: jeden sektor mapy w pamięci. Na granicy potwierdź przejście do kolejnego.'
-            : `Próba telefonu: mgła ${this.fogViewDistance} m, sektory świata, oryginalne tekstury. Dodatkowy tłum wyłączony.`,
+          `Próba telefonu: mgła ${this.fogViewDistance} m, sektory świata, oryginalne tekstury. Dodatkowy tłum wyłączony.`,
         );
       } else if (skippedCrowd || this.settings.preloadCrowd === false || this.graphics.mobile) {
         this.toast('Festiwalowicze doczytują się w tle: pod dużą sceną i na obu pasażach.');

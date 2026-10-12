@@ -1,6 +1,6 @@
 # Mobilne przejścia sektorowe
 
-Branch: `feat/mobile-sector-transitions`.
+Branch publikacyjny: `feat/mobile-sector-pages` (sam commit sektorów przeniesiony na aktualny `main`).
 
 Status rozgrywki: `VISUAL_GAMEPLAY_VERIFICATION_PENDING_HUMAN`.
 Nie przeprowadzono testu w przeglądarce ani pomiaru pamięci/FPS na telefonie.
@@ -41,4 +41,4 @@ Testy pokrywają granice i ujemne współrzędne, ładowanie całego obszaru, br
 5. Zablokować jeden plik sektora w narzędziach przeglądarki. Sprawdzić ponowienie oraz powrót z ponownym wczytaniem poprzedniego obszaru.
 6. Sprawdzić przejazd kołem widokowym, teleporty, mapę, pauzę i multiplayer w pobliżu granic. Zamknąć grę w trakcie pobierania i ponownie ją uruchomić.
 
-Nie wykonano push, PR ani merge.
+Publikacja na GitHub Pages została bezpośrednio autoryzowana przez użytkownika. Integracja zachowuje aktualny mobilny świat bez mgły oraz dotychczasową politykę streamingu dla diagnostycznego trybu desktopowego.
