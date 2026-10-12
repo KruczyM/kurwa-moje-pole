@@ -1,0 +1,161 @@
+import { buildCave } from './CaveBuilder';
+import type { CaveSketch } from './CaveBuilder';
+import type { LevelDefinition } from './types';
+import { buildChallenges } from './ChallengeCaves';
+import { EXIT_PUZZLES } from './ExitPuzzles';
+
+export const BIOMES = [
+  {
+    name: 'Magazyn Amarena',
+    item: 'Amareny',
+    wall: '#66544c',
+    soil: '#453630',
+    light: '#e7b37b',
+    accent: '#ff9b83',
+    background: 'art-v2/amarena-background.png',
+  },
+  {
+    name: 'Zielone podziemia',
+    item: 'Liście',
+    wall: '#3d6255',
+    soil: '#283e35',
+    light: '#b4d98b',
+    accent: '#83e67b',
+    background: 'art-v2/roots-background.png',
+  },
+  {
+    name: 'Neonowy rave',
+    item: 'Cukierki',
+    wall: '#514569',
+    soil: '#342b44',
+    light: '#bba0d9',
+    accent: '#83dadb',
+    background: 'art-v2/rave-background.png',
+  },
+  {
+    name: 'Dymna grota',
+    item: 'Bonga',
+    wall: '#657b88',
+    soil: '#354b55',
+    light: '#d5f0f4',
+    accent: '#b0e8ed',
+    background: 'art-v2/glass-background.png',
+  },
+] as const;
+
+/** Original chamber networks grow in area and geology density, alternating row and shaft exploration. */
+export const CAVE_SKETCHES: readonly CaveSketch[] = [
+  {
+    title: 'Podziemna hurtownia',
+    hint: 'Przeszukuj komory. Odkopuj butelki z boku, nie pod skałą.',
+    columns: 3,
+    rows: 3,
+    route: 'rows',
+    geology: 12,
+    patrols: 1,
+  },
+  {
+    title: 'Szyby dostawcze',
+    hint: 'Pionowe szyby łączą galerie. Wybierz skrót, zanim Krzak odetnie powrót.',
+    columns: 3,
+    rows: 3,
+    route: 'columns',
+    geology: 15,
+    patrols: 2,
+  },
+  {
+    title: 'Magazyn pod zwałem',
+    hint: 'Popychaj kamienne bramy do wnęk. Boczne złoża pozwalają ominąć część komór.',
+    columns: 3,
+    rows: 3,
+    route: 'rows',
+    geology: 18,
+    patrols: 3,
+  },
+  {
+    title: 'Katakumby korzeni',
+    hint: 'Otwieraj przejścia między komorami, ale pozostawiaj podpory pod głazami.',
+    columns: 3,
+    rows: 3,
+    route: 'columns',
+    geology: 19,
+    patrols: 3,
+  },
+  {
+    title: 'Zielony labirynt',
+    hint: 'Nie wszystkie przedmioty są potrzebne. Zbieraj bezpieczne złoża i oszczędzaj drogę.',
+    columns: 3,
+    rows: 3,
+    route: 'rows',
+    geology: 21,
+    patrols: 4,
+  },
+  {
+    title: 'Serce kolonii',
+    hint: 'Korzenie przy odnogach są uśpione, dopóki ich nie odkopiesz.',
+    columns: 3,
+    rows: 3,
+    route: 'columns',
+    geology: 23,
+    patrols: 5,
+  },
+  {
+    title: 'Kopalnia basu',
+    hint: 'Duże galerie mają kilka wyjść. Przerwij linię wzroku Undercovera za skałami.',
+    columns: 4,
+    rows: 3,
+    route: 'rows',
+    geology: 21,
+    patrols: 4,
+  },
+  {
+    title: 'Neonowe uskoki',
+    hint: 'Zejdź w boczne komory po cukierki. Najkrótsza trasa nie zawsze jest najbezpieczniejsza.',
+    columns: 4,
+    rows: 3,
+    route: 'columns',
+    geology: 24,
+    patrols: 5,
+  },
+  {
+    title: 'Rave pod lawiną',
+    hint: 'Kiedy otwierasz złoże, zaplanuj miejsce ucieczki przed lawiną.',
+    columns: 4,
+    rows: 3,
+    route: 'rows',
+    geology: 27,
+    patrols: 6,
+  },
+  {
+    title: 'Kryształowe głębiny',
+    hint: 'Bonga i skały spadają. Obchodź stosy przez równoległe galerie.',
+    columns: 4,
+    rows: 4,
+    route: 'columns',
+    geology: 24,
+    patrols: 6,
+  },
+  {
+    title: 'Dwanaście podziemnych dróg',
+    hint: 'Przeszukaj sieć komór, zbierz dostawę i wybierz własną drogę do wyjścia.',
+    columns: 4,
+    rows: 4,
+    route: 'rows',
+    geology: 27,
+    patrols: 7,
+  },
+  {
+    title: 'Twierdza Tasiora',
+    hint: 'Zbierz dostawę. W północno-wschodniej zagrodzie wepchnij głaz w złote pole, cofnij się w lewo i poszukaj komory wyjściowej na wschodzie.',
+    columns: 4,
+    rows: 4,
+    route: 'columns',
+    geology: 29,
+    patrols: 8,
+  },
+];
+
+export const LEVELS: readonly LevelDefinition[] = [
+  ...CAVE_SKETCHES.map(buildCave),
+  ...buildChallenges(EXIT_PUZZLES),
+];

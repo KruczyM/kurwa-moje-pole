@@ -9,6 +9,7 @@ import { CameraRig } from '../presentation/CameraRig';
 import type { SpriteMetadata } from '../presentation/SpriteAnimator';
 import type { Point } from '../simulation/WorldState';
 import { AfterJoystick } from './AfterJoystick';
+import { loadCachedImage } from '../../shared/ImageCache';
 
 /** Looks up required demo markup once, failing visibly instead of drawing a blank page. */
 function element<T extends HTMLElement>(id: string): T {
@@ -19,21 +20,10 @@ function element<T extends HTMLElement>(id: string): T {
 
 const BASE = `${import.meta.env.BASE_URL}game-assets/2d/after/`;
 const SLOT = 'local';
-const imageCache = new Map<string, Promise<HTMLImageElement>>();
 
 /** Loads each lightweight 2D image once; no festival GLBs, motion bank or network connection. */
 function loadImage(path: string): Promise<HTMLImageElement> {
-  let request = imageCache.get(path);
-  if (!request) {
-    request = new Promise((resolve, reject) => {
-      const image = new Image();
-      image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error(`Nie wczytano grafiki: ${path}`));
-      image.src = BASE + path;
-    });
-    imageCache.set(path, request);
-  }
-  return request;
+  return loadCachedImage(BASE + path);
 }
 
 /** Isolated offline demo host; reuses AnimationLoop and never starts the festival game. */
@@ -477,7 +467,6 @@ class AfterDemo {
     this.observer.disconnect();
     this.presentation.dispose();
     this.images.clear();
-    imageCache.clear();
     this.metadata.clear();
     this.clearInput();
     this.canvas.width = this.canvas.height = 1;

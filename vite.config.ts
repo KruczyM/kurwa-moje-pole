@@ -6,6 +6,8 @@ export default defineConfig(({ command, isPreview }) => ({
   base: command === 'build' || isPreview ? '/kurwa-moje-pole/' : '/',
   publicDir: 'public',
   plugins: [assetCachePlugin()],
-  build: { rollupOptions: { input: { main: 'index.html', after: 'after-demo.html' } } },
+  build: {
+    rollupOptions: { input: { main: 'index.html', after: 'after-demo.html', bongo: 'bongo-rush.html' } },
+  },
   test: { include: ['src/**/*.test.ts', 'server/**/*.test.ts'] },
 }));

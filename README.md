@@ -8,6 +8,46 @@ Osobny grywalny pilot 2D: [otwórz demo](https://kruczym.github.io/kurwa-moje-po
 Na telefonie użyj przycisków ekranowych; na komputerze WASD, Shift i E.
 Demo nie zastępuje festiwalu 3D. Opis, ograniczenia i pliki: [docs/after-demo.md](docs/after-demo.md).
 
+## After: Bongo Rush
+
+Osobna gra logiczno-zręcznościowa 2D inspirowana zasadami Boulder Dash: 12 plansz kampanii i 4 dodatkowe wyzwania,
+cztery biomy, spadające skały, patrole oraz 15 grywalnych postaci różniących się wyłącznie wyglądem.
+Kobra (Krzak) jest niegrywalną przeszkodą: po odkopaniu zarasta wolne sąsiednie pola co około 5 sekund.
+Plansze mają teraz 74×34–139×44 pól, sieci 9–16 komór, boczne złoża, skróty i cel
+18–32 przedmiotów. Przycisk Mapa lub M przełącza minimapę. Kamera przewija rozległą jaskinię.
+Przed każdym wyjściem jest obowiązkowa komora zagadki. Kampania ma 12 różnych kompozycji:
+wnęki, spusty, stosy skał i wybór kolejności kopania. Dodano łup pod podporami, zawały z obejściem
+i żyły zamykające odwrót. Przedmioty ze złotą obwódką trzeba zebrać niezależnie od zwykłego limitu.
+Biomy mają wygenerowane atlasy AI ścian i gruntu: ceglana piwnica, korzenie,
+neonowy bunkier i lodowo-szklana grota. Każdy materiał ma dwa warianty.
+Nie zastępuje After ani gry 3D. Nie uruchamia serwera multiplayer i nie pobiera modeli GLB.
+
+```powershell
+npm run dev:client
+# Otwórz adres wypisany przez Vite z końcówką /bongo-rush.html
+npm run test:unit -- src/games/bongo-rush
+```
+
+Na komputerze: WASD lub strzałki, Escape — pauza/wznowienie, R — restart poziomu.
+Na telefonie: gałka, przycisk pauzy u góry i restart ↻ na dole. Przedmioty zbiera się automatycznie.
+Każdy poziom ma limit czasu (minimum 3 minuty); pauza i pomoc „?” zatrzymują zegar.
+Prób jest dowolnie dużo. Odblokowane poziomy, postać i wyciszenie zapisują się lokalnie.
+Postacie mają osobne atlasy Idle/Walk bez T-pose i uciętych głów. Amareny odwzorowują trzy
+referencje smaków, a w tle gra cichy autorski ambient. Na poziomach 3, 6, 9 i 12 trzeba
+aktywować Kobrę przed komorą wyjściową. Audyt trudności i nowe tekstury są na `feat/bongo-ai-biome-textures`.
+Po kampanii odblokowują się rezerwuary, sześć wysp z ruchomymi pułapkami, spirala
+i napis KURWA MOJE POLE z prawdziwych spadających kamieni. Kwadrat z siatką obiega
+najbliższą krawędź. Spadająca skała eliminuje patrol i zostawia łup; w wyzwaniach
+trzeba zebrać także ten łup, a nie tylko osiągnąć licznik dostawy. Nie ma osobnego przycisku ataku.
+Po buildzie strona znajduje się w `dist/bongo-rush.html`; lokalny preview używa prefiksu
+`/kurwa-moje-pole/bongo-rush.html`. Publikacja wymaga osobnego wdrożenia gałęzi.
+
+Opis wszystkich modułów, zasad, formatu plansz i testów: [docs/bongo-rush.md](docs/bongo-rush.md).
+Raport przechodniości i opis nowych komór: [docs/bongo-avalanche.md](docs/bongo-avalanche.md).
+Opis czterech nowych wyzwań: [docs/bongo-challenges.md](docs/bongo-challenges.md).
+Audyt wszystkich 16 plansz i trudniejsze wersje spirali oraz napisu: [docs/bongo-difficulty.md](docs/bongo-difficulty.md).
+Atlasy AI, dokładne prompty i plan muzyki biomów: [docs/bongo-biome-art.md](docs/bongo-biome-art.md).
+
 ## Uruchomienie
 
 Wymagane są Node.js 20 LTS (lub nowszy), Git i Git LFS.

@@ -435,6 +435,7 @@ const GUIDE_TABS = [
   'dialogue',
   'bingo',
   'passport',
+  'bongo',
 ] as const;
 
 function switchGuideTabGlobal(tabId: string): void {

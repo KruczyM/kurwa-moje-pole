@@ -48,6 +48,13 @@ export class CameraRig {
     });
   }
 
+  /** Immediately frames a new spawn without panning through the previous level. */
+  snap(target: Point): void {
+    if (!Number.isFinite(target.x) || !Number.isFinite(target.y)) return;
+    this.center = this.clamp(target);
+    this.initialized = true;
+  }
+
   /** Projects world foot positions into CSS pixels, not device-pixel backing-store units. */
   project(point: Point): Point {
     const { width, height, pixelsPerMeter } = this.viewport;
