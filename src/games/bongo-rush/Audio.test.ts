@@ -31,11 +31,17 @@ class FakeContext {
       connect: vi.fn(),
       disconnect: vi.fn(),
       gain: {
+        value: 0.02,
+        cancelScheduledValues: vi.fn(),
+        setTargetAtTime: vi.fn(),
         setValueAtTime: vi.fn(),
         linearRampToValueAtTime: vi.fn(),
         exponentialRampToValueAtTime: vi.fn(),
       },
     };
+  }
+  createBiquadFilter() {
+    return { type: '', frequency: { setValueAtTime: vi.fn() }, connect: vi.fn(), disconnect: vi.fn() };
   }
 }
 
@@ -72,5 +78,21 @@ describe('ambient audio lifecycle', () => {
     expect(context.oscillators).toHaveLength(4);
     audio.dispose();
     expect(context.close).toHaveBeenCalledOnce();
+  });
+  it('fades old biome voices and still stops fading notes when paused immediately afterwards', () => {
+    vi.stubGlobal('AudioContext', FakeContext);
+    const audio = new ArcadeAudio();
+    audio.unlock();
+    const context = FakeContext.latest;
+    audio.updateMusic(0, true);
+    const old = [...context.oscillators];
+    audio.updateMusic(1, true);
+    for (const voice of old) expect(voice.stop).toHaveBeenLastCalledWith(10.3);
+    audio.silence();
+    for (const voice of context.oscillators) expect(voice.stop).toHaveBeenLastCalledWith();
+    const count = context.oscillators.length;
+    audio.updateMusic(1, false);
+    expect(context.oscillators).toHaveLength(count);
+    audio.dispose();
   });
 });

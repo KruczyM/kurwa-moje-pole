@@ -1,0 +1,25 @@
+{
+  "tool": "built-in image_gen",
+  "prompts": [
+    {
+      "biome": "amarena",
+      "file": "amarena-v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: original pixel-art game backdrop, landscape 1536x1024. A mysterious abandoned brick warehouse beside a rain-wet festival service passage at night, copper pipes, warm amber lamps in small windows, layered dark rooftops and faint distant tents, puddles reflecting amber light. Composition: wide side-view environmental establishing shot, dark spacious centre for a menu overlay, detailed brick arches at edges, bottom third wet stone ledges and puddles, upper third pipes and roof silhouettes. Hand-crafted 16-bit adventure pixel-art aesthetic, crisp pixel clusters, atmospheric and inviting, warm rust and amber against deep indigo. No characters, no text, no logos, no UI, no watermark, no photographic texture. Environment asset to animate subtle light and reflections in code."
+    },
+    {
+      "biome": "roots",
+      "file": "roots-v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: original pixel-art game background, landscape 1536x1024. A mysterious flooded underground garden at night, abandoned stone ruins, tangled roots around broken arches, still emerald water with tiny reflected firefly lights, distant layered silhouettes, moss and sparse cyan highlights. Composition: wide side-view establishing scene, intricate pixel clusters reminiscent of lovingly hand-crafted 16-bit adventure game art, dark quiet central space for a readable menu overlay, rich architecture around edges, no characters. Bottom third contains water and broken stone ledges; top third ancient arches. Atmospheric, inviting, memorable, not horror. Sharp pixel edges, no photographic textures. No text, logos, UI, watermark. This is an environment art asset, not a finished game screenshot; animate water reflections and particles later in code."
+    },
+    {
+      "biome": "rave",
+      "file": "rave-v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: original pixel-art game background landscape 1536x1024. Mysterious neon-lit festival technical backstage at night, layered scaffolds, dark metal service buildings, copper and black cables spanning overhead, small cyan and magenta geometric light panels without lettering, wet pavement reflecting purple and cyan, distant stage silhouettes. Wide side-view establishing environment, dark spacious centre reserved for menu overlay, rich architecture at edges, foreground lower third puddles and metal ledges, upper third scaffolds. Crisp handcrafted 16-bit adventure pixel clusters, memorable atmospheric saturated accents but mostly dark indigo. No people, no text, no logos, no UI or watermark, not photorealistic. A still environment asset for code-driven subtle light and reflections."
+    },
+    {
+      "biome": "glass",
+      "file": "glass-v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: original pixel-art game background landscape 1536x1024. A mysterious ice-and-glass underground ruin, ancient broken arches encased in blue ice, large translucent crystal silhouettes near the edges, distant layered frozen architecture, still dark icy pool reflecting sparse cyan lights, very thin low mist. Wide side-view environment with dark spacious centre for a menu overlay, bottom third ice ledges and water reflections, top third vaulted cavern. Crisp handcrafted 16-bit adventure pixel clusters, blue teal silver against deep indigo, inviting and mysterious rather than horror. No characters, no text, logos, UI or watermark. Not photorealistic. Still environment asset for subtle particles and reflection animation in code."
+    }
+  ]
+}

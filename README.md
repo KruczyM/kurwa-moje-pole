@@ -33,8 +33,11 @@ Na telefonie: gałka, przycisk pauzy u góry i restart ↻ na dole. Przedmioty z
 Każdy poziom ma limit czasu (minimum 3 minuty); pauza i pomoc „?” zatrzymują zegar.
 Prób jest dowolnie dużo. Odblokowane poziomy, postać i wyciszenie zapisują się lokalnie.
 Postacie mają osobne atlasy Idle/Walk bez T-pose i uciętych głów. Amareny odwzorowują trzy
-referencje smaków, a w tle gra cichy autorski ambient. Na poziomach 3, 6, 9 i 12 trzeba
-aktywować Kobrę przed komorą wyjściową. Audyt trudności i nowe tekstury są na `feat/bongo-ai-biome-textures`.
+referencje smaków, a w tle gra tajemniczy autorski motyw w czterech aranżacjach.
+Menu prowadzi przez osobną galerię postaci i wybór poziomu. Cztery scenerie mają
+spokojną paralaksę, refleksy i tematyczne ramy; grunt ma niewielkie prześwity,
+a kopanie — krótkie odpryski. Na poziomach 3, 6, 9 i 12 trzeba
+aktywować Kobrę przed komorą wyjściową. Najnowsza oprawa jest na `feat/bongo-living-biomes`.
 Po kampanii odblokowują się rezerwuary, sześć wysp z ruchomymi pułapkami, spirala
 i napis KURWA MOJE POLE z prawdziwych spadających kamieni. Kwadrat z siatką obiega
 najbliższą krawędź. Spadająca skała eliminuje patrol i zostawia łup; w wyzwaniach
@@ -47,6 +50,7 @@ Raport przechodniości i opis nowych komór: [docs/bongo-avalanche.md](docs/bong
 Opis czterech nowych wyzwań: [docs/bongo-challenges.md](docs/bongo-challenges.md).
 Audyt wszystkich 16 plansz i trudniejsze wersje spirali oraz napisu: [docs/bongo-difficulty.md](docs/bongo-difficulty.md).
 Atlasy AI, dokładne prompty i plan muzyki biomów: [docs/bongo-biome-art.md](docs/bongo-biome-art.md).
+Żywe scenerie, galeria, moduły, muzyka i weryfikacja: [docs/bongo-living-biomes.md](docs/bongo-living-biomes.md).
 
 ## Uruchomienie
 
