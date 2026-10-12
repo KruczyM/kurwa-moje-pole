@@ -68,7 +68,8 @@ export const VECTORS: Record<Direction, Point> = {
   down: { x: 0, y: 1 },
   left: { x: -1, y: 0 },
 };
-export const STEP_SECONDS = 0.14;
+/** Deliberate touch-friendly pace: five tile moves per second, shared with falling objects. */
+export const STEP_SECONDS = 0.2;
 /** Seconds of active gameplay between bush waves; pause does not advance simulation ticks. */
 export const BUSH_GROWTH_SECONDS = 5;
 export const BUSH_GROWTH_TICKS = Math.ceil(BUSH_GROWTH_SECONDS / STEP_SECONDS);

@@ -9,5 +9,9 @@ describe('Bongo Rush main menu entry', () => {
     expect(menu).toContain('data-tab="bongo"');
     expect(menu).toContain('id="guide-panel-bongo"');
     expect(menu.match(/href="\.\/bongo-rush\.html"/g)).toHaveLength(2);
+    expect(menu).toContain('Walka o tasiorowe bongo');
+    const game = readFileSync('bongo-rush.html', 'utf8');
+    expect(game).toContain('<title>After: Walka o tasiorowe bongo</title>');
+    expect(game).not.toContain('BONGO RUSH');
   });
 });
