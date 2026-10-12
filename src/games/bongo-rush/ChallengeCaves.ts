@@ -128,18 +128,23 @@ function spiral(): ExitPuzzle {
   grid[11][13] = 'O';
   for (const y of [17, 19, 21, 23]) grid[y][12] = 'O';
   grid[5][1] = 'P';
-  grid[5][2] = 'E';
+  // Exit below the outer coil, so composing the following vault never cuts through the spiral.
+  grid.push(Array<string>(25).fill('#'), Array<string>(25).fill('#'), Array<string>(25).fill('#'));
+  grid[24][1] = '.';
+  grid[25][1] = '.';
+  grid[26][1] = '.';
+  grid[26][2] = 'E';
   const reverse: Record<Direction, Direction> = { up: 'down', down: 'up', left: 'right', right: 'left' };
   const returnRoute = moves(...runs)
     .reverse()
     .map((direction) => reverse[direction]);
   return {
     name: 'Spirala z pamięcią',
-    hint: 'Zbierz złote łupy na kolejnych zwojach. Ze środka po zabraniu podpory cofnij się dwa pola w dół i od razu w lewo; skała zamknie środek za Tobą.',
+    hint: 'Zbierz łupy na zwojach i wycofaj się ze środka przed spadającą bramą. To nie koniec: za spiralą czekają przeciwne zasuwy i pułapka kolejności.',
     rows: grid.map((row) => row.join('')),
     entry,
-    exit: { x: 2, y: 5 },
-    solution: [...route, ...returnRoute, 'right'],
+    exit: { x: 2, y: 26 },
+    solution: [...route, ...returnRoute, ...moves(['down', 21], ['right', 1])],
   };
 }
 
@@ -158,7 +163,7 @@ const LETTERS: Record<string, readonly string[]> = {
 };
 
 /** Real loose rocks spell three words. Their lower strokes support mandatory loot and close mined passages. */
-function stoneLetters(): ExitPuzzle {
+export function stoneLetters(): ExitPuzzle {
   const width = 25,
     height = 27;
   const grid = Array.from({ length: height }, (_, y) =>
@@ -181,16 +186,74 @@ function stoneLetters(): ExitPuzzle {
     );
     for (let x = 3; x < width - 2; x++) if (grid[bottom - 1][x] === 'R') grid[bottom][x] = 'O';
   });
+  // Interior rewards must be mined before collapsing the lower strokes closes access.
+  // U/W/J/L use top entrances; R/M/P have lower recesses between moving side strokes.
+  for (const [x, y] of [
+    [8, 4],
+    [16, 4],
+    [12, 7],
+    [12, 12],
+    [17, 12],
+    [4, 15],
+    [4, 23],
+    [12, 20],
+    [17, 20],
+  ])
+    grid[y][x] = 'O';
   grid[5][1] = 'P';
   grid[24][23] = 'E';
   grid[5][0] = ' ';
   return {
     name: 'KURWA MOJE POLE',
-    hint: 'Kamienne litery są luźne. Zbieraj pod ich dolnymi kreskami, nie rozkopuj od góry. Najpierw zaplanuj kierunek przejścia i odwrót.',
+    hint: 'Łup jest też wewnątrz liter i w bocznych wnękach. Najpierw opróżnij górne kieszenie, dopiero potem podkopuj dolne kreski. W R/M/P trzeba wejść między kamienne kreski; z bocznych wnęk E natychmiast wycofaj się.',
     rows: grid.map((row) => row.join('')),
     entry: { x: 1, y: 5 },
     exit: { x: 23, y: 24 },
-    solution: moves(['down', 3], ['right', 22], ['down', 8], ['left', 22], ['down', 8], ['right', 22]),
+    solution: moves(
+      ['up', 3],
+      ['right', 7],
+      ['down', 2],
+      ['up', 2],
+      ['right', 8],
+      ['down', 2],
+      ['up', 2],
+      ['left', 15],
+      ['down', 6],
+      ['right', 11],
+      ['up', 1],
+      ['down', 1],
+      ['right', 11],
+      ['down', 2],
+      ['left', 5],
+      ['down', 2],
+      ['left', 1],
+      ['right', 1],
+      ['up', 2],
+      ['left', 6],
+      ['down', 2],
+      ['up', 2],
+      ['right', 11],
+      ['down', 6],
+      ['left', 19],
+      ['up', 1],
+      ['down', 1],
+      ['left', 3],
+      ['down', 2],
+      ['right', 11],
+      ['down', 2],
+      ['up', 2],
+      ['right', 6],
+      ['down', 2],
+      ['left', 1],
+      ['right', 1],
+      ['up', 2],
+      ['left', 17],
+      ['down', 6],
+      ['right', 3],
+      ['up', 1],
+      ['down', 1],
+      ['right', 19],
+    ),
   };
 }
 
@@ -244,11 +307,11 @@ export function buildChallenges(gates: readonly ExitPuzzle[]): readonly LevelDef
       2,
     ),
     level(sixIslands(), 14, 6),
-    level(spiral(), 15, 0),
+    level(composeVault('Spirala i trzy zasuwy', [spiral(), LOOT_PUZZLES[5], gates[4]]), 15, 0),
     level(
       composeVault('KURWA MOJE POLE — skalny finał', [
         stoneLetters(),
-        withSweeperArena(huntingPocket(false, 2)),
+        withSweeperArena(huntingPocket(false, 3)),
         gates[4],
       ]),
       16,

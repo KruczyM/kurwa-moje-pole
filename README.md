@@ -33,7 +33,7 @@ Każdy poziom ma limit czasu (minimum 3 minuty); pauza i pomoc „?” zatrzymuj
 Prób jest dowolnie dużo. Odblokowane poziomy, postać i wyciszenie zapisują się lokalnie.
 Postacie mają osobne atlasy Idle/Walk bez T-pose i uciętych głów. Amareny odwzorowują trzy
 referencje smaków, a w tle gra cichy autorski ambient. Na poziomach 3, 6, 9 i 12 trzeba
-aktywować Kobrę przed komorą wyjściową. Najnowsze zagadki są na `feat/bongo-challenge-caves`.
+aktywować Kobrę przed komorą wyjściową. Najnowszy audyt trudności jest na `feat/bongo-difficulty-pass`.
 Po kampanii odblokowują się rezerwuary, sześć wysp z ruchomymi pułapkami, spirala
 i napis KURWA MOJE POLE z prawdziwych spadających kamieni. Kwadrat z siatką obiega
 najbliższą krawędź. Spadająca skała eliminuje patrol i zostawia łup; w wyzwaniach
@@ -44,6 +44,7 @@ Po buildzie strona znajduje się w `dist/bongo-rush.html`; lokalny preview używ
 Opis wszystkich modułów, zasad, formatu plansz i testów: [docs/bongo-rush.md](docs/bongo-rush.md).
 Raport przechodniości i opis nowych komór: [docs/bongo-avalanche.md](docs/bongo-avalanche.md).
 Opis czterech nowych wyzwań: [docs/bongo-challenges.md](docs/bongo-challenges.md).
+Audyt wszystkich 16 plansz i trudniejsze wersje spirali oraz napisu: [docs/bongo-difficulty.md](docs/bongo-difficulty.md).
 
 ## Uruchomienie
 

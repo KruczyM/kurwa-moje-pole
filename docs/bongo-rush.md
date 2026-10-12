@@ -8,7 +8,8 @@ grafiki ani gotowe układy poziomów. Finał jest fikcyjną, satyryczną scenką
 
 Istniejące After jest zachowane, również na gałęziach `feat/after-demo` i
 `fix/after-joystick`. Obecna oprawa i zasady są na `feat/bongo-gameplay-polish`, w osobnym worktree;
-najnowsze wyzwania są na `feat/bongo-challenge-caves` (opis: [bongo-challenges.md](bongo-challenges.md));
+najnowszy audyt trudności jest na `feat/bongo-difficulty-pass` (opis: [bongo-difficulty.md](bongo-difficulty.md));
+wcześniejsze wyzwania są na `feat/bongo-challenge-caves` (opis: [bongo-challenges.md](bongo-challenges.md));
 wcześniejsze komory wydobywcze są na `feat/bongo-avalanche-puzzles`;
 adaptacje zagadek pozostają na `feat/bongo-reference-puzzles`;
 wcześniejsze kompozycje pozostały na `feat/bongo-authored-vaults`;

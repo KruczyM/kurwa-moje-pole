@@ -1,17 +1,18 @@
 # Cztery wyzwania Bongo Rush
 
-Gałąź: `feat/bongo-challenge-caves`. Oryginalne 12 plansz i finał na poziomie 12 zostają.
+Gałąź początkowa: `feat/bongo-challenge-caves`; trudniejsze wersje 15–16: `feat/bongo-difficulty-pass`.
+Audyt wszystkich plansz: [bongo-difficulty.md](bongo-difficulty.md). Oryginalne 12 plansz i finał na poziomie 12 zostają.
 Po ich ukończeniu otwiera się poziom 13, następne odblokowują się kolejno. Stary zapis
 z ukończoną kampanią odblokowuje 13 automatycznie. Nie wykonano publikacji ani merge.
 
 ## Plansze
 
-| Poziom | Konstrukcja                         | Obowiązkowa zagadka                                                                                                                                   |
-| ------ | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 13     | Dwa wysokie rezerwuary              | Zebrać łup od boku pod spadającymi przedmiotami, trafić dwa ruchome kwadraty skałami, zebrać ich łup, przejść kieszenie i zasuwę kolejności           |
-| 14     | Sześć wysp w dwóch rzędach          | Sześć niezależnych zrzutów na poruszające się cele; obserwować powrót kwadratu, wykopać podporę i natychmiast cofnąć się                              |
-| 15     | Spirala do środka i z powrotem      | Pięć obowiązkowych łupów, środkowy pod skałą; po jego zabraniu cofnąć się dwa pola i od razu skręcić, zanim spadnie brama                             |
-| 16     | Kamienne litery KURWA / MOJE / POLE | 32 łupy pod kreskami luźnych liter, kaskady zamykające przejście, pułapka skalna i zasuwa kolejności; boczna arena z kwadratem obiegającym przeszkodę |
+| Poziom | Konstrukcja                         | Obowiązkowa zagadka                                                                                                                         |
+| ------ | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 13     | Dwa wysokie rezerwuary              | Zebrać łup od boku pod spadającymi przedmiotami, trafić dwa ruchome kwadraty skałami, zebrać ich łup, przejść kieszenie i zasuwę kolejności |
+| 14     | Sześć wysp w dwóch rzędach          | Sześć niezależnych zrzutów na poruszające się cele; obserwować powrót kwadratu, wykopać podporę i natychmiast cofnąć się                    |
+| 15     | Spirala i trzy zasuwy               | Pięć łupów na zwojach, potem dwa łupy za przeciwnymi zasuwami i osobna zasuwa kolejności                                                    |
+| 16     | Kamienne litery KURWA / MOJE / POLE | 32 łupy pod kreskami i 9 wewnątrz/bokiem liter; kaskady, pułapka skalna i zasuwa kolejności                                                 |
 
 Układy są autorską interpretacją dostarczonych zdjęć, nie kopiami kodu, grafik ani
 plansz źródłowej gry. Rezerwuary, wyspy i spirala mają różne zasady przejścia;
@@ -71,7 +72,7 @@ Raport powstaje w ignorowanym `reports/bongo-avalanche/simulation-report.json`.
 Trudność i zabawa nadal wymagają oceny człowieka. Emulacja iPhone’a nie zastępuje
 testu na fizycznym telefonie; test mobilnej planszy używa klawiatury w emulowanym WebKit.
 
-### Wyniki lokalne — 2026-10-12
+### Wyniki pierwotnej wersji 153393e — 2026-10-12
 
 - `ci:code`: PASS, 173 pliki / 1678 testów jednostkowych oraz 6 testów narzędzi.
 - 32/32 odtworzenia symulacji: WON, wszystkie obowiązkowe łupy zebrane.

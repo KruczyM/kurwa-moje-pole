@@ -2,13 +2,14 @@
 import asyncio
 import json
 import runpy
+import sys
 from pathlib import Path
 from playwright.async_api import async_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'reports/bongo-challenges'
 CHECKS = runpy.run_path(str(ROOT / 'scripts/verify-bongo-rush.py'))
-URL = 'http://127.0.0.1:5202/bongo-rush.html?verify=1'
+URL = (sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:5202/bongo-rush.html') + '?verify=1'
 
 
 async def play(page, directions):
@@ -23,14 +24,18 @@ async def play(page, directions):
                    for o in state['world']['objects'])
         squares = [e for e in state['world']['enemies'] if e['kind'] == 'sweeper' and
                    e['y'] == target['y'] + 1 and abs(e['x'] - target['x']) <= 2]
-        if roof and squares and dx:
+        key = CHECKS['KEYS'][direction]
+        timed_release = bool(roof and squares and dx)
+        if timed_release:
             await page.wait_for_function('''target=>{
               const s=window.__bongoSnapshot();
-              return s.world.enemies.some(e=>e.kind==='sweeper' && e.y===target.y+1 &&
+              const ready=s.world.tick%2===0 && s.world.enemies.some(e=>e.kind==='sweeper' && e.y===target.y+1 &&
                 Math.abs(e.x-target.x)===1 && e.direction===(e.x>target.x?'left':'right'));
-            }''', arg=target, timeout=3000)
-        key = CHECKS['KEYS'][direction]
-        await page.keyboard.down(key)
+              if(ready) window.dispatchEvent(new KeyboardEvent('keydown',{code:target.key,bubbles:true}));
+              return ready;
+            }''', arg={**target, 'key': key}, timeout=3000)
+        else:
+            await page.keyboard.down(key)
         try:
             await page.wait_for_function('''target=>{
               const s=window.__bongoSnapshot();
@@ -39,7 +44,11 @@ async def play(page, directions):
               return reached || s.mode!=='playing';
             }''', arg={**target, 'key': key}, timeout=3000)
         except Exception:
-            print(json.dumps({'step': index, 'target': target, 'state': await CHECKS['snapshot'](page)}), flush=True)
+            failure = await CHECKS['snapshot'](page)
+            (OUT / 'failure-state.json').write_text(json.dumps(failure), encoding='utf-8')
+            print(json.dumps({'step': index, 'target': target, 'mode': failure['mode'],
+                             'player': failure['world']['player'], 'kills': failure['world']['kills'],
+                             'required': [o for o in failure['world']['objects'] if o.get('required')]}), flush=True)
             await page.screenshot(path=str(OUT / 'failure.png'))
             raise
         finally:
@@ -93,11 +102,12 @@ async def main():
     OUT.mkdir(parents=True, exist_ok=True)
     async with async_playwright() as p:
         results = []
-        for number in [13,14,15,16]:
+        for number in ([int(value) for value in sys.argv[2].split(',')] if len(sys.argv) > 2 else [13,14,15,16]):
             profile = p.devices['iPhone 13'] if number == 14 else {'viewport': {'width': 1800, 'height': 1600}}
             result = await level(p.webkit if number == 14 else p.chromium, number, profile)
             results.append(result)
             print(json.dumps(result), flush=True)
+            (OUT / 'browser-report.json').write_text(json.dumps(results, indent=2), encoding='utf-8')
         (OUT / 'browser-report.json').write_text(json.dumps(results, indent=2), encoding='utf-8')
 
 
