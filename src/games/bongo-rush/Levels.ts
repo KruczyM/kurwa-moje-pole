@@ -1,6 +1,8 @@
 import { buildCave } from './CaveBuilder';
 import type { CaveSketch } from './CaveBuilder';
 import type { LevelDefinition } from './types';
+import { buildChallenges } from './ChallengeCaves';
+import { EXIT_PUZZLES } from './ExitPuzzles';
 
 export const BIOMES = [
   {
@@ -153,4 +155,7 @@ export const CAVE_SKETCHES: readonly CaveSketch[] = [
   },
 ];
 
-export const LEVELS: readonly LevelDefinition[] = CAVE_SKETCHES.map(buildCave);
+export const LEVELS: readonly LevelDefinition[] = [
+  ...CAVE_SKETCHES.map(buildCave),
+  ...buildChallenges(EXIT_PUZZLES),
+];

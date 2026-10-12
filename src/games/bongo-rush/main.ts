@@ -12,6 +12,7 @@ import { CaveRenderer } from './Renderer';
 import type { HeroAtlas } from './Renderer';
 import { Simulation } from './Simulation';
 import { STEP_SECONDS } from './types';
+import { CAMPAIGN_LEVEL_COUNT } from './Campaign';
 import { measureSpriteCrop } from './SpriteBounds';
 
 type Mode = 'menu' | 'playing' | 'paused' | 'lost' | 'won' | 'victory';
@@ -256,7 +257,7 @@ class BongoRush {
   private updateHud(): void {
     const level = this.game.level,
       world = this.game.world;
-    element('level-title').textContent = `${level.id} / 12 · ${level.title}`;
+    element('level-title').textContent = `${level.id} / ${LEVELS.length} · ${level.title}`;
     element('counter').textContent = `${BIOMES[level.biome].item}: ${world.collected} / ${level.quota}`;
     const seconds = Math.ceil(this.game.remainingSeconds ?? 0);
     element('timer').textContent =
@@ -264,11 +265,13 @@ class BongoRush {
     element('timer').classList.toggle('urgent', seconds <= 30);
     element('exit-status').textContent = this.game.exitOpen
       ? 'Wyjście odblokowane →'
-      : this.game.requiredRemaining > 0 && world.collected >= level.quota
-        ? `Łup ze złotą obwódką: pozostało ${this.game.requiredRemaining}`
-        : level.gate && world.collected >= level.quota
-          ? 'Zamknij zagrodę złotą skałą'
-          : 'Zbierz dostawę';
+      : world.kills < (level.requiredKills ?? 0)
+        ? `Pułapki skalne: ${world.kills} / ${level.requiredKills} · zbierz też wypadający łup`
+        : this.game.requiredRemaining > 0 && world.collected >= level.quota
+          ? `Łup ze złotą obwódką: pozostało ${this.game.requiredRemaining}`
+          : level.gate && world.collected >= level.quota
+            ? 'Zamknij zagrodę złotą skałą'
+            : 'Zbierz dostawę';
     const stage =
       level.vault?.stages?.filter((part) => world.player.x >= part.entry.x - 3).pop() ?? level.vault;
     const hint = stage && world.player.x >= stage.entry.x - 3 ? `${stage.name}: ${stage.hint}` : level.hint;
@@ -282,11 +285,14 @@ class BongoRush {
   private finish(): void {
     const won = this.game.world.status === 'won';
     if (won) {
-      this.progress.unlocked = Math.max(this.progress.unlocked, Math.min(12, this.game.level.id + 1));
-      if (this.game.level.id === 12) this.progress.completed = true;
+      this.progress.unlocked = Math.max(
+        this.progress.unlocked,
+        Math.min(LEVELS.length, this.game.level.id + 1),
+      );
+      if (this.game.level.id === CAMPAIGN_LEVEL_COUNT) this.progress.completed = true;
       saveProgress(storage(), this.progress);
     }
-    if (won && this.game.level.id === 12) {
+    if (won && this.game.level.id === CAMPAIGN_LEVEL_COUNT) {
       this.victoryTime = 0;
       this.setMode('victory');
       return;
@@ -294,9 +300,11 @@ class BongoRush {
     element('result-label').textContent = won ? 'DOSTAWA ODEBRANA' : 'JESZCZE JEDNA PRÓBA';
     element('result-title').textContent = won ? 'Jaskinia za Tobą!' : 'Ups. Spróbuj jeszcze raz.';
     element('result-text').textContent = won
-      ? `Ukończono: ${this.game.level.title}. Następny poziom jest odblokowany.`
+      ? this.game.level.id === LEVELS.length
+        ? 'Ukończono wszystkie poziomy i wyzwania! Możesz wrócić do wyboru planszy.'
+        : `Ukończono: ${this.game.level.title}. Następny poziom jest odblokowany.`
       : this.game.world.reason;
-    element('next').hidden = !won;
+    element('next').hidden = !won || this.game.level.id === LEVELS.length;
     this.setMode(won ? 'won' : 'lost');
   }
 

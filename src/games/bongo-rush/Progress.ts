@@ -1,3 +1,5 @@
+import { CAMPAIGN_LEVEL_COUNT, LEVEL_COUNT } from './Campaign';
+
 export const HEROES = [
   'amper',
   'antena',
@@ -49,7 +51,12 @@ export function loadProgress(storage: Pick<Storage, 'getItem'>): Progress {
     if (!data || data.version !== 1) return defaults;
     return {
       version: 1,
-      unlocked: Number.isInteger(data.unlocked) ? Math.max(1, Math.min(12, data.unlocked)) : 1,
+      unlocked: Number.isInteger(data.unlocked)
+        ? Math.max(
+            data.completed === true ? CAMPAIGN_LEVEL_COUNT + 1 : 1,
+            Math.min(LEVEL_COUNT, data.unlocked),
+          )
+        : 1,
       hero: HEROES.includes(data.hero) ? data.hero : 'amper',
       muted: data.muted === true,
       completed: data.completed === true,

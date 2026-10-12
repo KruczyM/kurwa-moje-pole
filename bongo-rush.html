@@ -24,7 +24,7 @@
           aria-label="Kopalnia — poruszaj się klawiszami WASD lub strzałkami"
         ></canvas>
         <div class="hud">
-          <span id="level-title">12 poziomów · 4 biomy</span
+          <span id="level-title">16 poziomów · 4 biomy</span
           ><strong id="counter">Zbieraj. Kop. Nie daj się przygnieść.</strong><strong id="timer"></strong
           ><span id="exit-status"></span>
         </div>
@@ -66,6 +66,11 @@
         <section id="help-panel" class="panel compact help-panel" hidden aria-label="Pomoc">
           <button id="help-close" class="primary">Zamknij pomoc ×</button>
           <h2>Jak przejść jaskinię?</h2>
+          <p>
+            Spadający głaz eliminuje patrole i kwadraty z siatką. Łup pojawia się nad głazem: wróć po niego po
+            uderzeniu. Kwadrat obchodzi krawędzie przeszkód i nie kopie. W wyzwaniach obserwuj jego ruch przed
+            uruchomieniem pułapki; po odkopaniu podpory od razu cofnij się w bok.
+          </p>
           <ol>
             <li>Zbierz liczbę przedmiotów pokazaną u góry. Nie musisz zebrać wszystkich.</li>
             <li>
@@ -104,9 +109,12 @@
           ><button id="result-menu">Wybór poziomu</button>
         </section>
         <section id="victory" class="panel victory-panel" hidden aria-label="Koniec kampanii">
-          <span class="eyebrow">12 / 12 · CAŁA DOSTAWA ODEBRANA</span>
+          <span class="eyebrow">KAMPANIA UKOŃCZONA · ODBLOKOWANO 4 WYZWANIA</span>
           <h2>Bongo<br /><em>Tasiora</em></h2>
-          <p>Wszystkie jaskinie za Tobą. Satyryczny Owsiak opala legendarne bongo — nagroda jest Twoja!</p>
+          <p>
+            Dostawa odebrana! Satyryczny Owsiak opala legendarne bongo — nagroda jest Twoja! W wyborze poziomu
+            czekają cztery dodatkowe wyzwania.
+          </p>
           <button id="victory-menu" class="primary">Wróć do odblokowanych poziomów</button>
         </section>
         <nav id="touch-controls" hidden aria-label="Sterowanie dotykowe">

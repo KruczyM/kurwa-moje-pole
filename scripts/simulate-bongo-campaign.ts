@@ -20,9 +20,13 @@ function simulate(index: number, pauseAtTurns: boolean) {
     pushes += game.drainSounds().filter((sound) => sound === 'push').length;
   }
   for (const input of level.solution) {
-    if (pauseAtTurns && previous && previous !== input) {
-      advance();
-      advance();
+    const danger =
+      level.bonus &&
+      [...game.world.enemies, ...game.world.objects.filter((body) => body.falling)].some(
+        (body) => Math.abs(body.x - game.world.player.x) + Math.abs(body.y - game.world.player.y) <= 3,
+      );
+    if (pauseAtTurns && previous && previous !== input && !danger) {
+      for (let wait = 0; wait < (level.bonus ? 8 : 2); wait++) advance();
     }
     const target = neighbour(game.world.player, input);
     const harvesting =
@@ -40,7 +44,11 @@ function simulate(index: number, pauseAtTurns: boolean) {
     level: level.id,
     puzzle: level.vault!.name,
     result: 'WON',
-    profile: pauseAtTurns ? 'two-idle-ticks-at-turns' : 'continuous',
+    profile: pauseAtTurns
+      ? level.bonus
+        ? 'eight-tick-planning-outside-live-hazards'
+        : 'two-idle-ticks-at-turns'
+      : 'continuous',
     moves: level.solution.length,
     ticks: game.world.tick,
     simulatedSeconds: Number((game.world.tick * STEP_SECONDS).toFixed(2)),
@@ -52,6 +60,8 @@ function simulate(index: number, pauseAtTurns: boolean) {
     rockFallSteps: falls,
     pushes,
     trappedBoss: game.world.trapped,
+    kills: game.world.kills,
+    requiredKills: level.requiredKills ?? 0,
   };
 }
 

@@ -577,6 +577,23 @@ export class CaveRenderer {
   private patrol(enemy: Enemy, trapped: boolean): void {
     const ctx = this.context,
       boss = enemy.kind === 'boss';
+    if (enemy.kind === 'sweeper') {
+      ctx.fillStyle = '#17252c';
+      ctx.fillRect(9, 9, 46, 46);
+      ctx.strokeStyle = '#f2b45a';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(9, 9, 46, 46);
+      ctx.lineWidth = 1.5;
+      for (let offset = 18; offset <= 46; offset += 9) {
+        ctx.beginPath();
+        ctx.moveTo(offset, 10);
+        ctx.lineTo(offset, 54);
+        ctx.moveTo(10, offset);
+        ctx.lineTo(54, offset);
+        ctx.stroke();
+      }
+      return;
+    }
     const atlas = this.enemyAtlases.get(enemy.kind);
     if (atlas) {
       const { crop, image, metadata } = atlas;

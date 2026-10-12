@@ -14,6 +14,7 @@ export function createWorld(level: LevelDefinition): World {
     objects: [],
     enemies: [],
     collected: 0,
+    kills: 0,
     tick: 0,
     status: 'playing',
     reason: '',
@@ -25,7 +26,7 @@ export function createWorld(level: LevelDefinition): World {
   let exits = 0;
   level.rows.forEach((row, y) =>
     [...row].forEach((symbol, x) => {
-      if (!'#. PEORCBUJK'.includes(symbol)) throw new Error(`Nieznany kafelek: ${symbol}`);
+      if (!'#. PEORCBUJKSQ'.includes(symbol)) throw new Error(`Nieznany kafelek: ${symbol}`);
       const point = { x, y };
       world.cells.push(
         symbol === '#'
@@ -43,24 +44,33 @@ export function createWorld(level: LevelDefinition): World {
         players++;
       }
       if (symbol === 'E') exits++;
-      if (symbol === 'O' || symbol === 'R')
+      if (symbol === 'O' || symbol === 'Q' || symbol === 'R')
         world.objects.push({
           id: id++,
           ...point,
           previous: { ...point },
-          kind: symbol === 'O' ? 'pickup' : 'rock',
+          kind: symbol === 'R' ? 'rock' : 'pickup',
           required: symbol === 'O' && level.requiredPickups?.some((required) => same(required, point)),
           falling: false,
           variant: (x + y) % 4,
         });
-      if ('CBUJ'.includes(symbol))
+      if ('CBUJS'.includes(symbol))
         world.enemies.push({
           id: id++,
           ...point,
           previous: { ...point },
           direction: 'up',
           chasing: false,
-          kind: symbol === 'C' ? 'red' : symbol === 'B' ? 'blue' : symbol === 'U' ? 'undercover' : 'boss',
+          kind:
+            symbol === 'C'
+              ? 'red'
+              : symbol === 'B'
+                ? 'blue'
+                : symbol === 'U'
+                  ? 'undercover'
+                  : symbol === 'S'
+                    ? 'sweeper'
+                    : 'boss',
         });
     }),
   );
@@ -68,9 +78,18 @@ export function createWorld(level: LevelDefinition): World {
     players !== 1 ||
     exits !== 1 ||
     level.quota < 1 ||
-    world.objects.filter((o) => o.kind === 'pickup').length < level.quota
+    world.objects.filter((o) => o.kind === 'pickup').length +
+      world.enemies.filter((enemy) => enemy.kind !== 'boss').length <
+      level.quota
   )
     throw new Error('Plansza musi mieć start, wyjście i wystarczającą liczbę przedmiotów');
+  if (
+    level.requiredKills !== undefined &&
+    (!Number.isInteger(level.requiredKills) ||
+      level.requiredKills < 0 ||
+      level.requiredKills > world.enemies.filter((enemy) => enemy.kind !== 'boss').length)
+  )
+    throw new Error('Nieprawidłowa liczba wymaganych eliminacji');
   if (
     level.requiredPickups?.some((point) => !world.objects.some((body) => body.required && same(body, point)))
   )
@@ -167,6 +186,7 @@ export class Simulation {
     return (
       this.world.collected >= this.level.quota &&
       this.requiredRemaining === 0 &&
+      this.world.kills >= (this.level.requiredKills ?? 0) &&
       (!this.level.gate || this.world.trapped)
     );
   }
@@ -267,8 +287,21 @@ export class Simulation {
         return;
       }
       const victim = this.enemy(below);
-      if (victim && body.falling && victim.kind !== 'boss') {
+      if (victim && body.kind === 'rock' && body.falling && victim.kind !== 'boss') {
         w.enemies = w.enemies.filter((enemy) => enemy.id !== victim.id);
+        w.kills++;
+        // The crushing rock vacates this tile. Dropping here never overlaps the rock, a wall or the player.
+        // Reusing the removed enemy ID is unique among live bodies and deterministic across replays.
+        w.objects.push({
+          id: victim.id,
+          x: body.x,
+          y: body.y,
+          previous: { x: body.x, y: body.y },
+          kind: 'pickup',
+          required: (this.level.requiredKills ?? 0) > 0,
+          variant: victim.id % 4,
+          falling: false,
+        });
         this.move(body, below);
         this.sounds.push('impact');
         continue;
@@ -307,7 +340,10 @@ export class Simulation {
       enemy.chasing = enemy.kind === 'undercover' && visible;
       const forward = DIRECTIONS.indexOf(enemy.direction);
       const hand = enemy.kind === 'blue' ? -1 : 1;
-      let choices = [hand, 0, -hand, 2].map((turn) => DIRECTIONS[(forward + turn + 4) % 4]);
+      let choices =
+        enemy.kind === 'sweeper'
+          ? this.sweeperChoices(enemy)
+          : [hand, 0, -hand, 2].map((turn) => DIRECTIONS[(forward + turn + 4) % 4]);
       if (enemy.chasing)
         choices = [...DIRECTIONS].sort(
           (a, b) => this.distance(neighbour(enemy, a)) - this.distance(neighbour(enemy, b)),
@@ -328,6 +364,34 @@ export class Simulation {
         break;
       }
     }
+  }
+
+  /** A mesh square first reaches the nearest visible edge, then follows it with its left hand. */
+  private sweeperChoices(enemy: Enemy): Direction[] {
+    const solid = (point: Point) => this.cell(point) !== 'air' || !!this.object(point);
+    const adjacent = DIRECTIONS.findIndex((direction) => solid(neighbour(enemy, direction)));
+    if (!enemy.wallAttached && adjacent >= 0) {
+      enemy.wallAttached = true;
+      enemy.direction = DIRECTIONS[(adjacent + 1) % 4];
+    }
+    if (!enemy.wallAttached) {
+      const nearest = [...DIRECTIONS].sort((a, b) => {
+        /** Bounded axial ray; cave borders are solid even for malformed out-of-range queries. */
+        const distance = (direction: Direction) => {
+          let point = neighbour(enemy, direction),
+            steps = 1;
+          while (!solid(point) && steps < this.world.width + this.world.height) {
+            point = neighbour(point, direction);
+            steps++;
+          }
+          return steps;
+        };
+        return distance(a) - distance(b);
+      });
+      return nearest;
+    }
+    const facing = DIRECTIONS.indexOf(enemy.direction);
+    return [-1, 0, 1, 2].map((turn) => DIRECTIONS[(facing + turn + 4) % 4]);
   }
 
   /** Computes Manhattan distance for the short straight-line undercover chase. */

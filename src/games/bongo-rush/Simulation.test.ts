@@ -10,11 +10,11 @@ function fixture(rows: string[], quota = 1): LevelDefinition {
 }
 
 describe('Bongo Rush original campaign', () => {
-  it('has twelve distinct closed caves and three levels in each biome', () => {
-    expect(LEVELS).toHaveLength(12);
-    expect(new Set(LEVELS.map((level) => level.rows.join('\n'))).size).toBe(12);
+  it('has sixteen distinct closed caves and four levels in each biome', () => {
+    expect(LEVELS).toHaveLength(16);
+    expect(new Set(LEVELS.map((level) => level.rows.join('\n'))).size).toBe(16);
     for (let biome = 0; biome < 4; biome++)
-      expect(LEVELS.filter((level) => level.biome === biome)).toHaveLength(3);
+      expect(LEVELS.filter((level) => level.biome === biome)).toHaveLength(4);
     LEVELS.forEach(createWorld);
   });
   for (const level of LEVELS) {

@@ -3,6 +3,7 @@ import { CAVE_SKETCHES, LEVELS } from './Levels';
 import { buildCave } from './CaveBuilder';
 import { createWorld, Simulation } from './Simulation';
 import { DIRECTIONS, neighbour } from './types';
+const CORE_LEVELS = LEVELS.filter((level) => !level.bonus);
 
 describe('expanded original caves', () => {
   it('uses fixed authored sketches and never varies geology across restarts', () => {
@@ -14,7 +15,7 @@ describe('expanded original caves', () => {
     expect(LEVELS[0].rows).toHaveLength(34);
     expect(LEVELS[11].rows[0].length).toBe(139);
     expect(LEVELS[11].rows).toHaveLength(44);
-    for (const level of LEVELS) {
+    for (const level of CORE_LEVELS) {
       const w = createWorld(level);
       expect(w.width * w.height).toBeGreaterThan(24 * 18 * 3.5);
       expect(level.quota).toBeGreaterThanOrEqual(18);
@@ -50,7 +51,7 @@ describe('expanded original caves', () => {
     }
   });
 
-  it.each(LEVELS)('requires real pushes on level $id rather than just a longer corridor', (level) => {
+  it.each(CORE_LEVELS)('requires real pushes on level $id rather than just a longer corridor', (level) => {
     const game = new Simulation(level);
     let pushes = 0;
     for (const input of level.solution) {

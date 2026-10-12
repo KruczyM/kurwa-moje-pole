@@ -1,7 +1,7 @@
 /** Grid directions are shared by keyboard, joystick, physics and recorded solutions. */
 export type Direction = 'up' | 'right' | 'down' | 'left';
 export type Cell = 'wall' | 'soil' | 'air' | 'exit' | 'buried-bush' | 'bush';
-export type EnemyKind = 'red' | 'blue' | 'undercover' | 'boss';
+export type EnemyKind = 'red' | 'blue' | 'undercover' | 'boss' | 'sweeper';
 export interface Point {
   x: number;
   y: number;
@@ -17,6 +17,7 @@ export interface LooseObject extends Body {
   variant: number;
 }
 export interface Enemy extends Body {
+  wallAttached?: boolean;
   kind: EnemyKind;
   direction: Direction;
   chasing: boolean;
@@ -28,6 +29,8 @@ export interface LevelDefinition {
   biome: number;
   rows: readonly string[];
   quota: number;
+  bonus?: boolean;
+  requiredKills?: number;
   /** Original positions identify mandatory vault loot; the flag follows falling objects by ID. */
   requiredPickups?: readonly Point[];
   solution: readonly Direction[];
@@ -49,6 +52,7 @@ export interface World {
   objects: LooseObject[];
   enemies: Enemy[];
   collected: number;
+  kills: number;
   tick: number;
   status: 'playing' | 'lost' | 'won';
   reason: string;

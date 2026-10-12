@@ -4,6 +4,7 @@ import { LEVELS } from './Levels';
 import { ambientPhrase } from './Music';
 import { STEP_SECONDS } from './types';
 import type { LevelDefinition } from './types';
+const CORE_LEVELS = LEVELS.filter((level) => !level.bonus);
 
 /** A safe sealed corridor isolates the active-time clock from gravity and patrols. */
 function timed(seconds?: number): LevelDefinition {
@@ -60,7 +61,7 @@ describe('active-time deadline', () => {
 });
 
 describe('deliberate Kobra roots', () => {
-  it.each(LEVELS)('keeps level $id viable with short planning pauses at every turn', (level) => {
+  it.each(CORE_LEVELS)('keeps level $id viable with short planning pauses at every turn', (level) => {
     const game = new Simulation(level);
     let previous;
     for (const direction of level.solution) {
@@ -75,7 +76,7 @@ describe('deliberate Kobra roots', () => {
     expect(game.world.status).toBe('won');
     expect(game.world.enemies.length).toBeGreaterThan(0);
   });
-  for (const level of LEVELS) {
+  for (const level of CORE_LEVELS) {
     it(`keeps spawn safe and ${level.id % 3 ? 'optional' : 'mandatory'} roots on level ${level.id}`, () => {
       const game = new Simulation(level);
       const spawn = game.world.player;

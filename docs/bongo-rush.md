@@ -3,12 +3,13 @@
 ## Co to jest
 
 Oddzielna, offline’owa gra Canvas 2D. Celem jest odebranie dostawy, otwarcie wyjścia
-i przejście 12 poziomów. Inspiracją są zasady gier typu Boulder Dash, nie ich kod,
+i przejście 12 poziomów kampanii, a potem 4 dodatkowych wyzwań. Inspiracją są zasady gier typu Boulder Dash, nie ich kod,
 grafiki ani gotowe układy poziomów. Finał jest fikcyjną, satyryczną scenką.
 
 Istniejące After jest zachowane, również na gałęziach `feat/after-demo` i
 `fix/after-joystick`. Obecna oprawa i zasady są na `feat/bongo-gameplay-polish`, w osobnym worktree;
-najnowsze komory wydobywcze są na `feat/bongo-avalanche-puzzles`;
+najnowsze wyzwania są na `feat/bongo-challenge-caves` (opis: [bongo-challenges.md](bongo-challenges.md));
+wcześniejsze komory wydobywcze są na `feat/bongo-avalanche-puzzles`;
 adaptacje zagadek pozostają na `feat/bongo-reference-puzzles`;
 wcześniejsze kompozycje pozostały na `feat/bongo-authored-vaults`;
 wcześniejszy audyt biomów pozostał na `feat/bongo-biomes-puzzles`;

@@ -21,13 +21,18 @@ describe('versioned local campaign progress', () => {
     const data = { version: 1, unlocked: 99, hero: '<script>', muted: 'yes', completed: false };
     expect(loadProgress({ getItem: () => JSON.stringify(data) })).toEqual({
       version: 1,
-      unlocked: 12,
+      unlocked: 16,
       hero: 'amper',
       muted: false,
       completed: false,
     });
     data.unlocked = -3;
     expect(loadProgress({ getItem: () => JSON.stringify(data) }).unlocked).toBe(1);
+  });
+  it('unlocks challenges for a save which already completed the original campaign', () => {
+    expect(
+      loadProgress({ getItem: () => JSON.stringify({ version: 1, unlocked: 12, completed: true }) }).unlocked,
+    ).toBe(13);
   });
   it('round-trips valid preferences and does not block play on failed writes', () => {
     let value = '';
