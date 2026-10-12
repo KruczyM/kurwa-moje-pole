@@ -12,6 +12,7 @@ import {
 } from './rendering/fogTrial';
 import { FogSectorStreamer, type FogSectorManifest } from './world/FogSectorStreamer';
 import { mobileOpenWorldEnabled, mobileWorldRanges } from './world/mobileWorldStreaming';
+import { SectorTransitionDialog } from './ui/SectorTransitionDialog';
 import { fogWorldManifestUrl, fogWorldSectorUrl } from './assets/assetManifest';
 import { AssetLoader } from './assets/AssetLoader';
 import { characterAssets, effectAssets, festivalNpcAssets, musicAsset } from './assets/assetManifest';
@@ -165,6 +166,9 @@ export class Game {
   private readonly mobileInput = isMobileInputDevice();
   private readonly openMobileWorld = mobileOpenWorldEnabled(this.mobileInput);
   private readonly fogTrial = this.openMobileWorld || fogTrialEnabled(false);
+  private sectorTransitionDialog?: SectorTransitionDialog;
+  private sectorTransitioning = false;
+  private sectorSafePosition = new THREE.Vector3();
   private fogViewDistance = savedFogDistance();
   private graphics = fogTrialProfile(
     browserGraphicsProfile(savedMobileQuality()),
@@ -426,6 +430,7 @@ export class Game {
             loader.releaseWorldSector(fogWorldSectorUrl(sector.path), root);
           },
           (message) => this.toast(message),
+          this.mobileInput,
         );
         if (this.openMobileWorld) this.sectorStreamer.setStreamingPolicy(mobileWorldRanges);
         else this.sectorStreamer.setViewDistance(this.fogViewDistance);
@@ -730,6 +735,7 @@ export class Game {
         text.textContent = 'Wczytywanie najbliższych sektorów festiwalu…';
         await this.sectorStreamer.prime(this.camera.position);
         if (this.disposed) return;
+        this.sectorSafePosition.copy(this.camera.position);
         this.distanceVisibility?.update(1, this.camera.position);
       }
       await this.warmUpGpu();
@@ -745,7 +751,9 @@ export class Game {
         this.toggleFreeCamera(true);
       }
 
-      if (this.openMobileWorld) {
+      if (this.mobileInput) {
+        this.toast('Tryb mobilny: jeden sektor mapy w pamięci. Na granicy potwierdź przejście do kolejnego.');
+      } else if (this.openMobileWorld) {
         this.toast(
           'Telefon: świat bez mgły, doczytywanie do 60 m (obozy północne: 48 m). Dodatkowy tłum wyłączony.',
         );
@@ -820,6 +828,7 @@ export class Game {
 
   /** Obsługuje globalne skróty Escape, Tab, E oraz Ctrl+K zgodnie ze stanem gry. */
   private key(event: KeyboardEvent) {
+    if (this.sectorTransitioning) return;
     if (this.disposed) return;
     if (this.ui.isEcoPanelOpen()) {
       if (event.key === 'Escape') {
@@ -1741,6 +1750,7 @@ export class Game {
     }
     const dt = Math.min(frameElapsed, 0.05),
       state = this.state.current;
+    if (this.checkMobileSector()) return;
     if (state !== 'playing' && this.world?.flankiGame?.getHudState().isChugging)
       this.world.flankiGame.setPlayerDrinking(false);
     if (state !== 'paused' && state !== 'error') {
@@ -1757,6 +1767,7 @@ export class Game {
         const baseMods = this.effects?.modifiers || { speed: 1, sway: 0, shake: 0, bob: 1 };
         const activeMods = speedBoost > 1.0 ? { ...baseMods, speed: baseMods.speed * speedBoost } : baseMods;
         this.player?.updateElapsed(frameElapsed, activeMods);
+        if (this.checkMobileSector()) return;
         this.world?.flankiGame?.updateLocalRunnerPosition(this.camera.position);
         this.updateInteractionPrompt();
       }
@@ -2246,7 +2257,60 @@ export class Game {
     }
   }
 
+  /** Keep the player on the old side until the complete new area is ready. */
+  private checkMobileSector(): boolean {
+    if (this.sectorTransitioning) return true;
+    const stream = this.sectorStreamer;
+    if (!this.mobileInput || !stream?.activeArea) return false;
+    const area = stream.areaAt(this.camera.position);
+    if (area === stream.activeArea) {
+      this.sectorSafePosition.copy(this.camera.position);
+      return false;
+    }
+    const destination = this.camera.position.clone();
+    this.camera.position.copy(this.sectorSafePosition);
+    this.sectorTransitioning = true;
+    this.player?.stop();
+    if (this.player) this.player.enabled = false;
+    this.mobileControls?.setState('paused');
+    void this.crossMobileSector(area, destination, stream.activeArea);
+    return true;
+  }
+
+  private async crossMobileSector(area: string, destination: THREE.Vector3, previous: string) {
+    const dialog = (this.sectorTransitionDialog ??= new SectorTransitionDialog());
+    const stream = this.sectorStreamer!;
+    let target = area;
+    try {
+      if (!(await dialog.ask()) || this.disposed) return;
+      while (!this.disposed) {
+        dialog.loading();
+        try {
+          await stream.enterArea(target, (loaded, total) => {
+            if (!this.disposed) dialog.loading(loaded, total);
+          });
+          if (this.disposed) return;
+          if (target === area) this.camera.position.copy(destination);
+          this.sectorSafePosition.copy(this.camera.position);
+          return;
+        } catch {
+          if (this.disposed) return;
+          // Returning also reloads the old area: it was freed before the attempted download.
+          target = (await dialog.ask(true)) ? target : previous;
+        }
+      }
+    } finally {
+      if (!this.disposed) {
+        dialog.close();
+        this.mobileControls?.setState(this.state.current);
+        if (this.player) this.player.enabled = this.state.current === 'playing' && !this.toiletTimer;
+      }
+      this.sectorTransitioning = false;
+    }
+  }
+
   dispose() {
+    this.sectorTransitionDialog?.dispose();
     this.sectorStreamer?.dispose();
     // In-flight sector results still return to the streamer, which evicts them after disposal.
     this.sectorLoader?.disposeFogWorld();
