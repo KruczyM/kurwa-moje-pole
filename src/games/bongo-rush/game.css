@@ -1,8 +1,8 @@
 :root {
-  font-family:
-    system-ui,
-    -apple-system,
-    sans-serif;
+  --pixel-gold: #f6c85f;
+  --pixel-green: #a7dc75;
+  --pixel-ink: #121526;
+  font-family: 'Courier New', monospace;
   color: #f8efd9;
   background: #121723;
   color-scheme: dark;
@@ -25,11 +25,16 @@ select {
 }
 button,
 select {
-  border: 1px solid #ffffff30;
-  border-radius: 10px;
+  border: 2px solid #b6a6c7;
+  border-radius: 0;
   padding: 10px 14px;
   background: #24283b;
   color: #f8efd9;
+  box-shadow:
+    inset -3px -3px #0005,
+    inset 3px 3px #fff1,
+    3px 3px 0 #080b16;
+  min-height: 44px;
 }
 button {
   cursor: pointer;
@@ -59,26 +64,30 @@ a {
   overflow: hidden;
 }
 .topbar {
+  flex-wrap: wrap;
   min-height: 66px;
   padding: 12px max(20px, env(safe-area-inset-right)) 12px max(20px, env(safe-area-inset-left));
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  border-bottom: 1px solid #ffffff15;
-  background: #171b2b;
+  border-bottom: 4px solid var(--pixel-gold);
+  background: repeating-linear-gradient(90deg, #25213b 0 24px, #211e34 24px 48px);
 }
 .brand {
   text-decoration: none;
   font-size: 20px;
   font-weight: 900;
   letter-spacing: -0.6px;
+  text-shadow: 2px 2px #060916;
 }
 .brand span {
   color: #f4c477;
   margin-right: 7px;
 }
 .toolbar {
+  flex-wrap: wrap;
+  justify-content: flex-end;
   display: flex;
   gap: 8px;
 }
@@ -91,6 +100,8 @@ a {
   overflow: hidden;
 }
 #cave {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -109,13 +120,15 @@ a {
   align-items: center;
   width: max-content;
   max-width: calc(100% - 24px);
-  border: 1px solid #ffffff20;
-  border-radius: 12px;
+  border: 2px solid var(--pixel-gold);
+  border-radius: 0;
   padding: 9px 16px;
   background: #101623e8;
   pointer-events: none;
   font-size: 12px;
-  box-shadow: 0 4px 20px #0003;
+  box-shadow:
+    4px 4px 0 #080b16,
+    inset 0 -3px #0005;
 }
 .hud strong {
   color: #f5ce83;
@@ -133,10 +146,14 @@ a {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 28px;
-  border: 1px solid #ffffff25;
-  border-radius: 20px;
+  border: 3px solid var(--pixel-gold);
+  border-radius: 0;
   background: #151b2af5;
-  box-shadow: 0 20px 80px #0008;
+  box-shadow:
+    7px 7px 0 #090b18,
+    inset 0 0 0 3px #352e48;
+  scrollbar-color: var(--pixel-gold) var(--pixel-ink);
+  scrollbar-width: thin;
   width: min(440px, calc(100% - 28px));
 }
 .help-panel {
@@ -174,7 +191,8 @@ h1 {
   margin: 12px 0;
   font-size: clamp(46px, 7vw, 84px);
   line-height: 0.82;
-  letter-spacing: -5px;
+  letter-spacing: -3px;
+  text-shadow: 4px 4px 0 #080b16;
   font-weight: 950;
 }
 em {
@@ -286,8 +304,8 @@ summary {
   font-size: clamp(40px, 5vw, 70px);
 }
 footer {
+  border-top: 3px solid var(--pixel-green);
   padding: 8px 20px max(8px, env(safe-area-inset-bottom));
-  border-top: 1px solid #ffffff15;
   background: #171b2b;
   font-size: 11px;
   display: flex;
@@ -313,12 +331,13 @@ footer span {
 }
 #joystick {
   position: absolute;
-  left: max(22px, env(safe-area-inset-left));
+  right: max(22px, env(safe-area-inset-right));
   bottom: 20px;
   width: 124px;
   height: 124px;
   border: 2px solid #fff4;
-  border-radius: 50%;
+  border-radius: 0;
+  clip-path: polygon(18% 0, 82% 0, 100% 18%, 100% 82%, 82% 100%, 18% 100%, 0 82%, 0 18%);
   background: #10172880;
   touch-action: none;
   pointer-events: auto;
@@ -331,18 +350,21 @@ footer span {
   width: 52px;
   height: 52px;
   border: 2px solid #f5ce83aa;
-  border-radius: 50%;
+  border-radius: 0;
+  box-shadow:
+    inset -4px -4px #6a4c2a,
+    inset 4px 4px #f9dfa1;
   background: #f5ce8355;
   pointer-events: none;
 }
 #touch-restart {
   position: absolute;
-  right: max(24px, env(safe-area-inset-right));
+  left: max(24px, env(safe-area-inset-left));
   bottom: 28px;
   width: 56px;
   height: 56px;
   font-size: 28px;
-  border-radius: 50%;
+  border-radius: 0;
   pointer-events: auto;
   touch-action: manipulation;
   background: #101728cc;
@@ -369,13 +391,15 @@ footer span {
   }
   .hud {
     top: 8px;
-    font-size: 10px;
+    font-size: 12px;
     padding: 8px 12px;
     gap: 4px 10px;
   }
   footer {
     padding: 8px 12px;
-    font-size: 10px;
+    font-size: 12px;
+    max-height: 80px;
+    overflow-y: auto;
   }
   footer span {
     display: none;

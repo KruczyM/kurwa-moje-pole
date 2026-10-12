@@ -191,6 +191,7 @@ class BongoRush {
       return;
     }
     this.setMode('playing');
+    this.resize();
   }
 
   /** Rebuilds fresh simulation state from the current level, retaining already loaded graphics. */
@@ -502,6 +503,8 @@ class BongoRush {
         for (const sound of sounds) this.audio.play(sound, this.game.level.biome);
       }
     }
+    // Canvas state can be reset by backing-store resize when menu/footer layout changes.
+    this.context?.setTransform(this.canvas.width / this.width, 0, 0, this.canvas.height / this.height, 0, 0);
     this.renderer?.draw(
       this.game,
       this.backgrounds.get(this.game.level.biome),
