@@ -112,6 +112,7 @@ export class SectorResources {
       privateMaterials = new Set<THREE.Material>();
     root.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
+      if (object instanceof THREE.InstancedMesh) object.dispose();
       geometries.add(object.geometry);
       for (const material of Array.isArray(object.material) ? object.material : [object.material])
         if (!material.userData.fogMaterialKey) privateMaterials.add(material);

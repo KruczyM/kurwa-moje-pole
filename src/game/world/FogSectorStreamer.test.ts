@@ -1,6 +1,12 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
-import { FogSectorStreamer, sectorDistance, type FogSector } from './FogSectorStreamer';
+import {
+  FogSectorStreamer,
+  sectorDistance,
+  mobileAreaAt,
+  mobileSectorArea,
+  type FogSector,
+} from './FogSectorStreamer';
 
 const sector = (id: string, x = 0): FogSector => ({
   id,
@@ -10,6 +16,112 @@ const sector = (id: string, x = 0): FogSector => ({
     [x, 0, 0],
     [x + 2, 3, 2],
   ],
+});
+
+describe('mobile map transitions', () => {
+  const manifest = {
+    schema: 1,
+    sourceSha256: '',
+    cellSize: 16,
+    sectors: [sector('0_0'), sector('3_3', 48), sector('4_0', 64), sector('-1_0', -16)],
+  };
+  const setup = (
+    load = vi.fn<(sector: FogSector) => Promise<THREE.Group>>(async () => new THREE.Group()),
+  ) => {
+    const scene = new THREE.Group();
+    const release = vi.fn((_sector: FogSector, root: THREE.Object3D) => root.removeFromParent());
+    const stream = new FogSectorStreamer(scene, manifest, load, release, vi.fn(), true);
+    return { stream, scene, load, release };
+  };
+
+  it('uses a stable grid, including negative positions and exact boundaries', () => {
+    expect(mobileAreaAt(new THREE.Vector3(63.99, 100, 0))).toBe('0_0');
+    expect(mobileAreaAt(new THREE.Vector3(64, 0, -0.01))).toBe('1_-1');
+    expect(mobileAreaAt(new THREE.Vector3(-64, 0, 0))).toBe('-1_0');
+    expect(mobileAreaAt(new THREE.Vector3(32, 0, 0), 8)).toBe('1_0');
+    expect(mobileSectorArea(sector('-1_-4'))).toBe('-1_-1');
+    expect(() => mobileSectorArea(sector('invalid'))).toThrow();
+  });
+
+  it('primes every model in the starting area and never prefetches other areas', async () => {
+    const { stream, load, scene } = setup();
+    await stream.prime(new THREE.Vector3());
+    expect(load.mock.calls.map(([s]) => s.id)).toEqual(['0_0', '3_3']);
+    expect(scene.children).toHaveLength(2);
+    stream.setViewDistance(30);
+    stream.update(5, new THREE.Vector3(100, 0, 0));
+    await Promise.resolve();
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(stream.activeArea).toBe('0_0');
+  });
+
+  it('evicts all previous models before requesting the next map, and supports returning', async () => {
+    const { stream, load, release, scene } = setup();
+    await stream.prime(new THREE.Vector3());
+    load.mockImplementation(async () => {
+      expect(scene.children).toHaveLength(0);
+      expect(release).toHaveBeenCalledTimes(2);
+      return new THREE.Group();
+    });
+    const progress = vi.fn();
+    await stream.enterArea('1_0', progress);
+    expect(progress.mock.calls).toEqual([
+      [0, 1],
+      [1, 1],
+    ]);
+    expect(stream.activeArea).toBe('1_0');
+    expect(scene.children).toHaveLength(1);
+    load.mockImplementation(async () => new THREE.Group());
+    await stream.enterArea('0_0');
+    expect(release).toHaveBeenCalledTimes(3);
+    expect(scene.children).toHaveLength(2);
+    expect(load).toHaveBeenCalledTimes(5);
+  });
+
+  it('cleans up a partially loaded map after failure and permits retry', async () => {
+    const { stream, load, release, scene } = setup();
+    load.mockResolvedValueOnce(new THREE.Group()).mockRejectedValueOnce(new Error('Offline'));
+    await expect(stream.enterArea('0_0')).rejects.toThrow('Offline');
+    expect(scene.children).toHaveLength(0);
+    expect(release).toHaveBeenCalledOnce();
+    expect(stream.activeArea).toBeUndefined();
+    expect(stream.stats.pending).toBe(false);
+    await stream.enterArea('0_0');
+    expect(stream.activeArea).toBe('0_0');
+    expect(stream.stats.loaded).toBe(2);
+  });
+
+  it('serializes downloads and releases an in-flight result after disposal', async () => {
+    let finish!: (root: THREE.Group) => void;
+    const { stream, load, release, scene } = setup(
+      vi.fn(
+        () =>
+          new Promise<THREE.Group>((resolve) => {
+            finish = resolve;
+          }),
+      ),
+    );
+    const pending = stream.enterArea('0_0');
+    await expect(stream.enterArea('1_0')).rejects.toThrow('Trwa już');
+    stream.dispose();
+    finish(new THREE.Group());
+    await pending;
+    expect(load).toHaveBeenCalledOnce();
+    expect(release).toHaveBeenCalledOnce();
+    expect(scene.children).toHaveLength(0);
+    expect(stream.activeArea).toBeUndefined();
+  });
+
+  it('allows empty areas without getting stuck loading or asking on every frame', async () => {
+    const { stream, load, release } = setup();
+    await stream.prime(new THREE.Vector3());
+    await stream.enterArea('10_10');
+    expect(stream.activeArea).toBe('10_10');
+    expect(stream.stats.loaded).toBe(0);
+    await stream.enterArea('10_10');
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(release).toHaveBeenCalledTimes(2);
+  });
 });
 describe('FogSectorStreamer', () => {
   it('expands streaming live and releases sectors after the user reduces the distance', async () => {
