@@ -1,0 +1,55 @@
+.sector-transition {
+  box-sizing: border-box;
+  width: min(90vw, 440px);
+  max-height: 90dvh;
+  overflow: auto;
+  padding: 24px;
+  border: 1px solid #8da18a;
+  border-radius: 16px;
+  background: #18231b;
+  color: #fff;
+  font:
+    16px/1.5 system-ui,
+    sans-serif;
+}
+
+.sector-transition::backdrop {
+  background: #07100cf5;
+}
+
+.sector-transition h2 {
+  font-size: 22px;
+  margin-top: 0;
+}
+
+.sector-transition div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.sector-transition button {
+  flex: 1;
+  min-height: 48px;
+  padding: 10px 16px;
+  border: 1px solid #a0b69a;
+  border-radius: 8px;
+  background: #304a32;
+  color: #fff;
+  font: inherit;
+  touch-action: manipulation;
+}
+
+.sector-transition button:focus-visible {
+  outline: 3px solid #ffdf86;
+  outline-offset: 3px;
+}
+
+.sector-transition progress {
+  width: 100%;
+  height: 22px;
+}
+
+.sector-transition [hidden] {
+  display: none;
+}

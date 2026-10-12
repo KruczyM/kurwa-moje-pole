@@ -58,6 +58,7 @@ export class AssetLoader {
 
   async loadWorldSector(url: string): Promise<THREE.Object3D | null> {
     const model = await this.load(url, 'Sektor festiwalu', 'mixed');
+    if (!model) this.cache.delete(url); // A transition retry must make a fresh request.
     if (model) {
       this.sectorResources.acquire(model.scene);
       if (this.fogDisposed) {

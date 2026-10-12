@@ -3,7 +3,23 @@ import { fogRanges, FOG_TRIAL_FAR } from '../rendering/fogTrial';
 import type { SectorRanges } from './mobileWorldStreaming';
 
 export type FogSector = { id: string; path: string; bounds: [number[], number[]]; bytes: number };
-export type FogSectorManifest = { schema: number; sourceSha256: string; sectors: FogSector[] };
+export type FogSectorManifest = {
+  schema: number;
+  sourceSha256: string;
+  cellSize?: number;
+  sectors: FogSector[];
+};
+// Group the exported 16 m cells into map areas, without loading neighbouring areas.
+export const MOBILE_AREA_CELLS = 4;
+export function mobileAreaAt(viewer: THREE.Vector3, cellSize = 16): string {
+  const size = cellSize * MOBILE_AREA_CELLS;
+  return `${Math.floor(viewer.x / size)}_${Math.floor(viewer.z / size)}`;
+}
+export function mobileSectorArea(sector: FogSector): string {
+  const [x, z] = sector.id.split('_').map(Number);
+  if (!/^-?\d+_-?\d+$/.test(sector.id)) throw new Error('Nieprawidłowa siatka sektorów');
+  return `${Math.floor(x / MOBILE_AREA_CELLS)}_${Math.floor(z / MOBILE_AREA_CELLS)}`;
+}
 export function sectorDistance(sector: FogSector, viewer: THREE.Vector3): number {
   const [min, max] = sector.bounds;
   return Math.hypot(
@@ -31,6 +47,13 @@ export class FogSectorStreamer {
   private rangesFor(sector: FogSector): SectorRanges {
     return this.policy?.(sector) ?? this.ranges;
   }
+  private area?: string;
+  get activeArea(): string | undefined {
+    return this.area;
+  }
+  areaAt(viewer: THREE.Vector3): string {
+    return mobileAreaAt(viewer, this.manifest.cellSize);
+  }
   setViewDistance(distance: number): void {
     this.policy = undefined;
     this.ranges = fogRanges(distance);
@@ -42,11 +65,17 @@ export class FogSectorStreamer {
     private load: (sector: FogSector) => Promise<THREE.Object3D | null>,
     private release: (sector: FogSector, root: THREE.Object3D) => void,
     private warn: (message: string) => void,
+    private mapTransitions = false,
   ) {
     if (manifest.schema !== 1) throw new Error('Nieobsługiwany manifest sektorów świata');
+    if (mapTransitions) {
+      if (!manifest.cellSize || !Number.isFinite(manifest.cellSize) || manifest.cellSize <= 0)
+        throw new Error('Brak rozmiaru siatki sektorów');
+      manifest.sectors.forEach(mobileSectorArea);
+    }
   }
   update(dt: number, viewer: THREE.Vector3): void {
-    if (this.disposed) return;
+    if (this.disposed || this.mapTransitions) return;
     this.viewer.copy(viewer);
     this.elapsed += dt;
     if (this.elapsed < 0.25) return;
@@ -97,6 +126,10 @@ export class FogSectorStreamer {
     }
   }
   async prime(viewer: THREE.Vector3): Promise<void> {
+    if (this.mapTransitions) {
+      await this.enterArea(this.areaAt(viewer));
+      return;
+    }
     this.viewer.copy(viewer);
     while (
       !this.disposed &&
@@ -109,13 +142,51 @@ export class FogSectorStreamer {
     )
       await this.pump();
   }
-  dispose(): void {
-    this.disposed = true;
+  /** Evict before loading to avoid holding two maps in phone memory. Failed areas can be retried. */
+  async enterArea(area: string, progress?: (loaded: number, total: number) => void): Promise<void> {
+    if (!this.mapTransitions || this.disposed || this.area === area) return;
+    if (this.pending) throw new Error('Trwa już ładowanie sektora');
+    this.evictArea();
+    const sectors = this.manifest.sectors.filter((sector) => mobileSectorArea(sector) === area);
+    const operation = async () => {
+      progress?.(0, sectors.length);
+      try {
+        for (const sector of sectors) {
+          if (this.disposed) return;
+          const root = await this.load(sector);
+          if (!root) throw new Error('Nie udało się wczytać sektora. Sprawdź połączenie i spróbuj ponownie.');
+          if (this.disposed) {
+            this.release(sector, root);
+            return;
+          }
+          this.scene.add(root);
+          this.loaded.set(sector.id, root);
+          progress?.(this.loaded.size, sectors.length);
+        }
+        if (!this.disposed) this.area = area;
+      } catch (error) {
+        this.evictArea();
+        throw error;
+      }
+    };
+    this.pending = operation();
+    try {
+      await this.pending;
+    } finally {
+      this.pending = undefined;
+    }
+  }
+  private evictArea(): void {
+    this.area = undefined;
     for (const sector of this.manifest.sectors) {
       const root = this.loaded.get(sector.id);
       if (root) this.release(sector, root);
     }
     this.loaded.clear();
+  }
+  dispose(): void {
+    this.disposed = true;
+    this.evictArea();
   }
   get stats() {
     return { loaded: this.loaded.size, pending: Boolean(this.pending), failed: this.failed.size };

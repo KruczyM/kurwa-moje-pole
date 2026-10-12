@@ -17,6 +17,22 @@ function asset(key = 'material', offset = 0) {
   return { mesh, image, material, texture, disposed };
 }
 describe('SectorResources', () => {
+  it('releases per-instance GPU buffers when unloading a batched sector', () => {
+    const pool = new SectorResources();
+    const source = asset();
+    const batch = new THREE.InstancedMesh(source.mesh.geometry, source.material, 2);
+    const disposed = vi.fn();
+    batch.addEventListener('dispose', disposed);
+    const root = new THREE.Group();
+    root.add(source.mesh, batch);
+    pool.acquire(root);
+    pool.release(root);
+    pool.release(root);
+    expect(disposed).toHaveBeenCalledOnce();
+    expect(source.disposed.geometry).toHaveBeenCalledOnce();
+    expect(source.disposed.material).toHaveBeenCalledOnce();
+    expect(source.disposed.texture).toHaveBeenCalledOnce();
+  });
   it('shares resources between sectors and disposes only at the last release', () => {
     const pool = new SectorResources(),
       a = asset(),
