@@ -12,8 +12,9 @@ import {
 } from './rendering/fogTrial';
 import { FogSectorStreamer, type FogSectorManifest } from './world/FogSectorStreamer';
 import { mobileOpenWorldEnabled, mobileWorldRanges } from './world/mobileWorldStreaming';
+import { festivalAreaAt, festivalAreaLabel, MobileBotAllowance } from './world/mobileFestivalAreas';
 import { SectorTransitionDialog } from './ui/SectorTransitionDialog';
-import { fogWorldManifestUrl, fogWorldSectorUrl } from './assets/assetManifest';
+import { fogWorldManifestUrl, mobileWorldManifestUrl, fogWorldSectorUrl } from './assets/assetManifest';
 import { AssetLoader } from './assets/AssetLoader';
 import { characterAssets, effectAssets, festivalNpcAssets, musicAsset } from './assets/assetManifest';
 import { CampWorld, WORLD_LIMIT, terrainHeight } from './world/CampWorld';
@@ -169,6 +170,8 @@ export class Game {
   private sectorTransitionDialog?: SectorTransitionDialog;
   private sectorTransitioning = false;
   private sectorSafePosition = new THREE.Vector3();
+  private localCharacterName = '';
+  private mobileBotAllowance = new MobileBotAllowance();
   private fogViewDistance = savedFogDistance();
   private graphics = fogTrialProfile(
     browserGraphicsProfile(savedMobileQuality()),
@@ -407,7 +410,7 @@ export class Game {
       assets.interactables.forEach((asset, id) => this.propModels.set(id, asset.scene));
       this.world = new CampWorld(this.scene, assets);
       if (this.fogTrial) {
-        const response = await fetch(fogWorldManifestUrl);
+        const response = await fetch(this.mobileInput ? mobileWorldManifestUrl : fogWorldManifestUrl);
         if (!response.ok) throw new Error('Nie udało się wczytać manifestu sektorów festiwalu.');
         const manifest = (await response.json()) as FogSectorManifest;
         if (this.disposed) return;
@@ -474,7 +477,8 @@ export class Game {
           return;
         }
         const roots = [
-          ...(this.npcs?.npcs.filter((npc) => !npc.isHidden).map((npc) => npc.root) ?? []),
+          ...(this.npcs?.npcs.filter((npc) => !npc.isHidden && !npc.sectorDormant).map((npc) => npc.root) ??
+            []),
           ...Array.from(this.remotePlayersManager?.remotePlayers.values() ?? []).map((entity) => entity.root),
         ];
         const visibility = roots.map((root) => root.visible);
@@ -513,8 +517,19 @@ export class Game {
         npcNavigation,
         undefined,
         Math.floor(Math.random() * 0x100000000),
+        this.mobileInput,
       );
-      this.remotePlayersManager = new RemotePlayersManager(this.scene, assets.characters, this.networkClient);
+      this.remotePlayersManager = new RemotePlayersManager(
+        this.scene,
+        assets.characters,
+        this.networkClient,
+        undefined,
+        this.mobileInput
+          ? (player) =>
+              festivalAreaAt(player.transform.position[0], player.transform.position[2]) ===
+              this.sectorStreamer?.activeArea
+          : undefined,
+      );
       this.npcs.visibility.profile = this.graphics;
       this.remotePlayersManager.visibility.profile = this.graphics;
       this.npcs.setFestivalLayout(this.world.mapScenery);
@@ -552,13 +567,15 @@ export class Game {
       this.effects.setSettings(this.settings);
       this.interactions = new InteractionManager(this.camera, () => [
         ...(this.npcs!.speakerAnchor ? [this.npcs!.speakerAnchor] : []),
-        ...this.npcs!.npcs.map((npc) => npc.root),
+        ...this.npcs!.npcs.filter((npc) => !npc.isHidden && !npc.sectorDormant).map((npc) => npc.root),
         ...this.world!.interactables.map((item) => item.object),
       ]);
       const selectedName =
         (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('camp-player-character') : null) ||
         (typeof localStorage !== 'undefined' ? localStorage.getItem('camp-player-character') : null);
       const selectedAsset = characterAssets.find((asset) => asset.name === selectedName);
+      this.localCharacterName =
+        selectedAsset?.name ?? characterAssets.find((asset) => assets.characters.has(asset.id))?.name ?? '';
       const selectedCharacter =
         (selectedAsset ? assets.characters.get(selectedAsset.id) : undefined) ??
         assets.characters.values().next().value;
@@ -736,6 +753,11 @@ export class Game {
         await this.sectorStreamer.prime(this.camera.position);
         if (this.disposed) return;
         this.sectorSafePosition.copy(this.camera.position);
+        if (this.mobileInput) {
+          this.world.setMobileArea(this.sectorStreamer.activeArea);
+          this.remotePlayersManager.refreshResidentPlayers();
+          this.updateMobilePopulation();
+        }
         this.distanceVisibility?.update(1, this.camera.position);
       }
       await this.warmUpGpu();
@@ -1750,7 +1772,14 @@ export class Game {
     }
     const dt = Math.min(frameElapsed, 0.05),
       state = this.state.current;
-    if (this.checkMobileSector()) return;
+    if (this.checkMobileSector()) {
+      this.updateSharedSectorTransition(dt);
+      return;
+    }
+    if (this.mobileInput && state === 'playing') {
+      this.mobileBotAllowance.update(frameElapsed);
+      this.updateMobilePopulation();
+    }
     if (state !== 'playing' && this.world?.flankiGame?.getHudState().isChugging)
       this.world.flankiGame.setPlayerDrinking(false);
     if (state !== 'paused' && state !== 'error') {
@@ -1786,10 +1815,7 @@ export class Game {
       }
       this.remotePlayersManager?.update(dt, this.camera);
       if (this.spatialVoice && this.remotePlayersManager) {
-        const remotePositions = new Map<string, { x: number; y: number; z: number }>();
-        for (const [id, entity] of this.remotePlayersManager.remotePlayers) {
-          remotePositions.set(id, entity.currentPosition);
-        }
+        const remotePositions = this.remotePlayersManager.getPlayerPositions();
         const euler = new THREE.Euler().setFromQuaternion(this.camera.quaternion, 'YXZ');
         this.spatialVoice.update(this.camera.position, euler.y, remotePositions);
       }
@@ -2257,6 +2283,30 @@ export class Game {
     }
   }
 
+  private updateMobilePopulation() {
+    if (!this.mobileInput) return;
+    const names = this.remotePlayersManager?.getResidentCharacterNames() ?? [];
+    this.npcs?.setMobileArea(
+      this.sectorStreamer?.activeArea,
+      names.length,
+      [this.localCharacterName, ...names],
+      this.mobileBotAllowance.value,
+    );
+  }
+
+  /** Loading is local; the host must continue advancing the shared match. */
+  private updateSharedSectorTransition(dt: number) {
+    if (!this.networkClient?.isOnline()) return;
+    this.world?.update(this.clock.elapsedTime, this.camera.position, dt, this.settings.reduceMotion);
+    this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position, this.speakerAudio.isPlaying);
+    this.networkSyncTimer += dt;
+    if (this.networkSyncTimer >= 0.05) {
+      this.networkSyncTimer = 0;
+      const transform = this.player?.getTransform();
+      if (transform) this.networkClient.sendPlayerUpdate(transform);
+    }
+  }
+
   /** Keep the player on the old side until the complete new area is ready. */
   private checkMobileSector(): boolean {
     if (this.sectorTransitioning) return true;
@@ -2282,21 +2332,28 @@ export class Game {
     const stream = this.sectorStreamer!;
     let target = area;
     try {
-      if (!(await dialog.ask()) || this.disposed) return;
+      if (!(await dialog.ask(false, festivalAreaLabel(area))) || this.disposed) return;
       while (!this.disposed) {
-        dialog.loading();
+        dialog.loading(0, 0, festivalAreaLabel(target));
+        this.npcs?.setMobileArea();
+        this.world?.setMobileArea();
         try {
-          await stream.enterArea(target, (loaded, total) => {
-            if (!this.disposed) dialog.loading(loaded, total);
+          const loading = stream.enterArea(target, (loaded, total) => {
+            if (!this.disposed) dialog.loading(loaded, total, festivalAreaLabel(target));
           });
+          this.remotePlayersManager?.refreshResidentPlayers();
+          await loading;
           if (this.disposed) return;
           if (target === area) this.camera.position.copy(destination);
           this.sectorSafePosition.copy(this.camera.position);
+          this.world?.setMobileArea(stream.activeArea);
+          this.remotePlayersManager?.refreshResidentPlayers();
+          this.updateMobilePopulation();
           return;
         } catch {
           if (this.disposed) return;
           // Returning also reloads the old area: it was freed before the attempted download.
-          target = (await dialog.ask(true)) ? target : previous;
+          target = (await dialog.ask(true, festivalAreaLabel(target))) ? target : previous;
         }
       }
     } finally {
@@ -2361,6 +2418,8 @@ export class Game {
     this.voiceReactions.dispose();
     this.campfireGuitarGame.dispose();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
+    // Include detached mobile pool entries in the one shared-resource disposal pass.
+    for (const npc of this.npcs?.npcs ?? []) if (!npc.root.parent) this.scene.add(npc.root);
     disposeObjectTree(this.scene);
     this.renderer.renderLists.dispose();
     this.renderer.dispose();

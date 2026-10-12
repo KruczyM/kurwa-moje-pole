@@ -84,3 +84,38 @@ assert.deepEqual(actual, expected, 'Missing/extra static meshes');
 console.log(
   `Fog sectors validated: ${manifest.sectors.length} sectors, ${actual.size} meshes, original transforms/geometry/images/bounds preserved.`,
 );
+
+// Mobile exports are another complete partition of the same static meshes, grouped by place.
+const mobile = JSON.parse(readFileSync(new URL('fog-trial/mobile-manifest.json', directory), 'utf8'));
+const areas = JSON.parse(
+  readFileSync(new URL('../src/game/world/mobileFestivalAreas.json', import.meta.url), 'utf8'),
+);
+assert.equal(mobile.sourceSha256, manifest.sourceSha256);
+assert.deepEqual(mobile.areas, areas.areas, 'Rebuild mobile sectors after changing area definitions');
+actual.clear();
+const parents = new Map();
+source.doc.nodes.forEach((node, i) => node.children?.forEach((child) => parents.set(child, i)));
+const placementAreas = new Map();
+for (const sector of mobile.sectors) {
+  assert(
+    areas.areas.some((area) => area.id === sector.area),
+    'Unknown mobile area',
+  );
+  const asset = glb(new URL(`fog-trial/${sector.path}`, directory));
+  assert.equal(asset.raw.length, sector.bytes);
+  verify(asset, false);
+  for (const node of asset.doc.nodes) {
+    if (node.mesh === undefined) continue;
+    let owner = node.extras.fogSourceNode;
+    while (!source.doc.nodes[owner].extras?.runtimePlacement && parents.has(owner))
+      owner = parents.get(owner);
+    if (placementAreas.has(owner))
+      assert.equal(placementAreas.get(owner), sector.area, 'Placement split between mobile areas');
+    placementAreas.set(owner, sector.area);
+  }
+}
+assert.deepEqual(actual, expected, 'Missing/extra mobile static meshes');
+assert.equal(new Set(mobile.sectors.map((sector) => sector.area)).size, 6);
+console.log(
+  `Mobile areas validated: 6 places, ${mobile.sectors.length} chunks, ${actual.size} meshes; complete placements preserved.`,
+);

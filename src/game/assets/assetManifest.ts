@@ -16,6 +16,7 @@ const gameAsset = (path: string) => {
 
 export const fogWorldBaseUrl = gameAsset('world/festival/fog-trial/base.glb');
 export const fogWorldManifestUrl = gameAsset('world/festival/fog-trial/manifest.json');
+export const mobileWorldManifestUrl = gameAsset('world/festival/fog-trial/mobile-manifest.json');
 export const fogWorldSectorUrl = (path: string) => gameAsset(`world/festival/fog-trial/${path}`);
 
 /** Jedyny rejestr adresów binarnych zasobów używanych przez klienta. */

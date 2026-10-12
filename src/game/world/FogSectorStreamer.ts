@@ -1,13 +1,21 @@
 import * as THREE from 'three';
 import { fogRanges, FOG_TRIAL_FAR } from '../rendering/fogTrial';
 import type { SectorRanges } from './mobileWorldStreaming';
+import { festivalAreaAt } from './mobileFestivalAreas';
 
-export type FogSector = { id: string; path: string; bounds: [number[], number[]]; bytes: number };
+export type FogSector = {
+  id: string;
+  path: string;
+  bounds: [number[], number[]];
+  bytes: number;
+  area?: string;
+};
 export type FogSectorManifest = {
   schema: number;
   sourceSha256: string;
   cellSize?: number;
   sectors: FogSector[];
+  areas?: { id: string; label: string }[];
 };
 // Group the exported 16 m cells into map areas, without loading neighbouring areas.
 export const MOBILE_AREA_CELLS = 4;
@@ -52,7 +60,9 @@ export class FogSectorStreamer {
     return this.area;
   }
   areaAt(viewer: THREE.Vector3): string {
-    return mobileAreaAt(viewer, this.manifest.cellSize);
+    return this.manifest.areas
+      ? festivalAreaAt(viewer.x, viewer.z)
+      : mobileAreaAt(viewer, this.manifest.cellSize);
   }
   setViewDistance(distance: number): void {
     this.policy = undefined;
@@ -68,7 +78,11 @@ export class FogSectorStreamer {
     private mapTransitions = false,
   ) {
     if (manifest.schema !== 1) throw new Error('Nieobsługiwany manifest sektorów świata');
-    if (mapTransitions) {
+    if (mapTransitions && manifest.areas) {
+      const ids = new Set(manifest.areas.map((area) => area.id));
+      if (manifest.sectors.some((sector) => !sector.area || !ids.has(sector.area)))
+        throw new Error('Nieprawidłowe sektory miejsc festiwalu');
+    } else if (mapTransitions) {
       if (!manifest.cellSize || !Number.isFinite(manifest.cellSize) || manifest.cellSize <= 0)
         throw new Error('Brak rozmiaru siatki sektorów');
       manifest.sectors.forEach(mobileSectorArea);
@@ -147,7 +161,9 @@ export class FogSectorStreamer {
     if (!this.mapTransitions || this.disposed || this.area === area) return;
     if (this.pending) throw new Error('Trwa już ładowanie sektora');
     this.evictArea();
-    const sectors = this.manifest.sectors.filter((sector) => mobileSectorArea(sector) === area);
+    const sectors = this.manifest.sectors.filter(
+      (sector) => (sector.area ?? mobileSectorArea(sector)) === area,
+    );
     const operation = async () => {
       progress?.(0, sectors.length);
       try {

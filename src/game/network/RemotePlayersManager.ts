@@ -42,17 +42,21 @@ export class RemotePlayersManager {
   private unsubscribeSpeaking?: () => void;
   private unsubscribeAction?: () => void;
   private unsubscribeStatus?: () => void;
+  private latestSnapshot?: WorldSnapshotPayload;
 
   constructor(
     private readonly scene: THREE.Scene,
     private readonly characterModels: Map<string, GLTF>,
     private readonly networkClient?: NetworkClient,
     private spatialVoice?: SpatialVoiceManager,
+    private readonly isResident?: (player: PlayerSnapshot) => boolean,
   ) {
     if (this.networkClient) {
       this.unsubscribeStatus = this.networkClient.onStatusChange((status) => {
-        if (status === 'disconnected' || status === 'error')
+        if (status === 'disconnected' || status === 'error') {
+          this.latestSnapshot = undefined;
           for (const id of [...this.remotePlayers.keys()]) this.removeRemotePlayer(id);
+        }
       });
       this.unsubscribeSnapshot = this.networkClient.onWorldSnapshot((snapshot) => {
         this.handleWorldSnapshot(snapshot);
@@ -180,13 +184,24 @@ export class RemotePlayersManager {
 
     this.scene.remove(entity.root);
     if (entity.disposeVisual) entity.disposeVisual();
-    else entity.animator?.dispose();
+    else {
+      entity.animator?.dispose();
+      if (entity.visual instanceof THREE.Mesh) {
+        entity.visual.geometry.dispose();
+        const materials = Array.isArray(entity.visual.material)
+          ? entity.visual.material
+          : [entity.visual.material];
+        materials.forEach((material) => material.dispose());
+      }
+    }
     entity.nametag.dispose();
+    entity.root.clear();
     this.remotePlayers.delete(playerId);
   }
 
   /** Przetwarza snapshot świata z serwera: dodaje, aktualizuje lub usuwa innych graczy. */
   handleWorldSnapshot(snapshot: WorldSnapshotPayload): void {
+    this.latestSnapshot = snapshot;
     const myId = this.networkClient?.getMyPlayerId();
     const activePlayerIds = new Set<string>();
 
@@ -195,6 +210,9 @@ export class RemotePlayersManager {
       if (myId && player.playerId === myId) {
         continue;
       }
+
+      // Keep the global snapshot, but create skeletons/nametags only for the resident map.
+      if (this.isResident && !this.isResident(player)) continue;
 
       activePlayerIds.add(player.playerId);
       const existing = this.remotePlayers.get(player.playerId);
@@ -231,6 +249,26 @@ export class RemotePlayersManager {
         this.removeRemotePlayer(playerId);
       }
     }
+  }
+
+  refreshResidentPlayers(): void {
+    if (this.latestSnapshot) this.handleWorldSnapshot(this.latestSnapshot);
+  }
+
+  getResidentCharacterNames(): string[] {
+    return [...this.remotePlayers.values()].map((entity) => entity.characterName);
+  }
+
+  /** Voice and the map keep global positions even when an avatar is not loaded locally. */
+  getPlayerPositions(): Map<string, { x: number; y: number; z: number }> {
+    const positions = new Map<string, { x: number; y: number; z: number }>();
+    for (const player of this.latestSnapshot?.players ?? []) {
+      if (player.playerId === this.networkClient?.getMyPlayerId()) continue;
+      const entity = this.remotePlayers.get(player.playerId);
+      const [x, y, z] = player.transform.position;
+      positions.set(player.playerId, entity?.currentPosition ?? { x, y, z });
+    }
+    return positions;
   }
 
   /** Aktualizuje pozycje, obrót, animacje i nametagi wszystkich zdalnych graczy. */
@@ -347,11 +385,24 @@ export class RemotePlayersManager {
         isSpeaking: entity.isSpeaking,
       });
     }
+    for (const player of this.latestSnapshot?.players ?? []) {
+      if (this.remotePlayers.has(player.playerId) || player.playerId === this.networkClient?.getMyPlayerId())
+        continue;
+      markers.push({
+        id: player.playerId,
+        name: player.nickname?.trim() || player.character,
+        x: player.transform.position[0],
+        z: player.transform.position[2],
+        yaw: player.transform.yaw,
+        isSpeaking: this.spatialVoice?.isPeerSpeaking(player.playerId),
+      });
+    }
     return markers;
   }
 
   /** Zwalnia wszystkie modele zdalnych graczy, nametagi i odłącza subskrypcję snapshotów. */
   dispose(): void {
+    this.latestSnapshot = undefined;
     this.unsubscribeStatus?.();
     this.unsubscribeStatus = undefined;
     this.unsubscribeSnapshot?.();
