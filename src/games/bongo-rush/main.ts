@@ -14,6 +14,7 @@ import { Simulation } from './Simulation';
 import { STEP_SECONDS } from './types';
 import { CAMPAIGN_LEVEL_COUNT } from './Campaign';
 import { measureSpriteCrop } from './SpriteBounds';
+import { BIOME_TILE_ATLASES } from './BiomeTiles';
 
 type Mode = 'menu' | 'playing' | 'paused' | 'lost' | 'won' | 'victory';
 const BASE = import.meta.env.BASE_URL;
@@ -130,18 +131,20 @@ class BongoRush {
     const hero = element<HTMLSelectElement>('hero').value;
     try {
       const level = LEVELS[index];
-      const [atlas, background, bushAtlas, patrolAtlas, bossAtlas] = await Promise.all([
+      const [atlas, background, bushAtlas, patrolAtlas, bossAtlas, terrain] = await Promise.all([
         this.atlas(hero),
         loadCachedImage(`${BASE}game-assets/2d/bongo-rush/${BIOMES[level.biome].background}`),
         this.atlas('kobra'),
         this.atlas('patrol'),
         this.atlas('owsiak'),
+        loadCachedImage(`${BASE}game-assets/2d/bongo-rush/tiles-ai/${BIOME_TILE_ATLASES[level.biome]}`),
       ]);
       if (this.disposed || token !== this.loadToken) return false;
       this.backgrounds.set(level.biome, background);
       this.renderer!.hero(atlas);
       this.renderer!.bushHero(bushAtlas);
       this.renderer!.enemyHeroes(patrolAtlas, bossAtlas);
+      this.renderer!.terrain(level.biome, terrain);
       this.game = new Simulation(level);
       this.accumulator = 0;
       this.lastTime = 0;

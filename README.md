@@ -18,7 +18,8 @@ Plansze mają teraz 74×34–139×44 pól, sieci 9–16 komór, boczne złoża, 
 Przed każdym wyjściem jest obowiązkowa komora zagadki. Kampania ma 12 różnych kompozycji:
 wnęki, spusty, stosy skał i wybór kolejności kopania. Dodano łup pod podporami, zawały z obejściem
 i żyły zamykające odwrót. Przedmioty ze złotą obwódką trzeba zebrać niezależnie od zwykłego limitu.
-Biomy mają osobne ściany: cegła, korzenie, metal i lód.
+Biomy mają wygenerowane atlasy AI ścian i gruntu: ceglana piwnica, korzenie,
+neonowy bunkier i lodowo-szklana grota. Każdy materiał ma dwa warianty.
 Nie zastępuje After ani gry 3D. Nie uruchamia serwera multiplayer i nie pobiera modeli GLB.
 
 ```powershell
@@ -33,7 +34,7 @@ Każdy poziom ma limit czasu (minimum 3 minuty); pauza i pomoc „?” zatrzymuj
 Prób jest dowolnie dużo. Odblokowane poziomy, postać i wyciszenie zapisują się lokalnie.
 Postacie mają osobne atlasy Idle/Walk bez T-pose i uciętych głów. Amareny odwzorowują trzy
 referencje smaków, a w tle gra cichy autorski ambient. Na poziomach 3, 6, 9 i 12 trzeba
-aktywować Kobrę przed komorą wyjściową. Najnowszy audyt trudności jest na `feat/bongo-difficulty-pass`.
+aktywować Kobrę przed komorą wyjściową. Audyt trudności i nowe tekstury są na `feat/bongo-ai-biome-textures`.
 Po kampanii odblokowują się rezerwuary, sześć wysp z ruchomymi pułapkami, spirala
 i napis KURWA MOJE POLE z prawdziwych spadających kamieni. Kwadrat z siatką obiega
 najbliższą krawędź. Spadająca skała eliminuje patrol i zostawia łup; w wyzwaniach
@@ -45,6 +46,7 @@ Opis wszystkich modułów, zasad, formatu plansz i testów: [docs/bongo-rush.md]
 Raport przechodniości i opis nowych komór: [docs/bongo-avalanche.md](docs/bongo-avalanche.md).
 Opis czterech nowych wyzwań: [docs/bongo-challenges.md](docs/bongo-challenges.md).
 Audyt wszystkich 16 plansz i trudniejsze wersje spirali oraz napisu: [docs/bongo-difficulty.md](docs/bongo-difficulty.md).
+Atlasy AI, dokładne prompty i plan muzyki biomów: [docs/bongo-biome-art.md](docs/bongo-biome-art.md).
 
 ## Uruchomienie
 

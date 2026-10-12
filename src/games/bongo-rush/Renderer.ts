@@ -4,6 +4,7 @@ import type { SpriteMetadata } from '../after/presentation/SpriteAnimator';
 import type { Facing } from '../after/simulation/WorldState';
 import { BIOMES } from './Levels';
 import { paintCaveTile } from './CaveVisuals';
+import { biomeTileRect, paintBiomeTile, terrainVariant } from './BiomeTiles';
 import { drawAmarena } from './AmarenaArt';
 import { same } from './types';
 import type { Body, Enemy, LooseObject, Point } from './types';
@@ -29,6 +30,7 @@ export class CaveRenderer {
   private height = 1;
   private tile = 40;
   private tiles = new Map<string, HTMLCanvasElement>();
+  private terrainAtlases = new Map<number, HTMLImageElement>();
   private clock = 0;
   private playHeight = 1;
   private readonly topInset = 58;
@@ -57,6 +59,18 @@ export class CaveRenderer {
     this.enemyAtlases.set('boss', boss);
   }
 
+  /** Installs a lazily loaded shared atlas and invalidates only this biome's old baked terrain. */
+  terrain(biome: number, image: HTMLImageElement): void {
+    biomeTileRect(image.naturalWidth, image.naturalHeight, 'wall', 0);
+    if (this.terrainAtlases.get(biome) === image) return;
+    this.terrainAtlases.set(biome, image);
+    for (const [key, tile] of this.tiles) {
+      if (!key.startsWith(`${biome}:`)) continue;
+      tile.width = tile.height = 0;
+      this.tiles.delete(key);
+    }
+  }
+
   /** Fits desktop caves and keeps mobile tiles large enough to read while the camera follows. */
   resize(width: number, height: number, touch = false): void {
     this.width = width;
@@ -74,6 +88,7 @@ export class CaveRenderer {
       tile.height = 0;
     }
     this.tiles.clear();
+    this.terrainAtlases.clear();
     this.animator = undefined;
     this.atlas = undefined;
     this.bushAtlas = undefined;
@@ -212,7 +227,7 @@ export class CaveRenderer {
         const cell = world.cells[y * world.width + x];
         if (cell === 'wall' || cell === 'soil' || cell === 'buried-bush') {
           ctx.drawImage(
-            this.tileArt(game.level.biome, cell === 'wall' ? 'wall' : 'soil', (x + y * 3) % 3),
+            this.tileArt(game.level.biome, cell === 'wall' ? 'wall' : 'soil', terrainVariant(x, y)),
             position.x,
             position.y,
             this.tile + 0.5,
@@ -376,7 +391,10 @@ export class CaveRenderer {
     if (cached) return cached;
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = 64;
-    paintCaveTile(canvas.getContext('2d')!, biomeIndex, kind, variant);
+    const context = canvas.getContext('2d')!;
+    const atlas = this.terrainAtlases.get(biomeIndex);
+    if (atlas) paintBiomeTile(context, atlas, kind, variant);
+    else paintCaveTile(context, biomeIndex, kind, variant);
     this.tiles.set(key, canvas);
     return canvas;
   }
