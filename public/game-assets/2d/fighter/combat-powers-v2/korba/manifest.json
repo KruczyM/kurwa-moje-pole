@@ -1,0 +1,58 @@
+{
+  "version": 2,
+  "characterId": "korba",
+  "clips": {
+    "uppercut": {
+      "file": "uppercut_power.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "powers": true,
+      "size": 256,
+      "pivot": [
+        0.5,
+        0.8984375
+      ],
+      "facing": 1,
+      "worldSize": 200.0
+    },
+    "launch_hit": {
+      "file": "launch_hit.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "powers": true,
+      "size": 256,
+      "pivot": [
+        0.5,
+        0.8984375
+      ],
+      "facing": 1,
+      "worldSize": 200.0
+    },
+    "special": {
+      "file": "special_power.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "powers": true,
+      "size": 256,
+      "pivot": [
+        0.5,
+        0.8984375
+      ],
+      "facing": 1,
+      "worldSize": 200.0
+    },
+    "ultimate": {
+      "file": "ultimate_power.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "powers": true,
+      "size": 256,
+      "pivot": [
+        0.5,
+        0.8984375
+      ],
+      "facing": 1,
+      "worldSize": 200.0
+    }
+  }
+}
