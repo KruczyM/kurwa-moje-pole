@@ -11,6 +11,14 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'public/game-assets/world/festival/authored-festival.glb'
 OUT = SOURCE.with_name('fog-trial')
+AREAS = json.loads((ROOT / 'src/game/world/mobileFestivalAreas.json').read_text(encoding='utf-8'))
+
+
+def area_at(x, z):
+    for area in AREAS['areas']:
+        if any(a <= x < b and c <= z < d for a, b, c, d in area['regions']):
+            return area['id']
+    return AREAS['fallback']
 
 
 def build():
@@ -74,14 +82,49 @@ def build():
                 return False
             i = parents[i]
 
+    # All meshes of a placement stay together, including roofs, barriers and tower parts.
+    owners = {}
+    world_bounds = {}
+    placement_bounds = {}
+    for i, node in enumerate(src['nodes']):
+        owner = i
+        while not src['nodes'][owner].get('extras', {}).get('runtimePlacement') and owner in parents:
+            owner = parents[owner]
+        owners[i] = owner
+        if 'mesh' not in node:
+            continue
+        points = [(matrix(i) @ [*point, 1])[:3] for point in corners(mesh_bounds(node['mesh']))]
+        bounds = [[float(min(p[j] for p in points)) for j in range(3)], [float(max(p[j] for p in points)) for j in range(3)]]
+        world_bounds[i] = bounds
+        union = placement_bounds.setdefault(owner, [[math.inf]*3, [-math.inf]*3])
+        for j in range(3):
+            union[0][j] = min(union[0][j], bounds[0][j])
+            union[1][j] = max(union[1][j], bounds[1][j])
+
+    def placement_area(i):
+        owner = owners[i]
+        extras = src['nodes'][owner].get('extras', {})
+        name = extras.get('runtimePlacement', '')
+        if name in ['Lidl', 'AllegroWheel']:
+            return 'lidl-wheel'
+        if name == 'Road_0':
+            return 'north-passage'
+        if name == 'Road_1':
+            return 'south-passage'
+        bounds = placement_bounds[owner]
+        x, z = (bounds[0][0] + bounds[1][0]) / 2, (bounds[0][2] + bounds[1][2]) / 2
+        if name.startswith('StageBarrier_') or 'tower' in name.lower() or (extras.get('runtimeCategory') == 'Stages' and z < 64):
+            return 'main-stage'
+        return area_at(x, z)
+
     static = set()
     cells = {}
+    mobile_cells = {area['id']: {'nodes': set(), 'bounds': [[math.inf]*3, [-math.inf]*3]} for area in AREAS['areas']}
     for i, node in enumerate(src['nodes']):
         if 'mesh' not in node or resident(i):
             continue
         static.add(i)
-        points = [(matrix(i) @ [*point, 1])[:3] for point in corners(mesh_bounds(node['mesh']))]
-        bounds = [[float(min(p[j] for p in points)) for j in range(3)], [float(max(p[j] for p in points)) for j in range(3)]]
+        bounds = world_bounds[i]
         center = [(bounds[0][j] + bounds[1][j]) / 2 for j in range(3)]
         key = f'{math.floor(center[0]/16)}_{math.floor(center[2]/16)}'
         cell = cells.setdefault(key, {'nodes': set(), 'bounds': [[math.inf]*3, [-math.inf]*3]})
@@ -89,6 +132,11 @@ def build():
         for j in range(3):
             cell['bounds'][0][j] = min(cell['bounds'][0][j], bounds[0][j])
             cell['bounds'][1][j] = max(cell['bounds'][1][j], bounds[1][j])
+        mobile = mobile_cells[placement_area(i)]
+        mobile['nodes'].add(i)
+        for j in range(3):
+            mobile['bounds'][0][j] = min(mobile['bounds'][0][j], bounds[0][j])
+            mobile['bounds'][1][j] = max(mobile['bounds'][1][j], bounds[1][j])
 
     def emit(path, selected, base=False):
         doc = {k: copy.deepcopy(v) for k, v in src.items() if k not in ['nodes', 'scenes', 'meshes', 'accessors', 'bufferViews', 'buffers', 'materials', 'textures', 'images', 'samplers']}
@@ -222,6 +270,43 @@ def build():
         size = emit(path, cell['nodes'])
         manifest['sectors'].append({'id': key, 'path': path, 'bounds': cell['bounds'], 'bytes': size})
     (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=2), encoding='utf-8')
+    mobile_manifest = {'schema': 1, 'sourceSha256': revision, 'areas': AREAS['areas'], 'sectors': []}
+    def chunks(nodes):
+        selected, views, size = set(), set(), 0
+        meshes = {}
+        for i in sorted(nodes):
+            meshes.setdefault(src['nodes'][i]['mesh'], set()).add(i)
+        # Keep every instance of a source mesh together, so heavy tent geometry is not repeated.
+        for mesh, instances in sorted(meshes.items()):
+            used = set()
+            for primitive in src['meshes'][mesh]['primitives']:
+                accessors = list(primitive['attributes'].values())
+                if 'indices' in primitive:
+                    accessors.append(primitive['indices'])
+                for index in accessors:
+                    accessor = src['accessors'][index]
+                    if 'bufferView' in accessor:
+                        used.add(accessor['bufferView'])
+            extra = sum(src['bufferViews'][view]['byteLength'] for view in used - views)
+            if selected and size + extra > 8 * 1024 * 1024:
+                yield selected
+                selected, views, size = set(), set(), 0
+                extra = sum(src['bufferViews'][view]['byteLength'] for view in used)
+            selected.update(instances)
+            views.update(used)
+            size += extra
+        if selected:
+            yield selected
+
+    for area in AREAS['areas']:
+        key = area['id']
+        cell = mobile_cells[key]
+        assert cell['nodes'], f'Empty mobile area: {key}'
+        for index, nodes in enumerate(chunks(cell['nodes'])):
+            path = f'sectors/mobile-{key}-{index}.glb'
+            size = emit(path, nodes)
+            mobile_manifest['sectors'].append({'id': f'{key}-{index}', 'area': key, 'path': path, 'bounds': cell['bounds'], 'bytes': size})
+    (OUT / 'mobile-manifest.json').write_text(json.dumps(mobile_manifest, indent=2), encoding='utf-8')
     print(json.dumps({'baseBytes': base_size, 'sectors': len(cells), 'staticNodes': len(static), 'sourceSha256': revision}))
 
 

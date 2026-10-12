@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { terrainHeight } from './terrainHeight';
 import { AuthoredFestivalWorld } from './AuthoredFestivalWorld';
+import { festivalAreaAt } from './mobileFestivalAreas';
 export { terrainHeight } from './terrainHeight';
 import { FestivalWheel } from './festivalWheel';
 import { FestivalInfrastructureInstance } from './festivalInfrastructure';
@@ -163,6 +164,26 @@ export function physicalSizeIsValid(actual: THREE.Vector3, target: PhysicalSize,
 
 /** Buduje teren, oświetlenie, obiekty obozu, kolizje i punkty interakcji. */
 export class CampWorld {
+  private mobileResidentMeshes?: { mesh: THREE.Mesh; area: string }[];
+
+  /** Shared dynamic resources stay owned by the base world, but render only in their place. */
+  setMobileArea(areaId?: string): void {
+    if (!this.mobileResidentMeshes) {
+      this.mobileResidentMeshes = [];
+      for (const root of [this.authoredRoot, this.landmarksRoot])
+        root?.traverse((object) => {
+          if (!(object instanceof THREE.Mesh) || !object.layers.isEnabled(0) || object.userData.fogProxy)
+            return;
+          const center = new THREE.Box3().setFromObject(object).getCenter(new THREE.Vector3());
+          this.mobileResidentMeshes!.push({ mesh: object, area: festivalAreaAt(center.x, center.z) });
+        });
+    }
+    for (const { mesh, area } of this.mobileResidentMeshes) {
+      if (area === areaId) mesh.layers.enable(0);
+      else mesh.layers.disable(0);
+    }
+  }
+
   readonly prepareSector: (root: THREE.Object3D) => void;
   private wheel: FestivalWheel | null = null;
   public infrastructure: FestivalInfrastructureInstance | null = null;

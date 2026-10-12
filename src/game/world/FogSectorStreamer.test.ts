@@ -19,6 +19,42 @@ const sector = (id: string, x = 0): FogSector => ({
 });
 
 describe('mobile map transitions', () => {
+  it('loads named place chunks together instead of using 64 m grid ownership', async () => {
+    const chunks = [
+      { ...sector('camp-0'), area: 'camp' },
+      { ...sector('camp-1'), area: 'camp' },
+      { ...sector('stage-0'), area: 'main-stage' },
+    ];
+    const load = vi.fn(async () => new THREE.Group());
+    const release = vi.fn((_sector: FogSector, root: THREE.Object3D) => root.removeFromParent());
+    const stream = new FogSectorStreamer(
+      new THREE.Group(),
+      {
+        schema: 1,
+        sourceSha256: '',
+        areas: [
+          { id: 'camp', label: 'Camp' },
+          { id: 'main-stage', label: 'Stage' },
+        ],
+        sectors: chunks,
+      },
+      load,
+      release,
+      vi.fn(),
+      true,
+    );
+    await stream.prime(new THREE.Vector3(-98, 2, 40));
+    expect(stream.activeArea).toBe('camp');
+    expect(stream.stats.loaded).toBe(2);
+    expect(load).toHaveBeenCalledTimes(2);
+    stream.update(10, new THREE.Vector3(175, 2, 20));
+    expect(load).toHaveBeenCalledTimes(2);
+    await stream.enterArea('main-stage');
+    expect(release).toHaveBeenCalledTimes(2);
+    expect(stream.stats.loaded).toBe(1);
+    expect(stream.activeArea).toBe('main-stage');
+    stream.dispose();
+  });
   const manifest = {
     schema: 1,
     sourceSha256: '',

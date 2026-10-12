@@ -36,10 +36,10 @@ export class SectorTransitionDialog {
     resolve?.(value);
   }
 
-  ask(error = false): Promise<boolean> {
+  ask(error = false, destination = ''): Promise<boolean> {
     this.message.textContent = error
       ? 'Nie udało się wczytać sektora. Ponowić próbę czy wrócić do poprzedniego sektora?'
-      : 'Przejść dalej? Poprzedni sektor zostanie zwolniony, a nowy załadowany.';
+      : `Przejść do: ${destination || 'nowy sektor'}? Poprzedni sektor zostanie zwolniony, a nowy załadowany.`;
     this.yes.textContent = error ? 'Spróbuj ponownie' : 'Tak, przejdź';
     this.no.textContent = error ? 'Wróć' : 'Zostań tutaj';
     this.yes.hidden = this.no.hidden = false;
@@ -51,12 +51,12 @@ export class SectorTransitionDialog {
     });
   }
 
-  loading(loaded = 0, total = 0) {
+  loading(loaded = 0, total = 0, destination = '') {
     this.yes.hidden = this.no.hidden = true;
     this.progress.hidden = false;
     this.progress.max = Math.max(1, total);
     this.progress.value = loaded;
-    this.message.textContent = `Ładowanie sektora… ${loaded}/${total}`;
+    this.message.textContent = `Ładowanie${destination ? `: ${destination}` : ' sektora'}… ${loaded}/${total}`;
     if (!this.root.open) this.root.showModal();
   }
 

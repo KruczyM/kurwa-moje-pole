@@ -23,6 +23,7 @@ import {
 import { MAD_DOG_CONFIG, seatLayout, type SeatConfig } from '../world/campLandmarks';
 import type { MapScenery } from '../ui/FestivalMap';
 import { CHAIR_POSE_CLIPS, alignChairPelvis } from '../interactions/chairPose';
+import { MOBILE_FESTIVAL_AREAS, festivalAreaAt, mobileBotBudget } from '../world/mobileFestivalAreas';
 
 export function getSeatWorldPose(seat: SeatConfig): { position: THREE.Vector3; rotationY: number } {
   const offsetDistance = 1;
@@ -71,6 +72,7 @@ export type Npc = {
   animLodAccumulator: number;
   inConversation?: boolean;
   isHidden?: boolean;
+  sectorDormant?: boolean;
 };
 const CAMP_RADIUS = 13;
 const SPEAKER_POSITION = { x: -3.1, z: 1.2 };
@@ -128,6 +130,7 @@ export class NpcManager {
       .filter(
         (n) =>
           !n.isHidden &&
+          !n.sectorDormant &&
           !n.isSitting &&
           !n.root.userData.flankiTarget &&
           n.root.position.distanceToSquared(center) <= 60 * 60 &&
@@ -149,6 +152,78 @@ export class NpcManager {
   private disposed = false;
   private readonly ids = new Set<string>();
   private updateFrameIndex = 0;
+  private mobileArea?: string;
+  private mobilePopulationKey = '';
+
+  /** A small reusable pool; no background crowd downloads or simulation in unloaded places. */
+  setMobileArea(
+    areaId?: string,
+    remotePlayers = 0,
+    occupiedNames: readonly string[] = [],
+    allowance = 5,
+  ): void {
+    if (!this.mobileAreas) return;
+    // An active match owns its participants until it releases them; do not remove them for FPS.
+    if (areaId === this.mobileArea && this.npcs.some((npc) => npc.root.userData.flankiTarget)) return;
+    const key = JSON.stringify([
+      areaId,
+      remotePlayers,
+      allowance,
+      [...occupiedNames].sort(),
+      this.npcs.map((npc) => npc.isHidden),
+    ]);
+    if (key === this.mobilePopulationKey) return;
+    this.mobilePopulationKey = key;
+    const area = MOBILE_FESTIVAL_AREAS.find((entry) => entry.id === areaId);
+    const count = areaId ? mobileBotBudget(areaId, remotePlayers, allowance) : 0;
+    const available = this.npcs
+      .filter((npc) => !npc.isHidden && !occupiedNames.includes(npc.name))
+      .slice(0, count);
+    this.npcs.forEach((npc) => {
+      const index = available.indexOf(npc);
+      const active = index >= 0 && !!area;
+      if (!active) {
+        if (npc.assignedSeatId || npc.isSitting) this.standUpNpc(npc);
+        npc.sectorDormant = true;
+        npc.root.removeFromParent();
+        npc.animator?.cancelActivity();
+        npc.animLodAccumulator = 0;
+        return;
+      }
+      if (this.mobileArea !== areaId || npc.sectorDormant) {
+        if (npc.assignedSeatId || npc.isSitting) this.standUpNpc(npc);
+        const [x, z] = area.spawns[index % area.spawns.length];
+        const point = this.navigation.randomWalkablePoint(
+          () => npc.behavior.random(),
+          {
+            minX: x - 3,
+            maxX: x + 3,
+            minZ: z - 3,
+            maxZ: z + 3,
+          },
+          (px, pz) => festivalAreaAt(px, pz) !== areaId,
+        );
+        // Never place a bot in geometry or in a different area as a fallback.
+        if (!point) {
+          npc.sectorDormant = true;
+          npc.root.removeFromParent();
+          return;
+        }
+        npc.root.position.set(point.x, terrainHeight(point.x, point.z), point.z);
+        npc.target.copy(npc.root.position);
+        npc.velocity.set(0, 0, 0);
+        npc.speed = 0;
+        npc.waypoints.length = 0;
+        npc.watchdog.resetPosition(npc.root.position);
+        npc.animator?.cancelActivity();
+      }
+      npc.sectorDormant = false;
+      npc.root.visible = true;
+      this.scene.add(npc.root);
+    });
+    if (this.speakerAnchor) this.speakerAnchor.visible = areaId === 'camp';
+    this.mobileArea = areaId;
+  }
 
   setSpeakerPlaying(playing: boolean): void {
     this.speakerPlaying = playing;
@@ -257,7 +332,7 @@ export class NpcManager {
    */
   gatherNpcsAtFlanki(pitchCenter: THREE.Vector3, count = 6): void {
     const candidates = this.npcs
-      .filter((npc) => !npc.isHidden && !npc.isSitting)
+      .filter((npc) => !npc.isHidden && !npc.sectorDormant && !npc.isSitting)
       .sort(
         (a, b) =>
           a.root.position.distanceToSquared(pitchCenter) - b.root.position.distanceToSquared(pitchCenter),
@@ -300,15 +375,18 @@ export class NpcManager {
     readonly navigation: NpcNavigationGrid,
     private readonly watchdogConfig?: NpcWatchdogConfig,
     private readonly seed = 0x51f15e,
+    private readonly mobileAreas = false,
   ) {
     characterAssets.forEach((asset, index) => {
+      if (mobileAreas && index >= 6) return;
       this.addNpc(asset, index, models.get(asset.id), speaker);
     });
+    if (mobileAreas) this.setMobileArea();
   }
 
   /** Add streamed crowd models through the existing controller and animation lifecycle. */
   addFestivalNpc(asset: { id: string; name: string }, model: GLTF) {
-    if (this.disposed || this.ids.has(asset.id)) return false;
+    if (this.disposed || this.mobileAreas || this.ids.has(asset.id)) return false;
     return this.addNpc(asset, this.npcs.length, model, null, true);
   }
 
@@ -895,7 +973,7 @@ export class NpcManager {
     }
 
     const snapshots = this.npcs
-      .filter((npc) => !npc.isHidden)
+      .filter((npc) => !npc.isHidden && !npc.sectorDormant)
       .map((npc) => ({
         npc,
         position: npc.root.position.clone(),
@@ -915,11 +993,19 @@ export class NpcManager {
 
     for (let index = 0; index < this.npcs.length; index++) {
       const npc = this.npcs[index];
-      if (npc.isHidden) continue;
+      if (npc.isHidden || npc.sectorDormant) continue;
       npc.root.userData.distanceAnimationPaused = playerPosition
         ? !this.visibility.update(npc.root, playerPosition)
         : false;
       const flankiTarget = npc.root.userData.flankiTarget as THREE.Vector3 | undefined;
+      if (this.mobileAreas && !flankiTarget) {
+        if (this.mobileArea === 'main-stage' && !npc.inConversation && !npc.animator?.activityActive) {
+          const clip = ['HipHopDancing', 'SillyDancing'].find((name) => npc.animator?.hasClip(name));
+          if (clip) npc.animator?.startActivity([{ name: clip, seconds: 12 }]);
+        }
+        this.stepNpcAnimation(npc, dt, playerPosition, index, npc.animator?.activityActive);
+        continue;
+      }
       if (flankiTarget) {
         if (!npc.root.userData.flankiActive) {
           if (!npc.root.userData.flankiRouted) {
