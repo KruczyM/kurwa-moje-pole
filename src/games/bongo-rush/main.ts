@@ -131,20 +131,29 @@ class BongoRush {
     const hero = element<HTMLSelectElement>('hero').value;
     try {
       const level = LEVELS[index];
-      const [atlas, background, bushAtlas, patrolAtlas, bossAtlas, terrain] = await Promise.all([
-        this.atlas(hero),
-        loadCachedImage(`${BASE}game-assets/2d/bongo-rush/${BIOMES[level.biome].background}`),
-        this.atlas('kobra'),
-        this.atlas('patrol'),
-        this.atlas('owsiak'),
-        loadCachedImage(`${BASE}game-assets/2d/bongo-rush/tiles-ai/${BIOME_TILE_ATLASES[level.biome]}`),
-      ]);
+      const [atlas, background, bushAtlas, patrolAtlas, bossAtlas, terrain, items, tablets, depth] =
+        await Promise.all([
+          this.atlas(hero),
+          loadCachedImage(`${BASE}game-assets/2d/bongo-rush/${BIOMES[level.biome].background}`),
+          this.atlas('kobra'),
+          this.atlas('patrol'),
+          this.atlas('owsiak'),
+          loadCachedImage(`${BASE}game-assets/2d/bongo-rush/tiles-ai/${BIOME_TILE_ATLASES[level.biome]}`),
+          loadCachedImage(`${BASE}game-assets/2d/bongo-rush/art-v2/items.png`),
+          level.biome === 2
+            ? loadCachedImage(`${BASE}game-assets/2d/bongo-rush/art-v2/rave-tablets.png`)
+            : undefined,
+          loadCachedImage(`${BASE}game-assets/2d/bongo-rush/art-v2/depth.png`),
+        ]);
       if (this.disposed || token !== this.loadToken) return false;
       this.backgrounds.set(level.biome, background);
       this.renderer!.hero(atlas);
       this.renderer!.bushHero(bushAtlas);
       this.renderer!.enemyHeroes(patrolAtlas, bossAtlas);
       this.renderer!.terrain(level.biome, terrain);
+      this.renderer!.items(items);
+      this.renderer!.tablets(tablets);
+      this.renderer!.depth(depth);
       this.game = new Simulation(level);
       this.accumulator = 0;
       this.lastTime = 0;

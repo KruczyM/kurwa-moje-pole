@@ -771,7 +771,8 @@
   align-items: stretch;
 }
 
-.start-actions button {
+.start-actions button,
+.start-actions .minigame-link {
   min-height: 48px;
   padding: 12px 18px;
   font-size: 12px;
@@ -780,6 +781,26 @@
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.start-actions .minigame-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 180px;
+  box-sizing: border-box;
+  background: #252033;
+  color: #9dff4e;
+  border: 1px solid #9dff4e;
+  text-align: center;
+  text-decoration: none;
+}
+
+.start-actions .minigame-link:hover,
+.start-actions .minigame-link:focus-visible {
+  background: #352e4a;
+  outline: 2px solid #9dff4e;
+  outline-offset: 3px;
 }
 
 .start-actions #play {

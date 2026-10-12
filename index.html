@@ -36,6 +36,7 @@
         <p id="character-preview-status" role="status" hidden></p>
         <div id="character-preview-layer" class="character-preview-layer"></div>
         <div class="start-actions">
+          <a id="play-bongo-rush" class="minigame-link" href="./bongo-rush.html">BONGO RUSH · MINIGRA 2D</a>
           <button id="play">WEJDŹ NA POLE</button>
           <button id="play-freecam" type="button" class="freecam-btn">SWOBODNA KAMERA (Ctrl+K)</button>
           <button id="start-guide-btn" type="button" class="guide-btn">📖 PRZEWODNIK I SKRÓTY (H)</button>
@@ -354,6 +355,9 @@
           </div>
 
           <nav class="guide-tabs" role="tablist" aria-label="Kategorie przewodnika">
+            <button class="guide-tab-btn" type="button" role="tab" aria-selected="false" data-tab="bongo">
+              Bongo Rush · minigra 2D
+            </button>
             <button
               class="guide-tab-btn active"
               type="button"
@@ -396,6 +400,29 @@
           </nav>
 
           <div class="guide-content-area">
+            <div class="guide-panel" id="guide-panel-bongo" role="tabpanel" hidden>
+              <h3>Bongo Rush — podziemna minigra 2D</h3>
+              <p class="guide-intro">
+                Odkrywaj 16 plansz w czterech biomach: piwnicy Amarena, zielonych podziemiach, bunkrze Rave i
+                lodowej grocie. Zbieraj wymagane przedmioty, rozwiązuj zagadki ze spadającymi skałami i
+                dotrzyj do wyjścia przed upływem czasu.
+              </p>
+              <div class="guide-card">
+                <h4>Sterowanie i zasady</h4>
+                <ul>
+                  <li>Ruch i kopanie: WASD lub strzałki; na telefonie użyj joysticka.</li>
+                  <li>Uważaj na skały: podkopane spadają, a zepchnięte mogą eliminować przeciwników.</li>
+                  <li>Zbierz wymaganą liczbę przedmiotów oraz obowiązkowy łup oznaczony złotą obwódką.</li>
+                  <li>
+                    Przycisk „?” otwiera pomoc, „Mapa” przełącza minimapę, Esc zatrzymuje grę, R restartuje
+                    poziom.
+                  </li>
+                  <li>Odblokowane poziomy i wybór postaci zapisują się lokalnie na urządzeniu.</li>
+                </ul>
+                <p>Nowe tekstury, tła z paralaksą i przedmioty nadają każdemu biomowi własny klimat.</p>
+                <a class="minigame-link" href="./bongo-rush.html">Uruchom Bongo Rush</a>
+              </div>
+            </div>
             <!-- TAB 1: Klawisze i sterowanie -->
             <div class="guide-panel active" id="guide-panel-controls" role="tabpanel">
               <h3>Pełna klawiszologia i skróty</h3>

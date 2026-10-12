@@ -12,7 +12,7 @@ export const BIOMES = [
     soil: '#453630',
     light: '#e7b37b',
     accent: '#ff9b83',
-    background: 'amarena.svg',
+    background: 'art-v2/amarena-background.png',
   },
   {
     name: 'Zielone podziemia',
@@ -21,7 +21,7 @@ export const BIOMES = [
     soil: '#283e35',
     light: '#b4d98b',
     accent: '#83e67b',
-    background: 'roots.svg',
+    background: 'art-v2/roots-background.png',
   },
   {
     name: 'Neonowy rave',
@@ -30,7 +30,7 @@ export const BIOMES = [
     soil: '#342b44',
     light: '#bba0d9',
     accent: '#83dadb',
-    background: 'rave.svg',
+    background: 'art-v2/rave-background.png',
   },
   {
     name: 'Dymna grota',
@@ -39,7 +39,7 @@ export const BIOMES = [
     soil: '#354b55',
     light: '#d5f0f4',
     accent: '#b0e8ed',
-    background: 'glass.svg',
+    background: 'art-v2/glass-background.png',
   },
 ] as const;
 

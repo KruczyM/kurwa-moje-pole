@@ -1,4 +1,9 @@
-export const BIOME_TILE_ATLASES = ['amarena-v1.png', 'roots-v1.png', 'rave-v1.png', 'glass-v1.png'] as const;
+export const BIOME_TILE_ATLASES = [
+  '../art-v2/amarena-terrain.png',
+  '../art-v2/roots-terrain.png',
+  '../art-v2/rave-terrain.png',
+  '../art-v2/glass-terrain.png',
+] as const;
 export type TerrainKind = 'wall' | 'soil';
 
 /** Resolves a complete wall/soil quadrant, rejecting malformed sheets instead of sampling neighbouring art. */

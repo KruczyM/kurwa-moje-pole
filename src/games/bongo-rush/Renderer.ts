@@ -6,7 +6,9 @@ import { BIOMES } from './Levels';
 import { paintCaveTile } from './CaveVisuals';
 import { biomeTileRect, paintBiomeTile, terrainVariant } from './BiomeTiles';
 import { drawAmarena } from './AmarenaArt';
+import { caveTileSize, collectibleCell, raveTabletRect } from './ArtDirection';
 import { same } from './types';
+import { DEPTH_LAYERS, depthFrame, foregroundBands } from './Depth';
 import type { Body, Enemy, LooseObject, Point } from './types';
 import type { World } from './types';
 import type { Simulation } from './Simulation';
@@ -31,6 +33,12 @@ export class CaveRenderer {
   private tile = 40;
   private tiles = new Map<string, HTMLCanvasElement>();
   private terrainAtlases = new Map<number, HTMLImageElement>();
+  private itemAtlas?: HTMLImageElement;
+  private tabletAtlas?: HTMLImageElement;
+  private depthAtlas?: HTMLImageElement;
+  private depthAnchor: Point = { x: 0, y: 0 };
+  private readonly motionPreference =
+    typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)') : undefined;
   private clock = 0;
   private playHeight = 1;
   private readonly topInset = 58;
@@ -41,6 +49,64 @@ export class CaveRenderer {
 
   /** Receives an existing canvas context and never owns animation scheduling or asset loading. */
   constructor(private readonly context: CanvasRenderingContext2D) {}
+
+  /** Shared transparent AI sprites are loaded by the existing host image cache. */
+  items(image: HTMLImageElement): void {
+    this.itemAtlas = image;
+  }
+
+  /** Rave uses pressed tablets while other biomes keep their existing item sheet. */
+  tablets(image: HTMLImageElement | undefined): void {
+    this.tabletAtlas = image;
+  }
+
+  /** Receives the shared transparent frame atlas, never owns a second loader or camera. */
+  depth(image: HTMLImageElement): void {
+    this.depthAtlas = image;
+  }
+
+  private depthLayer(image: HTMLImageElement, biome: number, layer: number, displacement: Point): void {
+    const ctx = this.context;
+    const config = DEPTH_LAYERS[layer];
+    const columns = layer === 0 ? 1 : 2;
+    const sw = image.naturalWidth / columns,
+      sh = image.naturalHeight / columns;
+    const frame = depthFrame(
+      { x: this.width, y: this.playHeight },
+      { x: sw, y: sh },
+      displacement,
+      config.factor,
+      this.motionPreference?.matches ?? false,
+    );
+    ctx.save();
+    ctx.beginPath();
+    if (layer === 2) {
+      for (const band of foregroundBands(this.width, this.playHeight))
+        ctx.rect(band.x, band.y + this.topInset, band.width, band.height);
+    } else ctx.rect(0, this.topInset, this.width, this.playHeight);
+    ctx.clip();
+    ctx.globalAlpha = config.opacity;
+    ctx.drawImage(
+      image,
+      layer === 0 ? 0 : (biome % 2) * sw,
+      layer === 0 ? 0 : Math.floor(biome / 2) * sh,
+      sw,
+      sh,
+      frame.x,
+      frame.y + this.topInset,
+      frame.width,
+      frame.height,
+    );
+    ctx.restore();
+  }
+
+  private item(cell: number): boolean {
+    const image = this.itemAtlas;
+    if (!image) return false;
+    const size = image.naturalWidth / 4;
+    this.context.drawImage(image, (cell % 4) * size, Math.floor(cell / 4) * size, size, size, 0, 0, 64, 64);
+    return true;
+  }
 
   /** Swaps cosmetic art only; there is no character-specific simulation configuration. */
   hero(atlas: HeroAtlas): void {
@@ -77,7 +143,7 @@ export class CaveRenderer {
     this.height = height;
     const bottomInset = touch ? (height < 400 ? 115 : 150) : 12;
     this.playHeight = Math.max(90, height - this.topInset - bottomInset);
-    this.tile = Math.max(34, Math.min(58, width / 25, this.playHeight / 19));
+    this.tile = caveTileSize(width, this.playHeight);
     this.camera.resize({ width, height: this.playHeight, pixelsPerMeter: this.tile });
   }
 
@@ -89,6 +155,9 @@ export class CaveRenderer {
     }
     this.tiles.clear();
     this.terrainAtlases.clear();
+    this.itemAtlas = undefined;
+    this.tabletAtlas = undefined;
+    this.depthAtlas = undefined;
     this.animator = undefined;
     this.atlas = undefined;
     this.bushAtlas = undefined;
@@ -186,14 +255,6 @@ export class CaveRenderer {
     ctx.clearRect(0, 0, this.width, this.height);
     ctx.fillStyle = '#101725';
     ctx.fillRect(0, 0, this.width, this.height);
-    if (background) {
-      const scale = Math.max(this.width / background.width, this.height / background.height);
-      const width = background.width * scale,
-        height = background.height * scale;
-      ctx.drawImage(background, (this.width - width) / 2, (this.height - height) / 2, width, height);
-    }
-    ctx.fillStyle = '#071018a8';
-    ctx.fillRect(0, 0, this.width, this.height);
     const playerPoint = this.interpolate(world.player, alpha);
     if (this.world !== world) {
       this.world = world;
@@ -202,8 +263,19 @@ export class CaveRenderer {
       this.camera.resize({ width: this.width, height: this.playHeight, pixelsPerMeter: this.tile });
       this.mapTick = -1;
       this.camera.snap({ x: playerPoint.x + 0.5, y: playerPoint.y + 0.5 });
+      const origin = this.camera.project({ x: 0, y: 0 });
+      this.depthAnchor = {
+        x: (this.width / 2 - origin.x) / this.tile,
+        y: (this.playHeight / 2 - origin.y) / this.tile,
+      };
     }
     this.camera.follow({ x: playerPoint.x + 0.5, y: playerPoint.y + 0.5 }, dt, paused);
+    const anchor = this.camera.project(this.depthAnchor);
+    const displacement = { x: this.width / 2 - anchor.x, y: this.playHeight / 2 - anchor.y };
+    if (background) this.depthLayer(background, game.level.biome, 0, displacement);
+    ctx.fillStyle = '#07101855';
+    ctx.fillRect(0, 0, this.width, this.height);
+    if (this.depthAtlas) this.depthLayer(this.depthAtlas, game.level.biome, 1, displacement);
     ctx.save();
     ctx.beginPath();
     ctx.rect(0, this.topInset, this.width, this.playHeight);
@@ -234,7 +306,7 @@ export class CaveRenderer {
             this.tile + 0.5,
           );
         } else {
-          ctx.fillStyle = '#090f19c9';
+          ctx.fillStyle = '#090f1966';
           ctx.fillRect(position.x, position.y, this.tile + 0.5, this.tile + 0.5);
           if (cell === 'exit') this.exit(position, game.exitOpen, game.level.id === 12, biome.accent);
         }
@@ -276,8 +348,9 @@ export class CaveRenderer {
       ctx.scale(this.tile / 64, this.tile / 64);
       this.shadow();
       if ('kind' in body) {
-        if (body.kind === 'rock') this.rock(body.variant, biome.wall, biome.light);
-        else if (body.kind === 'pickup') {
+        if (body.kind === 'rock') {
+          if (!this.item(3)) this.rock(body.variant, biome.wall, biome.light);
+        } else if (body.kind === 'pickup') {
           this.pickup(game.level.biome, body.variant);
           if (body.required) {
             ctx.strokeStyle = '#ffdf68';
@@ -308,6 +381,7 @@ export class CaveRenderer {
     }
     ctx.restore();
     this.atmosphere(playerPoint);
+    if (this.depthAtlas) this.depthLayer(this.depthAtlas, game.level.biome, 2, displacement);
     if (this.showMap) this.minimap(world);
   }
 
@@ -499,7 +573,13 @@ export class CaveRenderer {
   /** Creates four collectible silhouettes and flavour/shape variations using original vector artwork. */
   private pickup(biome: number, variant: number): void {
     const ctx = this.context;
-    if (biome === 0) {
+    if (biome === 2 && this.tabletAtlas) {
+      const image = this.tabletAtlas;
+      const rect = raveTabletRect(image.naturalWidth, image.naturalHeight, variant);
+      ctx.drawImage(image, rect.x, rect.y, rect.width, rect.height, 0, 0, 64, 64);
+    } else if (this.item(collectibleCell(biome, variant))) {
+      // Generated art retains the existing glint and required-loot indicator below.
+    } else if (biome === 0) {
       drawAmarena(ctx, variant);
     } else if (biome === 1) {
       ctx.save();
@@ -561,6 +641,10 @@ export class CaveRenderer {
     ctx.save();
     ctx.translate(x - 32 * scale, y - 36 * scale);
     ctx.scale(scale, scale);
+    if (this.item(4 + (Math.abs(Math.trunc(variant)) % 4))) {
+      ctx.restore();
+      return;
+    }
     ctx.fillStyle = ['#65d7d880', '#ac8fe580', '#e5bd7580', '#80db9c80'][variant];
     ctx.strokeStyle = '#c4fff0';
     ctx.lineWidth = 2.5;
