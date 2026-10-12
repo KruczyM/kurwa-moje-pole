@@ -7,7 +7,14 @@ export default defineConfig(({ command, isPreview }) => ({
   publicDir: 'public',
   plugins: [assetCachePlugin()],
   build: {
-    rollupOptions: { input: { main: 'index.html', after: 'after-demo.html', bongo: 'bongo-rush.html' } },
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        after: 'after-demo.html',
+        bongo: 'bongo-rush.html',
+        fighter: 'fighter-demo.html',
+      },
+    },
   },
   test: { include: ['src/**/*.test.ts', 'server/**/*.test.ts'] },
 }));

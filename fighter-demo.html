@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"
+    />
+    <meta name="theme-color" content="#020617" />
+    <title>Kurwa, moje combo! — Bijatyka 2D (Tekken Style)</title>
+  </head>
+  <body>
+    <main id="fighter-app">
+      <!-- 2D Canvas Arena -->
+      <canvas id="fighter-canvas" aria-label="Arena walki Kurwa Moje Combo"></canvas>
+
+      <!-- Mobile Touch Controls (Tekken 4-button layout) -->
+      <nav id="touch-controls" aria-label="Sterowanie dotykowe">
+        <!-- Virtual D-pad (Left thumb) -->
+        <div id="dpad">
+          <button class="dpad-btn dpad-up" data-input="1" aria-label="Skok">↑</button>
+          <button class="dpad-btn dpad-left" data-input="4" aria-label="W lewo (Odwrót / Blok)">←</button>
+          <button class="dpad-btn dpad-down" data-input="2" aria-label="Kucanie">↓</button>
+          <button class="dpad-btn dpad-right" data-input="8" aria-label="W prawo (Podejście)">→</button>
+        </div>
+
+        <!-- Bottom Center Match Menu Buttons -->
+        <div id="hud-nav-buttons">
+          <button id="char-select-btn" class="quick-btn" title="Zmień postać">Wybór postaci</button>
+          <button id="help-btn" class="quick-btn" title="Ściąga sterowania i combosów">? Klawisze</button>
+          <button id="pause-btn" class="quick-btn" title="Pauza walki">Pauza</button>
+        </div>
+
+        <!-- Tekken Arcade Buttons (Right thumb) -->
+        <div id="action-buttons">
+          <button class="btn-arcade btn-punch" data-input="16" aria-label="Lewa Pięść">LP</button>
+          <button class="btn-arcade btn-punch" data-input="32" aria-label="Prawa Pięść">RP</button>
+          <button class="btn-arcade btn-special" data-input="256" aria-label="Ruch Specjalny">SP</button>
+          <button class="btn-arcade btn-kick" data-input="64" aria-label="Lewa Noga">LK</button>
+          <button class="btn-arcade btn-kick" data-input="128" aria-label="Prawa Noga">RK</button>
+          <button class="btn-arcade btn-block" data-input="512" aria-label="Garda / Rzut">BLK</button>
+        </div>
+      </nav>
+
+      <!-- Character Select Screen (Tekken Arcade Style) -->
+      <div id="char-select-screen" class="modal-overlay">
+        <div class="select-container">
+          <div class="select-header">
+            <a class="festival-menu-link" href="./">← Menu główne festiwalu</a>
+            <h2>WYBIERZ SWOJEGO ZAWODNIKA</h2>
+            <p>16 Grywalnych Bohaterów Festiwalu · Wybierz postać gracza i przeciwnika</p>
+            <div class="selection-slots">
+              <button type="button" data-select-slot="1" aria-pressed="true">Wybierz gracza</button>
+              <button type="button" data-select-slot="2" aria-pressed="false">Wybierz przeciwnika</button>
+            </div>
+          </div>
+
+          <div class="select-body">
+            <!-- Roster 4x4 Grid -->
+            <div id="roster-grid" class="roster-grid"></div>
+
+            <!-- Selected Fighter Details Pane -->
+            <div class="fighter-preview-card">
+              <div class="preview-portrait-wrap">
+                <img id="preview-portrait" src="" alt="Portret" />
+              </div>
+              <div class="preview-info">
+                <h3 id="preview-name">AMPER</h3>
+                <h4 id="preview-title">Technik Obozowy</h4>
+                <div class="preview-style" id="preview-style">Styl: Wszechstronny Brawler</div>
+                <p id="preview-desc">Bojowy elektryk obozowy.</p>
+                <div class="preview-moves">
+                  <div><span>Specjalny:</span> <strong id="preview-special">Impuls przedłużacza</strong></div>
+                  <div><span>Ultimate:</span> <strong id="preview-ultimate">Zwarcie na polu</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stage Selection Bar -->
+          <div class="stage-select-bar">
+            <span class="stage-select-title">ARENA WALKI:</span>
+            <div id="stage-chips" class="stage-chips">
+              <button type="button" class="stage-chip active" data-stage="main_stage">🎸 Duża Scena</button>
+              <button type="button" class="stage-chip" data-stage="grzybek">🍄 Kultowy Grzybek</button>
+              <button type="button" class="stage-chip" data-stage="sunset_camp">🎡 Pole Namiotowe</button>
+              <button type="button" class="stage-chip" data-stage="krishna_village">🪷 Wioska Kryszny</button>
+            </div>
+          </div>
+
+          <!-- Controls & Moves Helper Guide in Main Menu -->
+          <div class="controls-helper-box">
+            <div class="helper-header">
+              <span class="helper-badge">⌨️ STEROWANIE I COMBOSY (Klawisze obok siebie)</span>
+            </div>
+            <div class="helper-grid">
+              <div class="helper-col">
+                <span class="helper-col-title">RUCH (Lewa ręka)</span>
+                <div class="helper-item"><kbd>A</kbd> <kbd>D</kbd> <span>Chodzenie</span></div>
+                <div class="helper-item"><kbd>W</kbd> <span>Skok</span></div>
+                <div class="helper-item"><kbd>S</kbd> <span>Kucnięcie / Blok dolny</span></div>
+              </div>
+              <div class="helper-col">
+                <span class="helper-col-title">PIĘŚCI & SUPER (Górny rząd)</span>
+                <div class="helper-item"><kbd>U</kbd> <span>Lekka Pięść (LP)</span></div>
+                <div class="helper-item"><kbd>I</kbd> <span>Mocna Pięść (RP)</span></div>
+                <div class="helper-item">
+                  <kbd class="kbd-super">O</kbd> <span class="txt-super">SUPER MOVE (100% energii!)</span>
+                </div>
+              </div>
+              <div class="helper-col">
+                <span class="helper-col-title">NOGI & GARDA (Dolny rząd)</span>
+                <div class="helper-item"><kbd>J</kbd> <span>Lekkie Kopnięcie (LK)</span></div>
+                <div class="helper-item"><kbd>K</kbd> <span>Mocne Kopnięcie (RK)</span></div>
+                <div class="helper-item"><kbd>L</kbd> / <kbd>Spacja</kbd> <span>Blok / Garda</span></div>
+              </div>
+              <div class="helper-col">
+                <span class="helper-col-title">COMBOSY TEKKEN</span>
+                <div class="helper-item">
+                  <kbd>S</kbd>+<kbd>I</kbd> <span class="txt-launch">Podbródkowy (Wybicie w górę!)</span>
+                </div>
+                <div class="helper-item">
+                  <kbd>S</kbd>+<kbd>K</kbd> <span class="txt-sweep">Podcięcie (Powalenie na ziemię)</span>
+                </div>
+                <div class="helper-item"><kbd>U</kbd>➔<kbd>I</kbd> <span>Seria 1-2 (Target Combo)</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="select-footer">
+            <div class="select-mode-toggle">
+              <label for="fight-mode"
+                >Tryb gry:
+                <select id="fight-mode">
+                  <option value="bot">Z botem</option>
+                  <option value="training">Trening</option>
+                  <option value="online">Online ze znajomym</option>
+                </select>
+              </label>
+              <label for="bot-difficulty"
+                >Poziom bota:
+                <select id="bot-difficulty">
+                  <option value="easy">Spokojna rozgrzewka</option>
+                  <option value="normal" selected>Festiwalowy wojownik</option>
+                  <option value="hard">Mistrz pola</option>
+                </select>
+              </label>
+            </div>
+            <section id="online-lobby" aria-label="Prywatny pokój online" hidden>
+              <div class="online-actions">
+                <button id="online-create" type="button" class="btn-alt">Utwórz pokój</button>
+                <label for="online-code"
+                  >Kod pokoju
+                  <input
+                    id="online-code"
+                    maxlength="6"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="A1B2C3"
+                  />
+                </label>
+                <button id="online-join" type="button" class="btn-alt">Dołącz</button>
+                <button id="online-copy" type="button" class="btn-alt" disabled>Kopiuj zaproszenie</button>
+                <button id="online-leave" type="button" class="btn-alt" disabled>Opuść pokój</button>
+              </div>
+              <p id="online-room-details"></p>
+              <p id="online-status" role="status" aria-live="polite">
+                Utwórz pokój albo wpisz kod od znajomego.
+              </p>
+            </section>
+            <div class="select-actions">
+              <button id="random-btn" class="btn-alt">Losowa postać</button>
+              <button id="start-fight-btn" class="btn-start">ROZPOCZNIJ WALKĘ</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p id="online-match-status" role="status" aria-live="polite" hidden></p>
+
+      <!-- Pause Modal -->
+      <div id="pause-modal" class="modal-overlay" hidden>
+        <div class="modal-card">
+          <button
+            id="close-help-btn"
+            class="modal-close"
+            type="button"
+            aria-label="Zamknij pomoc i wróć do walki"
+          >
+            ✕ Zamknij
+          </button>
+          <h2>Pauza i pomoc</h2>
+          <div class="pause-controls-guide">
+            <p><strong>Układ klawiszy (Klawisze obok siebie):</strong></p>
+            <div class="helper-grid" style="margin: 10px 0 16px">
+              <div class="helper-col">
+                <span class="helper-col-title">RUCH</span>
+                <div class="helper-item"><kbd>A</kbd> <kbd>D</kbd> <span>Lewo / Prawo</span></div>
+                <div class="helper-item">
+                  <kbd>W</kbd> <span>Skok</span> · <kbd>S</kbd> <span>Kucnięcie</span>
+                </div>
+              </div>
+              <div class="helper-col">
+                <span class="helper-col-title">GÓRNY RZĄD</span>
+                <div class="helper-item"><kbd>U</kbd> <span>Lekka Pięść</span></div>
+                <div class="helper-item"><kbd>I</kbd> <span>Mocna Pięść</span></div>
+                <div class="helper-item">
+                  <kbd class="kbd-super">O</kbd> <span class="txt-super">Super Move (100%)</span>
+                </div>
+              </div>
+              <div class="helper-col">
+                <span class="helper-col-title">DOLNY RZĄD</span>
+                <div class="helper-item"><kbd>J</kbd> <span>Lekkie Kopnięcie</span></div>
+                <div class="helper-item"><kbd>K</kbd> <span>Mocne Kopnięcie</span></div>
+                <div class="helper-item"><kbd>L / Spacja</kbd> <span>Blok</span></div>
+              </div>
+            </div>
+            <p style="font-size: 11px; color: #facc15; margin-bottom: 12px">
+              ⭐ <strong>S + I</strong> = Podbródkowy (Wybicie w powietrze) · <strong>S + K</strong> =
+              Podcięcie
+            </p>
+          </div>
+          <button id="resume-btn" class="btn-primary">Wróć do walki</button>
+          <button id="reselect-from-pause-btn" class="btn-primary" style="background: #0284c7; color: #fff">
+            Wybór postaci
+          </button>
+          <a href="./after-demo.html" class="btn-secondary">Zagraj w „After: ostatnia noc”</a><br />
+          <a href="./" class="btn-secondary">Wróć do festiwalu 3D</a>
+        </div>
+      </div>
+
+      <!-- Rematch / Victory Modal -->
+      <div id="rematch-modal" class="modal-overlay" hidden>
+        <div class="modal-card">
+          <h2>Koniec Meczu</h2>
+          <p id="rematch-text">Zwycięstwo!</p>
+          <button id="rematch-btn" class="btn-primary">Rewanż</button>
+          <button id="reselect-from-win-btn" class="btn-primary" style="background: #0284c7; color: #fff">
+            Zmień zawodników
+          </button>
+          <a href="./" class="btn-secondary">Wróć do festiwalu 3D</a>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="/src/games/fighter/demo/main.ts"></script>
+  </body>
+</html>

@@ -3,6 +3,7 @@ import { Server, Socket } from 'socket.io';
 import { Room } from './Room.js';
 import { FlankiSession } from './FlankiSession.js';
 import { EcoSession } from './EcoSession.js';
+import { FighterRooms } from './FighterRooms.js';
 import { RateLimiter } from './RateLimiter.js';
 import {
   type JoinRoomPayload,
@@ -21,6 +22,7 @@ export class RoomServer {
   readonly server: http.Server;
   readonly io: Server;
   readonly rooms = new Map<string, Room>();
+  readonly fighterRooms: FighterRooms;
   private readonly flankiSessions = new Map<string, FlankiSession>();
   private readonly ecoSessions = new Map<string,EcoSession>();
   private lastEcoBroadcast=0;
@@ -33,7 +35,7 @@ export class RoomServer {
     this.server = http.createServer((req, res) => {
       if (req.url === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok', protocol: PROTOCOL_VERSION, rooms: this.rooms.size }));
+        res.end(JSON.stringify({ status: 'ok', protocol: PROTOCOL_VERSION, rooms: this.rooms.size, fighterProtocol: 1 }));
         return;
       }
       res.writeHead(404);
@@ -49,6 +51,7 @@ export class RoomServer {
       pingInterval: 5000,
     });
 
+    this.fighterRooms = new FighterRooms(this.io.of('/fighter'));
     this.setupSocketHandlers();
   }
 
@@ -359,6 +362,7 @@ export class RoomServer {
   }
 
   async start(): Promise<void> {
+    this.fighterRooms.start();
     this.startTickLoop();
     return new Promise((resolve) => {
       this.server.listen(this.port, () => {
@@ -371,6 +375,7 @@ export class RoomServer {
   }
 
   async stop(): Promise<void> {
+    this.fighterRooms.stop();
     if (this.tickTimer) {
       clearInterval(this.tickTimer);
       this.tickTimer = undefined;

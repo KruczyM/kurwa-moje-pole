@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "characterId": "krwiak",
+  "size": 192,
+  "columns": 6,
+  "pivot": [
+    0.5,
+    0.8567567567567568
+  ],
+  "worldSize": 259.0,
+  "facing": -1,
+  "modelSha256": "3c26ca29206844777a23a58dccff6724072b10100222046669ddf88fcf678399",
+  "clips": {
+    "idle": {
+      "file": "idle.png",
+      "frames": 6,
+      "durationTicks": 198,
+      "source": "Fighting Idle.fbx",
+      "sourceSha256": "b4d3d995a7dee135c2d6dc8976f178e2e0d8e4c6f13d2c4879948091839b42eb",
+      "derivedGuard": false
+    },
+    "jab": {
+      "file": "jab.png",
+      "frames": 6,
+      "durationTicks": 62,
+      "source": "Punching.fbx",
+      "sourceSha256": "098024fce0e0aa12829042d1246c1a91cc14fc887cb993af5feafd513557b92f",
+      "derivedGuard": false
+    },
+    "cross": {
+      "file": "cross.png",
+      "frames": 6,
+      "durationTicks": 120,
+      "source": "Cross Punch.fbx",
+      "sourceSha256": "479b6f6433c8bdc144ebd71bd238e89b6324552ad16e9a2cae9bcfb1d696eda8",
+      "derivedGuard": false
+    },
+    "hook": {
+      "file": "hook.png",
+      "frames": 6,
+      "durationTicks": 136,
+      "source": "Hook.fbx",
+      "sourceSha256": "0b7fbf00cf36bde1f06ddeda7727f67956f6a370853370decb0fe223e4802bf3",
+      "derivedGuard": false
+    },
+    "elbow": {
+      "file": "elbow.png",
+      "frames": 6,
+      "durationTicks": 136,
+      "source": "Illegal Elbow Punch.fbx",
+      "sourceSha256": "a5a3c05f0ef303fa4bf907cbdd6c721f8d3dffb6fac16bfe0dc9e79b7afed44f",
+      "derivedGuard": false
+    },
+    "kick": {
+      "file": "kick.png",
+      "frames": 6,
+      "durationTicks": 100,
+      "source": "Mma Kick.fbx",
+      "sourceSha256": "2284c8b91b2ceb46258df0b6b646af0a57ca6c3b7ac87a504d310dcef2aee35d",
+      "derivedGuard": false
+    },
+    "heavy_kick": {
+      "file": "heavy_kick.png",
+      "frames": 6,
+      "durationTicks": 160,
+      "source": "Inside Crescent Kick.fbx",
+      "sourceSha256": "48fe32a4cf99019e5582b4345683281fa3af96bdd0838db00a65a09cb3b3e285",
+      "derivedGuard": false
+    },
+    "uppercut": {
+      "file": "uppercut.png",
+      "frames": 6,
+      "durationTicks": 80,
+      "source": "Uppercut.fbx",
+      "sourceSha256": "94a567c60ab10ef4c99de7655f42435d45cf2a86a9bcb3eeb13cd32ec3de8092",
+      "derivedGuard": false
+    },
+    "air_kick": {
+      "file": "air_kick.png",
+      "frames": 6,
+      "durationTicks": 174,
+      "source": "Drop Kick.fbx",
+      "sourceSha256": "f5b43b2f161c0f90a03204d20f5db840ca177928f4f9490bcc02b3ba61e8a0aa",
+      "derivedGuard": false
+    },
+    "hit_head": {
+      "file": "hit_head.png",
+      "frames": 6,
+      "durationTicks": 86,
+      "source": "Head Hit.fbx",
+      "sourceSha256": "f03866ede33b6bd25b910f4232d951c84af8d98058faf1f41c3699939c9e08d1",
+      "derivedGuard": false
+    },
+    "hit_body": {
+      "file": "hit_body.png",
+      "frames": 6,
+      "durationTicks": 60,
+      "source": "Rib Hit.fbx",
+      "sourceSha256": "7c7821cddd7b67b52237e89dcec3bad76e18df9b0c260bef9547fdd550f12f1e",
+      "derivedGuard": false
+    },
+    "fall": {
+      "file": "fall.png",
+      "frames": 6,
+      "durationTicks": 182,
+      "source": "Flying Back Death.fbx",
+      "sourceSha256": "e73fd9e9a5fc7a1977e7d0010d2f279cf58119afb5aa43b20686bca8f0225647",
+      "derivedGuard": false
+    },
+    "get_up": {
+      "file": "get_up.png",
+      "frames": 6,
+      "durationTicks": 162,
+      "source": "Getting Up.fbx",
+      "sourceSha256": "70970510fb67861865e2f0407634d98915f2038bdfec92fd7c18653882ff84ad",
+      "derivedGuard": false
+    },
+    "block": {
+      "file": "block.png",
+      "frames": 6,
+      "durationTicks": 198,
+      "source": "Fighting Idle.fbx",
+      "sourceSha256": "b4d3d995a7dee135c2d6dc8976f178e2e0d8e4c6f13d2c4879948091839b42eb",
+      "derivedGuard": true
+    },
+    "walk": {
+      "file": "walk.png",
+      "frames": 6,
+      "durationTicks": 62,
+      "source": "@Walk",
+      "sourceSha256": "267e523d95883226591ca24b7368774339c111a443a862e2f82002ec4c68814c",
+      "derivedGuard": false
+    },
+    "crouch": {
+      "file": "crouch.png",
+      "frames": 6,
+      "durationTicks": 65,
+      "source": "@SneakWalk",
+      "sourceSha256": "267e523d95883226591ca24b7368774339c111a443a862e2f82002ec4c68814c",
+      "derivedGuard": false
+    }
+  }
+}
