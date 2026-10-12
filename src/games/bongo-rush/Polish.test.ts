@@ -21,6 +21,17 @@ function timed(seconds?: number): LevelDefinition {
 }
 
 describe('active-time deadline', () => {
+  it('allows at most five movement steps in one second while keeping the countdown in seconds', () => {
+    const game = new Simulation({
+      ...timed(180),
+      rows: ['############', '#P       OE#', '############'],
+    });
+    const startX = game.world.player.x;
+    for (let elapsed = STEP_SECONDS; elapsed <= 1 + 1e-9; elapsed += STEP_SECONDS) game.step('right');
+    expect(game.world.player.x - startX).toBeLessThanOrEqual(5);
+    expect(game.world.player.x - startX).toBeGreaterThanOrEqual(4);
+    expect(game.remainingSeconds).toBeCloseTo(179);
+  });
   it('expires only after the complete allotted simulation ticks', () => {
     const game = new Simulation(timed(STEP_SECONDS * 3));
     game.step();
