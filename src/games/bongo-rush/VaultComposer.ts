@@ -2,7 +2,7 @@ import type { Direction, Point } from './types';
 import type { ExitPuzzle } from './ExitPuzzles';
 
 /** Routes a low exit below its sealed chamber, never cutting through a receiving pocket. */
-function alignExit(puzzle: ExitPuzzle): ExitPuzzle {
+export function alignExit(puzzle: ExitPuzzle): ExitPuzzle {
   if (puzzle.exit.y === puzzle.entry.y) return puzzle;
   const width = puzzle.rows[0].length + 4,
     height = puzzle.rows.length + 2;

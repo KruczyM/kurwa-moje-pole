@@ -88,16 +88,16 @@ describe('deliberate Kobra roots', () => {
     expect(game.world.enemies.length).toBeGreaterThan(0);
   });
   for (const level of CORE_LEVELS) {
-    it(`keeps spawn safe and ${level.id % 3 ? 'optional' : 'mandatory'} roots on level ${level.id}`, () => {
+    it(`keeps spawn safe and authored root activation on level ${level.id}`, () => {
       const game = new Simulation(level);
       const spawn = game.world.player;
       expect(game.cell({ x: spawn.x + 1, y: spawn.y })).not.toBe('buried-bush');
       for (const direction of level.solution) game.step(direction);
       expect(game.world.status).toBe('won');
-      expect(game.world.bushRoots.length > 0).toBe(level.id % 3 === 0);
-      if (level.id % 3 === 0) {
+      expect(game.world.bushRoots.length > 0).toBe([4, 6].includes(level.id));
+      if ([4, 6].includes(level.id)) {
         const root = game.world.bushRoots[0];
-        expect(root.x).toBeLessThan(level.vault!.entry.x);
+        expect(root.x).toBe(level.vault!.stages![1].entry.x - 1);
         expect(level.rows[root.y][root.x]).toBe('K');
         expect(level.rows[root.y - 1][root.x]).toBe('#');
         expect(level.rows[root.y + 1][root.x]).toBe('#');

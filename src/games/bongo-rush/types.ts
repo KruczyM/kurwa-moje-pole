@@ -30,6 +30,9 @@ export interface LevelDefinition {
   rows: readonly string[];
   quota: number;
   bonus?: boolean;
+  style?: 'exploration' | 'puzzle';
+  alternatives?: readonly { name: string; inputs: readonly Direction[] }[];
+  encounters?: readonly { spawn: Point; role: string; minimumCircuit: number }[];
   requiredKills?: number;
   /** Original positions identify mandatory vault loot; the flag follows falling objects by ID. */
   requiredPickups?: readonly Point[];

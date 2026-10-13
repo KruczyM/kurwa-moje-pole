@@ -1,5 +1,9 @@
 # Audyt trudności 16 plansz
 
+To raport historyczny. Aktualną konstrukcję kampanii 1–12 i audyt wszystkich
+patroli opisuje [Rytm kampanii](bongo-campaign-rhythm.md). Bonusowe układy 13–16
+z tego raportu zostały zachowane.
+
 Gałąź `feat/bongo-difficulty-pass`, osobny worktree `.ai/worktrees/bongo-difficulty`.
 Nie zmieniono fizyki, prędkości postaci ani sztucznie nie skrócono czasu.
 Poprzednie wersje zostały na swoich gałęziach. Nie publikowano zmian.

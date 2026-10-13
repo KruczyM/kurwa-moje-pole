@@ -292,19 +292,22 @@ class BongoRush {
     LEVELS.forEach((level, index) => {
       const button = document.createElement('button');
       button.textContent = String(level.id).padStart(2, '0');
+      button.dataset.style = level.style ?? 'challenge';
+      const styleLabel =
+        level.style === 'exploration' ? 'Eksploracja' : level.style === 'puzzle' ? 'Łamigłówka' : 'Wyzwanie';
       button.disabled = level.id > this.progress.unlocked;
       button.dataset.level = String(index);
       button.title = `${BIOMES[level.biome].name}: ${level.title}`;
       button.setAttribute(
         'aria-label',
-        `Poziom ${level.id}: ${level.title}${button.disabled ? ' — zablokowany' : ''}`,
+        `Poziom ${level.id}: ${level.title} — ${styleLabel}${button.disabled ? ' — zablokowany' : ''}`,
       );
       button.setAttribute('aria-pressed', String(index === this.selected));
       button.style.setProperty('--biome', BIOMES[level.biome].accent);
       container.append(button);
     });
     element('selected-level').textContent =
-      `${this.selected + 1}. ${LEVELS[this.selected].title} · ${LEVELS[this.selected].rows[0].length} × ${LEVELS[this.selected].rows.length} pól · ${BIOMES[LEVELS[this.selected].biome].name}`;
+      `${this.selected + 1}. ${LEVELS[this.selected].title} · ${LEVELS[this.selected].style === 'exploration' ? 'Kopanie i eksploracja' : LEVELS[this.selected].style === 'puzzle' ? 'Łamigłówka' : 'Wyzwanie'} · ${BIOMES[LEVELS[this.selected].biome].name}`;
   }
 
   /** Updates textual goals only when state changes, keeping per-frame DOM work minimal. */
