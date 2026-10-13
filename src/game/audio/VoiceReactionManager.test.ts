@@ -17,6 +17,35 @@ const fakeAudio = (): FakeAudio => ({
 });
 
 describe('VoiceReactionManager', () => {
+  it('plays a farewell only when leaving the world for the main menu, never for internal menus', () => {
+    const foreground = fakeAudio(),
+      distant = fakeAudio();
+    const channels = [foreground, distant];
+    const manager = new VoiceReactionManager(
+      () => 0,
+      () => channels.shift()!,
+    );
+    for (const [from, to] of [
+      ['playing', 'paused'],
+      ['paused', 'playing'],
+      ['playing', 'inventory'],
+      ['inventory', 'playing'],
+      ['playing', 'inspecting'],
+      ['inspecting', 'playing'],
+      ['start', 'start'],
+      ['loading', 'start'],
+      ['error', 'start'],
+    ] as const)
+      expect(manager.playMainMenuReturn(from, to)).toBeNull();
+    expect(foreground.play).not.toHaveBeenCalled();
+    expect(manager.playMainMenuReturn('paused', 'start')).toBe('dude_thisgenepoolis');
+    expect(foreground.play).toHaveBeenCalledTimes(1);
+    expect(manager.playMainMenuReturn('playing', 'start')).toBe('dude_vote_dimple');
+    expect(foreground.play).toHaveBeenCalledTimes(2);
+    manager.dispose();
+    expect(foreground.src).toBe('');
+    expect(distant.src).toBe('');
+  });
   it('covers every gameplay effect and keeps catalog entries unique', () => {
     expect(supportedVoiceEffects).toEqual(['Piwo', 'Papieros', 'Joint', 'Kreska', 'Grzyb', 'MDMA', 'LSD']);
     const names = allVoiceReactionNames();
