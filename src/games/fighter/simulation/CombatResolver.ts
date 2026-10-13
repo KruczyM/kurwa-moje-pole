@@ -222,11 +222,11 @@ export function checkHit(
 
   // Meter build
   if (!blocked) {
-    attacker.meter = Math.min(100, attacker.meter + move.meterGain);
-    defender.meter = Math.min(100, defender.meter + 4);
+    attacker.meter = Math.min(100, attacker.meter + move.meterGain * 1.6);
+    defender.meter = Math.min(100, defender.meter + 6);
   } else {
-    attacker.meter = Math.min(100, attacker.meter + move.meterGain * 0.4);
-    defender.meter = Math.min(100, defender.meter + 2);
+    attacker.meter = Math.min(100, attacker.meter + move.meterGain * 0.65);
+    defender.meter = Math.min(100, defender.meter + 3);
   }
 
   return {

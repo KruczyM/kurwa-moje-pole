@@ -120,7 +120,7 @@ export class FighterView {
         this.createComicHitPopup(ev.data);
       } else if (ev.type === 'launch' && ev.data) {
         this.createLaunchShockwave(ev.data.point.x, ev.data.point.y);
-        this.createComicHitPopup(ev.data, 'BOING!');
+        this.createComicHitPopup(ev.data, 'W GÓRĘ!');
       } else if (ev.type === 'block' && ev.data) {
         this.createBlockRipples(ev.data.point.x, ev.data.point.y);
         this.createComicHitPopup(ev.data, 'BLOK!');
@@ -135,15 +135,15 @@ export class FighterView {
 
     if (!text) {
       if (hitData.isLauncher) {
-        text = Math.random() < 0.5 ? 'BOING!' : 'W GÓRĘ!';
+        text = Math.random() < 0.5 ? 'W GÓRĘ!' : 'W GÓRĘ!';
         color = '#fef08a';
         outlineColor = '#d97706';
       } else if (hitData.isAirJuggle) {
-        text = Math.random() < 0.5 ? 'PISK!' : 'POP!';
+        text = Math.random() < 0.5 ? 'COMBO!' : 'TRAFIONY!';
         color = '#38bdf8';
         outlineColor = '#0284c7';
       } else if (hitData.causesKnockdown || hitData.hitHeight === 'low') {
-        text = Math.random() < 0.5 ? 'BĘC!' : 'PRRR!';
+        text = Math.random() < 0.5 ? 'BĘC!' : 'GLEBA!';
         color = '#fb923c';
         outlineColor = '#c2410c';
       } else if (hitData.hitHeight === 'high') {

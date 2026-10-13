@@ -12,7 +12,18 @@ import { resolveFacing, resolvePushboxes, updatePhysics } from './Movement';
 import { prepareFighter } from './combatTiming';
 
 export interface SimulationEvent {
-  type: 'hit' | 'block' | 'ko' | 'launch' | 'round_start' | 'round_end' | 'match_end' | 'meter_empty';
+  type:
+    | 'hit'
+    | 'block'
+    | 'ko'
+    | 'launch'
+    | 'round_start'
+    | 'round_end'
+    | 'match_end'
+    | 'meter_empty'
+    | 'swing'
+    | 'land'
+    | 'meter_ready';
   tick: number;
   data?: any;
 }
@@ -83,11 +94,15 @@ export class FighterSimulation {
 
   update(p1Input: number, p2Input: number): MatchState {
     this.state.tick += 1;
-    this.state.stateTicks += 1;
-
     // Push inputs to buffers
     this.buffer1.push(p1Input);
     this.buffer2.push(p2Input);
+
+    if ((this.state.superFreezeTicks ?? 0) > 0) {
+      this.state.superFreezeTicks!--;
+      return this.state;
+    }
+    this.state.stateTicks += 1;
 
     if (this.state.roundState === 'fight') {
       this.updateRoundTimer();
@@ -96,7 +111,11 @@ export class FighterSimulation {
       const frozen2 = this.state.p2.hitstop > 0;
       this.updateFighter(this.state.p1, this.def1, this.buffer1);
       this.updateFighter(this.state.p2, this.def2, this.buffer2);
+      // Both inputs may initiate a simultaneous ultimate. Neither hitboxes nor
+      // physics resolve on the activation step; all combat resumes after freeze.
+      if ((this.state.superFreezeTicks ?? 0) > 0) return this.state;
 
+      const meterBefore = [this.state.p1.meter, this.state.p2.meter];
       // Hit resolution
       if (!frozen1 && !frozen2) {
         const [hitP1, hitP2] = resolveCombatPair(
@@ -124,10 +143,19 @@ export class FighterSimulation {
         }
       }
 
+      [this.state.p1, this.state.p2].forEach((fighter, slot) => {
+        if (meterBefore[slot]! < 100 && fighter.meter >= 100)
+          this.events.push({ type: 'meter_ready', tick: this.state.tick, data: { slot: slot + 1 } });
+      });
+      const airborne = [!this.state.p1.isGrounded, !this.state.p2.isGrounded];
       // Physics and boundaries
       if (!frozen1 && this.state.p1.hitstop <= 0) updatePhysics(this.state.p1, this.def1);
       if (!frozen2 && this.state.p2.hitstop <= 0) updatePhysics(this.state.p2, this.def2);
 
+      [this.state.p1, this.state.p2].forEach((fighter, slot) => {
+        if (airborne[slot] && fighter.isGrounded)
+          this.events.push({ type: 'land', tick: this.state.tick, data: { slot: slot + 1 } });
+      });
       resolvePushboxes(this.state.p1, this.def1, this.state.p2, this.def2);
       resolveFacing(this.state.p1, this.state.p2);
 
@@ -311,6 +339,19 @@ export class FighterSimulation {
 
     // Grounded neutral controls
     if (fighter.isGrounded) {
+      if (buf.justPressed(INPUT.TECHNIQUE)) {
+        const special = def.moves[def.specialMoveId];
+        if (special && fighter.meter >= special.meterCost) {
+          fighter.meter -= special.meterCost;
+          this.executeMove(fighter, special);
+          return;
+        }
+        this.events.push({
+          type: 'meter_empty',
+          tick: this.state.tick,
+          data: { fighterId: fighter.id, currentMeter: fighter.meter },
+        });
+      }
       const holdingDown = buf.isDown(INPUT.DOWN);
 
       // 1. Crouch / Directional Attack Inputs
@@ -432,6 +473,15 @@ export class FighterSimulation {
   }
 
   private executeMove(fighter: FighterState, move: MoveDefinition): void {
+    if (move.id === 'ultimate') {
+      this.state.superFreezeTicks = 48;
+      this.state.superFreezeTotal = 48;
+    }
+    this.events.push({
+      type: 'swing',
+      tick: this.state.tick,
+      data: { moveId: move.id, slot: fighter === this.state.p1 ? 1 : 2 },
+    });
     fighter.state = 'attack';
     fighter.currentMove = move;
     fighter.moveTick = 0;
@@ -529,6 +579,9 @@ export class FighterSimulation {
 
   loadSnapshot(snapshot: MatchSnapshot): void {
     const next = JSON.parse(JSON.stringify(snapshot));
+    for (const key of Object.keys(this.state)) {
+      if (!(key in next)) Reflect.deleteProperty(this.state, key);
+    }
     // Preserve actor identity for presentation effects bound to a player slot.
     for (const actor of ['p1', 'p2'] as const) {
       for (const key of Object.keys(this.state[actor])) {

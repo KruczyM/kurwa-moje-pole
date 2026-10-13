@@ -69,6 +69,8 @@ export class BotController {
       if (self.meter >= 100 && roll < 0.25) {
         // Ultimate
         mask = INPUT.SPECIAL;
+      } else if (self.meter >= 30 && roll < 0.3) {
+        mask = INPUT.TECHNIQUE;
       } else if (roll < 0.35) {
         // Light Punch (quick jab)
         mask = INPUT.LP;
@@ -77,7 +79,7 @@ export class BotController {
         mask = INPUT.LK | INPUT.DOWN;
       } else if (roll < 0.8) {
         // Heavy Punch
-        mask = INPUT.HP;
+        mask = this.random() < 0.3 ? INPUT.DOWN | INPUT.RP : INPUT.HP;
       } else if (roll < 0.9) {
         // Heavy Kick
         mask = INPUT.HK;

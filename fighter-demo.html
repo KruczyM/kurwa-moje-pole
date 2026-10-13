@@ -35,9 +35,12 @@
         <div id="action-buttons">
           <button class="btn-arcade btn-punch" data-input="16" aria-label="Lewa Pięść">LP</button>
           <button class="btn-arcade btn-punch" data-input="32" aria-label="Prawa Pięść">RP</button>
-          <button class="btn-arcade btn-special" data-input="256" aria-label="Ruch Specjalny">SP</button>
+          <button class="btn-arcade btn-special" data-input="256" aria-label="Ultimate">ULT</button>
           <button class="btn-arcade btn-kick" data-input="64" aria-label="Lewa Noga">LK</button>
           <button class="btn-arcade btn-kick" data-input="128" aria-label="Prawa Noga">RK</button>
+          <button class="btn-arcade btn-punch" data-input="34" aria-label="Podbródkowy — wybicie">↑RP</button>
+          <button class="btn-arcade btn-kick" data-input="130" aria-label="Podcięcie">↓RK</button>
+          <button class="btn-arcade btn-special" data-input="1024" aria-label="Cios specjalny">SP</button>
           <button class="btn-arcade btn-block" data-input="512" aria-label="Garda / Rzut">BLK</button>
         </div>
       </nav>
@@ -216,9 +219,15 @@
               </div>
             </div>
             <p style="font-size: 11px; color: #facc15; margin-bottom: 12px">
-              ⭐ <strong>S + I</strong> = Podbródkowy (Wybicie w powietrze) · <strong>S + K</strong> =
-              Podcięcie
+              ⭐ <strong>H lub S + I</strong> = Podbródkowy (Wybicie w powietrze) ·
+              <strong>N lub S + K</strong> = Podcięcie · <strong>P</strong> = Special (część paska) ·
+              <strong>O</strong> = Ultimate (100%)
             </p>
+          </div>
+          <div class="audio-settings">
+            <label>Muzyka <input id="music-volume" type="range" min="0" max="100" value="45" /></label>
+            <label>Efekty <input id="sfx-volume" type="range" min="0" max="100" value="80" /></label>
+            <label><input id="reduced-effects" type="checkbox" /> Ogranicz błyski i drgania</label>
           </div>
           <button id="resume-btn" class="btn-primary">Wróć do walki</button>
           <button id="reselect-from-pause-btn" class="btn-primary" style="background: #0284c7; color: #fff">
