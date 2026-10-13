@@ -55,7 +55,8 @@ describe('reopening the same cave on a phone', () => {
           (image as HTMLCanvasElement).width === 64,
       );
     expect(cachedTerrain.length).toBeGreaterThan(100);
-    expect(new Set(cachedTerrain).size).toBeLessThanOrEqual(4);
+    // Two materials × two variants × sixteen exposed-edge masks is still a bounded cache.
+    expect(new Set(cachedTerrain).size).toBeLessThanOrEqual(64);
     renderer.dispose();
     expect(cachedTerrain.every((canvas) => canvas.width === 0 && canvas.height === 0)).toBe(true);
   });

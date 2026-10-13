@@ -15,6 +15,9 @@ import { STEP_SECONDS } from './types';
 import { CAMPAIGN_LEVEL_COUNT } from './Campaign';
 import { measureSpriteCrop } from './SpriteBounds';
 import { BIOME_TILE_ATLASES } from './BiomeTiles';
+import { MenuFlow } from './MenuFlow';
+import { HeroGallery } from './HeroGallery';
+import { SCENES } from './LivingScene';
 
 type Mode = 'menu' | 'playing' | 'paused' | 'lost' | 'won' | 'victory';
 const BASE = import.meta.env.BASE_URL;
@@ -44,6 +47,14 @@ class BongoRush {
   private readonly input = new GridInput();
   private readonly audio = new ArcadeAudio();
   private readonly progress: Progress = loadProgress(storage());
+  private readonly motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+  private readonly menu = new MenuFlow(this.progress.hero);
+  private readonly gallery = new HeroGallery(
+    element('hero-gallery'),
+    (hero) => this.atlas(hero),
+    element<HTMLCanvasElement>('hero-preview'),
+    element('hero-preview-name'),
+  );
   private readonly atlases = new Map<string, Promise<HeroAtlas>>();
   private readonly backgrounds = new Map<number, HTMLImageElement>();
   private readonly observer = new ResizeObserver(() => this.resize());
@@ -65,13 +76,7 @@ class BongoRush {
   async start(): Promise<void> {
     if (!this.renderer) throw new Error('Ta przeglądarka nie udostępnia Canvas 2D.');
     this.audio.muted = this.progress.muted;
-    HEROES.forEach((hero, index) => {
-      const option = document.createElement('option');
-      option.value = hero;
-      option.textContent = HERO_LABELS[index];
-      element<HTMLSelectElement>('hero').append(option);
-    });
-    element<HTMLSelectElement>('hero').value = this.progress.hero;
+    this.gallery.select(this.menu.hero);
     this.renderLevels();
     this.bind();
     this.updateMute();
@@ -126,15 +131,14 @@ class BongoRush {
     const token = ++this.loadToken;
     this.loading = true;
     element<HTMLButtonElement>('begin').disabled = true;
-    element<HTMLButtonElement>('hero').disabled = true;
     element('load-status').textContent = 'Wczytywanie postaci i biomu…';
-    const hero = element<HTMLSelectElement>('hero').value;
+    const hero = this.menu.hero;
     try {
       const level = LEVELS[index];
       const [atlas, background, bushAtlas, patrolAtlas, bossAtlas, terrain, items, tablets, depth] =
         await Promise.all([
           this.atlas(hero),
-          loadCachedImage(`${BASE}game-assets/2d/bongo-rush/${BIOMES[level.biome].background}`),
+          loadCachedImage(`${BASE}game-assets/2d/bongo-rush/living/${SCENES[level.biome].file}`),
           this.atlas('kobra'),
           this.atlas('patrol'),
           this.atlas('owsiak'),
@@ -154,11 +158,12 @@ class BongoRush {
       this.renderer!.items(items);
       this.renderer!.tablets(tablets);
       this.renderer!.depth(depth);
+      const app = element('bongo-app');
+      app.style.setProperty('--scene-accent', SCENES[level.biome].accent);
+      app.style.setProperty('--scene-image', `url("${background.src}")`);
       this.game = new Simulation(level);
       this.accumulator = 0;
       this.lastTime = 0;
-      this.progress.hero = hero;
-      saveProgress(storage(), this.progress);
       element('load-status').textContent =
         'Bez limitu prób. Uważaj na zarastające przejścia. Postęp zapisuje się na tym urządzeniu.';
       this.updateHud();
@@ -172,7 +177,6 @@ class BongoRush {
       if (!this.disposed && token === this.loadToken) {
         this.loading = false;
         element<HTMLButtonElement>('begin').disabled = false;
-        element<HTMLSelectElement>('hero').disabled = false;
         element('begin').textContent = 'Wejdź do jaskini →';
       }
     }
@@ -181,6 +185,7 @@ class BongoRush {
   /** Starts a selected unlocked cave from a real user gesture so mobile audio is immediately available. */
   private async begin(index = this.selected): Promise<void> {
     if (this.loading || index < 0 || index >= this.progress.unlocked) return;
+    if (this.mode === 'menu' && !this.menu.canStart(index, this.progress.unlocked)) return;
     this.audio.unlock();
     this.audio.silence();
     this.input.reset();
@@ -191,6 +196,9 @@ class BongoRush {
       return;
     }
     this.setMode('playing');
+    this.updateHud();
+    this.progress.hero = this.menu.hero;
+    saveProgress(storage(), this.progress);
     this.resize();
   }
 
@@ -212,7 +220,11 @@ class BongoRush {
     this.input.reset();
     this.updateKnob();
     this.lastTime = 0;
-    element('menu').hidden = mode !== 'menu';
+    element('menu').hidden = mode !== 'menu' || this.menu.screen !== 'title';
+    element('hero-panel').hidden = mode !== 'menu' || this.menu.screen !== 'heroes';
+    element('level-panel').hidden = mode !== 'menu' || this.menu.screen !== 'levels';
+    element('bongo-app').dataset.screen = mode === 'menu' ? this.menu.screen : mode;
+    document.querySelector<HTMLElement>('.hud')!.hidden = mode === 'menu';
     element('pause-panel').hidden = mode !== 'paused';
     element('result').hidden = mode !== 'lost' && mode !== 'won';
     element('victory').hidden = mode !== 'victory';
@@ -235,6 +247,35 @@ class BongoRush {
               ? 'victory-menu'
               : undefined;
     if (focusTarget) element(focusTarget).focus({ preventScroll: true });
+  }
+
+  /** Changes only cosmetic menu pages; Escape never changes a running world's state. */
+  private showMenu(): void {
+    this.setMode('menu');
+    this.gallery.select(this.menu.hero);
+    element('chosen-hero').textContent =
+      `Postać: ${HERO_LABELS[HEROES.indexOf(this.menu.hero as (typeof HEROES)[number])]}`;
+    element<HTMLButtonElement>('hero-confirm').disabled = !this.gallery.ready(this.menu.hero);
+    if (this.menu.screen === 'heroes') {
+      element('hero-back').focus({ preventScroll: true });
+      void this.gallery.prepare().then(() => {
+        if (this.disposed) return;
+        element<HTMLButtonElement>('hero-confirm').disabled = !this.gallery.ready(this.menu.hero);
+        element('hero-status').textContent = this.gallery.ready(this.menu.hero)
+          ? this.gallery.loadedCount() === HEROES.length
+            ? 'Zaznacz bohatera i zatwierdź wybór.'
+            : `Miniatury: ${this.gallery.loadedCount()} / ${HEROES.length}. Brakujące: wróć i otwórz galerię ponownie.`
+          : 'Nie wczytano miniatury. Wróć i otwórz galerię ponownie.';
+      });
+    } else element(this.menu.screen === 'title' ? 'play' : 'begin').focus({ preventScroll: true });
+  }
+
+  /** Returns to the title using the latest unlocked biome, without retaining implicit hero approval. */
+  private returnToMenu(): void {
+    this.menu.title();
+    this.selected = this.progress.unlocked - 1;
+    this.showMenu();
+    void this.loadRun(this.selected);
   }
 
   /** Escape only toggles pause while in a run; it never sends the player straight to the main menu. */
@@ -292,6 +333,9 @@ class BongoRush {
       world.nextBushGrowth === undefined
         ? `${hint} Krzak z korzeniami: odkopanie uruchamia zarastanie przejść.`
         : `${hint} Krzak rośnie — fala za ${Math.ceil((world.nextBushGrowth - world.tick) * STEP_SECONDS)} s. R / ↻: restart.`;
+    if (this.mode === 'menu')
+      element('hint').textContent =
+        'Wybierz bohatera, potem odblokowaną jaskinię. Zbieraj dostawę i przygotuj bezpieczny odwrót. Pomoc: ?';
   }
 
   /** Unlocks the next cave once and presents loss, normal completion or the final short scene. */
@@ -327,6 +371,23 @@ class BongoRush {
     click('begin', () => {
       void this.begin();
     });
+    click('play', () => {
+      this.audio.unlock();
+      this.menu.openHeroes();
+      this.showMenu();
+    });
+    click('hero-confirm', () => {
+      if (!this.gallery.ready(this.menu.hero)) return;
+      this.menu.confirm();
+      this.showMenu();
+      void this.loadRun(this.selected);
+    });
+    for (const id of ['hero-back', 'level-back'])
+      click(id, () => {
+        this.menu.back();
+        this.showMenu();
+      });
+    click('title-help', () => element('help').click());
     click('pause', () => this.togglePause());
     click('map', () => this.toggleMap());
     click('help', () => {
@@ -343,7 +404,7 @@ class BongoRush {
     click('next', () => {
       void this.begin(this.game.level.id);
     });
-    for (const id of ['to-menu', 'result-menu', 'victory-menu']) click(id, () => this.setMode('menu'));
+    for (const id of ['to-menu', 'result-menu', 'victory-menu']) click(id, () => this.returnToMenu());
     click('mute', () => {
       this.audio.unlock();
       this.progress.muted = !this.progress.muted;
@@ -359,8 +420,11 @@ class BongoRush {
       this.renderLevels();
       void this.loadRun(this.selected);
     });
-    this.events.listen(element('hero'), 'change', () => {
-      if (!this.loading) void this.loadRun(this.selected);
+    this.events.listen(element('hero-gallery'), 'click', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-hero]');
+      if (!button || button.disabled || !this.menu.choose(button.dataset.hero!)) return;
+      this.gallery.select(this.menu.hero);
+      element<HTMLButtonElement>('hero-confirm').disabled = !this.gallery.ready(this.menu.hero);
     });
     this.events.listen(window, 'keydown', (event) => {
       const key = event as KeyboardEvent;
@@ -375,7 +439,12 @@ class BongoRush {
           if (!key.repeat) this.closeHelp();
           return;
         }
-        if (!key.repeat) this.togglePause();
+        if (!key.repeat) {
+          if (this.mode === 'menu') {
+            this.menu.back();
+            this.showMenu();
+          } else this.togglePause();
+        }
         return;
       }
       if (this.mode !== 'playing') return;
@@ -426,7 +495,7 @@ class BongoRush {
     if (this.mode === 'paused') {
       element('pause-panel').hidden = false;
       element('resume').focus({ preventScroll: true });
-    } else if (this.mode === 'menu') element('begin').focus({ preventScroll: true });
+    } else if (this.mode === 'menu') this.showMenu();
   }
 
   /** Toggles the same cached overview for keyboard and touch, preserving movement focus. */
@@ -491,7 +560,14 @@ class BongoRush {
     this.frames++;
     const dt = this.lastTime ? Math.min(0.05, Math.max(0, (time - this.lastTime) / 1000)) : 0;
     this.lastTime = time;
-    this.audio.updateMusic(this.game.level.biome, this.mode === 'playing' && !this.loading);
+    this.audio.updateMusic(
+      this.game.level.biome,
+      (this.mode === 'playing' || this.mode === 'menu') && !this.loading,
+      this.mode === 'menu',
+    );
+    const reduced = this.motionPreference.matches;
+    if (this.mode === 'menu' && this.menu.screen === 'heroes' && element('help-panel').hidden)
+      this.gallery.update(dt, reduced);
     if (this.mode === 'playing' && !this.loading) {
       this.accumulator += dt;
       while (this.accumulator >= STEP_SECONDS && this.mode === 'playing') {
@@ -499,6 +575,7 @@ class BongoRush {
         this.game.step(this.input.direction());
         this.updateHud();
         const sounds = this.game.drainSounds();
+        this.renderer?.effects(this.game.world, sounds);
         if (this.game.world.status !== 'playing') this.finish();
         for (const sound of sounds) this.audio.play(sound, this.game.level.biome);
       }
@@ -511,6 +588,7 @@ class BongoRush {
       this.accumulator / STEP_SECONDS,
       dt,
       this.mode !== 'playing',
+      this.mode === 'menu',
     );
     if (this.mode === 'victory') {
       this.victoryTime += dt;
@@ -528,6 +606,7 @@ class BongoRush {
     this.observer.disconnect();
     this.input.reset();
     this.audio.dispose();
+    this.gallery.dispose();
     this.renderer?.dispose();
     this.atlases.clear();
     this.backgrounds.clear();
@@ -544,6 +623,8 @@ class BongoRush {
       rafActive: this.loop.active,
       frames: this.frames,
       loading: this.loading,
+      menuScreen: this.menu.screen,
+      heroConfirmed: this.menu.confirmed,
     };
   }
 }

@@ -1,5 +1,5 @@
 import type { SoundEvent } from './types';
-import { ambientPhrase } from './Music';
+import { musicPhrase, MUSIC_BPM } from './Music';
 
 /** Original WebAudio effects require no copyrighted samples, downloads or paid APIs. */
 export class ArcadeAudio {
@@ -9,6 +9,9 @@ export class ArcadeAudio {
   private music = new Set<OscillatorNode>();
   private nextBeat = 0;
   private beat = 0;
+  private musicBiome = -1;
+  private musicGains = new Map<OscillatorNode, GainNode>();
+  private duckUntil = 0;
   muted = false;
 
   /** Unlocks iOS audio from a user gesture, never from the render loop. */
@@ -22,33 +25,61 @@ export class ArcadeAudio {
   }
 
   /** Schedules a quiet ambient soundtrack from the existing RAF, with at most a short look-ahead. */
-  updateMusic(biome: number, playing: boolean): void {
+  updateMusic(biome: number, playing: boolean, menu = false): void {
     const context = this.context;
     if (!playing || this.muted || !context || context.state !== 'running') return;
     const now = context.currentTime;
+    if (this.musicBiome !== biome) {
+      this.fadeMusic();
+      this.musicBiome = biome;
+      this.beat = 0;
+      this.nextBeat = now + 0.025;
+    }
     if (this.nextBeat < now) this.nextBeat = now + 0.025;
     if (this.nextBeat > now + 0.12 || this.music.size >= 12) return;
     const start = this.nextBeat;
-    ambientPhrase(biome, this.beat++).forEach((frequency, index) => {
+    musicPhrase(biome, this.beat++, menu).forEach((note) => {
       const oscillator = context.createOscillator();
       const gain = context.createGain();
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(frequency, start);
+      const filter = context.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(note.cutoff, start);
+      oscillator.type = note.wave;
+      oscillator.frequency.setValueAtTime(note.frequency, start);
       gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(index ? 0.025 : 0.018, start + 0.14);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + 1.8);
-      oscillator.connect(gain);
+      gain.gain.linearRampToValueAtTime(note.gain * (now < this.duckUntil ? 0.4 : 1), start + 0.09);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + note.duration);
+      oscillator.connect(filter);
+      filter.connect(gain);
       gain.connect(context.destination);
       this.music.add(oscillator);
+      this.musicGains.set(oscillator, gain);
       oscillator.onended = () => {
         this.music.delete(oscillator);
+        this.musicGains.delete(oscillator);
         oscillator.disconnect();
+        filter.disconnect();
         gain.disconnect();
       };
       oscillator.start(start);
-      oscillator.stop(start + 1.85);
+      oscillator.stop(start + note.duration + 0.05);
     });
-    this.nextBeat += 0.8;
+    this.nextBeat += 60 / MUSIC_BPM[biome];
+  }
+
+  /** Fades biome transitions without owning timers or another scheduler. */
+  private fadeMusic(): void {
+    const now = this.context?.currentTime ?? 0;
+    for (const [oscillator, gain] of this.musicGains) {
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value), now);
+      gain.gain.linearRampToValueAtTime(0, now + 0.25);
+      try {
+        oscillator.stop(now + 0.3);
+      } catch {
+        /* Voice already ended. */
+      }
+    }
   }
 
   /** Plays short biome-specific motifs with throttling and a bounded voice count. */
@@ -57,6 +88,10 @@ export class ArcadeAudio {
     if (this.muted || !context || context.state !== 'running' || this.active.size > 16) return;
     const now = context.currentTime;
     if (now - (this.last[event] ?? -100) < (event === 'dig' ? 0.09 : 0.06)) return;
+    if (event !== 'dig') {
+      this.duckUntil = now + 0.25;
+      for (const gain of this.musicGains.values()) gain.gain.setTargetAtTime(0.003, now, 0.03);
+    }
     this.last[event] = now;
     const pickup = [
       [523, 659, 784],
@@ -107,6 +142,7 @@ export class ArcadeAudio {
     }
     this.active.clear();
     this.music.clear();
+    this.musicGains.clear();
     this.nextBeat = 0;
     this.beat = 0;
   }

@@ -9,6 +9,10 @@ import { drawAmarena } from './AmarenaArt';
 import { caveTileSize, collectibleCell, raveTabletRect } from './ArtDirection';
 import { same } from './types';
 import { DEPTH_LAYERS, depthFrame, foregroundBands } from './Depth';
+import { paintSceneMotion } from './LivingScene';
+import { punchSoil, terrainEdges, paintTerrainEdges } from './TerrainDetails';
+import { VisualEffects } from './VisualEffects';
+import type { SoundEvent } from './types';
 import type { Body, Enemy, LooseObject, Point } from './types';
 import type { World } from './types';
 import type { Simulation } from './Simulation';
@@ -40,6 +44,7 @@ export class CaveRenderer {
   private readonly motionPreference =
     typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)') : undefined;
   private clock = 0;
+  private readonly debris = new VisualEffects();
   private playHeight = 1;
   private readonly topInset = 58;
   private world?: World;
@@ -49,6 +54,11 @@ export class CaveRenderer {
 
   /** Receives an existing canvas context and never owns animation scheduling or asset loading. */
   constructor(private readonly context: CanvasRenderingContext2D) {}
+
+  /** Receives sound observations from the fixed simulation step without changing the simulation. */
+  effects(world: World, sounds: readonly SoundEvent[]): void {
+    this.debris.observe(world, sounds);
+  }
 
   /** Shared transparent AI sprites are loaded by the existing host image cache. */
   items(image: HTMLImageElement): void {
@@ -149,6 +159,7 @@ export class CaveRenderer {
 
   /** Clears only renderer-owned canvases and animation state; shared images remain cached. */
   dispose(): void {
+    this.debris.clear();
     for (const tile of this.tiles.values()) {
       tile.width = 0;
       tile.height = 0;
@@ -247,17 +258,36 @@ export class CaveRenderer {
     alpha: number,
     dt: number,
     paused: boolean,
+    menu = false,
   ): void {
     const ctx = this.context,
       world = game.world,
       biome = BIOMES[game.level.biome];
-    if (!paused) this.clock += dt;
+    const reduced = this.motionPreference?.matches ?? false;
+    if ((!paused || menu) && !reduced) this.clock += dt;
     ctx.clearRect(0, 0, this.width, this.height);
     ctx.fillStyle = '#101725';
     ctx.fillRect(0, 0, this.width, this.height);
+    if (menu) {
+      if (background) {
+        const frame = depthFrame(
+          { x: this.width, y: this.height },
+          { x: background.naturalWidth, y: background.naturalHeight },
+          { x: Math.sin(this.clock * 0.08) * 45, y: Math.cos(this.clock * 0.06) * 20 },
+          0.4,
+          reduced,
+        );
+        ctx.drawImage(background, frame.x, frame.y, frame.width, frame.height);
+      }
+      paintSceneMotion(ctx, this.width, this.height, game.level.biome, this.clock, true, reduced);
+      if (this.depthAtlas)
+        this.depthLayer(this.depthAtlas, game.level.biome, 2, { x: Math.sin(this.clock * 0.08) * 70, y: 0 });
+      return;
+    }
     const playerPoint = this.interpolate(world.player, alpha);
     if (this.world !== world) {
       this.world = world;
+      this.debris.clear();
       // One active instance of the existing camera, with this cave's real bounds rather than 24x18.
       this.camera = new CameraRig({ width: world.width, height: world.height });
       this.camera.resize({ width: this.width, height: this.playHeight, pixelsPerMeter: this.tile });
@@ -273,6 +303,7 @@ export class CaveRenderer {
     const anchor = this.camera.project(this.depthAnchor);
     const displacement = { x: this.width / 2 - anchor.x, y: this.playHeight / 2 - anchor.y };
     if (background) this.depthLayer(background, game.level.biome, 0, displacement);
+    paintSceneMotion(ctx, this.width, this.height, game.level.biome, this.clock, false, reduced);
     ctx.fillStyle = '#07101855';
     ctx.fillRect(0, 0, this.width, this.height);
     if (this.depthAtlas) this.depthLayer(this.depthAtlas, game.level.biome, 1, displacement);
@@ -299,7 +330,12 @@ export class CaveRenderer {
         const cell = world.cells[y * world.width + x];
         if (cell === 'wall' || cell === 'soil' || cell === 'buried-bush') {
           ctx.drawImage(
-            this.tileArt(game.level.biome, cell === 'wall' ? 'wall' : 'soil', terrainVariant(x, y)),
+            this.tileArt(
+              game.level.biome,
+              cell === 'wall' ? 'wall' : 'soil',
+              terrainVariant(x, y),
+              terrainEdges(world, x, y),
+            ),
             position.x,
             position.y,
             this.tile + 0.5,
@@ -379,6 +415,14 @@ export class CaveRenderer {
       }
       ctx.restore();
     }
+    this.debris.update(dt, paused, reduced);
+    ctx.fillStyle = biome.light;
+    for (const chip of this.debris.chips) {
+      const point = this.camera.project(chip);
+      ctx.globalAlpha = Math.max(0, chip.life / 0.42) * 0.7;
+      ctx.fillRect(point.x, point.y, 3, 3);
+    }
+    ctx.globalAlpha = 1;
     ctx.restore();
     this.atmosphere(playerPoint);
     if (this.depthAtlas) this.depthLayer(this.depthAtlas, game.level.biome, 2, displacement);
@@ -459,8 +503,8 @@ export class CaveRenderer {
   }
 
   /** Caches rough cave textures; variants are deterministic and allocated only once per biome. */
-  private tileArt(biomeIndex: number, kind: 'wall' | 'soil', variant: number): HTMLCanvasElement {
-    const key = `${biomeIndex}:${kind}:${variant}`;
+  private tileArt(biomeIndex: number, kind: 'wall' | 'soil', variant: number, edges = 0): HTMLCanvasElement {
+    const key = `${biomeIndex}:${kind}:${variant}:${edges}`;
     const cached = this.tiles.get(key);
     if (cached) return cached;
     const canvas = document.createElement('canvas');
@@ -469,6 +513,8 @@ export class CaveRenderer {
     const atlas = this.terrainAtlases.get(biomeIndex);
     if (atlas) paintBiomeTile(context, atlas, kind, variant);
     else paintCaveTile(context, biomeIndex, kind, variant);
+    if (kind === 'soil') punchSoil(context, biomeIndex, variant);
+    paintTerrainEdges(context, edges, biomeIndex);
     this.tiles.set(key, canvas);
     return canvas;
   }

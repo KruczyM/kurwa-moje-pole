@@ -35,14 +35,41 @@
             Dwanaście rozległych jaskiń. Komory, szyby i lawiny.<br />Cztery dostawy. Jedno legendarne Bongo
             Tasiora.
           </p>
-          <div class="select-row">
-            <label>Twoja postać<select id="hero"></select></label
-            ><span>Wygląd inny.<br />Zasady te same.</span>
+          <button id="play" class="primary">Graj →</button>
+          <button id="title-help">Jak grać?</button>
+          <p class="menu-note">Wybierz bohatera. Przygotuj drogę ucieczki.</p>
+          <div class="links">
+            <a href="./after-demo.html">After: ostatnia noc</a><a href="./">Festiwal 3D</a>
           </div>
+          <small class="disclaimer"
+            >Fikcyjna, satyryczna gra dla dorosłych. Nie jest reklamą ani instrukcją używania
+            substancji.</small
+          >
+        </section>
+        <section id="hero-panel" class="panel gallery-panel" hidden aria-label="Wybór postaci">
+          <span class="eyebrow">01 / TWOJA EKIPA</span>
+          <h2>Wybierz postać</h2>
+          <p>Wygląd inny. Zasady te same. Kobra jest przeszkodą, nie bohaterem.</p>
+          <figure class="hero-preview">
+            <canvas id="hero-preview" width="192" height="224" aria-hidden="true"></canvas>
+            <figcaption id="hero-preview-name" aria-live="polite"></figcaption>
+          </figure>
+          <div id="hero-gallery" class="hero-grid" aria-label="Grywalne postacie"></div>
+          <p id="hero-status" role="status">Wczytywanie miniatur…</p>
+          <div class="menu-actions">
+            <button id="hero-back">← Wstecz</button
+            ><button id="hero-confirm" class="primary">Zatwierdź postać →</button>
+          </div>
+        </section>
+        <section id="level-panel" class="panel menu-panel" hidden aria-label="Wybór poziomu">
+          <span class="eyebrow">02 / WYBIERZ WYPRAWĘ</span>
+          <h2>Wejście do podziemi</h2>
+          <p id="chosen-hero"></p>
           <div id="levels" class="level-grid" aria-label="Wybierz odblokowany poziom"></div>
           <p id="selected-level"></p>
           <button id="begin" class="primary" disabled>Ładowanie…</button>
           <p id="load-status" role="status">Przygotowuję lekką wersję 2D…</p>
+          <button id="level-back">← Wybór postaci</button>
           <details>
             <summary>Jak grać?</summary>
             <p>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Simulation } from './Simulation';
 import { LEVELS } from './Levels';
-import { ambientPhrase } from './Music';
+import { ambientPhrase, musicPhrase, musicCycleBeats } from './Music';
 import { STEP_SECONDS } from './types';
 import type { LevelDefinition } from './types';
 const CORE_LEVELS = LEVELS.filter((level) => !level.bonus);
@@ -107,14 +107,14 @@ describe('deliberate Kobra roots', () => {
 });
 
 describe('ambient score', () => {
-  it('repeats stable eight-beat motifs with bounded voices and audible frequencies', () => {
+  it('repeats composed two-minute arrangements with bounded voices and audible frequencies', () => {
     for (let biome = 0; biome < 4; biome++)
       for (let beat = 0; beat < 16; beat++) {
         const phrase = ambientPhrase(biome, beat);
-        expect(phrase).toEqual(ambientPhrase(biome, beat + 8));
+        expect(phrase).toEqual(ambientPhrase(biome, beat + musicCycleBeats(biome)));
         expect(phrase.length).toBeLessThanOrEqual(2);
         for (const note of phrase) expect(note).toBeGreaterThan(40);
       }
-    expect(new Set([0, 1, 2, 3].map((b) => JSON.stringify(ambientPhrase(b, 0)))).size).toBe(4);
+    expect(new Set([0, 1, 2, 3].map((b) => JSON.stringify(musicPhrase(b, 0)))).size).toBe(4);
   });
 });
