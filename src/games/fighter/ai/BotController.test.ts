@@ -54,7 +54,7 @@ describe('BotController', () => {
     expect(bot.update(self, opponent)).toBe(INPUT.SPECIAL);
     const other = new BotController('normal', () => 0);
     self.meter = 99;
-    expect(other.update(self, opponent)).toBe(INPUT.LP);
+    expect(other.update(self, opponent)).toBe(INPUT.TECHNIQUE);
   });
   it('stops on KO and can attack in the air', () => {
     const { bot, self, opponent } = setup();

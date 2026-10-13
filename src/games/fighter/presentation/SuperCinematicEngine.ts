@@ -23,6 +23,7 @@ export interface SuperCinematicState {
 }
 
 export class SuperCinematicEngine {
+  public reducedEffects = false;
   private activeState: SuperCinematicState | null = null;
   private propsRenderer = new SuperPropsRenderer();
   private followsCombat = false;
@@ -97,11 +98,13 @@ export class SuperCinematicEngine {
       }
       const tick = attacker.moveTick;
       s.currentTick =
-        tick <= move.startup
-          ? (75 * tick) / Math.max(1, move.startup)
-          : tick <= move.startup + move.active
-            ? 76 + (16 * (tick - move.startup - 1)) / Math.max(1, move.active - 1)
-            : 93 + (12 * (tick - move.startup - move.active - 1)) / Math.max(1, move.recovery - 1);
+        (match.superFreezeTicks ?? 0) > 0 && s.moveId === 'ultimate'
+          ? 35 * (1 - match.superFreezeTicks! / (match.superFreezeTotal || 48))
+          : tick <= move.startup
+            ? 35 + (40 * tick) / Math.max(1, move.startup)
+            : tick <= move.startup + move.active
+              ? 76 + (16 * (tick - move.startup - 1)) / Math.max(1, move.active - 1)
+              : 93 + (12 * (tick - move.startup - move.active - 1)) / Math.max(1, move.recovery - 1);
       // Follow live positions and hitstop; presentation never moves a fighter.
       s.attackerX = attacker.x;
       s.attackerY = attacker.y;
@@ -115,7 +118,7 @@ export class SuperCinematicEngine {
     if (t <= 35) {
       s.phase = 'freeze';
       // Freeze camera zoomed in slightly on attacker
-      camera.shake(2, 0.05);
+      if (!this.reducedEffects) camera.shake(1, 0.05);
     } else if (t <= 75) {
       s.phase = 'action';
     } else if (t <= 92) {
@@ -127,10 +130,11 @@ export class SuperCinematicEngine {
         (attacker.hasHit && defender.state !== 'block_high' && defender.state !== 'block_low');
       if (!s.damageApplied && confirmedHit) {
         s.damageApplied = true;
-        camera.shake(14, 0.35);
+        if (!this.reducedEffects) camera.shake(12, 0.25);
 
         // Apply dedicated audio effect based on character
-        this.triggerSuperImpactAudio(s.attackerId, audio);
+        // Live impacts are sounded from authoritative events, including trades.
+        if (!this.followsCombat) this.triggerSuperImpactAudio(s.attackerId, audio);
 
         if (onImpactCallback) {
           // Cosmetic only. All damage, guards and range checks belong to simulation.
@@ -151,69 +155,7 @@ export class SuperCinematicEngine {
   }
 
   private triggerSuperImpactAudio(charId: string, audio: FighterAudio): void {
-    switch (charId.toLowerCase()) {
-      case 'amper':
-        audio.playGlassShatter();
-        audio.playBonk();
-        break;
-      case 'korba':
-        audio.playPropellerSpin();
-        audio.playSlap();
-        break;
-      case 'kobra':
-        audio.playSlideWhistle('down');
-        audio.playSlap();
-        break;
-      case 'antena':
-        audio.playLaserBeam();
-        break;
-      case 'gruczol':
-        audio.playFlushToilet();
-        audio.playFart();
-        break;
-      case 'klatwa':
-        audio.playBonk();
-        audio.playMegaphoneScreech();
-        break;
-      case 'krwiak':
-        audio.playBonk();
-        break;
-      case 'pien':
-        audio.playMegaphoneScreech();
-        break;
-      case 'pierscien':
-        audio.playJBLBassDrop();
-        break;
-      case 'zawor':
-        audio.playBoing();
-        audio.playPop();
-        break;
-      case 'ambona':
-        audio.playBonk();
-        audio.playSlideWhistle('down');
-        break;
-      case 'chlebak':
-        audio.playDJScratch();
-        break;
-      case 'dziaslo':
-        audio.playKOGong();
-        break;
-      case 'hemoroid':
-        audio.playEngineRoar();
-        audio.playBonk();
-        break;
-      case 'jeczmien':
-        audio.playLighterFlicks();
-        audio.playPop();
-        break;
-      case 'szerszen':
-        audio.playWhispers();
-        audio.playBonk();
-        break;
-      default:
-        audio.playBonk();
-        break;
-    }
+    audio.playUltimateImpact(charId);
   }
 
   public render(ctx: CanvasRenderingContext2D, _width: number, _height: number): void {
@@ -234,7 +176,7 @@ export class SuperCinematicEngine {
       // Speed lines cutting diagonally
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
       ctx.lineWidth = 2;
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < (this.reducedEffects ? 0 : 12); i++) {
         const lineOffset = ((t * 25 + i * 160) % 1800) - 900;
         ctx.beginPath();
         ctx.moveTo(lineOffset, -800);
@@ -269,20 +211,20 @@ export class SuperCinematicEngine {
       if (s.attackerPortrait && s.attackerPortrait.complete && s.attackerPortrait.naturalWidth > 0) {
         ctx.save();
         ctx.beginPath();
-        ctx.arc(portX, portY, 52, 0, Math.PI * 2);
+        ctx.arc(portX, portY, 60, 0, Math.PI * 2);
         ctx.clip();
-        ctx.drawImage(s.attackerPortrait, portX - 52, portY - 52, 104, 104);
+        ctx.drawImage(s.attackerPortrait, portX - 60, portY - 60, 120, 120);
         ctx.restore();
 
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.arc(portX, portY, 52, 0, Math.PI * 2);
+        ctx.arc(portX, portY, 60, 0, Math.PI * 2);
         ctx.stroke();
       }
 
       // Title & Super Move typography
-      ctx.font = '900 36px Impact, "Arial Black", sans-serif';
+      ctx.font = '900 42px Impact, "Arial Black", sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#ffffff';
@@ -310,6 +252,53 @@ export class SuperCinematicEngine {
             : t;
     if (this.followsCombat && s.phase === 'recovery') ctx.globalAlpha *= Math.max(0, (105 - t) / 12);
     this.renderCharacterSuperProps(ctx, s, propTick);
+    const concurrent = this.boundDefender;
+    if (s.moveId === 'ultimate' && concurrent?.currentMove?.id === 'ultimate') {
+      this.renderCharacterSuperProps(
+        ctx,
+        {
+          ...s,
+          attackerId: concurrent.id,
+          attackerX: concurrent.x,
+          attackerY: concurrent.y,
+          defenderX: s.attackerX,
+          defenderY: s.attackerY,
+          facing: concurrent.facing,
+        },
+        propTick,
+      );
+      if (s.phase === 'freeze') {
+        ctx.font = 'bold 18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#fef08a';
+        ctx.fillText(`KONTRA: ${concurrent.currentMove.name}`, 0, -105);
+      }
+    }
+    if (s.phase === 'impact' && s.damageApplied) {
+      const progress = Math.max(0, (t - 76) / 16);
+      ctx.save();
+      ctx.translate(s.defenderX, -(s.defenderY + 65));
+      ctx.globalAlpha *= 1 - progress;
+      ctx.strokeStyle = s.themeColor;
+      ctx.lineWidth = this.reducedEffects ? 2 : 5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 25 + progress * 145, 20 + progress * 90, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      const count = this.reducedEffects ? 6 : 24;
+      for (let i = 0; i < count; i++) {
+        const angle = (i * Math.PI * 2) / count;
+        const distance = 18 + progress * (70 + (i % 5) * 15);
+        ctx.fillStyle = i % 3 ? s.themeColor : '#fff3c4';
+        ctx.fillRect(Math.cos(angle) * distance, Math.sin(angle) * distance, 4, 9);
+      }
+      ctx.restore();
+    }
+    if (s.phase === 'recovery' && !s.damageApplied) {
+      ctx.font = 'bold 22px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillText(this.boundAttacker?.hasHit ? 'BLOK' : 'PUDŁO', s.defenderX, -(s.defenderY + 155));
+    }
 
     ctx.restore();
   }
@@ -375,12 +364,12 @@ export class SuperCinematicEngine {
 
       case 'gruczol': {
         // Gruczoł: White Toi-Toi throne & toilet paper barrage
-        p.drawToiToi(ctx, startX, -(startY + 10), 1.0);
+        p.drawToiToi(ctx, startX - facing * 35, -(startY + 4), 1.45);
         if (t > 45) {
-          for (let i = 0; i < 3; i++) {
-            const rollP = Math.min(1, Math.max(0, (t - 45 - i * 8) / 20));
+          for (let i = 0; i < 8; i++) {
+            const rollP = Math.min(1, Math.max(0, (t - 42 - i * 4) / 20));
             const rx = startX + facing * 20 + (targetX - startX) * rollP;
-            const ry = -(startY + 60 + Math.sin(rollP * Math.PI) * 45 - rollP * 20);
+            const ry = -(startY + 60 + Math.sin(rollP * Math.PI) * (45 + i * 9) - rollP * 20);
             p.drawToiletPaper(ctx, rx, ry, rollP * Math.PI * 4, rollP);
           }
         }

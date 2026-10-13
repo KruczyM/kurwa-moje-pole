@@ -55,7 +55,7 @@ describe('fighter client session ordering', () => {
       events: [],
     };
     online.open('join', room.code);
-    const joining = mock.handlers.get('fighter:hello')!({ version: 1 });
+    const joining = mock.handlers.get('fighter:hello')!({ version: 2 });
     mock.handlers.get('fighter:frame')!(frame);
     expect(frames).toHaveLength(0);
     acknowledge(null, { room, seat: 1, token: 'own-token' });
@@ -69,7 +69,7 @@ describe('fighter client session ordering', () => {
     expect(mock.socket.emit).not.toHaveBeenCalled();
     expect(mock.socket.removeAllListeners).toHaveBeenCalled();
     online.open('create');
-    const creating = mock.handlers.get('fighter:hello')!({ version: 1 });
+    const creating = mock.handlers.get('fighter:hello')!({ version: 2 });
     acknowledge(null, { room: { ...room, code: '123456' }, seat: 0, token: 'new-token' });
     await creating;
     mock.handlers.get('fighter:frame')!({ ...frame, sequence: 1 });

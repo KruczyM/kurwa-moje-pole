@@ -230,12 +230,14 @@ button.quick-btn:active {
 #action-buttons {
   display: grid;
   grid-template-columns: repeat(3, 56px);
-  grid-template-rows: repeat(2, 54px);
+  grid-template-rows: repeat(3, 54px);
   gap: 8px;
   pointer-events: auto;
 }
 
 .btn-arcade {
+  min-width: 44px;
+  min-height: 44px;
   background: rgba(15, 23, 42, 0.85);
   border: 2px solid rgba(255, 255, 255, 0.25);
   color: #fff;
@@ -655,6 +657,8 @@ button:disabled {
 /* Select Footer */
 .select-footer {
   display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   justify-content: space-between;
   align-items: center;
   margin-top: 12px;
@@ -689,6 +693,7 @@ button:disabled {
 
 .select-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -868,4 +873,56 @@ kbd.kbd-super {
 .txt-sweep {
   color: #fb923c;
   font-weight: 700;
+}
+.audio-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: center;
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid #475569;
+  border-radius: 10px;
+  background: #0f172a;
+}
+.select-footer > .audio-settings,
+.select-footer > #online-lobby {
+  flex-basis: 100%;
+}
+.audio-settings label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 13px;
+}
+.audio-settings input[type='range'] {
+  width: 110px;
+  min-height: 44px;
+  accent-color: #fbbf24;
+}
+.audio-settings input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+  accent-color: #fbbf24;
+}
+@media (max-width: 600px) {
+  #action-buttons {
+    grid-template-columns: repeat(3, 44px);
+    grid-template-rows: repeat(3, 44px);
+    gap: 5px;
+  }
+  #hud-nav-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .quick-btn {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-arcade,
+  button {
+    transition: none;
+  }
 }

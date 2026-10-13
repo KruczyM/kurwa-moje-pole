@@ -256,7 +256,7 @@ export class SuperPropsRenderer {
     ctx.stroke();
 
     // Curved roof
-    ctx.fillStyle = '#0284c7';
+    ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(0, -130, 36, Math.PI, 0);
     ctx.fill();
@@ -271,7 +271,16 @@ export class SuperPropsRenderer {
     ctx.fillStyle = '#0369a1';
     ctx.font = 'bold 16px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('WC', 0, -45);
+    ctx.fillText('WC TRON', 0, -45);
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 5;
+    ctx.strokeRect(-39, -132, 78, 135);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(-48, -38, 12, 35);
+    ctx.fillRect(36, -38, 12, 35);
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-29, -122, 58, 113);
 
     // Free / Occupied lock (Red)
     ctx.fillStyle = '#ef4444';

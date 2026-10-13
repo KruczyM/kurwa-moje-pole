@@ -137,7 +137,7 @@ export class FighterHud {
     ctx.fillStyle = match.p1.meter >= 100 ? '#ffd700' : '#94a3b8';
     ctx.textAlign = 'left';
     ctx.fillText(
-      match.p1.meter >= 100 ? 'SUPER READY!' : `SUPER ${Math.floor(match.p1.meter)}%`,
+      match.p1.meter >= 100 ? 'ULT GOTOWE!' : `ENERGIA ${Math.floor(match.p1.meter)}%`,
       p1X + meterWidth + 8,
       meterY + 9,
     );
@@ -155,7 +155,7 @@ export class FighterHud {
     ctx.textAlign = 'right';
     ctx.fillStyle = match.p2.meter >= 100 ? '#ffd700' : '#94a3b8';
     ctx.fillText(
-      match.p2.meter >= 100 ? 'SUPER READY!' : `SUPER ${Math.floor(match.p2.meter)}%`,
+      match.p2.meter >= 100 ? 'ULT GOTOWE!' : `ENERGIA ${Math.floor(match.p2.meter)}%`,
       p2X + barWidth - meterWidth - 8,
       meterY + 9,
     );
@@ -274,8 +274,14 @@ export class FighterHud {
     ctx.fillRect(x, y, w, h);
 
     const pct = Math.max(0, Math.min(1, meter / 100));
+    ctx.save();
+    if (meter >= 100) {
+      ctx.shadowColor = '#fbbf24';
+      ctx.shadowBlur = 10;
+    }
     ctx.fillStyle = meter >= 100 ? '#ffd700' : color;
     ctx.fillRect(x, y, w * pct, h);
+    ctx.restore();
 
     ctx.strokeStyle = '#475569';
     ctx.lineWidth = 1;

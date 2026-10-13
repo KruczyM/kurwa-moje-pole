@@ -69,9 +69,9 @@ function harness() {
   };
   const a = client();
   const b = client();
-  const created = a.request({ action: 'create', version: 1 });
+  const created = a.request({ action: 'create', version: 2 });
   if ('error' in created) throw Error(created.error);
-  const joined = b.request({ action: 'join', version: 1, code: created.room.code });
+  const joined = b.request({ action: 'join', version: 2, code: created.room.code });
   if ('error' in joined) throw Error(joined.error);
   const advance = (ticks: number) => {
     for (let i = 0; i < ticks; i++) server.step();
@@ -98,25 +98,54 @@ function harness() {
 }
 
 describe('private fighter sessions', () => {
+  it('synchronizes ultimate freeze, blocks movement and preserves guard for both clients', () => {
+    const h = harness();
+    h.start();
+    let sequence = 0;
+    for (let hit = 0; hit < 8; hit++) {
+      h.a.input(++sequence, INPUT.RIGHT);
+      h.advance(30);
+      h.a.input(++sequence, INPUT.RP);
+      h.a.input(++sequence, 0);
+      h.advance(80);
+    }
+    expect(h.a.frames.at(-1)!.snapshot.p1.meter).toBe(100);
+    h.a.input(++sequence, INPUT.SPECIAL);
+    h.b.input(1, INPUT.BLOCK);
+    h.advance(3);
+    const before = h.a.frames.at(-1)!.snapshot;
+    expect(before.superFreezeTicks).toBeGreaterThan(0);
+    h.a.input(++sequence, INPUT.RIGHT);
+    h.advance(42);
+    const after = h.a.frames.at(-1)!.snapshot;
+    expect(after.p1.x).toBe(before.p1.x);
+    expect(after.p2.hp).toBe(before.p2.hp);
+    expect(after.roundTimer).toBe(before.roundTimer);
+    expect(h.a.frames.at(-1)).toEqual(h.b.frames.at(-1));
+    h.advance(100);
+    expect(
+      h.a.frames.flatMap((frame) => frame.events).filter((event) => event.type === 'block'),
+    ).toHaveLength(1);
+  });
   it('restores a lone host lobby and rejects edits while resuming an existing match', () => {
     const h = harness();
     const host = h.client();
-    const created = host.request({ action: 'create', version: 1 });
+    const created = host.request({ action: 'create', version: 2 });
     if ('error' in created) throw Error(created.error);
     host.disconnect();
     const returned = h.client();
     expect(
-      returned.request({ action: 'join', version: 1, code: created.room.code, token: created.token }),
+      returned.request({ action: 'join', version: 2, code: created.room.code, token: created.token }),
     ).not.toHaveProperty('error');
     expect(returned.room?.phase).toBe('lobby');
-    expect(h.client().request({ action: 'join', version: 1, code: created.room.code })).not.toHaveProperty(
+    expect(h.client().request({ action: 'join', version: 2, code: created.room.code })).not.toHaveProperty(
       'error',
     );
     h.start();
     const before = h.a.frames.at(-1)!.snapshot;
     h.b.disconnect();
     const resumed = h.client();
-    resumed.request({ action: 'join', version: 1, code: h.created.room.code, token: h.joined.token });
+    resumed.request({ action: 'join', version: 2, code: h.created.room.code, token: h.joined.token });
     expect(h.a.room?.phase).toBe('countdown');
     expect(h.a.request({ action: 'select', characterId: 'korba' })).toHaveProperty('error');
     expect(h.a.request({ action: 'stage', stageId: h.created.room.stageId })).toHaveProperty('error');
@@ -129,7 +158,7 @@ describe('private fighter sessions', () => {
   });
   it('enforces capacity, ownership, same-character matches and readiness invalidation', () => {
     const h = harness();
-    expect(h.client().request({ action: 'join', version: 1, code: h.created.room.code })).toHaveProperty(
+    expect(h.client().request({ action: 'join', version: 2, code: h.created.room.code })).toHaveProperty(
       'error',
     );
     expect(h.b.request({ action: 'stage', stageId: 'grzybek' })).toHaveProperty('error');
@@ -192,7 +221,7 @@ describe('private fighter sessions', () => {
     expect(h.a.frames.at(-1)!.snapshot.tick).toBe(tick);
     const reconnect = h.client();
     expect(
-      reconnect.request({ action: 'join', version: 1, code: h.created.room.code, token: h.joined.token }),
+      reconnect.request({ action: 'join', version: 2, code: h.created.room.code, token: h.joined.token }),
     ).not.toHaveProperty('error');
     h.time(3000);
     h.advance(3);
@@ -203,7 +232,7 @@ describe('private fighter sessions', () => {
     expect(h.a.room?.phase).toBe('closed');
     expect(h.a.frames.at(-1)!.snapshot.winner).toBeNull();
     expect(
-      h.client().request({ action: 'join', version: 1, code: h.created.room.code, token: h.joined.token }),
+      h.client().request({ action: 'join', version: 2, code: h.created.room.code, token: h.joined.token }),
     ).toHaveProperty('error');
   });
 
@@ -211,7 +240,7 @@ describe('private fighter sessions', () => {
     const h = harness();
     h.start();
     const other = h.client();
-    const otherRoom = other.request({ action: 'create', version: 1 });
+    const otherRoom = other.request({ action: 'create', version: 2 });
     expect(otherRoom).not.toHaveProperty('error');
     h.a.request({ action: 'rematch' });
     expect(h.a.room?.phase).toBe('fight');
@@ -270,9 +299,9 @@ it('runs two real Socket.IO clients in the fighter namespace without joining fes
   });
   try {
     await vi.waitFor(() => expect(a.connected && b.connected).toBe(true));
-    const created = await request(a, { action: 'create', version: 1 });
+    const created = await request(a, { action: 'create', version: 2 });
     if ('error' in created) throw Error(created.error);
-    await request(b, { action: 'join', version: 1, code: created.room.code });
+    await request(b, { action: 'join', version: 2, code: created.room.code });
     await request(a, { action: 'ready', ready: true });
     await request(b, { action: 'ready', ready: true });
     now += 3000;

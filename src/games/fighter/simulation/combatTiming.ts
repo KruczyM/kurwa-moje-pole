@@ -13,12 +13,17 @@ const timings: Record<string, [number, number]> = {
   jump_punch: [10, 15],
   jump_kick: [13, 18],
   special: [22, 30],
-  ultimate: [28, 38],
+  ultimate: [50, 42],
 };
 
 export function combatMove(move: MoveDefinition): MoveDefinition {
   const [startup, recovery] = timings[move.id] ?? [12, 20];
-  return { ...move, startup: Math.max(startup, move.startup), recovery: Math.max(recovery, move.recovery) };
+  return {
+    ...move,
+    meterCost: move.id === 'special' ? 30 : move.meterCost,
+    startup: Math.max(startup, move.startup),
+    recovery: Math.max(recovery, move.recovery),
+  };
 }
 
 export function prepareFighter(def: FighterDefinition): FighterDefinition {

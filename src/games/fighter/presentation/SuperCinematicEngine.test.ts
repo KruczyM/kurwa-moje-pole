@@ -37,6 +37,7 @@ describe('SuperCinematicEngine (16 Festival Character Super Move Animations)', (
     engine = new SuperCinematicEngine();
     mockAudio = {
       playSuperStartup: vi.fn(),
+      playUltimateImpact: vi.fn(),
       playGlassShatter: vi.fn(),
       playPropellerSpin: vi.fn(),
       playLaserBeam: vi.fn(),
@@ -131,7 +132,7 @@ describe('SuperCinematicEngine (16 Festival Character Super Move Animations)', (
     expect(onImpact).toHaveBeenCalled();
     expect(mockMatch.p2.hp).toBe(1000); // Presentation must never apply combat damage.
     expect(mockCamera.shake).toHaveBeenCalled();
-    expect(mockAudio.playGlassShatter).toHaveBeenCalled();
+    expect(mockAudio.playUltimateImpact).toHaveBeenCalledWith('amper');
 
     // Advance to end of cinematic
     for (let i = 0; i < 30; i++) {
@@ -191,6 +192,35 @@ describe('SuperCinematicEngine (16 Festival Character Super Move Animations)', (
         expect(engine.isCinematicActive()).toBe(false);
       }
     }
+  });
+
+  it('keeps the portrait on screen throughout the shared 800 ms freeze', () => {
+    const attacker = mockMatch.p1;
+    Object.assign(attacker, {
+      state: 'attack',
+      currentMove: combatMove(ROSTER.amper.definition.moves.ultimate),
+    });
+    engine.startCinematic(
+      attacker,
+      mockMatch.p2,
+      'ultimate',
+      'Zwierciadło Wąsa',
+      'Amper',
+      {} as HTMLImageElement,
+      '#0284c7',
+      mockAudio,
+    );
+    mockMatch.superFreezeTotal = 48;
+    for (let remaining = 48; remaining > 0; remaining--) {
+      mockMatch.superFreezeTicks = remaining;
+      engine.update(mockMatch, mockCamera, mockAudio);
+      expect(engine.getActiveState()?.phase).toBe('freeze');
+      expect(mockAudio.playUltimateImpact).not.toHaveBeenCalled();
+    }
+    mockMatch.superFreezeTicks = 0;
+    attacker.moveTick = 10;
+    engine.update(mockMatch, mockCamera, mockAudio);
+    expect(engine.getActiveState()?.phase).toBe('action');
   });
 
   it('runs smoothly for all 16 festival characters', () => {

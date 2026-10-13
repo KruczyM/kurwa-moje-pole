@@ -35,7 +35,7 @@ export class RoomServer {
     this.server = http.createServer((req, res) => {
       if (req.url === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok', protocol: PROTOCOL_VERSION, rooms: this.rooms.size, fighterProtocol: 1 }));
+        res.end(JSON.stringify({ status: 'ok', protocol: PROTOCOL_VERSION, rooms: this.rooms.size, fighterProtocol: 2 }));
         return;
       }
       res.writeHead(404);

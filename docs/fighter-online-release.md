@@ -43,6 +43,6 @@ Proxy musi przekazywać istniejącą ścieżkę `/socket.io/`, w tym upgrade Web
 curl --fail https://kmp.aleksanderkruk.site/health
 ```
 
-Odpowiedź zaktualizowanego serwera zawiera `"fighterProtocol":1` oraz `"status":"ok"`. Sam pozytywny healthcheck nie potwierdza rozgrywki. Otworzyć bijatykę na dwóch urządzeniach, utworzyć pokój, dołączyć kodem, potwierdzić postacie i rozegrać mecz z rewanżem; przetestować krótki zanik sieci i powrót. **PRODUCTION_ONLINE_VERIFICATION_PENDING_BACKEND_UPDATE** pozostaje aktualny do wykonania aktualizacji i udanego pojedynku dwóch klientów na opublikowanej stronie.
+Odpowiedź zaktualizowanego serwera zawiera `"fighterProtocol":2` oraz `"status":"ok"`. Sam pozytywny healthcheck nie potwierdza rozgrywki. Otworzyć bijatykę na dwóch urządzeniach, utworzyć pokój, dołączyć kodem, potwierdzić postacie i rozegrać mecz z rewanżem; przetestować krótki zanik sieci i powrót. **PRODUCTION_ONLINE_VERIFICATION_PENDING_BACKEND_UPDATE** pozostaje aktualny do wykonania aktualizacji i udanego pojedynku dwóch klientów na opublikowanej stronie.
 
 Wcześniejsze prace pozostają zachowane na `feat/fighter-demo`; wydanie przygotowano osobno na `feat/fighter-menu-release` z aktualnego `main`.

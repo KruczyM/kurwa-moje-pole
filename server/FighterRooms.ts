@@ -106,7 +106,7 @@ export class FighterRooms {
         input.sequence <= member.sequence ||
         !Number.isInteger(input.mask) ||
         input.mask < 0 ||
-        input.mask > 1023
+        input.mask > 2047
       )
         return;
       member.sequence = input.sequence;

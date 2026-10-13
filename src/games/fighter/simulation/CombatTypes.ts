@@ -9,7 +9,8 @@ export const INPUT = {
   LK: 1 << 6, // Left Kick (Lekkie Kopnięcie)
   RK: 1 << 7, // Right Kick (Mocne Kopnięcie / HK)
   HK: 1 << 7, // Alias for Right Kick
-  SPECIAL: 1 << 8, // Special Move
+  SPECIAL: 1 << 8, // Ultimate (legacy input name)
+  TECHNIQUE: 1 << 10, // Character special, independent from ultimate
   BLOCK: 1 << 9, // Block / Throw Escape
 } as const;
 
@@ -112,6 +113,8 @@ export interface FighterState {
 export type RoundState = 'intro' | 'fight' | 'roundOver' | 'matchOver';
 
 export interface MatchState {
+  superFreezeTicks?: number;
+  superFreezeTotal?: number;
   tick: number;
   roundTimer: number; // In seconds (e.g. 90.0)
   roundNumber: number;
@@ -124,16 +127,6 @@ export interface MatchState {
   p2: FighterState;
 }
 
-export interface MatchSnapshot {
+export interface MatchSnapshot extends MatchState {
   inputHistory?: [number[], number[]];
-  tick: number;
-  roundTimer: number;
-  roundNumber: number;
-  roundState: RoundState;
-  winner: 1 | 2 | 'draw' | null;
-  p1Wins: number;
-  p2Wins: number;
-  stateTicks: number;
-  p1: FighterState;
-  p2: FighterState;
 }

@@ -19,7 +19,7 @@ function advance(sim: FighterSimulation, ticks: number, p1 = 0, p2 = 0): void {
 }
 function untilHit(sim: FighterSimulation, p1 = 0, p2 = 0): void {
   const hp = sim.getState().p2.hp;
-  for (let i = 0; i < 90 && sim.getState().p2.hp === hp; i++) sim.update(p1, p2);
+  for (let i = 0; i < 180 && sim.getState().p2.hp === hp; i++) sim.update(p1, p2);
   expect(sim.getState().p2.hp).toBeLessThan(hp);
 }
 

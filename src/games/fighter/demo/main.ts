@@ -67,9 +67,67 @@ class FighterDemo {
     this.setupModals();
     this.startMatch();
     this.setupOnline();
+    this.setupAudio();
 
     this.loop = this.loop.bind(this);
     requestAnimationFrame(this.loop);
+  }
+
+  private setupAudio(): void {
+    const controls = document.querySelector<HTMLElement>('.audio-settings')!;
+    const selection = controls.cloneNode(true) as HTMLElement;
+    selection.querySelectorAll<HTMLElement>('[id]').forEach((item) => {
+      item.id += '-select';
+    });
+    document.querySelector('.select-footer')!.append(selection);
+    let music = 0.45,
+      effects = 0.8;
+    let reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    try {
+      const saved = JSON.parse(localStorage.getItem('fighter-av-settings') ?? '{}');
+      if (Number.isFinite(saved?.music)) music = Math.max(0, Math.min(1, saved.music));
+      if (Number.isFinite(saved?.effects)) effects = Math.max(0, Math.min(1, saved.effects));
+      if (typeof saved?.reduced === 'boolean') reduced = saved.reduced;
+    } catch {
+      /* Optional persistence. */
+    }
+    const apply = () => {
+      this.audio.setVolumes(music, effects);
+      this.camera.reducedEffects = reduced;
+      this.view.superCinematic.reducedEffects = reduced;
+      for (const suffix of ['', '-select']) {
+        (document.getElementById('music-volume' + suffix) as HTMLInputElement).value = String(music * 100);
+        (document.getElementById('sfx-volume' + suffix) as HTMLInputElement).value = String(effects * 100);
+        (document.getElementById('reduced-effects' + suffix) as HTMLInputElement).checked = reduced;
+      }
+    };
+    for (const suffix of ['', '-select']) {
+      for (const id of ['music-volume', 'sfx-volume', 'reduced-effects']) {
+        document.getElementById(id + suffix)!.addEventListener('input', (event) => {
+          const input = event.target as HTMLInputElement;
+          if (id === 'music-volume') music = Number(input.value) / 100;
+          else if (id === 'sfx-volume') effects = Number(input.value) / 100;
+          else reduced = input.checked;
+          apply();
+          try {
+            localStorage.setItem('fighter-av-settings', JSON.stringify({ music, effects, reduced }));
+          } catch {
+            /* Optional persistence. */
+          }
+        });
+      }
+    }
+    apply();
+    const unlock = () => {
+      void this.audio.unlock().then(() => {
+        this.audio.preloadCombat();
+        this.audio.preloadFighters([this.p1Key, this.p2Key]);
+      });
+    };
+    window.addEventListener('pointerdown', unlock, { passive: true });
+    window.addEventListener('keydown', unlock);
+    document.addEventListener('visibilitychange', () => this.audio.setVisible(!document.hidden));
+    window.addEventListener('pagehide', () => this.audio.dispose());
   }
 
   private preloadPortraits(): void {
@@ -90,6 +148,7 @@ class FighterDemo {
     this.view.reset();
     this.p1CinematicPlayed = this.p2CinematicPlayed = false;
     this.view.retainFighters([this.p1Key, this.p2Key]);
+    this.audio.preloadFighters([this.p1Key, this.p2Key]);
     this.p1Entry = ROSTER[this.p1Key]!;
     this.p2Entry = ROSTER[this.p2Key]!;
     this.view.getFighterSprites(this.p1Key);
@@ -131,6 +190,9 @@ class FighterDemo {
       // Górny rząd: U, I, O (Lekka Pięść, Mocna Pięść, SUPER MOVE)
       KeyU: INPUT.LP, // Lekka Pięść (Góra - Wskazujący)
       KeyI: INPUT.RP, // Mocna Pięść (Góra - Środkowy)
+      KeyH: INPUT.DOWN | INPUT.RP,
+      KeyN: INPUT.DOWN | INPUT.RK,
+      KeyP: INPUT.TECHNIQUE,
       KeyO: INPUT.SPECIAL, // SUPER MOVE / ULTIMATE (Góra - Serdeczny)
 
       // Dolny rząd: J, K, L (Lekkie Kopnięcie, Mocne Kopnięcie, Garda/Blok)
@@ -298,7 +360,7 @@ class FighterDemo {
         else this.p2Key = key;
         updatePreview(key);
         refreshGridCards();
-        this.audio.playHit('light');
+        this.audio.playUi();
       });
 
       grid.appendChild(card);
@@ -331,7 +393,7 @@ class FighterDemo {
       else this.p2Key = randKey;
       updatePreview(randKey);
       refreshGridCards();
-      this.audio.playHit('heavy');
+      this.audio.playUi();
     });
 
     const stageChips = document.querySelectorAll<HTMLButtonElement>('.stage-chip');
@@ -346,7 +408,7 @@ class FighterDemo {
           this.selectedStageId = stageId;
           this.view.setStage(stageId);
           stageChips.forEach((c) => c.classList.toggle('active', c.dataset.stage === stageId));
-          this.audio.playHit('light');
+          this.audio.playUi();
         }
       });
     });
@@ -612,6 +674,8 @@ class FighterDemo {
   }
 
   private loop(now: number): void {
+    this.audio.setScene(this.inSelectScreen ? 'menu' : 'fight');
+    this.audio.update();
     const dt = Math.min(0.1, (now - this.lastTime) / 1000);
     this.lastTime = now;
     const room = this.online.room;
@@ -705,28 +769,47 @@ class FighterDemo {
       );
     }
 
+    if (
+      this.view.superCinematic.isCinematicActive() &&
+      state.p1.currentMove?.id === 'ultimate' &&
+      state.p2.currentMove?.id === 'ultimate'
+    ) {
+      this.p1CinematicPlayed = this.p2CinematicPlayed = true;
+    }
     if (this.mode !== 'online') this.view.update();
     this.view.addEvents(events);
 
     for (const ev of events) {
-      if (ev.type === 'launch') {
+      if (ev.type === 'swing') {
+        this.audio.playSwing(ev.data?.moveId);
+      } else if (ev.type === 'land') {
+        this.audio.playLanding();
+      } else if (ev.type === 'meter_ready') {
+        this.audio.playReady();
+        const fighter = ev.data?.slot === 1 ? state.p1 : state.p2;
+        this.view.addComicPopup(fighter.x, fighter.y + 140, 'ULTIMATE GOTOWE!', '#fde047', '#422006');
+      } else if (ev.type === 'launch') {
         const hitData = ev.data ?? {};
-        this.audio.playFunnyHit({
-          ...hitData,
-          isLauncher: true,
-          defenderId:
-            hitData.defenderId ??
-            (state.p2.isAirJuggle ? this.p2Entry.definition.id : this.p1Entry.definition.id),
-        });
+        if (hitData.moveId === 'ultimate') this.audio.playUltimateImpact(hitData.attackerId);
+        else
+          this.audio.playFunnyHit({
+            ...hitData,
+            isLauncher: true,
+            defenderId:
+              hitData.defenderId ??
+              (state.p2.isAirJuggle ? this.p2Entry.definition.id : this.p1Entry.definition.id),
+          });
         this.camera.shake(12, 0.28);
       } else if (ev.type === 'hit') {
         const hitData = ev.data ?? {};
         const isHeavy = hitData.damage > 75;
-        this.audio.playFunnyHit({
-          ...hitData,
-          isHeavy,
-          defenderId: hitData.defenderId,
-        });
+        if (hitData.moveId === 'ultimate') this.audio.playUltimateImpact(hitData.attackerId);
+        else
+          this.audio.playFunnyHit({
+            ...hitData,
+            isHeavy,
+            defenderId: hitData.defenderId,
+          });
         if (isHeavy) this.camera.shake(10, 0.22);
       } else if (ev.type === 'block') {
         this.audio.playBlock();
@@ -740,7 +823,7 @@ class FighterDemo {
         this.audio.playEmptyMeterBuzz();
         const fId = ev.data?.fighterId;
         const fighter = fId === state.p1.id ? state.p1 : state.p2;
-        this.view.addComicPopup(fighter.x, fighter.y + 115, 'BRAK SUPER!', '#f59e0b', '#78350f');
+        this.view.addComicPopup(fighter.x, fighter.y + 115, 'ZA MAŁO ENERGII!', '#f59e0b', '#78350f');
       }
     }
 
@@ -769,6 +852,7 @@ class FighterDemo {
         ? interpolateMatch(this.previousOnlineState, current, (performance.now() - this.onlineFrameAt) / 50)
         : current;
 
+    this.camera.cinematic = (state.superFreezeTicks ?? 0) > 0;
     this.camera.update(state.p1.x, state.p2.x, dt);
 
     // Render 2D Fighting Stage & Characters with individual theme colors
