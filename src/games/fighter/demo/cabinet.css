@@ -1,0 +1,475 @@
+/* Screen-printed cabinet fascia. All decoration is CSS, with existing game art. */
+#char-select-screen {
+  background: radial-gradient(ellipse at top, #34413b, #111715 65%);
+}
+
+#char-select-screen [hidden] {
+  display: none !important;
+}
+
+#char-select-screen .select-container {
+  width: 100%;
+  max-width: 1120px;
+  border: 7px ridge #737d70;
+  border-radius: 3px;
+  padding: 18px 24px;
+  background:
+    repeating-linear-gradient(173deg, transparent 0 41px, #ffffff05 42px 43px),
+    radial-gradient(ellipse at top right, #39423a, transparent 60%), #171e1c;
+  box-shadow:
+    0 0 0 3px #090e0c,
+    0 20px 70px #000b;
+}
+
+#char-select-screen .select-header {
+  text-align: left;
+}
+
+#char-select-screen .festival-menu-link {
+  color: #e9dfc3;
+  border: 0;
+  padding-left: 0;
+  font: 12px monospace;
+  margin: 0;
+}
+
+.cabinet-marquee {
+  position: relative;
+  padding: 16px 24px;
+  border: 2px solid #e8b54b;
+  background:
+    repeating-linear-gradient(0deg, #0000 0 3px, #0002 3px 4px), linear-gradient(115deg, #183c36, #102723 70%);
+  box-shadow: inset 0 0 30px #070e0c;
+  overflow: hidden;
+}
+
+.cabinet-edition {
+  color: #67e2ca;
+  font: bold 11px monospace;
+  letter-spacing: 0.15em;
+}
+
+#char-select-screen .cabinet-marquee h2 {
+  font:
+    900 clamp(30px, 4.8vw, 58px) / 0.95 Impact,
+    'Arial Black',
+    sans-serif;
+  letter-spacing: -0.02em;
+  color: #f4e6bc;
+  margin: 12px 0;
+  transform: rotate(-2deg);
+  text-shadow:
+    3px 3px #111b17,
+    5px 5px #be7136;
+}
+
+.cabinet-marquee h2 em {
+  color: #ffd05a;
+  font-style: normal;
+}
+
+#char-select-screen .cabinet-marquee p {
+  color: #e2d9bf;
+  font-size: 12px;
+}
+
+.cabinet-sticker {
+  position: absolute;
+  right: 30px;
+  top: 40px;
+  padding: 14px;
+  background: #f0d391;
+  color: #19231c;
+  font:
+    900 20px / 1.05 Impact,
+    sans-serif;
+  transform: rotate(9deg);
+  border: 3px double #403622;
+  box-shadow: 4px 5px #0006;
+}
+
+.mode-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.mode-buttons button {
+  padding: 12px;
+  text-align: left;
+  color: #ebe0c4;
+  background: #26302a;
+  border: 1px solid #78816c;
+  border-bottom: 4px solid #090f0c;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mode-buttons button span {
+  color: #77dac3;
+  font: 12px monospace;
+  margin-right: 6px;
+}
+
+.mode-buttons button small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  margin-top: 5px;
+}
+
+.mode-buttons button[aria-pressed='true'] {
+  color: #101b17;
+  background: #e7bd5e;
+  border-color: #ffda7c;
+  border-bottom-color: #90622c;
+}
+
+.mode-buttons button[aria-pressed='true'] span {
+  color: #26372a;
+}
+
+#char-select-screen .selection-slots {
+  justify-content: flex-start;
+}
+
+#char-select-screen .selection-slots button {
+  border-radius: 0;
+  border: 1px solid #6f8274;
+  background: #202c25;
+  color: #e9e0c8;
+}
+
+#char-select-screen .selection-slots button[aria-pressed='true'] {
+  border-color: #5ef1d5;
+  box-shadow: inset 0 -3px #5ef1d5;
+}
+
+#char-select-screen .select-body {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.15fr);
+  gap: 14px;
+  overflow: visible;
+}
+
+#char-select-screen .roster-grid {
+  grid-row: span 2;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 6px;
+  align-content: start;
+  overflow: visible;
+  background: #0b1410;
+  border: 2px inset #6c7566;
+}
+
+#char-select-screen .roster-card {
+  min-width: 0;
+  min-height: 64px;
+  aspect-ratio: 0.9;
+  padding: 3px;
+  border-radius: 0;
+  background: linear-gradient(145deg, #445044, #1a281e);
+  border: 2px solid #6c7566;
+  box-shadow: none;
+  transform: none;
+}
+
+#char-select-screen .roster-card img {
+  width: 100%;
+  height: calc(100% - 16px);
+  object-fit: contain;
+}
+
+#char-select-screen .roster-card span {
+  color: #fff0c9;
+  font: bold 10px monospace;
+}
+
+#char-select-screen .roster-card.selected-p1 {
+  border-color: #5ef1d5;
+  box-shadow: inset 0 -4px #5ef1d5;
+}
+
+#char-select-screen .roster-card.selected-p2 {
+  border-color: #ffd05a;
+  box-shadow: inset 0 4px #ffd05a;
+}
+
+#char-select-screen .roster-card.selected-p1.selected-p2 {
+  border-color: #5ef1d5 #ffd05a #ffd05a #5ef1d5;
+  box-shadow:
+    inset 0 -4px #5ef1d5,
+    inset 0 4px #ffd05a;
+}
+
+.matchup-art {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr);
+  align-items: center;
+  background:
+    repeating-linear-gradient(125deg, #0000 0 19px, #060e0b55 20px 22px),
+    linear-gradient(110deg, #1b5c50 49%, #5d4828 50%);
+  border: 2px solid #7a856b;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.matchup-player {
+  min-width: 0;
+  text-align: center;
+}
+
+.matchup-player > span {
+  color: #fff1cd;
+  font: bold 11px monospace;
+  letter-spacing: 0.1em;
+}
+
+.matchup-player img {
+  width: 100%;
+  height: clamp(150px, 20vw, 245px);
+  object-fit: contain;
+  filter: drop-shadow(6px 6px 0 #0006);
+}
+
+.matchup-player figcaption {
+  color: #fff0c4;
+  font:
+    900 clamp(15px, 2vw, 25px) Impact,
+    sans-serif;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.matchup-vs {
+  z-index: 1;
+  font:
+    italic 900 38px Impact,
+    sans-serif;
+  color: #ffd05a;
+  transform: rotate(-12deg);
+  text-shadow: 3px 3px #101b17;
+}
+
+#char-select-screen .fighter-preview-card {
+  display: block;
+  padding: 10px 14px;
+  background: #ddd0a9;
+  color: #20291f;
+  border: 0;
+  border-radius: 0;
+  box-shadow: 3px 3px #060e0b;
+}
+
+#char-select-screen .preview-portrait-wrap {
+  display: none;
+}
+
+#char-select-screen .preview-info {
+  min-width: 0;
+}
+
+#char-select-screen .preview-info h3 {
+  color: #182a22;
+  font-family: Impact, 'Arial Black', sans-serif;
+}
+
+#char-select-screen .preview-info h4,
+#char-select-screen .preview-style,
+#char-select-screen .preview-info p {
+  color: #344535;
+}
+
+#char-select-screen .preview-info p {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+#char-select-screen .preview-moves {
+  background: #1b3029;
+  border-radius: 0;
+  border-left-color: #bc7b2c;
+  line-height: 1.6;
+}
+
+#char-select-screen .preview-moves span {
+  color: #bde6d4;
+}
+
+#char-select-screen .stage-select-bar {
+  display: block;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 12px 0;
+}
+
+#char-select-screen .stage-select-title {
+  display: block;
+  margin-bottom: 8px;
+  color: #e6d5a8;
+  font: bold 11px monospace;
+}
+
+#char-select-screen .stage-chips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+#char-select-screen .stage-chip {
+  min-height: 68px;
+  white-space: normal;
+  text-align: left;
+  align-content: end;
+  padding: 10px;
+  color: #fff3d4;
+  background:
+    linear-gradient(#08110d55, #08110dee),
+    var(--stage-art) center / cover;
+  border: 2px solid #687361;
+  border-radius: 0;
+  text-shadow: 1px 2px #000;
+}
+
+#char-select-screen .stage-chip.active {
+  border-color: #ffd05a;
+  box-shadow: inset 0 -4px #ffd05a;
+}
+
+.cabinet-drawer {
+  border-top: 1px dashed #78816c;
+  color: #e8ddbd;
+}
+
+.cabinet-drawer summary {
+  min-height: 44px;
+  padding: 14px 6px;
+  font: bold 12px monospace;
+  cursor: pointer;
+}
+
+#char-select-screen .controls-helper-box,
+#char-select-screen .audio-settings {
+  background: #111e17;
+  border: 0;
+  border-radius: 0;
+  margin: 0 0 10px;
+}
+
+#char-select-screen .select-footer {
+  border-top: 3px double #78816c;
+  padding-top: 14px;
+}
+
+#char-select-screen .select-mode-toggle label {
+  color: #e8ddbd;
+  flex-wrap: wrap;
+}
+
+#char-select-screen .select-mode-toggle select {
+  background: #202c25;
+  border-color: #78816c;
+  border-radius: 0;
+}
+
+#char-select-screen .btn-alt {
+  border-radius: 2px;
+  border: 1px solid #8d947b;
+  background: #2c3e32;
+  color: #f0e4c3;
+}
+
+#char-select-screen .btn-start {
+  background: #edc25f;
+  color: #16251b;
+  border: 2px solid #ffe4a0;
+  border-bottom: 5px solid #976a28;
+  border-radius: 3px;
+  font:
+    900 20px Impact,
+    'Arial Black',
+    sans-serif;
+  letter-spacing: 0.04em;
+  box-shadow: 3px 4px #080e0b;
+}
+
+#char-select-screen #online-lobby {
+  background: #12231b;
+  border: 1px dashed #84b39a;
+  border-radius: 0;
+}
+
+#char-select-screen :is(button, input, select, a, summary) {
+  min-height: 44px;
+}
+
+#char-select-screen :focus-visible {
+  outline: 3px solid #fff1b8;
+  outline-offset: 3px;
+}
+
+#char-select-screen button:not(:disabled):hover {
+  filter: brightness(1.15);
+}
+
+@media (max-width: 700px) {
+  #char-select-screen .select-container {
+    padding: 12px;
+    border-width: 4px;
+  }
+
+  .cabinet-marquee {
+    padding: 14px;
+  }
+
+  .cabinet-sticker {
+    position: static;
+    display: inline-block;
+    margin: 2px 0 12px;
+    padding: 8px;
+    font-size: 15px;
+    transform: rotate(3deg);
+  }
+
+  .cabinet-edition {
+    font-size: 9px;
+    letter-spacing: 0.03em;
+  }
+
+  .mode-buttons button {
+    font-size: 11px;
+    padding: 10px 6px;
+  }
+
+  .mode-buttons button small {
+    font-size: 10px;
+  }
+
+  #char-select-screen .select-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #char-select-screen .roster-grid {
+    grid-row: auto;
+  }
+
+  .matchup-player img {
+    height: 165px;
+  }
+
+  #char-select-screen .stage-chips {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #char-select-screen .select-actions {
+    width: 100%;
+  }
+
+  #char-select-screen .btn-start {
+    flex: 1;
+    font-size: 17px;
+  }
+}

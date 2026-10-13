@@ -2,12 +2,9 @@
 <html lang="pl">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#020617" />
-    <title>Kurwa, moje combo! — Bijatyka 2D (Tekken Style)</title>
+    <title>Kurwa, moje combo! — Festiwalowy automat arcade</title>
   </head>
   <body>
     <main id="fighter-app">
@@ -50,19 +47,45 @@
         <div class="select-container">
           <div class="select-header">
             <a class="festival-menu-link" href="./">← Menu główne festiwalu</a>
-            <h2>WYBIERZ SWOJEGO ZAWODNIKA</h2>
-            <p>16 Grywalnych Bohaterów Festiwalu · Wybierz postać gracza i przeciwnika</p>
+            <div class="cabinet-marquee">
+              <span class="cabinet-edition">FESTIWALOWY AUTOMAT / 16 ZAWODNIKÓW</span>
+              <h2>KURWA,<br /><em>MOJE COMBO!</em></h2>
+              <span class="cabinet-sticker">BŁOTO.<br />POT. COMBO.</span>
+              <p>Wybierz ekipę. Zajmij arenę. Pokaż swoje combo.</p>
+            </div>
             <div class="selection-slots">
               <button type="button" data-select-slot="1" aria-pressed="true">Wybierz gracza</button>
               <button type="button" data-select-slot="2" aria-pressed="false">Wybierz przeciwnika</button>
             </div>
           </div>
 
+          <div class="mode-buttons" role="group" aria-label="Tryb gry">
+            <button type="button" data-fight-mode="bot" aria-pressed="true">
+              <span>01</span> Z botem <small>Sprawdź swoje combo</small>
+            </button>
+            <button type="button" data-fight-mode="training" aria-pressed="false">
+              <span>02</span> Trening <small>Ćwicz bez presji</small>
+            </button>
+            <button type="button" data-fight-mode="online" aria-pressed="false">
+              <span>03</span> Online ze znajomym <small>Prywatny pojedynek</small>
+            </button>
+          </div>
           <div class="select-body">
             <!-- Roster 4x4 Grid -->
             <div id="roster-grid" class="roster-grid"></div>
 
             <!-- Selected Fighter Details Pane -->
+            <div class="matchup-art" aria-label="Wybrani zawodnicy">
+              <figure class="matchup-player">
+                <span>GRACZ 1</span><img id="matchup-p1" alt="" width="240" height="320" />
+                <figcaption id="matchup-name-p1"></figcaption>
+              </figure>
+              <b class="matchup-vs" aria-hidden="true">VS</b>
+              <figure class="matchup-player">
+                <span>GRACZ 2</span><img id="matchup-p2" alt="" width="240" height="320" />
+                <figcaption id="matchup-name-p2"></figcaption>
+              </figure>
+            </div>
             <div class="fighter-preview-card">
               <div class="preview-portrait-wrap">
                 <img id="preview-portrait" src="" alt="Portret" />
@@ -84,55 +107,27 @@
           <div class="stage-select-bar">
             <span class="stage-select-title">ARENA WALKI:</span>
             <div id="stage-chips" class="stage-chips">
-              <button type="button" class="stage-chip active" data-stage="main_stage">🎸 Duża Scena</button>
-              <button type="button" class="stage-chip" data-stage="grzybek">🍄 Kultowy Grzybek</button>
-              <button type="button" class="stage-chip" data-stage="sunset_camp">🎡 Pole Namiotowe</button>
-              <button type="button" class="stage-chip" data-stage="krishna_village">🪷 Wioska Kryszny</button>
+              <button type="button" class="stage-chip active" data-stage="main_stage">01 / Duża Scena</button>
+              <button type="button" class="stage-chip" data-stage="grzybek">02 / Kultowy Grzybek</button>
+              <button type="button" class="stage-chip" data-stage="sunset_camp">03 / Pole Namiotowe</button>
+              <button type="button" class="stage-chip" data-stage="krishna_village">
+                04 / Wioska Kryszny
+              </button>
             </div>
           </div>
 
-          <!-- Controls & Moves Helper Guide in Main Menu -->
-          <div class="controls-helper-box">
-            <div class="helper-header">
-              <span class="helper-badge">⌨️ STEROWANIE I COMBOSY (Klawisze obok siebie)</span>
-            </div>
-            <div class="helper-grid">
-              <div class="helper-col">
-                <span class="helper-col-title">RUCH (Lewa ręka)</span>
-                <div class="helper-item"><kbd>A</kbd> <kbd>D</kbd> <span>Chodzenie</span></div>
-                <div class="helper-item"><kbd>W</kbd> <span>Skok</span></div>
-                <div class="helper-item"><kbd>S</kbd> <span>Kucnięcie / Blok dolny</span></div>
-              </div>
-              <div class="helper-col">
-                <span class="helper-col-title">PIĘŚCI & SUPER (Górny rząd)</span>
-                <div class="helper-item"><kbd>U</kbd> <span>Lekka Pięść (LP)</span></div>
-                <div class="helper-item"><kbd>I</kbd> <span>Mocna Pięść (RP)</span></div>
-                <div class="helper-item">
-                  <kbd class="kbd-super">O</kbd> <span class="txt-super">SUPER MOVE (100% energii!)</span>
-                </div>
-              </div>
-              <div class="helper-col">
-                <span class="helper-col-title">NOGI & GARDA (Dolny rząd)</span>
-                <div class="helper-item"><kbd>J</kbd> <span>Lekkie Kopnięcie (LK)</span></div>
-                <div class="helper-item"><kbd>K</kbd> <span>Mocne Kopnięcie (RK)</span></div>
-                <div class="helper-item"><kbd>L</kbd> / <kbd>Spacja</kbd> <span>Blok / Garda</span></div>
-              </div>
-              <div class="helper-col">
-                <span class="helper-col-title">COMBOSY TEKKEN</span>
-                <div class="helper-item">
-                  <kbd>S</kbd>+<kbd>I</kbd> <span class="txt-launch">Podbródkowy (Wybicie w górę!)</span>
-                </div>
-                <div class="helper-item">
-                  <kbd>S</kbd>+<kbd>K</kbd> <span class="txt-sweep">Podcięcie (Powalenie na ziemię)</span>
-                </div>
-                <div class="helper-item"><kbd>U</kbd>➔<kbd>I</kbd> <span>Seria 1-2 (Target Combo)</span></div>
-              </div>
-            </div>
-          </div>
+          <details class="cabinet-drawer">
+            <summary>Sterowanie / opanuj combo</summary>
+            <div class="controls-helper-box"></div>
+          </details>
+          <details class="cabinet-drawer">
+            <summary>Dźwięk / komfort gry</summary>
+            <div id="selection-audio-settings"></div>
+          </details>
 
           <div class="select-footer">
             <div class="select-mode-toggle">
-              <label for="fight-mode"
+              <label for="fight-mode" hidden
                 >Tryb gry:
                 <select id="fight-mode">
                   <option value="bot">Z botem</option>
@@ -173,7 +168,7 @@
             </section>
             <div class="select-actions">
               <button id="random-btn" class="btn-alt">Losowa postać</button>
-              <button id="start-fight-btn" class="btn-start">ROZPOCZNIJ WALKĘ</button>
+              <button id="start-fight-btn" class="btn-start">WRZUĆ COMBO / START</button>
             </div>
           </div>
         </div>

@@ -48,7 +48,7 @@ def write(name, sound):
         stream.writeframes((sound * 32767).astype('<i2').tobytes())
 
 
-def score(name, bpm, combat):
+def score(name, bpm, combat, write_output=True):
     beat = 60 / bpm
     duration = beat * 64
     events = []
@@ -81,11 +81,13 @@ def score(name, bpm, combat):
     mono = mix(duration, events)
     # Short stereo delay wraps at the loop boundary; quiet headroom preserves hits.
     stereo = np.column_stack((mono, mono * .88 + np.roll(mono, int(.013 * RATE)) * .12)) * .65
-    write(name, stereo)
+    if write_output:
+        write(name, stereo)
 
 
 def main():
-    score('menu', 104, False)
+    # Preserve the original RNG sequence for fight/SFX without writing the retired menu.
+    score('menu', 104, False, write_output=False)
     score('fight', 136, True)
     body = mix(.32, [(0, tone(.25, 125, 48, 7), .8), (0, noise(.14, 9, 5), 1.3)])
     heavy = mix(.48, [(0, tone(.4, 90, 30, 6), .9), (0, noise(.22, 8, 4), 1.6), (.025, noise(.1, 10, 2, True), .4)])
@@ -132,6 +134,8 @@ def main():
         write(name, sound)
     manifest = {'version': 2, 'sampleRate': RATE, 'provenance': 'Original deterministic synthesis; no third-party samples, voices or paid services.', 'music': {'menu': {'bpm': 104, 'bars': 16}, 'fight': {'bpm': 136, 'bars': 16}}, 'effects': sorted(effects)}
     (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
+    from build_cabinet_menu import generate
+    generate()
     print(f'Generated {len(effects)} effects and 2 original stereo music loops in {OUT}')
 
 

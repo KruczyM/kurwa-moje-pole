@@ -28,8 +28,8 @@ describe('published original arcade audio', () => {
       const duration = (file.length - 44) / (rate * channels * 2);
       const music = name === 'menu' || name === 'fight';
       expect(channels).toBe(music ? 2 : 1);
-      expect(duration).toBeGreaterThan(music ? 28 : 0.05);
-      expect(duration).toBeLessThan(music ? 38 : 1.5);
+      expect(duration).toBeGreaterThan(name === 'menu' ? 63 : music ? 28 : 0.05);
+      expect(duration).toBeLessThan(name === 'menu' ? 65 : music ? 38 : 1.5);
       let peak = 0,
         energy = 0;
       for (let offset = 44; offset < file.length; offset += 2) {
