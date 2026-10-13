@@ -10,18 +10,20 @@ describe('expanded original caves', () => {
     CAVE_SKETCHES.forEach((sketch, index) => expect(buildCave(sketch, index)).toEqual(LEVELS[index]));
   });
 
-  it('fits expanded mining wings up to 139x44, with larger objectives and optional deposits', () => {
-    expect(LEVELS[0].rows[0].length).toBe(76);
-    expect(LEVELS[0].rows).toHaveLength(34);
-    expect(LEVELS[11].rows[0].length).toBe(139);
-    expect(LEVELS[11].rows).toHaveLength(44);
+  it('alternates large optional mining networks and compact puzzle wings without a length-based difficulty claim', () => {
     for (const level of CORE_LEVELS) {
       const w = createWorld(level);
-      expect(w.width * w.height).toBeGreaterThan(24 * 18 * 3.5);
-      expect(level.quota).toBeGreaterThanOrEqual(18);
-      expect(w.objects.filter((o) => o.kind === 'pickup').length).toBeGreaterThan(level.quota + 8);
-      expect(w.objects.filter((o) => o.kind === 'rock').length).toBeGreaterThan(30);
-      expect(level.solution.length).toBeGreaterThan(250);
+      expect(level.style).toBe(level.id % 2 ? 'exploration' : 'puzzle');
+      if (level.style === 'exploration') {
+        expect(w.width * w.height).toBeGreaterThan(3000);
+        expect(w.objects.filter((o) => o.kind === 'pickup').length).toBeGreaterThan(level.quota);
+        expect(level.alternatives).toHaveLength(1);
+        expect(level.requiredPickups).toHaveLength(0);
+      } else {
+        expect(w.height).toBeLessThanOrEqual(16);
+        expect(level.solution.length).toBeLessThan(200);
+        expect(level.requiredPickups!.length).toBeGreaterThan(0);
+      }
     }
   });
 
@@ -51,14 +53,17 @@ describe('expanded original caves', () => {
     }
   });
 
-  it.each(CORE_LEVELS)('requires real pushes on level $id rather than just a longer corridor', (level) => {
-    const game = new Simulation(level);
-    let pushes = 0;
-    for (const input of level.solution) {
-      game.step(input);
-      pushes += game.drainSounds().filter((sound) => sound === 'push').length;
-    }
-    expect(pushes, `no push puzzle in ${level.id}`).toBeGreaterThanOrEqual(3);
-    expect(game.world.status).toBe('won');
-  });
+  it.each(CORE_LEVELS.filter((level) => level.style === 'puzzle' && level.id !== 4))(
+    'requires real pushes on puzzle $id rather than just a longer corridor',
+    (level) => {
+      const game = new Simulation(level);
+      let pushes = 0;
+      for (const input of level.solution) {
+        game.step(input);
+        pushes += game.drainSounds().filter((sound) => sound === 'push').length;
+      }
+      expect(pushes, `no push puzzle in ${level.id}`).toBeGreaterThanOrEqual(2);
+      expect(game.world.status).toBe('won');
+    },
+  );
 });

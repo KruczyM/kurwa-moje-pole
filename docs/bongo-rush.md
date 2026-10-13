@@ -48,11 +48,11 @@ Samo uruchomienie buildu nie publikuje strony na GitHub Pages.
 | 7–9     | Neonowy rave      | Różne cukierki ecstasy | Undercover                                      |
 | 10–12   | Dymna grota       | Bonga                  | Mieszane patrole; satyryczny Owsiak tylko na 12 |
 
-Plansze mają **74×34–139×44 pola**: 1–6 mają 9 głównych komór, 7–9: 12,
-10–12: 16. Szerokość zależy od kompozycji skrzydła zagadki wyjściowej;
-główna sieć jaskiń zachowuje poprzednie rozmiary 46×34–60×44.
-Cele wynoszą odpowiednio 18, 24 i 32 przedmioty. Przedmiotów jest więcej niż cel,
-więc można wybierać pomiędzy bezpieczniejszym objazdem a ryzykownym bocznym złożem.
+Poziomy 1–12 przeplatają **kopanie i eksplorację (nieparzyste)** z **łamigłówkami
+(parzyste)**. Eksploracja ma 68×54 pola (11: 80×54), wybór opcjonalnych złóż
+i limity 3, 4, 5, 5, 4, 6 przedmiotów. Zagadki mają zwarte skrzydła o wysokości
+do 15 pól, bez długiego obowiązkowego dojścia przez kopalnię. W menu widoczne są
+oznaczenia KOP / ZAG / WYZW. Bonusowe wyzwania 13–16 pozostają osobną grupą.
 
 Komory łączą się w obu osiach, mają odnogi, skróty i pętle. Występują skalne filary,
 przegrody z prześwitami, niskie stropy, puste kieszenie, podparte żyły głazów
@@ -62,25 +62,27 @@ Każdy biom ma także odrębną powierzchnię przekopywanej ziemi.
 Głazy i przedmioty korzystają z istniejącej grawitacji — podkopanie podpory
 może wywołać lawinę. Nie trzeba chodzić jedną narysowaną ścieżką.
 
-Przed wyjściem jest obowiązkowa komora, której nie omija nadmiar przedmiotów.
-Każdy poziom ma inną kompozycję 12 modułów (6 zasuw i 6 komór wydobywczych),
-nie dwanaście osobnych silników fizyki. Łup ze złotą obwódką jest obowiązkowy,
+Na eksploracji można wygrać bez zabijania albo wykorzystać skałę i odebrać łup
+z patrolu zamiast czyścić inne złoże. Patrole mają obiegi 16 pól i świadomie
+otwierane wejścia. Zagadka wyjściowa nie jest już obowiązkowa na każdym poziomie.
+Kompozycje wykorzystują wspólne moduły, nie osobne silniki fizyki.
+Na planszach zagadkowych łup ze złotą obwódką jest obowiązkowy,
 niezależnie od zwykłej dostawy. Jego znacznik podąża za przedmiotem także po upadku.
 
-| Poziom | Kompozycja                                                |
-| ------ | --------------------------------------------------------- |
-| 1      | Łup spod podpory, potem wnęka na głaz                     |
-| 2      | Dwie kieszenie z łupem, potem spust                       |
-| 3      | Czteropiętrowy zawał, górne obejście, wnęka i szyb        |
-| 4      | Żyła bez powrotu i wspólna podpora stosu                  |
-| 5      | Skarbiec za zasuwą, podkop i przygotowanie wnęki          |
-| 6      | Dwa łupy za przeciwnymi zasuwami, zmiana strony           |
-| 7      | Zawał pod kominem, potem pułapka złej kolejności          |
-| 8      | Dwie kieszenie, skarbiec, stos                            |
-| 9      | Kopalnia lawinowa: żyła, komin, dwa spusty, stos          |
-| 10     | Dwa łupy, przeciwne zasuwy i pułapka kolejności           |
-| 11     | Skarbiec, żyła bez odwrotu, zmiana strony, stos           |
-| 12     | Zagroda bossa, komin, dwie zasuwy, żyła, kolejność i stos |
+| Poziom | Kompozycja                                               |
+| ------ | -------------------------------------------------------- |
+| 1      | Wybór złóż lub strzeżonego skrótu                        |
+| 2      | Zasuwa, przygotowanie wnęki i brama                      |
+| 3      | Złoża pod zwałami, boczne odwroty i wybór powrotu        |
+| 4      | Żyła bez powrotu i wspólna podpora stosu                 |
+| 5      | Wybór złóż, pętle wokół kolonii i skrót z Kobrą          |
+| 6      | Dwa boczne zbiory, Kobra i przeciwne zasuwy              |
+| 7      | Osłonięty obieg Undercovera lub alternatywne złoża       |
+| 8      | Przeciwne zasuwy i kolejność przygotowania górnego głazu |
+| 9      | Wybór komina, żyły lub łupu z pułapki                    |
+| 10     | Zawał, przeciwne zasuwy i pułapka kolejności             |
+| 11     | Rozgałęzienia, pięć złóż i dwa niezależne patrole        |
+| 12     | Krótki ciąg przygotowania skał i zagroda bossa           |
 
 Podpowiedź zmienia się przy wejściu do kolejnego modułu. W zagadce kolejności najpierw
 trzeba przygotować miejsce dla górnego głazu, a dopiero później odkopać dolną wnękę.
@@ -89,7 +91,7 @@ ani automatycznego wykrywania wszystkich blokad. Odizolowane komory pozwalają
 zatrzymać się między poprawnymi ruchami; patrole i Kobra w głównej jaskini nadal działają.
 
 Każdy poziom ma własny stały szkic, geologię i testowaną sekwencję przejścia.
-Na ostatnim poziomie, oprócz 32 bong, trzeba przepchnąć skałę na złote pole
+Na poziomie 12, oprócz trzech wymaganych bong, trzeba przepchnąć skałę na złote pole
 u wejścia do zagrody. Boss patroluje jej wnętrze; nie walczy się z nim ani nie przygniata.
 Po zamknięciu zagrody dostępna jest nagroda i krótka scenka z Bongo Tasiora.
 
@@ -136,10 +138,12 @@ Otwiera pomoc z zatrzymaną grą. Zamknięcie pomocy pozostawia pauzę — wznó
 | Plik w `src/games/bongo-rush/` | Rola                                                                                |
 | ------------------------------ | ----------------------------------------------------------------------------------- |
 | `main.ts`                      | Host gry: menu, ładowanie, pojedyncza pętla, input, fokus, pauza i sprzątanie       |
-| `types.ts`                     | Kierunki, typy planszy i ciał, czas kroku `STEP_SECONDS = 0.14`                     |
+| `types.ts`                     | Kierunki, typy planszy i ciał, czas kroku `STEP_SECONDS = 0.2`                      |
 | `Simulation.ts`                | Kopanie, ruch, przepychanie, grawitacja, patrole, wygrana i przegrana               |
 | `Levels.ts`                    | Cztery palety biomów, 12 szkiców plansz i sekwencje ich przejścia                   |
-| `CaveBuilder.ts`               | Stałe sieci komór, skróty, geologia, podparte złoża i zapis wejścia do testów       |
+| `CaveBuilder.ts`               | Opcjonalne sieci złóż i zwarte kompozycje zagadek, naprzemienne typy kampanii       |
+| `PatrolEncounter.ts`           | Obieg patrolu, boczna pułapka i zapisy wejść w bezpiecznym oknie                    |
+| `DifficultyAudit.ts`           | Pomiar manewrów, obiegów, zbliżeń i odebranych łupów w rzeczywistej symulacji       |
 | `CaveVisuals.ts`               | Cztery różne konstrukcje ścian i powierzchnie ziemi, rysowane w cache Canvas        |
 | `ExitPuzzles.ts`               | Jednowejściowe komory zagadek, podpowiedzi i sekwencje rzeczywistych ruchów         |
 | `LootPuzzles.ts`               | Sześć autorskich komór z wymaganym łupem pod skałami i zapisanymi rozwiązaniami     |
@@ -244,6 +248,10 @@ do prawdziwej symulacji, bez teleportacji. Po każdej zmianie planszy zaktualizu
 i uruchom testy. Różny wygląd przedmiotów jest kosmetyczny, nie zmienia ich wartości.
 
 ## Testowanie
+
+Bieżące komendy i raport kampanii: [Rytm kampanii](bongo-campaign-rhythm.md).
+Poniższe starsze skrypty scenariuszowe zakładają historyczne układy menu i map;
+nie zastępują aktualnego `verify-bongo-rhythm.py` i `verify-bongo-living.py`.
 
 ```powershell
 npm run test:unit -- src/games/bongo-rush

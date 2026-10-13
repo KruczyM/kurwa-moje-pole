@@ -1,6 +1,9 @@
 import type { SoundEvent } from './types';
 import { musicPhrase, MUSIC_BPM } from './Music';
 
+const GAME_MUSIC_GAIN = 1.8;
+const PICKUP_GAIN = 0.03;
+
 /** Original WebAudio effects require no copyrighted samples, downloads or paid APIs. */
 export class ArcadeAudio {
   private context?: AudioContext;
@@ -47,7 +50,10 @@ export class ArcadeAudio {
       oscillator.type = note.wave;
       oscillator.frequency.setValueAtTime(note.frequency, start);
       gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(note.gain * (now < this.duckUntil ? 0.4 : 1), start + 0.09);
+      gain.gain.linearRampToValueAtTime(
+        note.gain * (menu ? 1 : GAME_MUSIC_GAIN) * (now < this.duckUntil ? 0.4 : 1),
+        start + 0.09,
+      );
       gain.gain.exponentialRampToValueAtTime(0.0001, start + note.duration);
       oscillator.connect(filter);
       filter.connect(gain);
@@ -88,7 +94,8 @@ export class ArcadeAudio {
     if (this.muted || !context || context.state !== 'running' || this.active.size > 16) return;
     const now = context.currentTime;
     if (now - (this.last[event] ?? -100) < (event === 'dig' ? 0.09 : 0.06)) return;
-    if (event !== 'dig') {
+    // Quiet, frequent pickups should not repeatedly bury the soundtrack.
+    if (event !== 'dig' && event !== 'pickup') {
       this.duckUntil = now + 0.25;
       for (const gain of this.musicGains.values()) gain.gain.setTargetAtTime(0.003, now, 0.03);
     }
@@ -116,7 +123,7 @@ export class ArcadeAudio {
       oscillator.type = event === 'impact' || event === 'dig' ? 'triangle' : 'sine';
       oscillator.frequency.setValueAtTime(frequency, start);
       gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.075, start + 0.006);
+      gain.gain.linearRampToValueAtTime(event === 'pickup' ? PICKUP_GAIN : 0.075, start + 0.006);
       gain.gain.exponentialRampToValueAtTime(0.001, start + 0.12);
       oscillator.connect(gain);
       gain.connect(context.destination);

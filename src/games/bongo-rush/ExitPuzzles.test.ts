@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EXIT_PUZZLES, exitPuzzleForLevel } from './ExitPuzzles';
+import { EXIT_PUZZLES } from './ExitPuzzles';
 import { LEVELS } from './Levels';
 import { Simulation } from './Simulation';
 import { DIRECTIONS, neighbour, same } from './types';
@@ -105,17 +105,12 @@ describe('mandatory exit puzzles', () => {
     expect(game.world.status).toBe('playing');
   });
 
-  it.each(LEVELS.filter((level) => !level.bonus))(
-    'keeps level $id exit in a sealed puzzle wing even with excess pickups',
+  it.each(LEVELS.filter((level) => level.style === 'puzzle'))(
+    'requires actual preparation and marked loot in puzzle $id, not the old generic mining preamble',
     (level) => {
       const game = new Simulation(level);
-      const puzzle = exitPuzzleForLevel(level.id - 1);
-      const approach = level.solution.slice(0, -puzzle.solution.length);
-      for (const direction of approach) game.step(direction);
-      expect(game.world.collected).toBeGreaterThanOrEqual(level.quota);
-      expect(game.world.status).toBe('playing');
-      expect(game.world.player).toMatchObject(level.vault!.entry);
-      for (const direction of puzzle.solution) game.step(direction);
+      expect(game.exitOpen).toBe(false);
+      for (const direction of level.solution) game.step(direction);
       expect(game.world.status).toBe('won');
     },
   );

@@ -989,14 +989,12 @@ export class Game {
         return;
       }
       const source = this.state.current;
-      const menuEscape = source === 'playing' || source === 'paused';
       const target = escapeTarget(source);
       if (target) {
         // To samo Escape nie może zamknąć preview i chwilę później otworzyć pauzy.
         if (source === 'inspecting') {
           this.pointerLockPause.suppressLossesUntil(performance.now() + POINTER_LOCK_ESCAPE_SUPPRESSION_MS);
         }
-        if (menuEscape) this.voiceReactions.playMenuEscape();
         this.closeCurrentState(target);
       }
       return;

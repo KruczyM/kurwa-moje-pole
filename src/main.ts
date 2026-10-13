@@ -14,6 +14,7 @@ import { isMobileInputDevice } from './game/player/MobileControls';
 import { isGrassQualityPreset } from './game/world/grassQuality';
 import { isAspectRatioPreset } from './game/rendering/viewportAspect';
 import { NetworkClient } from './game/network/NetworkClient';
+import { VoiceReactionManager } from './game/audio/VoiceReactionManager';
 import {
   CANONICAL_CHARACTERS,
   type CharacterName,
@@ -33,6 +34,8 @@ void assetCacheReady.then((ready) => {
       : 'Cache dyskowy niedostępny. Gra korzysta ze zwykłego pobierania plików.';
 });
 let game: Game | undefined;
+// The farewell belongs to the shell: disposing the world must not cut it off.
+let mainMenuVoice: VoiceReactionManager | undefined;
 let preview: CharacterPreview | undefined;
 const savedSessionChar =
   typeof sessionStorage !== 'undefined'
@@ -256,6 +259,8 @@ async function startGame(freeCamera = false) {
 
   game?.dispose();
   game = undefined;
+  mainMenuVoice?.dispose();
+  mainMenuVoice = undefined;
   preview?.dispose();
   preview = undefined;
   sessionStorage.setItem('camp-player-character', selected);
@@ -282,10 +287,17 @@ async function startFreeCameraGame() {
 
 /** Zamyka bieżącą grę i odtwarza ekran startowy wraz z podglądem postaci. */
 function backToStart() {
+  const from = state.current;
+  const hadGame = Boolean(game);
   game?.dispose();
   game = undefined;
   if (state.current !== 'start') state.transition('start');
   createPreview();
+  if (hadGame) {
+    mainMenuVoice?.dispose();
+    mainMenuVoice = new VoiceReactionManager();
+    mainMenuVoice.playMainMenuReturn(from, state.current);
+  }
 }
 
 state.subscribe(({ to }) => syncShell(to));
@@ -421,6 +433,7 @@ window.addEventListener(
   () => {
     preview?.dispose();
     game?.dispose();
+    mainMenuVoice?.dispose();
     networkClient.disconnect(true);
   },
   { once: true },

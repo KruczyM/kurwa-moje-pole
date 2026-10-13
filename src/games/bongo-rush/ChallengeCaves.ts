@@ -283,6 +283,22 @@ function level(puzzle: ExitPuzzle, id: number, requiredKills: number): LevelDefi
     hint: puzzle.hint,
     biome: (id - 13) % 4,
     bonus: true,
+    encounters: rows.flatMap((row, y) =>
+      [...row].flatMap((tile, x) =>
+        ['C', 'B', 'U', 'S'].includes(tile)
+          ? [
+              {
+                spawn: { x, y },
+                role:
+                  id === 16 && y === 1
+                    ? 'Strażnik obwodu broni opcjonalnej nagrody; osobna trasa nie przecina pułapki.'
+                    : 'Cel świadomie otwieranej pułapki: zrzut skały i odbiór obowiązkowego łupu.',
+                minimumCircuit: id === 16 && y === 1 ? 16 : 3,
+              },
+            ]
+          : [],
+      ),
+    ),
     rows,
     requiredPickups,
     requiredKills,

@@ -1,6 +1,7 @@
 import type { EffectId, EffectPhase } from '../effects/EffectManager';
 import { voiceAsset } from '../assets/assetManifest';
 import catalog from './voiceReactionCatalog.json';
+import type { AppState } from '../lifecycle/AppStateMachine';
 
 type AudioLike = {
   src: string;
@@ -116,8 +117,9 @@ export class VoiceReactionManager {
   playGameEntry() {
     return this.play(catalog.gameEnter);
   }
-  /** Losuje kwestię dla otwarcia albo zamknięcia menu pauzy. */
-  playMenuEscape() {
+  /** Losuje pożegnanie wyłącznie przy opuszczeniu świata do menu wyboru postaci. */
+  playMainMenuReturn(from: AppState, to: AppState) {
+    if (to !== 'start' || from === 'start' || from === 'loading' || from === 'error') return null;
     return this.play(catalog.menuEscape);
   }
   /** Odtwarza reakcję na rozpoczęcie inspekcji przedmiotu. */

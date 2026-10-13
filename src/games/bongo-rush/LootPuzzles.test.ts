@@ -45,16 +45,19 @@ describe('mandatory mining chambers', () => {
     });
   }
 
-  it.each(LEVELS)('requires marked loot on level $id even after exceeding the normal quota', (level) => {
-    const game = new Simulation(level);
-    game.world.collected = 1000;
-    game.world.trapped = true;
-    expect(level.requiredPickups!.length).toBeGreaterThan(0);
-    expect(game.exitOpen).toBe(false);
-    for (const input of level.solution) game.step(input);
-    expect(game.world.status).toBe('won');
-    expect(game.requiredRemaining).toBe(0);
-  });
+  it.each(LEVELS.filter((level) => level.style !== 'exploration'))(
+    'requires marked loot on level $id even after exceeding the normal quota',
+    (level) => {
+      const game = new Simulation(level);
+      game.world.collected = 1000;
+      game.world.trapped = true;
+      expect(level.requiredPickups!.length).toBeGreaterThan(0);
+      expect(game.exitOpen).toBe(false);
+      for (const input of level.solution) game.step(input);
+      expect(game.world.status).toBe('won');
+      expect(game.requiredRemaining).toBe(0);
+    },
+  );
 
   it('keeps the required marker attached to a falling collectible rather than its original tile', () => {
     const game = new Simulation({

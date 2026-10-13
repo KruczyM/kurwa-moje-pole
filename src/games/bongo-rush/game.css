@@ -254,6 +254,21 @@ a {
 .hero-grid span {
   padding: 5px 2px;
 }
+.level-grid button[data-style]::after {
+  display: block;
+  font-size: 9px;
+  margin-top: 3px;
+  color: #c6d7df;
+}
+.level-grid button[data-style='exploration']::after {
+  content: 'KOP';
+}
+.level-grid button[data-style='puzzle']::after {
+  content: 'ZAG';
+}
+.level-grid button[data-style='challenge']::after {
+  content: 'WYZW';
+}
 #menu > button {
   width: 100%;
   margin: 6px 0;
