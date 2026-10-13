@@ -1,13 +1,19 @@
 export const BIOME_TILE_ATLASES = [
-  '../art-v2/amarena-terrain.png',
-  '../art-v2/roots-terrain.png',
-  '../art-v2/rave-terrain.png',
-  '../art-v2/glass-terrain.png',
+  '../materials-v3/amarena.png',
+  '../materials-v3/roots.png',
+  '../materials-v3/rave.png',
+  '../materials-v3/glass.png',
 ] as const;
 export type TerrainKind = 'wall' | 'soil';
 
 /** Resolves a complete wall/soil quadrant, rejecting malformed sheets instead of sampling neighbouring art. */
 export function biomeTileRect(width: number, height: number, kind: TerrainKind, variant: number) {
+  if (Number.isInteger(width) && width >= 6 && width % 6 === 0 && height === (width / 6) * 4) {
+    const cell =
+      kind === 'soil' ? 4 + (Math.abs(Math.trunc(variant)) % 4) : Math.abs(Math.trunc(variant)) % 24;
+    const size = width / 6;
+    return { x: (cell % 6) * size, y: Math.floor(cell / 6) * size, width: size, height: size };
+  }
   if (!Number.isInteger(width) || width < 4 || width !== height || width % 2 !== 0)
     throw new Error('Atlas biomu musi być kwadratową grafiką o parzystym rozmiarze.');
   const size = width / 2;

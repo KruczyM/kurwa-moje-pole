@@ -46,7 +46,8 @@ def render(hero):
     scene.render.engine = 'CYCLES'
     scene.cycles.samples = 8
     scene.cycles.use_denoising = True
-    scene.render.resolution_x = scene.render.resolution_y = 96
+    animated_npc = hero in ['patrol-red-v3', 'patrol-blue-v3', 'undercover-v3']
+    scene.render.resolution_x = scene.render.resolution_y = 128 if animated_npc else 96
     scene.render.resolution_percentage = 100
     scene.render.film_transparent = True
     scene.render.image_settings.file_format = 'PNG'
@@ -54,6 +55,7 @@ def render(hero):
     scene.view_settings.view_transform = 'Standard'
     npc = hero in ['owsiak', 'patrol']
     source = (ROOT / f'source-assets/bongo-rush/models/{hero}-textured.glb' if npc else
+              ROOT / f'source-assets/bongo-rush/models-v3/{hero}/npc-animations.glb' if animated_npc else
               ROOT / f'public/game-assets/characters/{hero}/npc-animations.glb')
     bpy.ops.import_scene.gltf(filepath=str(source))
     rigs = [obj for obj in scene.objects if obj.type == 'ARMATURE']
@@ -64,7 +66,7 @@ def render(hero):
         if animated.animation_data:
             for track in animated.animation_data.nla_tracks:
                 track.mute = True
-    meshes = [obj for obj in scene.objects if obj.type == 'MESH' and len(obj.data.vertices) > 200]
+    meshes = [obj for obj in scene.objects if obj.type == 'MESH' and (animated_npc or len(obj.data.vertices) > 200)]
     for obj in scene.objects:
         if obj.type == 'MESH' and obj not in meshes:
             obj.hide_render = True
@@ -72,7 +74,9 @@ def render(hero):
     idle, walk = actions.get('idle'), actions.get('walk')
     if not npc and (not idle or not walk):
         raise RuntimeError(f'{hero}: Idle/Walk missing; refusing static fallback')
-    samples = [(None, 0)] if npc else [(idle, 0.25)] + [(walk, fraction) for fraction in [0, 0.25, 0.5, 0.75]]
+    samples = ([(None, 0)] if npc else
+               [(idle, 0), (idle, .5)] + [(walk, fraction/8) for fraction in range(8)] if animated_npc else
+               [(idle, 0.25)] + [(walk, fraction) for fraction in [0, 0.25, 0.5, 0.75]])
     all_points = []
     for action, fraction in samples:
         if action:
@@ -126,9 +130,9 @@ def render(hero):
             scene.render.filepath = str(out / f'{row}-{column}.png')
             bpy.ops.render.render(write_still=True)
     (out / 'meta.json').write_text(json.dumps({
-        'character': hero, 'frameWidth': 96, 'frameHeight': 96, 'framesPerDirection': len(samples),
+        'character': hero, 'frameWidth': 128 if animated_npc else 96, 'frameHeight': 128 if animated_npc else 96, 'framesPerDirection': len(samples),
         'rows': {'down': 0, 'right': 1, 'up': 2, 'left': 3},
-        'animationColumns': {'idle': [0], 'walk': [0] if npc else [1, 2, 3, 4]},
+        'animationColumns': {'idle': [0,1] if animated_npc else [0], 'walk': list(range(2,10)) if animated_npc else [0] if npc else [1, 2, 3, 4]},
         'source': str(source.relative_to(ROOT)).replace('\\', '/'),
         'cameraFit': 'all-evaluated-frames-sphere',
         'rigStatus': 'unrigged-generated-mesh' if npc else 'animated',

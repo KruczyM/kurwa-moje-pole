@@ -36,7 +36,11 @@ export class FighterSimulation {
   private readonly buffer2 = new InputBuffer();
   private events: SimulationEvent[] = [];
 
-  constructor(def1: FighterDefinition, def2: FighterDefinition) {
+  constructor(
+    def1: FighterDefinition,
+    def2: FighterDefinition,
+    private readonly options: { training?: boolean } = {},
+  ) {
     this.def1 = prepareFighter(def1);
     this.def2 = prepareFighter(def2);
     this.state = this.createInitialState();
@@ -54,7 +58,7 @@ export class FighterSimulation {
       stateTicks: 0,
       hp: def.maxHp,
       maxHp: def.maxHp,
-      meter: 0,
+      meter: this.options.training ? 100 : 0,
       currentMove: null,
       moveTick: 0,
       hitstop: 0,
@@ -70,6 +74,7 @@ export class FighterSimulation {
   private createInitialState(): MatchState {
     return {
       tick: 0,
+      training: this.options.training === true,
       roundTimer: 90.0,
       roundNumber: 1,
       roundState: 'fight',
@@ -94,6 +99,10 @@ export class FighterSimulation {
 
   update(p1Input: number, p2Input: number): MatchState {
     this.state.tick += 1;
+    if (this.options.training) {
+      this.state.p1.meter = 100;
+      this.state.p2.hp = this.state.p2.maxHp;
+    }
     // Push inputs to buffers
     this.buffer1.push(p1Input);
     this.buffer2.push(p2Input);
@@ -111,6 +120,7 @@ export class FighterSimulation {
       const frozen2 = this.state.p2.hitstop > 0;
       this.updateFighter(this.state.p1, this.def1, this.buffer1);
       this.updateFighter(this.state.p2, this.def2, this.buffer2);
+      if (this.options.training) this.state.p1.meter = 100;
       // Both inputs may initiate a simultaneous ultimate. Neither hitboxes nor
       // physics resolve on the activation step; all combat resumes after freeze.
       if ((this.state.superFreezeTicks ?? 0) > 0) return this.state;
@@ -159,8 +169,11 @@ export class FighterSimulation {
       resolvePushboxes(this.state.p1, this.def1, this.state.p2, this.def2);
       resolveFacing(this.state.p1, this.state.p2);
 
-      // Check round end
-      this.checkRoundEnd();
+      // Training keeps reactions and damage events, but never permits a KO.
+      if (this.options.training) {
+        this.state.p2.hp = this.state.p2.maxHp;
+        this.state.p1.meter = 100;
+      } else this.checkRoundEnd();
     } else if (this.state.roundState === 'roundOver') {
       if (this.state.stateTicks > 120) {
         // 2 seconds delay before next round
@@ -172,6 +185,7 @@ export class FighterSimulation {
   }
 
   private updateRoundTimer(): void {
+    if (this.options.training) return;
     // 60 ticks per second
     if (this.state.stateTicks % 60 === 0 && this.state.roundTimer > 0) {
       this.state.roundTimer -= 1.0;

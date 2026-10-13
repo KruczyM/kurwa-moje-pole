@@ -1,3 +1,4 @@
+import { STAGE_HALF_WIDTH, STAGE_WIDTH } from './Movement';
 import { Box, FighterDefinition, FighterState, MoveDefinition, INPUT } from './CombatTypes';
 
 export function boxesIntersect(a: Box, b: Box): boolean {
@@ -23,6 +24,7 @@ export function getFighterHurtbox(fighter: FighterState, def: FighterDefinition)
 }
 
 export function getMoveHitboxes(fighter: FighterState, move: MoveDefinition): Box[] {
+  if (move.id === 'ultimate') return [{ x: -STAGE_HALF_WIDTH, y: -100, w: STAGE_WIDTH, h: 2000 }];
   return move.hitboxes.map((b) => {
     const worldX = fighter.facing === 1 ? fighter.x + b.x : fighter.x - (b.x + b.w);
 
@@ -245,9 +247,12 @@ export function checkHit(
     causesKnockdown: Boolean(
       move.causesKnockdown || (move.attackHeight === 'low' && move.id.includes('sweep')),
     ),
-    point: {
-      x: (collisionBox.x + collisionBox.w / 2 + hurtbox.x + hurtbox.w / 2) / 2,
-      y: (collisionBox.y + collisionBox.h / 2 + hurtbox.y + hurtbox.h / 2) / 2,
-    },
+    point:
+      move.id === 'ultimate'
+        ? { x: hurtbox.x + hurtbox.w / 2, y: hurtbox.y + hurtbox.h / 2 }
+        : {
+            x: (collisionBox.x + collisionBox.w / 2 + hurtbox.x + hurtbox.w / 2) / 2,
+            y: (collisionBox.y + collisionBox.h / 2 + hurtbox.y + hurtbox.h / 2) / 2,
+          },
   };
 }

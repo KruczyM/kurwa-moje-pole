@@ -155,7 +155,9 @@ class FighterDemo {
     this.view.getFighterSprites(this.p1Key);
     this.view.getFighterSprites(this.p2Key);
     this.view.setStage(this.selectedStageId);
-    this.sim = new FighterSimulation(this.p1Entry.definition, this.p2Entry.definition);
+    this.sim = new FighterSimulation(this.p1Entry.definition, this.p2Entry.definition, {
+      training: this.mode === 'training',
+    });
     this.bot = new BotController(this.botDifficulty);
     document
       .querySelectorAll<HTMLElement>('.controls-helper-box, .pause-controls-guide')

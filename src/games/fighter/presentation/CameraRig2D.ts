@@ -1,3 +1,5 @@
+import { CAMERA_SHAKE_MARGIN } from './stageLayout';
+
 export class CameraRig2D {
   public reducedEffects = false;
   public cinematic = false;
@@ -28,7 +30,7 @@ export class CameraRig2D {
 
   shake(intensity = 8, duration = 0.2): void {
     if (this.reducedEffects) return;
-    this.shakeIntensity = intensity;
+    this.shakeIntensity = Math.max(0, Math.min(CAMERA_SHAKE_MARGIN, intensity));
     this.shakeTime = duration;
   }
 

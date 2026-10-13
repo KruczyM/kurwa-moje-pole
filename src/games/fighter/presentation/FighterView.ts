@@ -3,6 +3,7 @@ import { CameraRig2D } from './CameraRig2D';
 import { SimulationEvent } from '../simulation/FighterSimulation';
 import { STAGES, StageDefinition } from '../data/stages';
 import { SuperCinematicEngine } from './SuperCinematicEngine';
+import { stageLayout } from './stageLayout';
 import { CombatSpriteBank } from './CombatSpriteBank';
 
 interface VisualEffect {
@@ -40,6 +41,7 @@ export class FighterView {
 
   public retainFighters(ids: string[]): void {
     this.combatSprites.retain(ids);
+    this.superCinematic.retainFighters(ids);
     for (const id of this.spritesMap.keys()) {
       if (!ids.includes(id)) this.spritesMap.delete(id);
     }
@@ -244,22 +246,18 @@ export class FighterView {
     // 2. Camera transform
     const shake = camera.getShakeOffset();
     const screenCenterX = width / 2 + shake.x;
-    const screenGroundY = height * 0.76 + shake.y;
+    const screenGroundY = height * 0.74 + shake.y;
 
     ctx.translate(screenCenterX, screenGroundY);
     ctx.scale(camera.zoom, camera.zoom);
     ctx.translate(-camera.x, 0);
 
-    // 3. Render Stage Background (with dampened camera zoom so top banners and festival monuments stay fully framed)
-    ctx.save();
-    const bgZoomDampening = (1.0 + (camera.zoom - 1.0) * 0.15) / camera.zoom;
-    ctx.scale(bgZoomDampening, bgZoomDampening);
-    this.drawStageBackground(ctx, camera.x);
-    ctx.restore();
+    // Background and feet share the same transform and world ground.
+    this.drawStageBackground(ctx, camera.x, width, height, camera.zoom);
 
     // 4. Render Fighters
-    this.drawFighter(ctx, match.p1, def1, p1Glow, p1Color);
-    this.drawFighter(ctx, match.p2, def2, p2Glow, p2Color);
+    this.drawFighter(ctx, match.p1, def1, p1Glow, p1Color, match.tick, 1, (match.superFreezeTicks ?? 0) > 0);
+    this.drawFighter(ctx, match.p2, def2, p2Glow, p2Color, match.tick, 2, (match.superFreezeTicks ?? 0) > 0);
 
     // 5. Render VFX
     this.drawEffects(ctx);
@@ -270,24 +268,46 @@ export class FighterView {
     ctx.restore();
   }
 
-  private drawStageBackground(ctx: CanvasRenderingContext2D, camX: number): void {
+  private drawStageBackground(
+    ctx: CanvasRenderingContext2D,
+    camX: number,
+    width: number,
+    height: number,
+    zoom: number,
+  ): void {
     const stage = this.getActiveStage();
     const img = this.getStageImage(stage.id);
 
-    // Arena width is 1200 (-600 to +600).
-    // Draw background (1420 px) with subtle parallax shift to frame stage monuments and Pol'and'Rock banners in the viewport:
-    const parallaxFactor = 0.16;
-    const bgX = -camX * parallaxFactor;
-    const bgWidth = 1420;
-    const aspectRatio = img && img.naturalWidth > 0 ? img.naturalHeight / img.naturalWidth : 9 / 16;
-    const bgHeight = bgWidth * aspectRatio;
-    const groundInImage = bgHeight * stage.groundOffsetRatio;
-    const drawX = -bgWidth / 2 + bgX;
-    const drawY = -groundInImage;
+    const aspect = img && img.naturalWidth > 0 ? img.naturalHeight / img.naturalWidth : 9 / 16;
+    const layout = stageLayout(width, height, zoom, camX, aspect, stage.groundOffsetRatio);
 
     if (img && img.complete && img.naturalWidth > 0) {
       // 1. Draw detailed stage background graphic
-      ctx.drawImage(img, drawX, drawY, bgWidth, bgHeight);
+      // Extend only the illustrated foreground on tall screens; retain the stage
+      // composition above the calibrated ground instead of zooming the stage away.
+      const sourceGround = img.naturalHeight * stage.groundOffsetRatio;
+      ctx.drawImage(
+        img,
+        0,
+        0,
+        img.naturalWidth,
+        sourceGround,
+        layout.x,
+        layout.y,
+        layout.width,
+        layout.aboveGround,
+      );
+      ctx.drawImage(
+        img,
+        0,
+        sourceGround,
+        img.naturalWidth,
+        img.naturalHeight - sourceGround,
+        layout.x,
+        0,
+        layout.width,
+        layout.belowGround,
+      );
 
       // 2. Animated lighting and atmospheric stage effects
       this.drawStageAtmosphere(ctx, stage);
@@ -310,8 +330,7 @@ export class FighterView {
     // 4. Subtle atmospheric depth wash for character silhouette separation
     this.drawArenaDepthSeparation(ctx, stage);
 
-    // 5. Stage boundary barriers
-    this.drawStageBarriers(ctx, stage);
+    // Existing illustrated fencing and vegetation form the scenery; no synthetic posts.
   }
 
   private drawStageAtmosphere(ctx: CanvasRenderingContext2D, stage: StageDefinition): void {
@@ -523,98 +542,15 @@ export class FighterView {
     ctx.restore();
   }
 
-  private drawStageBarriers(ctx: CanvasRenderingContext2D, stage: StageDefinition): void {
-    ctx.save();
-    const barrierPositions = [-600, 600];
-
-    for (const bx of barrierPositions) {
-      if (stage.id === 'main_stage') {
-        // Concert crowd control barrier with steel mesh and hazard beacons
-        ctx.fillStyle = '#334155';
-        ctx.fillRect(bx - 6, -110, 12, 110);
-        ctx.fillStyle = '#64748b';
-        ctx.fillRect(bx - 20, -112, 40, 8);
-        ctx.fillRect(bx - 16, -60, 32, 6);
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(bx - 24, -4, 48, 6);
-        // Yellow caution stripes
-        ctx.fillStyle = '#facc15';
-        ctx.fillRect(bx - 4, -90, 8, 14);
-        ctx.fillRect(bx - 4, -50, 8, 14);
-        // Glowing red beacon
-        ctx.fillStyle = '#ef4444';
-        ctx.shadowColor = '#ef4444';
-        ctx.shadowBlur = 10;
-        ctx.beginPath();
-        ctx.arc(bx, -118, 5, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (stage.id === 'grzybek') {
-        // Festival wooden timber posts with hemp ropes
-        ctx.fillStyle = '#78350f';
-        ctx.fillRect(bx - 7, -100, 14, 100);
-        ctx.fillStyle = '#92400e';
-        ctx.fillRect(bx - 10, -104, 20, 8);
-        // Heavy hemp rope
-        ctx.strokeStyle = '#d97706';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(bx - 20, -75);
-        ctx.quadraticCurveTo(bx, -68, bx + 20, -75);
-        ctx.stroke();
-        // Colorful festival ribbon
-        ctx.fillStyle = bx < 0 ? '#06b6d4' : '#ec4899';
-        ctx.fillRect(bx - 3, -70, 6, 26);
-      } else if (stage.id === 'sunset_camp') {
-        // Camping timber stake with hanging warm vintage lantern
-        ctx.fillStyle = '#451a03';
-        ctx.fillRect(bx - 6, -115, 12, 115);
-        // Lantern bracket arm
-        ctx.strokeStyle = '#78350f';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(bx, -110);
-        ctx.lineTo(bx + (bx < 0 ? 18 : -18), -110);
-        ctx.lineTo(bx + (bx < 0 ? 18 : -18), -98);
-        ctx.stroke();
-        // Glowing lantern bulb
-        ctx.fillStyle = '#fbbf24';
-        ctx.shadowColor = '#f59e0b';
-        ctx.shadowBlur = 12;
-        ctx.beginPath();
-        ctx.arc(bx + (bx < 0 ? 18 : -18), -94, 6, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        // Krishna Village: Carved ornamental sandstone pillar with marigold garlands
-        ctx.fillStyle = '#c2410c';
-        ctx.fillRect(bx - 9, -120, 18, 120);
-        ctx.fillStyle = '#ea580c';
-        ctx.fillRect(bx - 14, -124, 28, 8);
-        ctx.fillRect(bx - 12, -4, 24, 6);
-        // Golden diya oil lamp top
-        ctx.fillStyle = '#f59e0b';
-        ctx.shadowColor = '#f59e0b';
-        ctx.shadowBlur = 12;
-        ctx.beginPath();
-        ctx.arc(bx, -130, 7, 0, Math.PI * 2);
-        ctx.fill();
-        // Orange marigold flower garland
-        ctx.fillStyle = '#f97316';
-        for (let g = 0; g < 4; g++) {
-          ctx.beginPath();
-          ctx.arc(bx + (g % 2 === 0 ? -4 : 4), -95 + g * 18, 4, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    }
-    ctx.restore();
-  }
-
   private drawFighter(
     ctx: CanvasRenderingContext2D,
     fighter: FighterState,
     def: FighterDefinition,
     glowColor: string,
     bodyColor: string,
+    simulationTick: number,
+    slot: number,
+    frozen: boolean,
   ): void {
     ctx.save();
     ctx.translate(fighter.x, 0);
@@ -663,7 +599,13 @@ export class FighterView {
     ctx.save();
     ctx.shadowColor = stage.ambientLight;
     ctx.shadowBlur = 6;
-    const hasCombatFrame = this.combatSprites.draw(ctx, fighter);
+    const hasCombatFrame = this.combatSprites.draw(
+      ctx,
+      fighter,
+      simulationTick,
+      slot,
+      frozen || fighter.hitstop > 0,
+    );
     ctx.restore();
     if (hasCombatFrame) {
       if (fighter.state === 'block_high' || fighter.state === 'block_low') {

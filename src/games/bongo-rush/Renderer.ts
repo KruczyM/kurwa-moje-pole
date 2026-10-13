@@ -1,5 +1,6 @@
 import { CameraRig } from '../after/presentation/CameraRig';
 import { SpriteAnimator } from '../after/presentation/SpriteAnimator';
+import { PatrolAnimator } from './PatrolAnimator';
 import type { SpriteMetadata } from '../after/presentation/SpriteAnimator';
 import type { Facing } from '../after/simulation/WorldState';
 import { BIOMES } from './Levels';
@@ -12,6 +13,8 @@ import { DEPTH_LAYERS, depthFrame, foregroundBands } from './Depth';
 import { paintSceneMotion } from './LivingScene';
 import { punchSoil, terrainEdges, paintTerrainEdges } from './TerrainDetails';
 import { VisualEffects } from './VisualEffects';
+import { buildTerrainLayout } from './TerrainLayout';
+import type { TerrainPlacement } from './TerrainLayout';
 import type { SoundEvent } from './types';
 import type { Body, Enemy, LooseObject, Point } from './types';
 import type { World } from './types';
@@ -32,6 +35,9 @@ export class CaveRenderer {
   private atlas?: HeroAtlas;
   private bushAtlas?: HeroAtlas;
   private enemyAtlases = new Map<string, HeroAtlas>();
+  private enemyAnimators = new Map<number, PatrolAnimator>();
+  private enemyAnimationTick = -1;
+  private terrainLayout?: TerrainPlacement;
   private width = 1;
   private height = 1;
   private tile = 40;
@@ -58,6 +64,21 @@ export class CaveRenderer {
   /** Receives sound observations from the fixed simulation step without changing the simulation. */
   effects(world: World, sounds: readonly SoundEvent[]): void {
     this.debris.observe(world, sounds);
+  }
+
+  /** Read-only counters for the existing DEV snapshot; no canvas or simulation state escapes. */
+  diagnostics() {
+    return {
+      cachedTiles: this.tiles.size,
+      enemyAnimators: this.enemyAnimators.size,
+      decorations: this.terrainLayout
+        ? {
+            walls: this.terrainLayout.walls,
+            directional: this.terrainLayout.directional,
+            accents: this.terrainLayout.accents,
+          }
+        : undefined,
+    };
   }
 
   /** Shared transparent AI sprites are loaded by the existing host image cache. */
@@ -130,9 +151,12 @@ export class CaveRenderer {
   }
 
   /** Installs baked views of the generated 3D models without loading heavy GLBs during gameplay. */
-  enemyHeroes(patrol: HeroAtlas, boss: HeroAtlas): void {
-    this.enemyAtlases.set('red', patrol);
+  enemyHeroes(red: HeroAtlas, blue: HeroAtlas, undercover: HeroAtlas, boss: HeroAtlas): void {
+    this.enemyAtlases.set('red', red);
+    this.enemyAtlases.set('blue', blue);
+    this.enemyAtlases.set('undercover', undercover);
     this.enemyAtlases.set('boss', boss);
+    this.enemyAnimators.clear();
   }
 
   /** Installs a lazily loaded shared atlas and invalidates only this biome's old baked terrain. */
@@ -173,6 +197,8 @@ export class CaveRenderer {
     this.atlas = undefined;
     this.bushAtlas = undefined;
     this.enemyAtlases.clear();
+    this.enemyAnimators.clear();
+    this.terrainLayout = undefined;
     this.world = undefined;
     if (this.map) this.map.width = this.map.height = 0;
     this.map = undefined;
@@ -287,6 +313,9 @@ export class CaveRenderer {
     const playerPoint = this.interpolate(world.player, alpha);
     if (this.world !== world) {
       this.world = world;
+      this.terrainLayout = buildTerrainLayout(world, game.level.id * 4 + game.level.biome);
+      this.enemyAnimators.clear();
+      this.enemyAnimationTick = -1;
       this.debris.clear();
       // One active instance of the existing camera, with this cave's real bounds rather than 24x18.
       this.camera = new CameraRig({ width: world.width, height: world.height });
@@ -300,6 +329,11 @@ export class CaveRenderer {
       };
     }
     this.camera.follow({ x: playerPoint.x + 0.5, y: playerPoint.y + 0.5 }, dt, paused);
+    if (this.enemyAnimationTick !== world.tick) {
+      this.enemyAnimationTick = world.tick;
+      for (const id of this.enemyAnimators.keys())
+        if (!world.enemies.some((enemy) => enemy.id === id)) this.enemyAnimators.delete(id);
+    }
     const anchor = this.camera.project(this.depthAnchor);
     const displacement = { x: this.width / 2 - anchor.x, y: this.playHeight / 2 - anchor.y };
     if (background) this.depthLayer(background, game.level.biome, 0, displacement);
@@ -329,11 +363,15 @@ export class CaveRenderer {
           continue;
         const cell = world.cells[y * world.width + x];
         if (cell === 'wall' || cell === 'soil' || cell === 'buried-bush') {
+          if (cell !== 'wall') {
+            ctx.fillStyle = '#070b1299';
+            ctx.fillRect(position.x, position.y, this.tile + 0.5, this.tile + 0.5);
+          }
           ctx.drawImage(
             this.tileArt(
               game.level.biome,
               cell === 'wall' ? 'wall' : 'soil',
-              terrainVariant(x, y),
+              this.terrainLayout?.cells[y * world.width + x] ?? terrainVariant(x, y),
               terrainEdges(world, x, y),
             ),
             position.x,
@@ -395,7 +433,7 @@ export class CaveRenderer {
             ctx.arc(32, 31, 27, 0, Math.PI * 2);
             ctx.stroke();
           }
-        } else this.patrol(body as Enemy, world.trapped);
+        } else this.patrol(body as Enemy, world.trapped, dt, paused);
       } else if (this.atlas && this.animator) {
         const moving = !same(body, body.previous) && world.status === 'playing';
         const frame = this.animator.update(dt, FACINGS[body.direction], moving, false, paused);
@@ -506,15 +544,25 @@ export class CaveRenderer {
   private tileArt(biomeIndex: number, kind: 'wall' | 'soil', variant: number, edges = 0): HTMLCanvasElement {
     const key = `${biomeIndex}:${kind}:${variant}:${edges}`;
     const cached = this.tiles.get(key);
-    if (cached) return cached;
+    if (cached) {
+      this.tiles.delete(key);
+      this.tiles.set(key, cached);
+      return cached;
+    }
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = 64;
     const context = canvas.getContext('2d')!;
     const atlas = this.terrainAtlases.get(biomeIndex);
     if (atlas) paintBiomeTile(context, atlas, kind, variant);
     else paintCaveTile(context, biomeIndex, kind, variant);
-    if (kind === 'soil') punchSoil(context, biomeIndex, variant);
+    if (kind === 'soil') punchSoil(context, biomeIndex, variant % 4);
     paintTerrainEdges(context, edges, biomeIndex);
+    if (this.tiles.size >= 256) {
+      const oldest = this.tiles.keys().next().value!;
+      const evicted = this.tiles.get(oldest)!;
+      evicted.width = evicted.height = 0;
+      this.tiles.delete(oldest);
+    }
     this.tiles.set(key, canvas);
     return canvas;
   }
@@ -722,7 +770,7 @@ export class CaveRenderer {
   }
 
   /** Draws original uniformed cartoon patrols; the finale character is clearly a fictional caricature. */
-  private patrol(enemy: Enemy, trapped: boolean): void {
+  private patrol(enemy: Enemy, trapped: boolean, dt = 0, paused = true): void {
     const ctx = this.context,
       boss = enemy.kind === 'boss';
     if (enemy.kind === 'sweeper') {
@@ -745,12 +793,18 @@ export class CaveRenderer {
     const atlas = this.enemyAtlases.get(enemy.kind);
     if (atlas) {
       const { crop, image, metadata } = atlas;
-      const row = metadata.rows[enemy.direction];
+      let animator = this.enemyAnimators.get(enemy.id);
+      if (!animator) {
+        animator = new PatrolAnimator(metadata);
+        this.enemyAnimators.set(enemy.id, animator);
+      }
+      const moving = !same(enemy, enemy.previous);
+      const frame = animator.update(dt, FACINGS[enemy.direction], moving, enemy.chasing, paused, trapped);
       const width = (58 * crop.width) / crop.height;
       ctx.drawImage(
         image,
-        crop.x,
-        row * metadata.frameHeight + crop.y,
+        frame.x + crop.x,
+        frame.y + crop.y,
         crop.width,
         crop.height,
         32 - width / 2,
@@ -758,6 +812,11 @@ export class CaveRenderer {
         width,
         58,
       );
+      if (enemy.chasing) {
+        ctx.fillStyle = '#ffdf7e';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText('!', 53, 12);
+      }
       if (boss && trapped) {
         ctx.fillStyle = '#ffecab';
         ctx.font = 'bold 12px sans-serif';
@@ -765,55 +824,8 @@ export class CaveRenderer {
       }
       return;
     }
-    ctx.fillStyle = '#24263a';
-    ctx.beginPath();
-    ctx.roundRect(13, 44, 15, 14, 5);
-    ctx.roundRect(36, 44, 15, 14, 5);
-    ctx.fill();
-    ctx.fillStyle = boss
-      ? '#20202d'
-      : enemy.kind === 'red'
-        ? '#cf5465'
-        : enemy.kind === 'blue'
-          ? '#5484cf'
-          : '#777489';
-    ctx.strokeStyle = '#111725';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(12, 25, 40, 28, 10);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#e8b48d';
-    ctx.beginPath();
-    ctx.ellipse(32, 19, 18, 16, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = boss ? '#d4c5a5' : '#29283d';
-    ctx.beginPath();
-    ctx.ellipse(32, 8, 18, 6, 0, Math.PI, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = boss ? '#ee343e' : '#111725';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(18, 16, 12, 8);
-    ctx.strokeRect(34, 16, 12, 8);
-    ctx.beginPath();
-    ctx.moveTo(30, 19);
-    ctx.lineTo(34, 19);
-    ctx.stroke();
-    ctx.fillStyle = boss ? '#ffe98d' : '#ffffffaa';
-    ctx.font = 'bold 13px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(boss ? '♥' : enemy.kind === 'undercover' ? '?' : 'P', 32, 43);
-    if (enemy.chasing) {
-      ctx.fillStyle = '#ffdf7e';
-      ctx.font = 'bold 16px sans-serif';
-      ctx.fillText('!', 53, 12);
-    }
-    if (boss && trapped) {
-      ctx.fillStyle = '#ffecab';
-      ctx.font = 'bold 12px sans-serif';
-      ctx.fillText('♪', 52, 10);
-    }
+    // Missing humanoid atlases are a load error, never silently replaced by a stick figure.
+    throw new Error(`Brak atlasu przeciwnika: ${enemy.kind}`);
   }
 
   /** Highlights unlocked exits and distinguishes the final prize from ordinary cave doors. */

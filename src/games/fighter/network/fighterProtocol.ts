@@ -1,7 +1,7 @@
 import type { MatchSnapshot } from '../simulation/CombatTypes';
 import type { SimulationEvent } from '../simulation/FighterSimulation';
 
-export const FIGHTER_PROTOCOL = 2;
+export const FIGHTER_PROTOCOL = 3;
 export type FighterPhase = 'lobby' | 'countdown' | 'fight' | 'finished' | 'suspended' | 'closed';
 export interface FighterSeat {
   characterId: string;

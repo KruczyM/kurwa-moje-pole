@@ -24,7 +24,7 @@ export class FighterHud {
     this.p1LagHp += (match.p1.hp - this.p1LagHp) * 0.05;
     this.p2LagHp += (match.p2.hp - this.p2LagHp) * 0.05;
 
-    const barWidth = Math.min(320, width * 0.36);
+    const barWidth = Math.max(44, Math.min(320, (width - 228) / 2));
     const barHeight = 22;
     const topY = 28;
     const portraitSize = 42;
@@ -58,12 +58,12 @@ export class FighterHud {
     // P1 Name & Wins
     ctx.font = '900 16px sans-serif';
     ctx.fillStyle = '#ffde59';
-    ctx.fillText(p1Name.toUpperCase(), p1X + 4, topY + barHeight + 17);
+    ctx.fillText(p1Name.toUpperCase(), p1X + 4, topY + barHeight + 17, barWidth - 8);
 
     // P1 Round Wins
     for (let i = 0; i < 2; i++) {
       ctx.beginPath();
-      ctx.arc(p1X + 110 + i * 16, topY + barHeight + 12, 5, 0, Math.PI * 2);
+      ctx.arc(p1PortraitX + 10 + i * 16, topY + portraitSize + 12, 5, 0, Math.PI * 2);
       ctx.fillStyle = i < match.p1Wins ? '#ffd700' : '#334155';
       ctx.fill();
       ctx.strokeStyle = '#0f172a';
@@ -100,12 +100,12 @@ export class FighterHud {
     ctx.font = '900 16px sans-serif';
     ctx.fillStyle = '#ff6b81';
     ctx.textAlign = 'right';
-    ctx.fillText(p2Name.toUpperCase(), p2X + barWidth - 4, topY + barHeight + 17);
+    ctx.fillText(p2Name.toUpperCase(), p2X + barWidth - 4, topY + barHeight + 17, barWidth - 8);
 
     // P2 Round Wins
     for (let i = 0; i < 2; i++) {
       ctx.beginPath();
-      ctx.arc(p2X + barWidth - 110 - i * 16, topY + barHeight + 12, 5, 0, Math.PI * 2);
+      ctx.arc(p2PortraitX + 26 - i * 16, topY + portraitSize + 12, 5, 0, Math.PI * 2);
       ctx.fillStyle = i < match.p2Wins ? '#ffd700' : '#334155';
       ctx.fill();
       ctx.strokeStyle = '#0f172a';
@@ -121,10 +121,10 @@ export class FighterHud {
     ctx.lineWidth = 3;
     ctx.strokeRect(centerX - 36, topY - 2, 72, 42);
 
-    ctx.font = 'bold 28px monospace';
+    ctx.font = match.training ? 'bold 10px monospace' : 'bold 28px monospace';
     ctx.fillStyle = match.roundTimer <= 10 ? '#ef4444' : '#ffffff';
     ctx.textAlign = 'center';
-    ctx.fillText(Math.ceil(match.roundTimer).toString(), centerX, topY + 30);
+    ctx.fillText(match.training ? 'TRENING' : Math.ceil(match.roundTimer).toString(), centerX, topY + 30);
 
     // --- SUPER METERS (Under Player Names) ---
     const meterWidth = barWidth * 0.7;
@@ -138,8 +138,8 @@ export class FighterHud {
     ctx.textAlign = 'left';
     ctx.fillText(
       match.p1.meter >= 100 ? 'ULT GOTOWE!' : `ENERGIA ${Math.floor(match.p1.meter)}%`,
-      p1X + meterWidth + 8,
-      meterY + 9,
+      p1X,
+      meterY + 23,
     );
 
     // P2 Super Meter
@@ -156,8 +156,8 @@ export class FighterHud {
     ctx.fillStyle = match.p2.meter >= 100 ? '#ffd700' : '#94a3b8';
     ctx.fillText(
       match.p2.meter >= 100 ? 'ULT GOTOWE!' : `ENERGIA ${Math.floor(match.p2.meter)}%`,
-      p2X + barWidth - meterWidth - 8,
-      meterY + 9,
+      p2X + barWidth,
+      meterY + 23,
     );
 
     // --- COMBO COUNTERS ---

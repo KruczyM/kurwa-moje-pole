@@ -2,6 +2,7 @@ import './game.css';
 import { AnimationLoop } from '../../game/lifecycle/AnimationLoop';
 import { EventScope } from '../../game/lifecycle/EventScope';
 import { loadCachedImage } from '../shared/ImageCache';
+import { SpriteAnimator } from '../after/presentation/SpriteAnimator';
 import type { SpriteMetadata } from '../after/presentation/SpriteAnimator';
 import { ArcadeAudio } from './Audio';
 import { GridInput } from './Input';
@@ -102,6 +103,17 @@ class BongoRush {
         }),
       ])
         .then(([image, metadata]) => {
+          new SpriteAnimator(metadata);
+          if (
+            image.width !== metadata.frameWidth * metadata.framesPerDirection ||
+            image.height !== metadata.frameHeight * 4
+          )
+            throw new Error(`Niepoprawny rozmiar atlasu: ${hero}`);
+          if (
+            hero.endsWith('-v3') &&
+            (metadata.animationColumns.idle.length !== 2 || metadata.animationColumns.walk.length !== 8)
+          )
+            throw new Error(`Brak pełnej animacji przeciwnika: ${hero}`);
           const canvas = document.createElement('canvas');
           canvas.width = image.width;
           canvas.height = image.height;
@@ -133,27 +145,41 @@ class BongoRush {
     element<HTMLButtonElement>('begin').disabled = true;
     element('load-status').textContent = 'Wczytywanie postaci i biomu…';
     const hero = this.menu.hero;
+    let loaded = false;
     try {
       const level = LEVELS[index];
-      const [atlas, background, bushAtlas, patrolAtlas, bossAtlas, terrain, items, tablets, depth] =
-        await Promise.all([
-          this.atlas(hero),
-          loadCachedImage(`${BASE}game-assets/2d/bongo-rush/living/${SCENES[level.biome].file}`),
-          this.atlas('kobra'),
-          this.atlas('patrol'),
-          this.atlas('owsiak'),
-          loadCachedImage(`${BASE}game-assets/2d/bongo-rush/tiles-ai/${BIOME_TILE_ATLASES[level.biome]}`),
-          loadCachedImage(`${BASE}game-assets/2d/bongo-rush/art-v2/items.png`),
-          level.biome === 2
-            ? loadCachedImage(`${BASE}game-assets/2d/bongo-rush/art-v2/rave-tablets.png`)
-            : undefined,
-          loadCachedImage(`${BASE}game-assets/2d/bongo-rush/art-v2/depth.png`),
-        ]);
+      const [
+        atlas,
+        background,
+        bushAtlas,
+        patrolAtlas,
+        blueAtlas,
+        undercoverAtlas,
+        bossAtlas,
+        terrain,
+        items,
+        tablets,
+        depth,
+      ] = await Promise.all([
+        this.atlas(hero),
+        loadCachedImage(`${BASE}game-assets/2d/bongo-rush/living/${SCENES[level.biome].file}`),
+        this.atlas('kobra'),
+        this.atlas('patrol-red-v3'),
+        this.atlas('patrol-blue-v3'),
+        this.atlas('undercover-v3'),
+        this.atlas('owsiak'),
+        loadCachedImage(`${BASE}game-assets/2d/bongo-rush/tiles-ai/${BIOME_TILE_ATLASES[level.biome]}`),
+        loadCachedImage(`${BASE}game-assets/2d/bongo-rush/art-v2/items.png`),
+        level.biome === 2
+          ? loadCachedImage(`${BASE}game-assets/2d/bongo-rush/art-v2/rave-tablets.png`)
+          : undefined,
+        loadCachedImage(`${BASE}game-assets/2d/bongo-rush/art-v2/depth.png`),
+      ]);
       if (this.disposed || token !== this.loadToken) return false;
       this.backgrounds.set(level.biome, background);
       this.renderer!.hero(atlas);
       this.renderer!.bushHero(bushAtlas);
-      this.renderer!.enemyHeroes(patrolAtlas, bossAtlas);
+      this.renderer!.enemyHeroes(patrolAtlas, blueAtlas, undercoverAtlas, bossAtlas);
       this.renderer!.terrain(level.biome, terrain);
       this.renderer!.items(items);
       this.renderer!.tablets(tablets);
@@ -167,6 +193,7 @@ class BongoRush {
       element('load-status').textContent =
         'Bez limitu prób. Uważaj na zarastające przejścia. Postęp zapisuje się na tym urządzeniu.';
       this.updateHud();
+      loaded = true;
       return true;
     } catch (error) {
       if (!this.disposed && token === this.loadToken)
@@ -177,7 +204,7 @@ class BongoRush {
       if (!this.disposed && token === this.loadToken) {
         this.loading = false;
         element<HTMLButtonElement>('begin').disabled = false;
-        element('begin').textContent = 'Wejdź do jaskini →';
+        element('begin').textContent = loaded ? 'Wejdź do jaskini →' : 'Ponów wczytywanie →';
       }
     }
   }
@@ -628,6 +655,7 @@ class BongoRush {
       loading: this.loading,
       menuScreen: this.menu.screen,
       heroConfirmed: this.menu.confirmed,
+      rendering: this.renderer?.diagnostics(),
     };
   }
 }

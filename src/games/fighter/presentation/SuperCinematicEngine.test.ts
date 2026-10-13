@@ -262,56 +262,41 @@ describe('SuperCinematicEngine (16 Festival Character Super Move Animations)', (
     }
   });
 
-  it('renders all 16 character props without errors in SuperPropsRenderer', () => {
-    const renderer = new SuperPropsRenderer();
-    const mockCtx = {
-      save: vi.fn(),
-      restore: vi.fn(),
-      translate: vi.fn(),
-      rotate: vi.fn(),
-      scale: vi.fn(),
-      beginPath: vi.fn(),
-      closePath: vi.fn(),
-      arc: vi.fn(),
-      ellipse: vi.fn(),
-      rect: vi.fn(),
-      roundRect: vi.fn(),
-      fillRect: vi.fn(),
-      strokeRect: vi.fn(),
-      stroke: vi.fn(),
-      fill: vi.fn(),
-      moveTo: vi.fn(),
-      lineTo: vi.fn(),
-      quadraticCurveTo: vi.fn(),
-      fillText: vi.fn(),
-      strokeText: vi.fn(),
-      createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
-      createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
-    } as unknown as CanvasRenderingContext2D;
-
-    // Test each prop drawing function
-    renderer.drawMirror(mockCtx, 0, 0, 0, false);
-    renderer.drawMirror(mockCtx, 0, 0, 1.2, true);
-    renderer.drawBraidPropeller(mockCtx, 0, 0, 2.5);
-    renderer.drawWaterStream(mockCtx, 0, 0, 100, 0, 0.7);
-    renderer.drawCandyAndBeam(mockCtx, 0, 0, true, 0, 0, 200);
-    renderer.drawToiToi(mockCtx, 0, 0, 1.0);
-    renderer.drawToiletPaper(mockCtx, 0, 0, 1.0, 0.5);
-    renderer.drawNeonBattleCry(mockCtx, 0, 0, 1.0, 1.0);
-    renderer.drawSummerSign(mockCtx, 0, 0, 0.3);
-    renderer.drawMegaphone(mockCtx, 0, 0, 1, 10);
-    renderer.drawJBLSpeaker(mockCtx, 0, 0, 5);
-    renderer.drawMushroom(mockCtx, 0, 0);
-    renderer.drawMandala(mockCtx, 0, 0, 0.5, 0.6);
-    renderer.drawToteBag(mockCtx, 0, 0);
-    renderer.drawCampingStove(mockCtx, 0, 0, 1.5);
-    renderer.drawDJDeck(mockCtx, 0, 0, 0.8);
-    renderer.drawMeteorAura(mockCtx, 0, 0, 50);
-    renderer.drawOffroadJeep(mockCtx, 0, 0, 1);
-    renderer.drawBurningLighter(mockCtx, 0, 0, 0.5);
-    renderer.drawHypocrisyBlock(mockCtx, 0, 0, 1.0);
-
-    expect(mockCtx.save).toHaveBeenCalled();
-    expect(mockCtx.restore).toHaveBeenCalled();
+  it('draws cached AI props and releases discarded fighters', () => {
+    const images: { src: string; removeAttribute: ReturnType<typeof vi.fn> }[] = [];
+    vi.stubGlobal(
+      'Image',
+      class {
+        src = '';
+        complete = true;
+        naturalWidth = 640;
+        naturalHeight = 640;
+        removeAttribute = vi.fn();
+        constructor() {
+          images.push(this);
+        }
+      },
+    );
+    try {
+      const renderer = new SuperPropsRenderer();
+      const ctx = {
+        save: vi.fn(),
+        restore: vi.fn(),
+        translate: vi.fn(),
+        rotate: vi.fn(),
+        scale: vi.fn(),
+        drawImage: vi.fn(),
+      } as unknown as CanvasRenderingContext2D;
+      renderer.retain(['gruczol', 'szerszen']);
+      for (const id of ['gruczol', 'szerszen', 'paper']) renderer.drawProp(ctx, id, 0, 0, 100, 100);
+      expect(ctx.drawImage).toHaveBeenCalledTimes(3);
+      const old = [...images];
+      renderer.retain(['amper', 'korba']);
+      expect(old.every((image) => image.removeAttribute.mock.calls.length === 1)).toBe(true);
+      renderer.drawProp(ctx, 'amper', 0, 0, 100, 100);
+      expect(ctx.drawImage).toHaveBeenCalledTimes(4);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
