@@ -16,6 +16,8 @@ export class HeroGallery {
   constructor(
     container: HTMLElement,
     private readonly load: (hero: string) => Promise<HeroAtlas>,
+    private readonly preview?: HTMLCanvasElement,
+    private readonly previewName?: HTMLElement,
   ) {
     container.replaceChildren();
     HEROES.forEach((hero, index) => {
@@ -63,6 +65,8 @@ export class HeroGallery {
   /** Keeps selection readable to assistive technologies and does not move keyboard focus. */
   select(hero: string): void {
     this.selected = hero;
+    if (this.previewName)
+      this.previewName.textContent = HERO_LABELS[HEROES.indexOf(hero as (typeof HEROES)[number])] ?? '';
     for (const [name, entry] of this.entries) {
       entry.button.setAttribute('aria-pressed', String(name === hero));
       this.paint(name, 0, true);
@@ -106,12 +110,19 @@ export class HeroGallery {
       crop.width * scale,
       crop.height * scale,
     );
+    if (hero === this.selected && this.preview) {
+      const preview = this.preview.getContext('2d')!;
+      preview.clearRect(0, 0, this.preview.width, this.preview.height);
+      preview.imageSmoothingEnabled = true;
+      preview.drawImage(canvas, 0, 0, this.preview.width, this.preview.height);
+    }
   }
 
   /** Disposes owned canvases while leaving the global image cache intact. */
   dispose(): void {
     this.disposed = true;
     for (const entry of this.entries.values()) entry.canvas.width = entry.canvas.height = 0;
+    if (this.preview) this.preview.width = this.preview.height = 0;
     this.entries.clear();
   }
 }

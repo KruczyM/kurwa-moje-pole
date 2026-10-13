@@ -51,9 +51,12 @@ async def run(engine, name, profile, reduced=False):
       localStorage.setItem('after-bongo-rush:v1', JSON.stringify({version:1,unlocked:16,hero:'amper',muted:true,completed:true}));
       window.__frameSamples=[];
       window.__terrainDraws=0;
+      window.__heroDraws=[];
       window.__tileAlpha=[];const seenTiles=new WeakSet();
       const draw=CanvasRenderingContext2D.prototype.drawImage;
       CanvasRenderingContext2D.prototype.drawImage=function(image,...args){
+        if(this.canvas.id==='cave' && image instanceof HTMLImageElement && image.src.includes('/characters/'))
+          window.__heroDraws.push(image.src);
         if(image instanceof HTMLCanvasElement && image.width===64){
           window.__terrainDraws++;
           if(!seenTiles.has(image)){
@@ -89,9 +92,14 @@ async def run(engine, name, profile, reduced=False):
         await page.locator('#play').click()
         await page.wait_for_function('()=>document.querySelectorAll("#hero-gallery button:not(:disabled)").length===15')
         assert await page.locator('[data-hero="kobra"]').count() == 0
+        previews = set()
         for hero in await page.locator('[data-hero]').evaluate_all('(nodes)=>nodes.map(n=>n.dataset.hero)'):
             await page.locator(f'[data-hero="{hero}"]').click()
             assert await page.locator(f'[data-hero="{hero}"]').get_attribute('aria-pressed') == 'true'
+            label = await page.locator(f'[data-hero="{hero}"] span').inner_text()
+            assert await page.locator('#hero-preview-name').inner_text() == label
+            previews.add(await page.locator('#hero-preview').evaluate('(canvas)=>canvas.toDataURL()'))
+        assert len(previews) == 15, 'Every hero must have a distinct selectable preview'
         assert await page.locator('#hero-gallery canvas').evaluate_all('''nodes=>nodes.every(canvas=>{
           const p=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
           let visible=0;for(let i=3;i<p.length;i+=4)if(p[i])visible++;
@@ -110,6 +118,8 @@ async def run(engine, name, profile, reduced=False):
             await page.locator(f'[data-level="{level-1}"]').click()
             await ready(page)
             terrain_before = await page.evaluate('window.__terrainDraws')
+            selected_hero = await page.locator('[data-hero][aria-pressed="true"]').get_attribute('data-hero')
+            await page.evaluate('window.__heroDraws=[]')
             await page.locator('#begin').click()
             await page.wait_for_function('()=>document.querySelector("#level-panel").hidden')
             await page.wait_for_function('count=>window.__terrainDraws>count', arg=terrain_before)
@@ -125,6 +135,7 @@ async def run(engine, name, profile, reduced=False):
               return colors.size>100;
             }''')
             assert await page.evaluate('document.activeElement.id') == 'cave'
+            assert await page.evaluate('(hero)=>window.__heroDraws.some(src=>src.includes(`/characters/${hero}/`))', selected_hero)
             await page.screenshot(path=str(OUT / f'{name}-level-{level}.png'))
             if level == 1:
                 results.append(await timings(page))

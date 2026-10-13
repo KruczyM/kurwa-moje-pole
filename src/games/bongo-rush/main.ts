@@ -49,7 +49,12 @@ class BongoRush {
   private readonly progress: Progress = loadProgress(storage());
   private readonly motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
   private readonly menu = new MenuFlow(this.progress.hero);
-  private readonly gallery = new HeroGallery(element('hero-gallery'), (hero) => this.atlas(hero));
+  private readonly gallery = new HeroGallery(
+    element('hero-gallery'),
+    (hero) => this.atlas(hero),
+    element<HTMLCanvasElement>('hero-preview'),
+    element('hero-preview-name'),
+  );
   private readonly atlases = new Map<string, Promise<HeroAtlas>>();
   private readonly backgrounds = new Map<number, HTMLImageElement>();
   private readonly observer = new ResizeObserver(() => this.resize());
