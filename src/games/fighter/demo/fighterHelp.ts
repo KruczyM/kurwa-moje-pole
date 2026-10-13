@@ -10,8 +10,8 @@ export function renderFighterHelp(host: HTMLElement, def: FighterDefinition): vo
     <p><strong>Niskie i powietrzne:</strong> dół + U/J: niski prosty/kopnięcie. U/I/J/K w skoku: atak w powietrzu.</p>
     <p><strong>Garda:</strong> trzymaj L, spację lub BLK. Cofanie także blokuje. Na niski cios: dół + blok. Samo kucanie nie blokuje.</p>
     <p><strong>Seria:</strong> po trafionym lub zablokowanym prostym naciśnij I albo K. Po powaleniu cios przyspiesza wstawanie.</p>
-    <p><strong>Special:</strong> P / SP — 30% energii. <strong>Ultimate:</strong> O / ULT / numpad 6 — 100%. Pasek rośnie po trafieniach i blokach. Ultimate wymaga zasięgu i może być zablokowany.</p>
-    <p><strong>Mecz:</strong> dwie wygrane rundy, 90 sekund na rundę. Escape: menu. W treningu przeciwnik jest nieruchomy.</p>
+    <p><strong>Special:</strong> P / SP — 30% energii. <strong>Ultimate:</strong> O / ULT / numpad 6 — 100%. Pasek rośnie po trafieniach i blokach. Ultimate dosięga całej areny i może być zablokowany.</p>
+    <p><strong>Mecz:</strong> dwie wygrane rundy, 90 sekund na rundę. Escape: menu. W treningu przeciwnik jest nieruchomy i nieśmiertelny, ultimate ma pełną energię, a czas nie kończy pojedynku.</p>
     <p><strong>Online:</strong> wybierasz swoją postać i potwierdzasz gotowość. Po otwarciu menu walka online trwa dalej. Powrót do wyboru postaci opuszcza pokój.</p>`;
   const signature = document.createElement('p');
   signature.className = 'fighter-signature';

@@ -66,7 +66,15 @@ button:hover {
   align-items: flex-start;
   padding: 8vw;
   background:
-    radial-gradient(circle at 76% 45%, #fd5c8140, transparent 25%), linear-gradient(135deg, #131127, #39204f);
+    linear-gradient(90deg, #07120cdd, #07120c44),
+    url('../public/game-assets/2d/fighter/art-v3/wristbands-wide.webp') center / cover;
+}
+@media (orientation: portrait) {
+  #start {
+    background-image:
+      linear-gradient(#07120c99, #07120cbb),
+      url('../public/game-assets/2d/fighter/art-v3/wristbands-portrait.webp');
+  }
 }
 .eyebrow {
   color: #9dff4e;

@@ -16,7 +16,7 @@ export const STAGES: Record<string, StageDefinition> = {
     theme: 'night',
     imagePath: 'game-assets/2d/fighter/stages/main_stage.jpg',
     ambientLight: '#38bdf8',
-    groundOffsetRatio: 0.78,
+    groundOffsetRatio: 0.9,
   },
   grzybek: {
     id: 'grzybek',
@@ -25,7 +25,7 @@ export const STAGES: Record<string, StageDefinition> = {
     theme: 'day',
     imagePath: 'game-assets/2d/fighter/stages/grzybek.jpg',
     ambientLight: '#06b6d4',
-    groundOffsetRatio: 0.78,
+    groundOffsetRatio: 0.86,
   },
   sunset_camp: {
     id: 'sunset_camp',
@@ -34,7 +34,7 @@ export const STAGES: Record<string, StageDefinition> = {
     theme: 'sunset',
     imagePath: 'game-assets/2d/fighter/stages/sunset_camp.jpg',
     ambientLight: '#f59e0b',
-    groundOffsetRatio: 0.78,
+    groundOffsetRatio: 0.88,
   },
   krishna_village: {
     id: 'krishna_village',
@@ -43,7 +43,7 @@ export const STAGES: Record<string, StageDefinition> = {
     theme: 'day',
     imagePath: 'game-assets/2d/fighter/stages/krishna_village.jpg',
     ambientLight: '#f59e0b',
-    groundOffsetRatio: 0.78,
+    groundOffsetRatio: 0.86,
   },
 };
 

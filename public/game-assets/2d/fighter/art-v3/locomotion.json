@@ -1,0 +1,2284 @@
+{
+  "version": 3,
+  "fighters": {
+    "ambona": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "amper": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "antena": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "chlebak": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "dziaslo": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "gruczol": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "hemoroid": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "jeczmien": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "klatwa": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "kobra": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "korba": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "krwiak": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "pien": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "pierscien": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "szerszen": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "ultimate": {
+        "file": "ultimate.png",
+        "frames": 6,
+        "durationTicks": 105,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    },
+    "zawor": {
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk": {
+        "file": "walk.png",
+        "frames": 12,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 4,
+        "durationTicks": 8,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 200,
+        "facing": 1,
+        "locomotion": true
+      }
+    }
+  },
+  "sources": {
+    "ambona": {
+      "source": "walk-ambona.png",
+      "sha256": "27b5c98205575b925df72144062d6b2d4f294577690d2b1d00099b37a3b8e5c5",
+      "completePoses": 12,
+      "sourceBoxes": [
+        [
+          65,
+          13,
+          244,
+          330
+        ],
+        [
+          375,
+          12,
+          561,
+          330
+        ],
+        [
+          695,
+          12,
+          860,
+          330
+        ],
+        [
+          1003,
+          13,
+          1175,
+          330
+        ],
+        [
+          65,
+          341,
+          286,
+          664
+        ],
+        [
+          362,
+          344,
+          554,
+          664
+        ],
+        [
+          706,
+          340,
+          863,
+          664
+        ],
+        [
+          1004,
+          341,
+          1168,
+          662
+        ],
+        [
+          68,
+          678,
+          256,
+          998
+        ],
+        [
+          363,
+          675,
+          583,
+          996
+        ],
+        [
+          675,
+          672,
+          899,
+          998
+        ],
+        [
+          1007,
+          674,
+          1167,
+          998
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "12 complete poses"
+    },
+    "amper": {
+      "source": "walk-amper.png",
+      "sha256": "54b0614f162d1eff741db4bd73d247fcaf54cd6592a73208e9ed9fe69e9911d6",
+      "completePoses": 16,
+      "sourceBoxes": [
+        [
+          46,
+          13,
+          220,
+          320
+        ],
+        [
+          293,
+          13,
+          483,
+          320
+        ],
+        [
+          545,
+          13,
+          749,
+          320
+        ],
+        [
+          800,
+          13,
+          995,
+          319
+        ],
+        [
+          40,
+          328,
+          224,
+          642
+        ],
+        [
+          288,
+          330,
+          472,
+          641
+        ],
+        [
+          542,
+          334,
+          741,
+          642
+        ],
+        [
+          796,
+          333,
+          984,
+          642
+        ],
+        [
+          28,
+          653,
+          215,
+          962
+        ],
+        [
+          284,
+          654,
+          478,
+          963
+        ],
+        [
+          541,
+          656,
+          729,
+          964
+        ],
+        [
+          798,
+          658,
+          985,
+          964
+        ],
+        [
+          32,
+          975,
+          216,
+          1277
+        ],
+        [
+          282,
+          978,
+          475,
+          1277
+        ],
+        [
+          541,
+          978,
+          736,
+          1275
+        ],
+        [
+          810,
+          977,
+          990,
+          1276
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "rows 2-4"
+    },
+    "antena": {
+      "source": "walk-antena.png",
+      "sha256": "72590f4b11b949de552ec44df97bdc58371394b89fbb676331e5a61cbdd5df36",
+      "completePoses": 16,
+      "sourceBoxes": [
+        [
+          109,
+          15,
+          273,
+          331
+        ],
+        [
+          378,
+          15,
+          549,
+          331
+        ],
+        [
+          646,
+          15,
+          852,
+          331
+        ],
+        [
+          945,
+          16,
+          1123,
+          329
+        ],
+        [
+          91,
+          339,
+          277,
+          647
+        ],
+        [
+          378,
+          339,
+          562,
+          647
+        ],
+        [
+          651,
+          339,
+          833,
+          648
+        ],
+        [
+          927,
+          339,
+          1126,
+          647
+        ],
+        [
+          84,
+          657,
+          270,
+          958
+        ],
+        [
+          367,
+          656,
+          560,
+          959
+        ],
+        [
+          654,
+          657,
+          847,
+          959
+        ],
+        [
+          931,
+          656,
+          1136,
+          958
+        ],
+        [
+          83,
+          965,
+          282,
+          1266
+        ],
+        [
+          361,
+          966,
+          577,
+          1267
+        ],
+        [
+          645,
+          965,
+          868,
+          1267
+        ],
+        [
+          935,
+          965,
+          1122,
+          1271
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "rows 2-4"
+    },
+    "chlebak": {
+      "source": "walk-chlebak.png",
+      "sha256": "22f7abeeed14f1b41e7093483b70d7239d7f8be5021d384a4af1a063e54ad151",
+      "completePoses": 16,
+      "sourceBoxes": [
+        [
+          70,
+          10,
+          257,
+          326
+        ],
+        [
+          354,
+          10,
+          542,
+          326
+        ],
+        [
+          646,
+          10,
+          822,
+          328
+        ],
+        [
+          922,
+          10,
+          1121,
+          328
+        ],
+        [
+          92,
+          336,
+          258,
+          652
+        ],
+        [
+          383,
+          336,
+          542,
+          653
+        ],
+        [
+          664,
+          336,
+          829,
+          654
+        ],
+        [
+          958,
+          336,
+          1130,
+          653
+        ],
+        [
+          89,
+          661,
+          278,
+          969
+        ],
+        [
+          369,
+          661,
+          559,
+          969
+        ],
+        [
+          669,
+          661,
+          855,
+          969
+        ],
+        [
+          954,
+          661,
+          1141,
+          969
+        ],
+        [
+          80,
+          974,
+          255,
+          1284
+        ],
+        [
+          372,
+          974,
+          541,
+          1284
+        ],
+        [
+          657,
+          974,
+          854,
+          1282
+        ],
+        [
+          955,
+          974,
+          1155,
+          1283
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "rows 2-4"
+    },
+    "dziaslo": {
+      "source": "walk-dziaslo.png",
+      "sha256": "b841ba359dacd08ebb5f6ccfe3eb520f0885a7e8d1573c16303ab7b7d033ef8e",
+      "completePoses": 12,
+      "sourceBoxes": [
+        [
+          62,
+          14,
+          234,
+          363
+        ],
+        [
+          364,
+          14,
+          528,
+          363
+        ],
+        [
+          659,
+          13,
+          833,
+          363
+        ],
+        [
+          961,
+          15,
+          1151,
+          361
+        ],
+        [
+          56,
+          376,
+          239,
+          735
+        ],
+        [
+          352,
+          377,
+          576,
+          734
+        ],
+        [
+          657,
+          377,
+          877,
+          734
+        ],
+        [
+          961,
+          376,
+          1183,
+          734
+        ],
+        [
+          45,
+          747,
+          248,
+          1149
+        ],
+        [
+          346,
+          750,
+          581,
+          1155
+        ],
+        [
+          649,
+          751,
+          895,
+          1157
+        ],
+        [
+          968,
+          752,
+          1202,
+          1160
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "12 complete poses"
+    },
+    "gruczol": {
+      "source": "walk-gruczol.png",
+      "sha256": "f615fbad2cc1dd231a9c265d0d9281cd0555453f75eb070550c8d819a2cbe652",
+      "completePoses": 16,
+      "sourceBoxes": [
+        [
+          122,
+          9,
+          292,
+          311
+        ],
+        [
+          400,
+          9,
+          566,
+          311
+        ],
+        [
+          668,
+          9,
+          882,
+          311
+        ],
+        [
+          976,
+          9,
+          1197,
+          311
+        ],
+        [
+          72,
+          320,
+          291,
+          624
+        ],
+        [
+          376,
+          323,
+          582,
+          623
+        ],
+        [
+          678,
+          320,
+          896,
+          624
+        ],
+        [
+          978,
+          322,
+          1189,
+          623
+        ],
+        [
+          65,
+          633,
+          289,
+          935
+        ],
+        [
+          370,
+          634,
+          582,
+          935
+        ],
+        [
+          667,
+          633,
+          904,
+          936
+        ],
+        [
+          972,
+          633,
+          1194,
+          936
+        ],
+        [
+          65,
+          946,
+          286,
+          1248
+        ],
+        [
+          376,
+          945,
+          608,
+          1248
+        ],
+        [
+          667,
+          946,
+          890,
+          1248
+        ],
+        [
+          1004,
+          945,
+          1180,
+          1251
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "rows 2-4"
+    },
+    "hemoroid": {
+      "source": "walk-hemoroid.png",
+      "sha256": "dcaebc41f7d22167cfe888bb7750e8ef1befd914339b3830fe930b8527c863d5",
+      "completePoses": 12,
+      "sourceBoxes": [
+        [
+          62,
+          12,
+          219,
+          334
+        ],
+        [
+          370,
+          12,
+          561,
+          333
+        ],
+        [
+          686,
+          12,
+          870,
+          334
+        ],
+        [
+          1010,
+          12,
+          1196,
+          334
+        ],
+        [
+          48,
+          344,
+          234,
+          665
+        ],
+        [
+          361,
+          344,
+          565,
+          665
+        ],
+        [
+          677,
+          343,
+          877,
+          665
+        ],
+        [
+          1008,
+          343,
+          1212,
+          665
+        ],
+        [
+          54,
+          674,
+          226,
+          995
+        ],
+        [
+          355,
+          674,
+          558,
+          994
+        ],
+        [
+          678,
+          674,
+          898,
+          993
+        ],
+        [
+          1003,
+          674,
+          1180,
+          995
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "12 complete poses"
+    },
+    "jeczmien": {
+      "source": "walk-jeczmien.png",
+      "sha256": "c13acc762196c0527b79e541f6b494bc494e0a79278a2b41162875d55e3463e6",
+      "completePoses": 16,
+      "sourceBoxes": [
+        [
+          87,
+          8,
+          242,
+          322
+        ],
+        [
+          381,
+          8,
+          546,
+          321
+        ],
+        [
+          665,
+          8,
+          848,
+          322
+        ],
+        [
+          962,
+          8,
+          1164,
+          321
+        ],
+        [
+          64,
+          325,
+          274,
+          635
+        ],
+        [
+          367,
+          325,
+          551,
+          635
+        ],
+        [
+          680,
+          325,
+          850,
+          635
+        ],
+        [
+          973,
+          325,
+          1162,
+          635
+        ],
+        [
+          71,
+          641,
+          262,
+          948
+        ],
+        [
+          368,
+          638,
+          559,
+          948
+        ],
+        [
+          679,
+          640,
+          849,
+          949
+        ],
+        [
+          974,
+          638,
+          1158,
+          947
+        ],
+        [
+          65,
+          955,
+          270,
+          1267
+        ],
+        [
+          380,
+          955,
+          562,
+          1267
+        ],
+        [
+          670,
+          955,
+          858,
+          1267
+        ],
+        [
+          998,
+          954,
+          1163,
+          1268
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "rows 2-4"
+    },
+    "klatwa": {
+      "source": "walk-klatwa.png",
+      "sha256": "5c47b22e6c13793d9979a517243f7dc6f52a427ad40c297e665b2fa67664d6f3",
+      "completePoses": 16,
+      "sourceBoxes": [
+        [
+          76,
+          17,
+          227,
+          333
+        ],
+        [
+          371,
+          17,
+          518,
+          333
+        ],
+        [
+          641,
+          17,
+          834,
+          332
+        ],
+        [
+          930,
+          17,
+          1151,
+          332
+        ],
+        [
+          74,
+          340,
+          241,
+          652
+        ],
+        [
+          370,
+          340,
+          547,
+          652
+        ],
+        [
+          662,
+          340,
+          833,
+          653
+        ],
+        [
+          966,
+          341,
+          1136,
+          653
+        ],
+        [
+          83,
+          666,
+          244,
+          969
+        ],
+        [
+          377,
+          666,
+          549,
+          969
+        ],
+        [
+          649,
+          666,
+          858,
+          968
+        ],
+        [
+          957,
+          666,
+          1149,
+          969
+        ],
+        [
+          55,
+          981,
+          258,
+          1295
+        ],
+        [
+          353,
+          980,
+          578,
+          1295
+        ],
+        [
+          680,
+          980,
+          837,
+          1296
+        ],
+        [
+          963,
+          980,
+          1128,
+          1298
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "rows 2-4"
+    },
+    "kobra": {
+      "source": "walk-kobra.png",
+      "sha256": "d54dfb367b2405bd644355fc052a1034f5471cf1f70764d68a01e400df6099a7",
+      "completePoses": 16,
+      "sourceBoxes": [
+        [
+          78,
+          12,
+          256,
+          313
+        ],
+        [
+          331,
+          12,
+          511,
+          313
+        ],
+        [
+          582,
+          12,
+          780,
+          313
+        ],
+        [
+          851,
+          12,
+          1046,
+          312
+        ],
+        [
+          66,
+          324,
+          240,
+          620
+        ],
+        [
+          348,
+          324,
+          502,
+          622
+        ],
+        [
+          603,
+          324,
+          776,
+          622
+        ],
+        [
+          878,
+          325,
+          1052,
+          621
+        ],
+        [
+          57,
+          629,
+          260,
+          928
+        ],
+        [
+          325,
+          629,
+          517,
+          929
+        ],
+        [
+          592,
+          629,
+          799,
+          931
+        ],
+        [
+          858,
+          629,
+          1070,
+          930
+        ],
+        [
+          56,
+          948,
+          269,
+          1331
+        ],
+        [
+          333,
+          948,
+          521,
+          1332
+        ],
+        [
+          598,
+          948,
+          801,
+          1332
+        ],
+        [
+          863,
+          948,
+          1072,
+          1332
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "rows 2-4"
+    },
+    "korba": {
+      "source": "walk-korba.png",
+      "sha256": "9aed7fc4dd71114e39012e1ef737d13251d3a601b50cb8d2703b450d2673a661",
+      "completePoses": 16,
+      "sourceBoxes": [
+        [
+          102,
+          11,
+          272,
+          338
+        ],
+        [
+          352,
+          11,
+          524,
+          338
+        ],
+        [
+          607,
+          11,
+          780,
+          337
+        ],
+        [
+          862,
+          11,
+          1054,
+          339
+        ],
+        [
+          95,
+          349,
+          278,
+          679
+        ],
+        [
+          353,
+          349,
+          511,
+          677
+        ],
+        [
+          593,
+          349,
+          803,
+          677
+        ],
+        [
+          861,
+          350,
+          1046,
+          678
+        ],
+        [
+          84,
+          686,
+          277,
+          1017
+        ],
+        [
+          356,
+          686,
+          530,
+          1018
+        ],
+        [
+          598,
+          686,
+          793,
+          1017
+        ],
+        [
+          863,
+          687,
+          1034,
+          1019
+        ],
+        [
+          94,
+          1026,
+          280,
+          1360
+        ],
+        [
+          280,
+          1029,
+          531,
+          1360
+        ],
+        [
+          612,
+          1029,
+          794,
+          1361
+        ],
+        [
+          867,
+          1026,
+          1048,
+          1360
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "rows 2-4"
+    },
+    "krwiak": {
+      "source": "walk-krwiak.png",
+      "sha256": "65ecd5f7773ae73200ec2de78401650274f7f379b581b703561d62b1628c8452",
+      "completePoses": 16,
+      "sourceBoxes": [
+        [
+          107,
+          14,
+          268,
+          312
+        ],
+        [
+          399,
+          15,
+          569,
+          311
+        ],
+        [
+          691,
+          15,
+          867,
+          312
+        ],
+        [
+          978,
+          14,
+          1160,
+          311
+        ],
+        [
+          88,
+          327,
+          269,
+          629
+        ],
+        [
+          406,
+          326,
+          551,
+          631
+        ],
+        [
+          697,
+          328,
+          869,
+          630
+        ],
+        [
+          983,
+          327,
+          1156,
+          628
+        ],
+        [
+          111,
+          645,
+          285,
+          948
+        ],
+        [
+          376,
+          644,
+          577,
+          948
+        ],
+        [
+          687,
+          644,
+          861,
+          948
+        ],
+        [
+          958,
+          645,
+          1180,
+          949
+        ],
+        [
+          108,
+          961,
+          280,
+          1253
+        ],
+        [
+          375,
+          962,
+          579,
+          1254
+        ],
+        [
+          691,
+          961,
+          871,
+          1257
+        ],
+        [
+          988,
+          961,
+          1160,
+          1256
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "rows 2-4"
+    },
+    "pien": {
+      "source": "walk-pien.png",
+      "sha256": "324bff5603ecc8982ae377e33e7a6973507d60612b16f1e63e3ec65b8a9ba791",
+      "completePoses": 16,
+      "sourceBoxes": [
+        [
+          50,
+          10,
+          255,
+          321
+        ],
+        [
+          346,
+          9,
+          557,
+          321
+        ],
+        [
+          638,
+          10,
+          875,
+          322
+        ],
+        [
+          940,
+          9,
+          1165,
+          322
+        ],
+        [
+          38,
+          325,
+          259,
+          636
+        ],
+        [
+          337,
+          325,
+          557,
+          637
+        ],
+        [
+          639,
+          325,
+          857,
+          635
+        ],
+        [
+          936,
+          326,
+          1167,
+          636
+        ],
+        [
+          41,
+          641,
+          263,
+          949
+        ],
+        [
+          338,
+          642,
+          557,
+          949
+        ],
+        [
+          632,
+          640,
+          867,
+          947
+        ],
+        [
+          942,
+          641,
+          1165,
+          948
+        ],
+        [
+          28,
+          954,
+          256,
+          1265
+        ],
+        [
+          337,
+          954,
+          566,
+          1264
+        ],
+        [
+          635,
+          954,
+          878,
+          1266
+        ],
+        [
+          943,
+          954,
+          1180,
+          1266
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "rows 2-4"
+    },
+    "pierscien": {
+      "source": "walk-pierscien.png",
+      "sha256": "8e3db9d9c0f6dbaf3e0201ff600754e878477c30d9d91acbdca0f7530e92bc6f",
+      "completePoses": 16,
+      "sourceBoxes": [
+        [
+          63,
+          11,
+          243,
+          314
+        ],
+        [
+          373,
+          13,
+          554,
+          313
+        ],
+        [
+          678,
+          11,
+          872,
+          314
+        ],
+        [
+          988,
+          11,
+          1180,
+          313
+        ],
+        [
+          68,
+          325,
+          244,
+          628
+        ],
+        [
+          402,
+          324,
+          556,
+          630
+        ],
+        [
+          689,
+          326,
+          864,
+          629
+        ],
+        [
+          991,
+          324,
+          1177,
+          629
+        ],
+        [
+          66,
+          637,
+          246,
+          944
+        ],
+        [
+          367,
+          640,
+          567,
+          944
+        ],
+        [
+          673,
+          640,
+          867,
+          942
+        ],
+        [
+          1022,
+          639,
+          1169,
+          943
+        ],
+        [
+          69,
+          951,
+          257,
+          1253
+        ],
+        [
+          384,
+          951,
+          567,
+          1252
+        ],
+        [
+          686,
+          952,
+          875,
+          1249
+        ],
+        [
+          986,
+          951,
+          1195,
+          1255
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "rows 2-4"
+    },
+    "szerszen": {
+      "source": "walk-szerszen.png",
+      "sha256": "dcb7ba09753bdbfa09a9b5e8756b65758fc4bfc0449408d76c80af3243656099",
+      "completePoses": 16,
+      "sourceBoxes": [
+        [
+          74,
+          13,
+          261,
+          344
+        ],
+        [
+          344,
+          15,
+          531,
+          344
+        ],
+        [
+          604,
+          12,
+          793,
+          344
+        ],
+        [
+          877,
+          12,
+          1098,
+          344
+        ],
+        [
+          65,
+          351,
+          275,
+          680
+        ],
+        [
+          338,
+          351,
+          532,
+          680
+        ],
+        [
+          616,
+          351,
+          811,
+          682
+        ],
+        [
+          885,
+          351,
+          1090,
+          682
+        ],
+        [
+          46,
+          697,
+          278,
+          1027
+        ],
+        [
+          333,
+          694,
+          556,
+          1027
+        ],
+        [
+          607,
+          695,
+          830,
+          1029
+        ],
+        [
+          895,
+          694,
+          1107,
+          1027
+        ],
+        [
+          73,
+          1039,
+          264,
+          1370
+        ],
+        [
+          337,
+          1039,
+          548,
+          1369
+        ],
+        [
+          609,
+          1039,
+          815,
+          1369
+        ],
+        [
+          893,
+          1039,
+          1085,
+          1370
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "rows 2-4"
+    },
+    "zawor": {
+      "source": "walk-zawor.png",
+      "sha256": "682aa757dc640211ea5ecb981562053c066152f2b25f0d9a2322bd310b6ae078",
+      "completePoses": 16,
+      "sourceBoxes": [
+        [
+          60,
+          15,
+          226,
+          318
+        ],
+        [
+          353,
+          15,
+          553,
+          319
+        ],
+        [
+          662,
+          15,
+          855,
+          319
+        ],
+        [
+          967,
+          15,
+          1178,
+          319
+        ],
+        [
+          46,
+          333,
+          229,
+          640
+        ],
+        [
+          361,
+          334,
+          536,
+          640
+        ],
+        [
+          661,
+          333,
+          850,
+          636
+        ],
+        [
+          978,
+          333,
+          1161,
+          640
+        ],
+        [
+          37,
+          655,
+          220,
+          959
+        ],
+        [
+          355,
+          655,
+          547,
+          959
+        ],
+        [
+          664,
+          655,
+          857,
+          960
+        ],
+        [
+          975,
+          655,
+          1173,
+          960
+        ],
+        [
+          31,
+          971,
+          232,
+          1269
+        ],
+        [
+          340,
+          970,
+          547,
+          1267
+        ],
+        [
+          653,
+          971,
+          856,
+          1267
+        ],
+        [
+          973,
+          971,
+          1183,
+          1269
+        ]
+      ],
+      "exit": "reversed entry",
+      "cycle": "rows 2-4"
+    }
+  }
+}

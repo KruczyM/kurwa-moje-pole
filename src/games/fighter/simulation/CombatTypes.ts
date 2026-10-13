@@ -113,6 +113,7 @@ export interface FighterState {
 export type RoundState = 'intro' | 'fight' | 'roundOver' | 'matchOver';
 
 export interface MatchState {
+  training?: boolean;
   superFreezeTicks?: number;
   superFreezeTotal?: number;
   tick: number;

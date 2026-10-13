@@ -1,3 +1,4 @@
+import { FIGHTER_PROTOCOL } from '../src/games/fighter/network/fighterProtocol.js';
 import http from 'http';
 import { Server, Socket } from 'socket.io';
 import { Room } from './Room.js';
@@ -35,7 +36,7 @@ export class RoomServer {
     this.server = http.createServer((req, res) => {
       if (req.url === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok', protocol: PROTOCOL_VERSION, rooms: this.rooms.size, fighterProtocol: 2 }));
+        res.end(JSON.stringify({ status: 'ok', protocol: PROTOCOL_VERSION, rooms: this.rooms.size, fighterProtocol: FIGHTER_PROTOCOL }));
         return;
       }
       res.writeHead(404);

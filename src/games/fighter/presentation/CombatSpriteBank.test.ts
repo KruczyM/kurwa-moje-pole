@@ -205,10 +205,10 @@ describe('combat atlas loading', () => {
     vi.stubGlobal('fetch', fetchMock);
     const bank = new CombatSpriteBank();
     bank.retain(['amper']);
-    await vi.waitFor(() => expect(images).toHaveLength(22));
+    await vi.waitFor(() => expect(images).toHaveLength(24));
     bank.retain(['amper']);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(images.some((image) => image.src.endsWith('/combat/amper/walk.png'))).toBe(true);
+    expect(images.some((image) => image.src.endsWith('/art-v3/locomotion/amper/walk.png'))).toBe(true);
     expect(images.some((image) => image.src.endsWith('/combat-powers-v2/amper/uppercut_power.png'))).toBe(
       true,
     );

@@ -186,7 +186,7 @@ describe('FighterSimulation — timed combat', () => {
       expect(restored.getSnapshot()).toEqual(sim.getSnapshot());
     }
   });
-  it('super needs meter and cannot damage out of range', () => {
+  it('ultimate needs meter and hits once across the whole arena', () => {
     const sim = new FighterSimulation(amperDefinition, korbaDefinition);
     sim.update(INPUT.SPECIAL, 0);
     expect(sim.getEvents().some((e) => e.type === 'meter_empty')).toBe(true);
@@ -195,7 +195,10 @@ describe('FighterSimulation — timed combat', () => {
     sim.update(INPUT.SPECIAL, 0);
     expect(sim.getState().p1.meter).toBe(0);
     advance(sim, 100);
-    expect(sim.getState().p2.hp).toBe(950);
+    expect(sim.getState().p2.hp).toBe(950 - amperDefinition.moves.ultimate.damage);
+    const hp = sim.getState().p2.hp;
+    advance(sim, 100);
+    expect(sim.getState().p2.hp).toBe(hp);
   });
   it('applies timing floors to all 16 characters without changing source data', () => {
     for (const entry of Object.values(ROSTER)) {

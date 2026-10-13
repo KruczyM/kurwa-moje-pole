@@ -20,6 +20,7 @@ export function combatMove(move: MoveDefinition): MoveDefinition {
   const [startup, recovery] = timings[move.id] ?? [12, 20];
   return {
     ...move,
+    attackHeight: move.id === 'ultimate' ? 'mid' : move.attackHeight,
     meterCost: move.id === 'special' ? 30 : move.meterCost,
     startup: Math.max(startup, move.startup),
     recovery: Math.max(recovery, move.recovery),

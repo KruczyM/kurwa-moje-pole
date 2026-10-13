@@ -1,3 +1,4 @@
+import { FIGHTER_PROTOCOL } from './fighterProtocol';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FighterSimulation } from '../simulation/FighterSimulation';
 import { amperDefinition } from '../data/fighters/amper';
@@ -55,7 +56,7 @@ describe('fighter client session ordering', () => {
       events: [],
     };
     online.open('join', room.code);
-    const joining = mock.handlers.get('fighter:hello')!({ version: 2 });
+    const joining = mock.handlers.get('fighter:hello')!({ version: FIGHTER_PROTOCOL });
     mock.handlers.get('fighter:frame')!(frame);
     expect(frames).toHaveLength(0);
     acknowledge(null, { room, seat: 1, token: 'own-token' });
@@ -69,7 +70,7 @@ describe('fighter client session ordering', () => {
     expect(mock.socket.emit).not.toHaveBeenCalled();
     expect(mock.socket.removeAllListeners).toHaveBeenCalled();
     online.open('create');
-    const creating = mock.handlers.get('fighter:hello')!({ version: 2 });
+    const creating = mock.handlers.get('fighter:hello')!({ version: FIGHTER_PROTOCOL });
     acknowledge(null, { room: { ...room, code: '123456' }, seat: 0, token: 'new-token' });
     await creating;
     mock.handlers.get('fighter:frame')!({ ...frame, sequence: 1 });

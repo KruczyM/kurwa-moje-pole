@@ -1,4 +1,4 @@
-import { SuperPropsRenderer } from './SuperPropsRenderer';
+import { SuperPropsRenderer, ultimatePropPose } from './SuperPropsRenderer';
 import { FighterAudio } from './FighterAudio';
 import { CameraRig2D } from './CameraRig2D';
 import { FighterState, MatchState } from '../simulation/CombatTypes';
@@ -29,6 +29,10 @@ export class SuperCinematicEngine {
   private followsCombat = false;
   private boundAttacker: FighterState | null = null;
   private boundDefender: FighterState | null = null;
+
+  public retainFighters(ids: string[]): void {
+    this.propsRenderer.retain(ids);
+  }
 
   public isCinematicActive(): boolean {
     return this.activeState !== null;
@@ -241,15 +245,7 @@ export class SuperCinematicEngine {
 
     // Keep authored projectile travel inside active ticks. Charge poses cannot
     // launch a projectile before the corresponding combat sprite makes contact.
-    const propTick = !this.followsCombat
-      ? t
-      : s.phase === 'freeze'
-        ? t
-        : s.phase === 'action'
-          ? 35 + (5 * (t - 35)) / 40
-          : s.phase === 'impact'
-            ? 42 + (50 * (t - 76)) / 16
-            : t;
+    const propTick = t;
     if (this.followsCombat && s.phase === 'recovery') ctx.globalAlpha *= Math.max(0, (105 - t) / 12);
     this.renderCharacterSuperProps(ctx, s, propTick);
     const concurrent = this.boundDefender;
@@ -304,176 +300,25 @@ export class SuperCinematicEngine {
   }
 
   private renderCharacterSuperProps(ctx: CanvasRenderingContext2D, s: SuperCinematicState, t: number): void {
+    const id = s.attackerId.toLowerCase();
+    if (id === 'szerszen' && t < 50) return;
+    const pose = ultimatePropPose(t, s.attackerX, s.attackerY, s.defenderX, s.defenderY, id);
     const p = this.propsRenderer;
-    const progress = Math.min(1, Math.max(0, (t - 35) / 40)); // 0 to 1 during action
-    const startX = s.attackerX;
-    const startY = s.attackerY;
-    const targetX = s.defenderX;
-    const targetY = s.defenderY;
-    const facing = s.facing;
-
-    switch (s.attackerId.toLowerCase()) {
-      case 'amper': {
-        // Amper: Mirror appears, grooms mustache, throws spinning mirror
-        if (t <= 50) {
-          // Looking in mirror
-          p.drawMirror(ctx, startX + facing * 35, -(startY + 85), facing * 0.2, false);
-        } else {
-          // Thrown spinning mirror flying along parabolic arc
-          const mProgress = Math.min(1, (t - 50) / 25);
-          const curX = startX + facing * 35 + (targetX - (startX + facing * 35)) * mProgress;
-          const curY =
-            startY + 85 + (targetY - (startY + 85)) * mProgress - Math.sin(mProgress * Math.PI) * 75;
-          const angle = mProgress * Math.PI * 6;
-          p.drawMirror(ctx, curX, -curY, angle, mProgress >= 0.95);
-        }
-        break;
+    const angle = this.reducedEffects ? 0 : pose.angle;
+    if (id === 'gruczol') {
+      p.drawProp(ctx, id, s.attackerX - s.facing * 65, -(s.attackerY + 115), 175, 230);
+      for (let roll = 0; roll < 6; roll++) {
+        const offset = Math.sin(roll * 2.4) * (1 - pose.progress) * 65;
+        p.drawProp(ctx, 'paper', pose.x + offset, pose.y - Math.sin(roll * 1.5) * 35, 70, 80, angle + roll);
       }
-
-      case 'korba': {
-        // Korba: Fast spin, braids turn into propeller blades
-        const propX = startX + (targetX - startX) * progress;
-        p.drawBraidPropeller(ctx, propX, -(startY + 70), t * 0.85);
-        break;
-      }
-
-      case 'kobra': {
-        // Kobra: Comic liquid stream arc
-        if (t > 40) {
-          const sProgress = Math.min(1, (t - 40) / 30);
-          p.drawWaterStream(ctx, startX + facing * 25, -(startY + 45), targetX, -(targetY + 50), sProgress);
-        }
-        break;
-      }
-
-      case 'antena': {
-        // Antena: Candy eaten then laser beam blast
-        const candyY = t < 52 ? -(startY + 110 - (t - 35) * 4) : -999;
-        const beamActive = t >= 52 && t <= 88;
-        p.drawCandyAndBeam(
-          ctx,
-          startX + facing * 15,
-          candyY,
-          beamActive,
-          startX + facing * 40,
-          -(startY + 80),
-          targetX,
-        );
-        break;
-      }
-
-      case 'gruczol': {
-        // Gruczoł: White Toi-Toi throne & toilet paper barrage
-        p.drawToiToi(ctx, startX - facing * 35, -(startY + 4), 1.45);
-        if (t > 45) {
-          for (let i = 0; i < 8; i++) {
-            const rollP = Math.min(1, Math.max(0, (t - 42 - i * 4) / 20));
-            const rx = startX + facing * 20 + (targetX - startX) * rollP;
-            const ry = -(startY + 60 + Math.sin(rollP * Math.PI) * (45 + i * 9) - rollP * 20);
-            p.drawToiletPaper(ctx, rx, ry, rollP * Math.PI * 4, rollP);
-          }
-        }
-        break;
-      }
-
-      case 'klatwa': {
-        // Klątwa: Neon 3D "KURWA MOJE POLE" shoots out
-        if (t > 45) {
-          const cryP = Math.min(1, (t - 45) / 28);
-          const cx = startX + facing * 50 + (targetX - startX) * cryP;
-          const cy = -(startY + 85);
-          p.drawNeonBattleCry(ctx, cx, cy, 0.8 + cryP * 0.5, 1.0);
-        }
-        break;
-      }
-
-      case 'krwiak': {
-        // Krwiak: Neon "SUMMER" signboard overhead strike
-        const signAngle = facing * (-0.8 + progress * 2.2);
-        p.drawSummerSign(ctx, startX + facing * 45, -(startY + 95), signAngle);
-        break;
-      }
-
-      case 'pien': {
-        // Pień: Metal Megaphone & sonic rings
-        p.drawMegaphone(ctx, startX + facing * 35, -(startY + 80), facing, t * 5);
-        break;
-      }
-
-      case 'pierscien': {
-        // Pierścień: Giant JBL Boombox with pulsing bass
-        p.drawJBLSpeaker(ctx, startX + facing * 45, -(startY + 2), t * 0.4);
-        break;
-      }
-
-      case 'zawor': {
-        // Zawór: Mushroom, Mandala background, Ninja cape
-        if (t < 50) {
-          p.drawMushroom(ctx, startX + facing * 25, -(startY + 10));
-        } else {
-          // Spinning colorful mandala background
-          p.drawMandala(ctx, (startX + targetX) / 2, -180, t * 0.05, 0.65);
-        }
-        break;
-      }
-
-      case 'ambona': {
-        // Ambona: Tote bag, wrench, and camping stove
-        p.drawToteBag(ctx, startX - facing * 30, -(startY + 5));
-        if (t > 48) {
-          const stoveP = Math.min(1, (t - 48) / 24);
-          const sx = startX + (targetX - startX) * stoveP;
-          const sy = -(startY + 50 + Math.sin(stoveP * Math.PI) * 50);
-          p.drawCampingStove(ctx, sx, sy, stoveP * Math.PI * 4);
-        }
-        break;
-      }
-
-      case 'chlebak': {
-        // Chlebak: DJ deck turntable and scratch disc
-        p.drawDJDeck(ctx, startX + facing * 35, -(startY + 20), t * 0.35);
-        break;
-      }
-
-      case 'dziaslo': {
-        // Dziąsło: Rocket jump & meteor dive drop
-        if (t >= 65) {
-          const diveP = Math.min(1, (t - 65) / 12);
-          const meteorY = -600 + diveP * 540;
-          p.drawMeteorAura(ctx, targetX, meteorY, 65);
-        }
-        break;
-      }
-
-      case 'hemoroid': {
-        // Hemoroid: Muddy off-road 4x4 Jeep driving across screen
-        const jeepX = startX - facing * 350 + facing * progress * 550;
-        p.drawOffroadJeep(ctx, jeepX, -(startY + 12), facing);
-        break;
-      }
-
-      case 'jeczmien': {
-        // Jęczmień: Burning lighter projectiles
-        if (t > 42) {
-          for (let i = 0; i < 4; i++) {
-            const ligP = Math.min(1, Math.max(0, (t - 42 - i * 6) / 20));
-            const lx = startX + facing * 20 + (targetX - startX) * ligP;
-            const ly = -(startY + 65 + Math.sin(ligP * Math.PI) * 35);
-            p.drawBurningLighter(ctx, lx, ly, ligP * Math.PI * 3);
-          }
-        }
-        break;
-      }
-
-      case 'szerszen': {
-        // Szerszeń: Falling "HIPOKRYZJA" stone monolith
-        if (t > 50) {
-          const dropP = Math.min(1, (t - 50) / 24);
-          const blockY = -450 + dropP * 380;
-          p.drawHypocrisyBlock(ctx, targetX, blockY, 1.0);
-        }
-        break;
-      }
+    } else if (['pierscien', 'pien', 'chlebak'].includes(id)) {
+      p.drawProp(ctx, id, s.attackerX + s.facing * 65, -(s.attackerY + 60), 135, 120, 0, s.facing);
+      p.drawProp(ctx, 'soundwave', pose.x, pose.y, 155, 180, 0, s.facing);
+    } else if (id === 'hemoroid') {
+      p.drawProp(ctx, id, pose.x, -(s.attackerY + 65), 245, 150, 0, s.facing);
+    } else {
+      const size = id === 'szerszen' ? 135 : id === 'dziaslo' ? 195 : 145;
+      p.drawProp(ctx, id, pose.x, pose.y, size, size, angle, id === 'szerszen' ? 1 : s.facing);
     }
   }
 }

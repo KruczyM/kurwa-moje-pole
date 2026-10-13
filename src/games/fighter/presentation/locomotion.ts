@@ -1,0 +1,44 @@
+import type { FighterState } from '../simulation/CombatTypes';
+
+export interface LocomotionPose {
+  tick: number;
+  x: number;
+  moving: boolean;
+  elapsed: number;
+  phase: number;
+  clip: 'idle' | 'walk_start' | 'walk' | 'walk_stop';
+}
+
+/** Presentation state only; no delayed inputs or modifications to simulation. */
+export function locomotionPose(
+  previous: LocomotionPose | undefined,
+  fighter: FighterState,
+  tick: number,
+  frozen = false,
+): LocomotionPose {
+  const moving = fighter.state === 'walk_fwd' || fighter.state === 'walk_back';
+  const delta = previous && !frozen ? Math.max(0, Math.min(6, tick - previous.tick)) : 0;
+  let elapsed = previous?.elapsed ?? 0;
+  let phase = previous?.phase ?? 0;
+  let clip = previous?.clip ?? 'idle';
+  if (!moving && fighter.state !== 'idle') {
+    clip = 'idle';
+    elapsed = 0;
+    phase = 0;
+  } else if (moving && !previous?.moving) {
+    clip = 'walk_start';
+    elapsed = 0;
+  } else if (!moving && previous?.moving) {
+    clip = 'walk_stop';
+    elapsed = 0;
+  } else {
+    elapsed += delta;
+    if (clip === 'walk_start' && elapsed >= 8) clip = 'walk';
+    if (clip === 'walk_stop' && elapsed >= 8) clip = 'idle';
+  }
+  if (moving && previous && !frozen) {
+    const distance = Math.min(30, Math.abs(fighter.x - previous.x));
+    phase = (phase + (distance / 65) * 12 * (fighter.state === 'walk_back' ? -1 : 1) + 12) % 12;
+  }
+  return { tick, x: fighter.x, moving, elapsed, phase, clip };
+}

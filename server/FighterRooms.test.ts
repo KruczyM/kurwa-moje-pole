@@ -5,6 +5,7 @@ import { Server, type Namespace, type Socket } from 'socket.io';
 import { io as connect } from 'socket.io-client';
 import { FighterRooms } from './FighterRooms';
 import { INPUT } from '../src/games/fighter/simulation/CombatTypes';
+import { FIGHTER_PROTOCOL } from '../src/games/fighter/network/fighterProtocol';
 import type {
   FighterFrame,
   FighterReply,
@@ -69,9 +70,9 @@ function harness() {
   };
   const a = client();
   const b = client();
-  const created = a.request({ action: 'create', version: 2 });
+  const created = a.request({ action: 'create', version: FIGHTER_PROTOCOL });
   if ('error' in created) throw Error(created.error);
-  const joined = b.request({ action: 'join', version: 2, code: created.room.code });
+  const joined = b.request({ action: 'join', version: FIGHTER_PROTOCOL, code: created.room.code });
   if ('error' in joined) throw Error(joined.error);
   const advance = (ticks: number) => {
     for (let i = 0; i < ticks; i++) server.step();
@@ -98,6 +99,10 @@ function harness() {
 }
 
 describe('private fighter sessions', () => {
+  it('rejects protocol 2 clients after the shared full-arena rules upgrade', () => {
+    const h = harness();
+    expect(h.client().request({ action: 'create', version: 2 })).toHaveProperty('error');
+  });
   it('synchronizes ultimate freeze, blocks movement and preserves guard for both clients', () => {
     const h = harness();
     h.start();
@@ -130,22 +135,32 @@ describe('private fighter sessions', () => {
   it('restores a lone host lobby and rejects edits while resuming an existing match', () => {
     const h = harness();
     const host = h.client();
-    const created = host.request({ action: 'create', version: 2 });
+    const created = host.request({ action: 'create', version: FIGHTER_PROTOCOL });
     if ('error' in created) throw Error(created.error);
     host.disconnect();
     const returned = h.client();
     expect(
-      returned.request({ action: 'join', version: 2, code: created.room.code, token: created.token }),
+      returned.request({
+        action: 'join',
+        version: FIGHTER_PROTOCOL,
+        code: created.room.code,
+        token: created.token,
+      }),
     ).not.toHaveProperty('error');
     expect(returned.room?.phase).toBe('lobby');
-    expect(h.client().request({ action: 'join', version: 2, code: created.room.code })).not.toHaveProperty(
-      'error',
-    );
+    expect(
+      h.client().request({ action: 'join', version: FIGHTER_PROTOCOL, code: created.room.code }),
+    ).not.toHaveProperty('error');
     h.start();
     const before = h.a.frames.at(-1)!.snapshot;
     h.b.disconnect();
     const resumed = h.client();
-    resumed.request({ action: 'join', version: 2, code: h.created.room.code, token: h.joined.token });
+    resumed.request({
+      action: 'join',
+      version: FIGHTER_PROTOCOL,
+      code: h.created.room.code,
+      token: h.joined.token,
+    });
     expect(h.a.room?.phase).toBe('countdown');
     expect(h.a.request({ action: 'select', characterId: 'korba' })).toHaveProperty('error');
     expect(h.a.request({ action: 'stage', stageId: h.created.room.stageId })).toHaveProperty('error');
@@ -158,9 +173,9 @@ describe('private fighter sessions', () => {
   });
   it('enforces capacity, ownership, same-character matches and readiness invalidation', () => {
     const h = harness();
-    expect(h.client().request({ action: 'join', version: 2, code: h.created.room.code })).toHaveProperty(
-      'error',
-    );
+    expect(
+      h.client().request({ action: 'join', version: FIGHTER_PROTOCOL, code: h.created.room.code }),
+    ).toHaveProperty('error');
     expect(h.b.request({ action: 'stage', stageId: 'grzybek' })).toHaveProperty('error');
     expect(h.a.request({ action: 'select', characterId: '__proto__' })).toHaveProperty('error');
     h.b.request({ action: 'select', characterId: 'amper' });
@@ -221,7 +236,12 @@ describe('private fighter sessions', () => {
     expect(h.a.frames.at(-1)!.snapshot.tick).toBe(tick);
     const reconnect = h.client();
     expect(
-      reconnect.request({ action: 'join', version: 2, code: h.created.room.code, token: h.joined.token }),
+      reconnect.request({
+        action: 'join',
+        version: FIGHTER_PROTOCOL,
+        code: h.created.room.code,
+        token: h.joined.token,
+      }),
     ).not.toHaveProperty('error');
     h.time(3000);
     h.advance(3);
@@ -232,7 +252,12 @@ describe('private fighter sessions', () => {
     expect(h.a.room?.phase).toBe('closed');
     expect(h.a.frames.at(-1)!.snapshot.winner).toBeNull();
     expect(
-      h.client().request({ action: 'join', version: 2, code: h.created.room.code, token: h.joined.token }),
+      h.client().request({
+        action: 'join',
+        version: FIGHTER_PROTOCOL,
+        code: h.created.room.code,
+        token: h.joined.token,
+      }),
     ).toHaveProperty('error');
   });
 
@@ -240,7 +265,7 @@ describe('private fighter sessions', () => {
     const h = harness();
     h.start();
     const other = h.client();
-    const otherRoom = other.request({ action: 'create', version: 2 });
+    const otherRoom = other.request({ action: 'create', version: FIGHTER_PROTOCOL });
     expect(otherRoom).not.toHaveProperty('error');
     h.a.request({ action: 'rematch' });
     expect(h.a.room?.phase).toBe('fight');
@@ -299,9 +324,9 @@ it('runs two real Socket.IO clients in the fighter namespace without joining fes
   });
   try {
     await vi.waitFor(() => expect(a.connected && b.connected).toBe(true));
-    const created = await request(a, { action: 'create', version: 2 });
+    const created = await request(a, { action: 'create', version: FIGHTER_PROTOCOL });
     if ('error' in created) throw Error(created.error);
-    await request(b, { action: 'join', version: 2, code: created.room.code });
+    await request(b, { action: 'join', version: FIGHTER_PROTOCOL, code: created.room.code });
     await request(a, { action: 'ready', ready: true });
     await request(b, { action: 'ready', ready: true });
     now += 3000;
