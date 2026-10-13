@@ -108,4 +108,10 @@ Ocena monotonii i balansu przez człowieka oraz fizyczny iPhone:
 Samodzielny przegląd wykrył i poprawił nadpisany opis dostępności przycisków
 oraz nieużyteczny opcjonalny łup patroli zagadkowych — zastąpiono go skrótem.
 Nie zmieniono kodu symulacji, wejść, zapisów, renderera ani pętli RAF.
-Publikacja pozostaje wstrzymana do niezależnego review wymaganego w `AGENTS.md`.
+Niezależny review zakresu `ca822ce..821bc11` zakończono bez blockerów publikacji.
+Reviewer osobno uruchomił `ci:code`: 193 pliki, 1830 testów jednostkowych i 6
+narzędziowych, encoding/format/lint/typecheck oraz `git diff --check` PASS.
+Obejmuje to również późniejsze zmiany miksu Bongo i pożegnania głosowego gry 3D.
+Raporty przeglądarkowe były wyciszone: nie stanowią odsłuchu tych zmian audio.
+Odsłuch, fizyczny iPhone i subiektywny balans pozostają `PENDING_HUMAN`.
+Publikację przez PR zatwierdził użytkownik; stan wdrożenia będzie sprawdzony po merge.
