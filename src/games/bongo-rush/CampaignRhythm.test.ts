@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS } from './Levels';
+import { LEGACY_LEVELS as LEVELS } from './Levels';
 import { Simulation } from './Simulation';
 import { neighbour, same } from './types';
 import type { Direction, LevelDefinition } from './types';

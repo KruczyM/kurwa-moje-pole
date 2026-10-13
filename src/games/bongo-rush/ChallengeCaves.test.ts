@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS } from './Levels';
+import { LEGACY_LEVELS as LEVELS } from './Levels';
 import { huntingPocket } from './ChallengeCaves';
 import { Simulation } from './Simulation';
 import type { LevelDefinition } from './types';

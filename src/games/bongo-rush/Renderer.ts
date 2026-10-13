@@ -114,7 +114,7 @@ export class CaveRenderer {
     if (layer === 2) {
       for (const band of foregroundBands(this.width, this.playHeight))
         ctx.rect(band.x, band.y + this.topInset, band.width, band.height);
-    } else ctx.rect(0, this.topInset, this.width, this.playHeight);
+    } else ctx.rect(0, this.topInset, this.width, this.height - this.topInset);
     ctx.clip();
     ctx.globalAlpha = config.opacity;
     ctx.drawImage(
@@ -175,7 +175,7 @@ export class CaveRenderer {
   resize(width: number, height: number, touch = false): void {
     this.width = width;
     this.height = height;
-    const bottomInset = touch ? (height < 400 ? 115 : 150) : 12;
+    const bottomInset = touch ? (height < 400 ? 160 : 220) : 12;
     this.playHeight = Math.max(90, height - this.topInset - bottomInset);
     this.tile = caveTileSize(width, this.playHeight);
     this.camera.resize({ width, height: this.playHeight, pixelsPerMeter: this.tile });
@@ -313,7 +313,12 @@ export class CaveRenderer {
     const playerPoint = this.interpolate(world.player, alpha);
     if (this.world !== world) {
       this.world = world;
-      this.terrainLayout = buildTerrainLayout(world, game.level.id * 4 + game.level.biome);
+      this.terrainLayout = buildTerrainLayout(
+        world,
+        game.level.id * 4 + game.level.biome,
+        game.currentTerrainTheme,
+        game.currentDecorations,
+      );
       this.enemyAnimators.clear();
       this.enemyAnimationTick = -1;
       this.debris.clear();
@@ -343,14 +348,14 @@ export class CaveRenderer {
     if (this.depthAtlas) this.depthLayer(this.depthAtlas, game.level.biome, 1, displacement);
     ctx.save();
     ctx.beginPath();
-    ctx.rect(0, this.topInset, this.width, this.playHeight);
+    ctx.rect(0, this.topInset, this.width, this.height - this.topInset);
     ctx.clip();
     ctx.translate(0, this.topInset);
     const origin = this.camera.project({ x: 0, y: 0 });
-    const firstX = Math.max(0, Math.floor(-origin.x / this.tile) - 1);
-    const firstY = Math.max(0, Math.floor(-origin.y / this.tile) - 1);
-    const lastX = Math.min(world.width, Math.ceil((this.width - origin.x) / this.tile) + 1);
-    const lastY = Math.min(world.height, Math.ceil((this.playHeight - origin.y) / this.tile) + 1);
+    const firstX = Math.floor(-origin.x / this.tile) - 1;
+    const firstY = Math.floor(-origin.y / this.tile) - 1;
+    const lastX = Math.ceil((this.width - origin.x) / this.tile) + 1;
+    const lastY = Math.ceil((this.height - this.topInset - origin.y) / this.tile) + 1;
     for (let y = firstY; y < lastY; y++)
       for (let x = firstX; x < lastX; x++) {
         const position = this.camera.project({ x, y });
@@ -358,10 +363,11 @@ export class CaveRenderer {
           position.x < -this.tile ||
           position.y < -this.tile ||
           position.x > this.width ||
-          position.y > this.playHeight
+          position.y > this.height - this.topInset
         )
           continue;
-        const cell = world.cells[y * world.width + x];
+        const inside = x >= 0 && y >= 0 && x < world.width && y < world.height;
+        const cell = inside ? world.cells[y * world.width + x] : 'wall';
         if (cell === 'wall' || cell === 'soil' || cell === 'buried-bush') {
           if (cell !== 'wall') {
             ctx.fillStyle = '#070b1299';
@@ -371,7 +377,10 @@ export class CaveRenderer {
             this.tileArt(
               game.level.biome,
               cell === 'wall' ? 'wall' : 'soil',
-              this.terrainLayout?.cells[y * world.width + x] ?? terrainVariant(x, y),
+              inside
+                ? (this.terrainLayout?.cells[y * world.width + x] ?? terrainVariant(x, y))
+                : (Math.abs(Math.floor(x / 4) + Math.floor(y / 5) + game.currentTerrainTheme) % 4) * 2 +
+                    terrainVariant(x, y),
               terrainEdges(world, x, y),
             ),
             position.x,
@@ -383,6 +392,39 @@ export class CaveRenderer {
           ctx.fillStyle = '#090f1966';
           ctx.fillRect(position.x, position.y, this.tile + 0.5, this.tile + 0.5);
           if (cell === 'exit') this.exit(position, game.exitOpen, game.level.id === 12, biome.accent);
+          if (cell === 'portal') {
+            const portal = game.activePortals.find((end) => same(end, { x, y }));
+            ctx.strokeStyle = portal?.name.startsWith('Wymagany') ? '#f6c85f' : '#9fe9ec';
+            ctx.lineWidth = Math.max(2, this.tile * 0.06);
+            ctx.beginPath();
+            ctx.ellipse(
+              position.x + this.tile / 2,
+              position.y + this.tile / 2,
+              this.tile * 0.3,
+              this.tile * 0.4,
+              0,
+              0,
+              Math.PI * 2,
+            );
+            ctx.stroke();
+            ctx.fillStyle = '#25516e88';
+            ctx.fill();
+            ctx.fillStyle = '#e9ffff';
+            ctx.font = `bold ${this.tile * 0.3}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.fillText('↔', position.x + this.tile / 2, position.y + this.tile * 0.6);
+          }
+        }
+
+        const source = world.lootSources?.find((entry) => same(entry.definition.tile, { x, y }));
+        if (source && !source.activated) {
+          ctx.fillStyle = '#f6c85f';
+          ctx.strokeStyle = '#f6c85f';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(position.x + 3, position.y + 3, this.tile - 6, this.tile - 6);
+          ctx.font = `bold ${this.tile * 0.28}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.fillText(`${source.remaining} K`, position.x + this.tile / 2, position.y + this.tile * 0.6);
         }
         if (
           cell === 'bush' ||
@@ -414,7 +456,7 @@ export class CaveRenderer {
         position.x < -this.tile * 2 ||
         position.y < -this.tile * 2 ||
         position.x > this.width ||
-        position.y > this.playHeight
+        position.y > this.height - this.topInset
       )
         continue;
       ctx.save();
@@ -496,9 +538,11 @@ export class CaveRenderer {
               ? '#63716b'
               : cell === 'bush'
                 ? '#69a446'
-                : cell === 'exit'
-                  ? '#fff0aa'
-                  : '#101820';
+                : cell === 'portal'
+                  ? '#7ce7ee'
+                  : cell === 'exit'
+                    ? '#fff0aa'
+                    : '#101820';
         map.fillRect(index % world.width, Math.floor(index / world.width), 1, 1);
       });
       for (const body of world.objects) {

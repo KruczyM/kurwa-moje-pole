@@ -93,6 +93,7 @@
         <section id="help-panel" class="panel compact help-panel" hidden aria-label="Pomoc">
           <button id="help-close" class="primary">Zamknij pomoc ×</button>
           <h2>Jak przejść jaskinię?</h2>
+          <p id="context-hint"></p>
           <p>
             Spadający głaz eliminuje patrole i kwadraty z siatką. Łup pojawia się nad głazem: wróć po niego po
             uderzeniu. Kwadrat obchodzi krawędzie przeszkód i nie kopie. W wyzwaniach obserwuj jego ruch przed
@@ -103,6 +104,15 @@
             <li>
               Łup ze złotą obwódką w komorach skalnych jest obowiązkowy. Nadmiar zwykłych przedmiotów go nie
               zastąpi.
+            </li>
+            <li>
+              Portale ze złotą obwódką prowadzą do wymaganego skarbca, a niebieskie do opcjonalnego. Wróć
+              przez ten sam portal; łup i odkopane przejścia zostaną zachowane. Nieaktywna komora czeka na
+              Twój powrót.
+            </li>
+            <li>
+              Złoty kafelek z liczbą i literą K uwalnia tyle przedmiotów oraz budzi korzenie Kobry. Łup
+              pojawia się w ujściu pojedynczo. Najpierw przygotuj drogę odwrotu.
             </li>
             <li>Kop ziemię WASD, strzałkami lub gałką. M / Mapa pokazuje całą jaskinię.</li>
             <li>Skały pchasz tylko poziomo na puste pole. Najpierw przygotuj wnękę i odwrót.</li>
@@ -115,7 +125,8 @@
               zagadki — nie zawracaj bez planu.
             </li>
             <li>
-              Rozwiąż komorę przy wyjściu ↑ zanim skończy się czas. W finale zamknij też zagrodę złotą skałą.
+              Rozwiąż komorę przy wyjściu ↑. Zegar obowiązuje tylko w dodatkowych wyzwaniach. W finale zamknij
+              też zagrodę złotą skałą.
             </li>
           </ol>
           <p>Esc — pauza. R / ↻ — restart bez limitu prób. Pauza i pomoc zatrzymują zegar oraz Kobrę.</p>
@@ -145,8 +156,10 @@
           <button id="victory-menu" class="primary">Wróć do odblokowanych poziomów</button>
         </section>
         <nav id="touch-controls" hidden aria-label="Sterowanie dotykowe">
-          <div id="joystick" role="group" aria-label="Gałka ruchu — przeciągnij palcem">
-            <span id="knob"></span>
+          <div id="joystick-zone">
+            <div id="joystick" role="group" aria-label="Gałka ruchu — przeciągnij palcem">
+              <span id="knob"></span>
+            </div>
           </div>
           <button id="touch-restart" aria-label="Restart poziomu">↻</button>
         </nav>

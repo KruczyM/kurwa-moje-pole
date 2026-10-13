@@ -1,4 +1,4 @@
-import type { World } from './types';
+import type { World, TerrainMotif } from './types';
 
 export interface TerrainPlacement {
   cells: Uint8Array;
@@ -18,6 +18,8 @@ export function terrainHash(x: number, y: number, seed = 0): number {
 export function buildTerrainLayout(
   world: Pick<World, 'width' | 'height' | 'cells'>,
   seed: number,
+  theme = 0,
+  authored: readonly TerrainMotif[] = [],
 ): TerrainPlacement {
   const { width, height, cells } = world;
   const output = new Uint8Array(cells.length);
@@ -25,13 +27,14 @@ export function buildTerrainLayout(
   const candidates: { x: number; y: number; hash: number }[] = [];
   let walls = 0,
     directional = 0,
-    accents = 0,
-    warning = 0;
+    accents = 0;
   for (let y = 0; y < height; y++)
     for (let x = 0; x < width; x++) {
       const index = y * width + x;
       output[index] =
-        cells[index] === 'wall' ? terrainHash(x, y, seed) % 4 : 4 + (terrainHash(x, y, seed) % 4);
+        cells[index] === 'wall'
+          ? ((Math.floor(x / 4) + Math.floor(y / 5) + theme) % 4) * 2 + (terrainHash(x, y, seed) % 2)
+          : 8 + (terrainHash(x, y, seed) % 6);
       if (cells[index] === 'wall') {
         walls++;
         candidates.push({ x, y, hash: terrainHash(x, y, seed + 19) });
@@ -40,8 +43,8 @@ export function buildTerrainLayout(
   candidates.sort((a, b) => a.hash - b.hash || a.y - b.y || a.x - b.x);
   const fits = (x: number, y: number, dx: number, dy: number, length: number) => {
     for (let n = 0; n < length; n++)
-      for (let oy = -1; oy <= 1; oy++)
-        for (let ox = -1; ox <= 1; ox++) {
+      for (let oy = 0; oy <= 0; oy++)
+        for (let ox = 0; ox <= 0; ox++) {
           const nx = x + n * dx + ox,
             ny = y + n * dy + oy;
           if (
@@ -58,8 +61,8 @@ export function buildTerrainLayout(
   };
   const reserve = (x: number, y: number, dx: number, dy: number, length: number) => {
     for (let n = 0; n < length; n++)
-      for (let oy = -1; oy <= 1; oy++)
-        for (let ox = -1; ox <= 1; ox++) reserved.add((y + n * dy + oy) * width + x + n * dx + ox);
+      for (let oy = 0; oy <= 0; oy++)
+        for (let ox = 0; ox <= 0; ox++) reserved.add((y + n * dy + oy) * width + x + n * dx + ox);
   };
   const span = (x: number, y: number, dx: number, dy: number) => {
     let length = 1;
@@ -72,28 +75,47 @@ export function buildTerrainLayout(
       }
     return length;
   };
+  // Authored landmarks take priority but obey exactly the same fit and density limits.
+  for (const motif of authored) {
+    const { x, y } = motif.at;
+    if (!Number.isInteger(x) || !Number.isInteger(y) || !Number.isInteger(motif.variant) || motif.variant < 0)
+      continue;
+    const dx = motif.kind === 'horizontal' ? 1 : 0;
+    const dy = motif.kind === 'vertical' ? 1 : 0;
+    const length = motif.kind === 'accent' ? 1 : 3;
+    if (!fits(x, y, dx, dy, length)) continue;
+    if (length === 1 ? accents + 1 > Math.floor(walls * 0.08) : directional + 3 > Math.floor(walls * 0.2))
+      continue;
+    const first =
+      motif.kind === 'accent' ? 14 + (motif.variant % 8) : (dx ? 22 : 34) + (motif.variant % 4) * 3;
+    for (let n = 0; n < length; n++) output[(y + n * dy) * width + x + n * dx] = first + n;
+    reserve(x, y, dx, dy, length);
+    if (length === 1) accents++;
+    else directional += 3;
+  }
   // Prefer the longest available solid axis, then alternate on ties. Scan complete maps, never viewports.
   for (const { x, y, hash } of candidates) {
-    if (directional + 3 > Math.floor(walls * 0.15)) break;
+    if (directional + 3 > Math.floor(walls * 0.2)) break;
     const h = fits(x, y, 1, 0, 3),
       v = fits(x, y, 0, 1, 3);
     if (!h && !v) continue;
     const hs = span(x, y, 1, 0),
       vs = span(x, y, 0, 1);
+    if ((hs > vs && !h) || (vs > hs && !v)) continue;
     const horizontal = h && (!v || hs > vs || (hs === vs && (hash & 1) === 0));
     const dx = horizontal ? 1 : 0,
       dy = horizontal ? 0 : 1;
-    const first = (horizontal ? 12 : 18) + ((hash >>> 4) % 2) * 3;
+    const first = (horizontal ? 22 : 34) + ((hash >>> 4) % 4) * 3;
     for (let n = 0; n < 3; n++) output[(y + n * dy) * width + x + n * dx] = first + n;
     reserve(x, y, dx, dy, 3);
     directional += 3;
   }
   for (const { x, y, hash } of candidates) {
-    if (accents + 1 > Math.floor(walls * 0.05)) break;
+    if (accents + 1 > Math.floor(walls * 0.08)) break;
     if (!fits(x, y, 0, 0, 1)) continue;
-    let accent = 8 + ((hash >>> 8) % 4);
-    if (accent === 11 && warning + 1 > Math.floor(walls * 0.02)) accent = 8 + (hash % 3);
-    if (accent === 11) warning++;
+    let accent = 14 + ((hash >>> 8) % 8);
+    if ((hash & 7) === 0) accent = 46 + (hash % 4);
+
     output[y * width + x] = accent;
     reserve(x, y, 0, 0, 1);
     accents++;

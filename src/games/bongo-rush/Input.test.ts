@@ -47,4 +47,14 @@ describe('cardinal joystick and keyboard', () => {
     input.joystick.move(1, 0, 12, 40);
     expect(input.direction()).toBe('down');
   });
+  it('keeps captured movement far outside the visual base without increasing strength', () => {
+    const input = new GridInput();
+    input.joystick.begin(3);
+    input.joystick.move(3, 800, -30, 35);
+    expect(input.direction()).toBe('right');
+    expect(Math.hypot(input.joystick.snapshot().x, input.joystick.snapshot().y)).toBeCloseTo(1);
+    expect(Math.hypot(input.joystick.snapshot().knobX, input.joystick.snapshot().knobY)).toBeCloseTo(35);
+    input.joystick.end(3);
+    expect(input.direction()).toBeUndefined();
+  });
 });

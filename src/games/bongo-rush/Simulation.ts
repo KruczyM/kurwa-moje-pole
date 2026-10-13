@@ -2,7 +2,7 @@ import { BUSH_GROWTH_TICKS, DIRECTIONS, STEP_SECONDS, neighbour, same } from './
 import type { Cell, Direction, Enemy, LevelDefinition, LooseObject, Point, SoundEvent, World } from './types';
 
 /** Loads an authored ASCII cave into fresh state; restarts never reuse mutated objects. */
-export function createWorld(level: LevelDefinition): World {
+export function createWorld(level: LevelDefinition, chamber = false): World {
   const width = level.rows[0]?.length ?? 0;
   if (width < 3 || level.rows.length < 3 || level.rows.some((row) => row.length !== width))
     throw new Error('Nieprawidłowe wymiary planszy');
@@ -20,6 +20,11 @@ export function createWorld(level: LevelDefinition): World {
     reason: '',
     trapped: false,
     bushRoots: [],
+    lootSources: level.lootSources?.map((definition) => ({
+      definition,
+      activated: false,
+      remaining: definition.count,
+    })),
   };
   let id = 1;
   let players = 0;
@@ -76,11 +81,24 @@ export function createWorld(level: LevelDefinition): World {
   );
   if (
     players !== 1 ||
-    exits !== 1 ||
+    (!chamber && exits !== 1) ||
+    (chamber && exits !== 0) ||
     level.quota < 1 ||
-    world.objects.filter((o) => o.kind === 'pickup').length +
-      world.enemies.filter((enemy) => enemy.kind !== 'boss').length <
-      level.quota
+    (!chamber &&
+      world.objects.filter((o) => o.kind === 'pickup').length +
+        (level.lootSources?.reduce((n, source) => n + source.count, 0) ?? 0) +
+        (level.chambers?.reduce(
+          (n, room) =>
+            n +
+            room.rows
+              .join('')
+              .split('')
+              .filter((c) => c === 'O').length +
+            (room.lootSources?.reduce((m, source) => m + source.count, 0) ?? 0),
+          0,
+        ) ?? 0) +
+        world.enemies.filter((enemy) => enemy.kind !== 'boss').length <
+        level.quota)
   )
     throw new Error('Plansza musi mieć start, wyjście i wystarczającą liczbę przedmiotów');
   if (
@@ -100,12 +118,76 @@ export function createWorld(level: LevelDefinition): World {
   for (let y = 0; y < world.height; y++)
     if (world.cells[y * width] !== 'wall' || world.cells[y * width + width - 1] !== 'wall')
       throw new Error('Otwarta granica planszy');
+  const occupied = new Set<string>();
+  for (const source of level.lootSources ?? []) {
+    for (const point of [source.tile, source.outlet, ...source.roots]) {
+      if (
+        !Number.isInteger(point.x) ||
+        !Number.isInteger(point.y) ||
+        point.x <= 0 ||
+        point.y <= 0 ||
+        point.x >= width - 1 ||
+        point.y >= world.height - 1
+      )
+        throw new Error('Źródło łupu poza planszą');
+    }
+    const key = `${source.tile.x},${source.tile.y}`;
+    if (
+      occupied.has(key) ||
+      !Number.isInteger(source.count) ||
+      source.count < 1 ||
+      source.count > 32 ||
+      world.cells[source.tile.y * width + source.tile.x] !== 'soil' ||
+      world.cells[source.outlet.y * width + source.outlet.x] !== 'air' ||
+      [world.player, ...world.objects, ...world.enemies].some((body) => same(body, source.tile))
+    )
+      throw new Error('Nieprawidłowe źródło łupu');
+    if (source.roots.some((point) => world.cells[point.y * width + point.x] !== 'air'))
+      throw new Error('Korzeń źródła musi być na wolnym polu');
+    occupied.add(key);
+  }
   return world;
 }
 
 /** Owns deterministic grid rules only; the existing host RAF owns time and rendering. */
 export class Simulation {
-  readonly world: World;
+  private activeWorld: World;
+  private readonly rooms = new Map<string, World>();
+  private chamber = 'main';
+  private portalLatch = false;
+  private elapsedTicks = 0;
+  private nextObjectId = 1;
+  get ticks(): number {
+    return this.elapsedTicks;
+  }
+  get world(): World {
+    return this.activeWorld;
+  }
+  get chamberId(): string {
+    return this.chamber;
+  }
+  get chamberName(): string {
+    return this.level.chambers?.find((room) => room.id === this.chamber)?.name ?? this.level.title;
+  }
+  get chamberHint(): string {
+    return this.level.chambers?.find((room) => room.id === this.chamber)?.hint ?? this.level.hint;
+  }
+  get currentTerrainTheme(): number {
+    return (this.level.terrainTheme ?? 0) + (this.chamber === 'main' ? 0 : 1);
+  }
+  get currentDecorations() {
+    return this.chamber === 'main'
+      ? this.level.decorations
+      : this.level.chambers?.find((room) => room.id === this.chamber)?.decorations;
+  }
+  /** Read-only location list used by the existing renderer and HUD. */
+  get activePortals() {
+    return (this.level.portals ?? []).flatMap((portal) =>
+      [portal.a, portal.b]
+        .filter((end) => end.chamber === this.chamber)
+        .map((end) => ({ ...end, name: portal.name })),
+    );
+  }
   private sounds: SoundEvent[] = [];
   private opened?: Point;
 
@@ -116,7 +198,59 @@ export class Simulation {
       (!Number.isFinite(level.timeLimitSeconds) || level.timeLimitSeconds <= 0)
     )
       throw new Error('Nieprawidłowy limit czasu');
-    this.world = createWorld(level);
+    this.activeWorld = createWorld(level);
+    this.rooms.set('main', this.activeWorld);
+    for (const room of level.chambers ?? []) {
+      if (room.id === 'main' || this.rooms.has(room.id)) throw new Error('Powtórzona komora');
+      this.rooms.set(
+        room.id,
+        createWorld(
+          {
+            ...level,
+            rows: room.rows,
+            quota: 1,
+            lootSources: room.lootSources,
+            requiredPickups: room.requiredPickups,
+            requiredKills: undefined,
+            chambers: undefined,
+          },
+          true,
+        ),
+      );
+    }
+    this.nextObjectId =
+      Math.max(
+        0,
+        ...[...this.rooms.values()].flatMap((room) =>
+          [...room.objects, ...room.enemies].map((body) => body.id),
+        ),
+      ) + 1;
+    const endpoints = new Set<string>();
+    for (const portal of level.portals ?? []) {
+      for (const end of [portal.a, portal.b]) {
+        const room = this.rooms.get(end.chamber);
+        const key = `${end.chamber}:${end.x},${end.y}`;
+        if (
+          !room ||
+          endpoints.has(key) ||
+          !Number.isInteger(end.x) ||
+          !Number.isInteger(end.y) ||
+          end.x <= 0 ||
+          end.y <= 0 ||
+          end.x >= room.width - 1 ||
+          end.y >= room.height - 1 ||
+          room.cells[end.y * room.width + end.x] !== 'air' ||
+          [...room.objects, ...room.enemies].some((body) => same(body, end)) ||
+          room.lootSources?.some(
+            (source) =>
+              same(source.definition.outlet, end) || source.definition.roots.some((root) => same(root, end)),
+          )
+        )
+          throw new Error('Nieprawidłowe lub zajęte lądowanie portalu');
+        endpoints.add(key);
+        room.cells[end.y * room.width + end.x] = 'portal';
+      }
+    }
   }
 
   /** Treats coordinates outside the authored cave as solid walls. */
@@ -148,10 +282,13 @@ export class Simulation {
     if (w.status !== 'playing') return;
     for (const body of [w.player, ...w.objects, ...w.enemies]) body.previous = { x: body.x, y: body.y };
     w.tick++;
+    this.elapsedTicks++;
     this.opened = undefined;
     const wasOpen = this.exitOpen;
     const moved = new Set<number>();
     if (input) this.movePlayer(input, moved);
+    if (this.world !== w) return;
+    if (w.status === 'playing') this.emitLoot();
     if (w.status !== 'playing') return;
     this.gravity(moved);
     if (w.status !== 'playing') return;
@@ -178,7 +315,7 @@ export class Simulation {
   /** Active simulation ticks are the only clock; pausing cannot consume the level budget. */
   get remainingSeconds(): number | undefined {
     const limit = this.level.timeLimitSeconds;
-    return limit === undefined ? undefined : Math.max(0, limit - this.world.tick * STEP_SECONDS);
+    return limit === undefined ? undefined : Math.max(0, limit - this.elapsedTicks * STEP_SECONDS);
   }
 
   /** Mandatory mining loot cannot be replaced by spare deposits; the final also requires the boss trap. */
@@ -193,7 +330,15 @@ export class Simulation {
 
   /** Counts remaining marked bodies, including loot that has moved under gravity. */
   get requiredRemaining(): number {
-    return this.world.objects.filter((body) => body.required).length;
+    return [...this.rooms.values()].reduce(
+      (total, room) =>
+        total +
+        room.objects.filter((body) => body.required).length +
+        (room.lootSources
+          ?.filter((source) => source.definition.required)
+          .reduce((n, source) => n + source.remaining, 0) ?? 0),
+      0,
+    );
   }
 
   /** Checks vacant air; exits are reserved for the player and cannot be clogged by rocks. */
@@ -245,6 +390,13 @@ export class Simulation {
       this.opened = target;
       this.sounds.push('pickup');
     }
+    for (const source of w.lootSources ?? []) {
+      if (!source.activated && same(target, source.definition.tile)) {
+        source.activated = true;
+        w.bushRoots.push(...source.definition.roots.map((root) => ({ ...root })));
+        if (source.definition.roots.length) w.nextBushGrowth ??= w.tick + BUSH_GROWTH_TICKS;
+      }
+    }
     if (this.cell(target) === 'buried-bush') {
       w.bushRoots.push({ ...target });
       w.nextBushGrowth ??= w.tick + BUSH_GROWTH_TICKS;
@@ -255,6 +407,54 @@ export class Simulation {
       this.sounds.push('dig');
     }
     this.move(w.player, target);
+    if (this.cell(target) !== 'portal') this.portalLatch = false;
+    if (!this.portalLatch && this.cell(target) === 'portal') this.enterPortal(target);
+  }
+
+  /** A reserved landing cannot contain loose bodies, roots or an enemy. */
+  private enterPortal(point: Point): void {
+    const pair = this.level.portals?.find((portal) =>
+      [portal.a, portal.b].some((end) => end.chamber === this.chamber && same(end, point)),
+    );
+    if (!pair) return;
+    const destination = pair.a.chamber === this.chamber && same(pair.a, point) ? pair.b : pair.a;
+    const previous = this.world;
+    const next = this.rooms.get(destination.chamber)!;
+    next.collected = previous.collected;
+    next.kills = previous.kills;
+    next.trapped = previous.trapped;
+    next.player = {
+      ...previous.player,
+      x: destination.x,
+      y: destination.y,
+      previous: { x: destination.x, y: destination.y },
+    };
+    this.chamber = destination.chamber;
+    this.activeWorld = next;
+    this.portalLatch = true;
+    this.opened = undefined;
+    this.sounds.push('exit');
+    if (this.remainingSeconds === 0) this.lose('Czas minął.');
+  }
+
+  /** Backpressure keeps one physical pickup per outlet, never a burst of overlapping bodies. */
+  private emitLoot(): void {
+    const w = this.world;
+    for (const source of w.lootSources ?? []) {
+      if (!source.activated || source.remaining === 0 || !this.empty(source.definition.outlet)) continue;
+      const id = this.nextObjectId++;
+      const point = source.definition.outlet;
+      w.objects.push({
+        id,
+        ...point,
+        previous: { ...point },
+        kind: 'pickup',
+        required: source.definition.required,
+        falling: false,
+        variant: source.remaining % 4,
+      });
+      source.remaining--;
+    }
   }
 
   /** Expands one simultaneous four-neighbour wave into vacant air, never through soil or bodies. */

@@ -341,8 +341,9 @@ class BongoRush {
   private updateHud(): void {
     const level = this.game.level,
       world = this.game.world;
-    element('level-title').textContent = `${level.id} / ${LEVELS.length} · ${level.title}`;
+    element('level-title').textContent = `${level.id} / ${LEVELS.length} · ${this.game.chamberName}`;
     element('counter').textContent = `${BIOMES[level.biome].item}: ${world.collected} / ${level.quota}`;
+    element('timer').hidden = this.game.remainingSeconds === undefined;
     const seconds = Math.ceil(this.game.remainingSeconds ?? 0);
     element('timer').textContent =
       `Czas ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
@@ -358,10 +359,15 @@ class BongoRush {
             : 'Zbierz dostawę';
     const stage =
       level.vault?.stages?.filter((part) => world.player.x >= part.entry.x - 3).pop() ?? level.vault;
-    const hint = stage && world.player.x >= stage.entry.x - 3 ? `${stage.name}: ${stage.hint}` : level.hint;
+    const hint =
+      this.game.chamberId !== 'main'
+        ? `${this.game.chamberName}: ${this.game.chamberHint}`
+        : stage && world.player.x >= stage.entry.x - 3
+          ? `${stage.name}: ${stage.hint}`
+          : level.hint;
     element('hint').textContent =
       world.nextBushGrowth === undefined
-        ? `${hint} Krzak z korzeniami: odkopanie uruchamia zarastanie przejść.`
+        ? hint
         : `${hint} Krzak rośnie — fala za ${Math.ceil((world.nextBushGrowth - world.tick) * STEP_SECONDS)} s. R / ↻: restart.`;
     if (this.mode === 'menu')
       element('hint').textContent =
@@ -421,6 +427,7 @@ class BongoRush {
     click('pause', () => this.togglePause());
     click('map', () => this.toggleMap());
     click('help', () => {
+      element('context-hint').textContent = `${this.game.chamberName}: ${this.game.chamberHint}`;
       if (this.mode === 'playing') this.setMode('paused');
       if (this.mode === 'paused') element('pause-panel').hidden = true;
       element('help-panel').hidden = false;
@@ -498,7 +505,7 @@ class BongoRush {
     this.events.listen(document, 'visibilitychange', () => {
       if (document.hidden && this.mode === 'playing') this.setMode('paused');
     });
-    const stick = element('joystick');
+    const stick = element('joystick-zone');
     this.events.listen(stick, 'pointerdown', (event) => {
       const pointer = event as PointerEvent;
       if (this.mode !== 'playing' || !this.input.joystick.begin(pointer.pointerId)) return;
@@ -648,6 +655,8 @@ class BongoRush {
     return {
       mode: this.mode,
       level: this.game.level.id,
+      chamber: this.game.chamberId,
+      steps: this.game.ticks,
       world: structuredClone(this.game.world),
       input: this.input.direction(),
       rafActive: this.loop.active,
