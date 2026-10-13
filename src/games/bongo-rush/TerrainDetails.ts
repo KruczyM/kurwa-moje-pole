@@ -2,7 +2,7 @@ import type { Cell, World } from './types';
 
 /** Small alpha openings fit within a 14.1% pixel budget, never touching the solid outer boundary. */
 export function soilHoles(biome: number, variant: number) {
-  const shift = variant ? 3 : 0;
+  const shift = (Math.abs(Math.trunc(variant)) % 4) * 2;
   return Array.from({ length: 6 }, (_, index) => {
     const x = 6 + ((index * 11 + shift) % 43);
     const y = 7 + ((index * 17 + biome * 7) % 35);
@@ -16,18 +16,15 @@ export function punchSoil(ctx: CanvasRenderingContext2D, biome: number, variant:
   ctx.globalCompositeOperation = 'destination-out';
   ctx.fillStyle = '#000';
   for (const hole of soilHoles(biome, variant)) {
-    if (biome === 2) ctx.fillRect(hole.x, hole.y, hole.width, hole.height);
-    else {
-      const { x, y, width, height } = hole;
-      ctx.beginPath();
-      ctx.moveTo(x, y + 2);
-      ctx.lineTo(x + width - 1, y);
-      ctx.lineTo(x + width, y + height - 3);
-      ctx.lineTo(x + width - 1, y + height);
-      ctx.lineTo(x + 1, y + height - 1);
-      ctx.closePath();
-      ctx.fill();
-    }
+    const { x, y, width, height } = hole;
+    ctx.beginPath();
+    ctx.moveTo(x, y + 2);
+    ctx.lineTo(x + width - 1, y);
+    ctx.lineTo(x + width, y + height - 3);
+    ctx.lineTo(x + width - 1, y + height);
+    ctx.lineTo(x + 1, y + height - 1);
+    ctx.closePath();
+    ctx.fill();
   }
   ctx.restore();
 }
