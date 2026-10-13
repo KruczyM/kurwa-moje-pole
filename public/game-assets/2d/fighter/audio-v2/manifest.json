@@ -4,8 +4,10 @@
   "provenance": "Original deterministic synthesis; no third-party samples, voices or paid services.",
   "music": {
     "menu": {
-      "bpm": 104,
-      "bars": 16
+      "bpm": 120,
+      "bars": 32,
+      "title": "Bloto, pot i combo",
+      "generator": "scripts/fighter/build_cabinet_menu.py"
     },
     "fight": {
       "bpm": 136,

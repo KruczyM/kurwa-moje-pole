@@ -1,49 +1,20 @@
 import type { FighterDefinition } from '../simulation/CombatTypes';
-import { combatMove } from '../simulation/combatTiming';
 
 /** One guide shared by character selection and pause; never promises unimplemented moves. */
 export function renderFighterHelp(host: HTMLElement, def: FighterDefinition): void {
   host.innerHTML = `
-    <h3>Jak grać?</h3>
+    <h3>Opanuj swoje combo</h3>
     <p><strong>Ruch:</strong> WASD lub strzałki. W / ↑: skok; S / ↓: kucanie.</p>
-    <p><strong>Ciosy:</strong> U: prosty, I: sierpowy, J: lekkie kopnięcie, K: mocne kopnięcie.
-    Alternatywnie numpad: 4 / 5 / 1 / 2. Na telefonie: LP / RP / LK / RK.</p>
-    <p><strong>Garda:</strong> trzymaj L, spację lub BLK. Cofanie także blokuje.
-    Na niski cios: dół + blok. Samo kucanie nie blokuje; unika wysokich ciosów, ale nie ciosów mid.</p>
-    <p><strong>Ruchy kierunkowe:</strong> H / ↑RP lub dół + I: podbródkowy; N / ↓RK lub dół + K: podcięcie;
-    dół + U/J: niski prosty/kopnięcie. Ciosy U/I/J/K działają również w powietrzu.</p>
-    <p><strong>Tempo:</strong> cios najpierw ma zamach, potem okno trafienia i powrót.
-    Kolejny przycisk nie pomija powrotu. Nie trzymaj ciosu — naciśnij ponownie po jego zakończeniu.</p>
-    <p><strong>Seria:</strong> po trafionym lub zablokowanym prostym naciśnij I albo K na początku powrotu.
-    Pudło nie pozwala skrócić recovery. Po powaleniu cios przyspiesza wstawanie; wstawanie jest chronione.</p>
-    <p><strong>Special:</strong> P / SP, koszt według listy ruchów. <strong>Ultimate:</strong> O / ULT / numpad 6 przy 100% energii. Nadal wymaga zasięgu i może być zablokowany.
-    Pasek rośnie po trafieniach i blokach. Chwyty nie są dostępne.</p>
-    <p><strong>Mecz:</strong> dwie wygrane rundy, 90 sekund na rundę. Escape: pauza/powrót.
-    Wybierz tryb z botem, trening albo online ze znajomym. Online każdy wybiera swoją postać i potwierdza gotowość.
-    Escape otwiera menu, ale walka online trwa dalej. Wyjście do wyboru postaci opuszcza pokój.
-    W treningu przeciwnik jest nieruchomy.</p>
-    <h4>Czas zamachu / powrotu — wybrana postać</h4>
-    <div class="move-timing-list"></div>`;
-  const list = host.querySelector('.move-timing-list')!;
-  for (const id of [
-    'light_punch',
-    'heavy_punch',
-    'light_kick',
-    'heavy_kick',
-    'crouch_punch',
-    'crouch_kick',
-    'uppercut',
-    'sweep',
-    'jump_punch',
-    'jump_kick',
-    'special',
-    'ultimate',
-  ]) {
-    const source = def.moves[id];
-    if (!source) continue;
-    const move = combatMove(source);
-    const line = document.createElement('p');
-    line.textContent = `${move.name}: ${Math.round((move.startup / 60) * 1000)} ms zamachu + ${Math.round((move.recovery / 60) * 1000)} ms powrotu · energia: ${move.meterCost}% (bez czasu trafienia, freeze i hitstop).`;
-    list.append(line);
-  }
+    <p><strong>Ciosy:</strong> U / LP: prosty · I / RP: sierpowy · J / LK: lekkie kopnięcie · K / RK: mocne kopnięcie. Alternatywnie numpad: 4 / 5 / 1 / 2.</p>
+    <p><strong>Podbródkowy:</strong> H / ↑RP lub dół + I — wybicie w powietrze. <strong>Podcięcie:</strong> N / ↓RK lub dół + K — powalenie.</p>
+    <p><strong>Niskie i powietrzne:</strong> dół + U/J: niski prosty/kopnięcie. U/I/J/K w skoku: atak w powietrzu.</p>
+    <p><strong>Garda:</strong> trzymaj L, spację lub BLK. Cofanie także blokuje. Na niski cios: dół + blok. Samo kucanie nie blokuje.</p>
+    <p><strong>Seria:</strong> po trafionym lub zablokowanym prostym naciśnij I albo K. Po powaleniu cios przyspiesza wstawanie.</p>
+    <p><strong>Special:</strong> P / SP — 30% energii. <strong>Ultimate:</strong> O / ULT / numpad 6 — 100%. Pasek rośnie po trafieniach i blokach. Ultimate wymaga zasięgu i może być zablokowany.</p>
+    <p><strong>Mecz:</strong> dwie wygrane rundy, 90 sekund na rundę. Escape: menu. W treningu przeciwnik jest nieruchomy.</p>
+    <p><strong>Online:</strong> wybierasz swoją postać i potwierdzasz gotowość. Po otwarciu menu walka online trwa dalej. Powrót do wyboru postaci opuszcza pokój.</p>`;
+  const signature = document.createElement('p');
+  signature.className = 'fighter-signature';
+  signature.textContent = `${def.name} · Special: ${def.moves.special?.name ?? 'Cios specjalny'} · Ultimate: ${def.moves.ultimate?.name ?? 'Super cios'}`;
+  host.append(signature);
 }

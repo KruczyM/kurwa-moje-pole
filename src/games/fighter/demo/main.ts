@@ -1,4 +1,5 @@
 import './demo.css';
+import './cabinet.css';
 import { ROSTER, ROSTER_KEYS, CharacterRosterEntry } from '../data/fighters/roster';
 import { STAGES, STAGE_KEYS } from '../data/stages';
 import { FighterSimulation, type SimulationEvent } from '../simulation/FighterSimulation';
@@ -79,7 +80,7 @@ class FighterDemo {
     selection.querySelectorAll<HTMLElement>('[id]').forEach((item) => {
       item.id += '-select';
     });
-    document.querySelector('.select-footer')!.append(selection);
+    document.getElementById('selection-audio-settings')!.append(selection);
     let music = 0.45,
       effects = 0.8;
     let reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
@@ -216,7 +217,7 @@ class FighterDemo {
         const modal = document.querySelector<HTMLElement>('.modal-overlay:not([hidden])');
         const focusable = modal
           ? Array.from(
-              modal.querySelectorAll<HTMLElement>('button, a, input, select, [tabindex="0"]'),
+              modal.querySelectorAll<HTMLElement>('button, a, input, select, summary, [tabindex="0"]'),
             ).filter((item) => item.offsetParent !== null && !item.matches(':disabled'))
           : [];
         const first = focusable[0];
@@ -321,6 +322,15 @@ class FighterDemo {
     };
 
     const refreshGridCards = () => {
+      for (const [seat, key] of [
+        [1, this.p1Key],
+        [2, this.p2Key],
+      ] as const) {
+        const image = document.getElementById(`matchup-p${seat}`) as HTMLImageElement;
+        image.src = selectionArtUrl(base, key, 'full');
+        image.alt = ROSTER[key]!.definition.name;
+        document.getElementById(`matchup-name-p${seat}`)!.textContent = ROSTER[key]!.definition.name;
+      }
       document.querySelectorAll('.roster-card').forEach((card) => {
         const key = card.getAttribute('data-key');
         card.classList.toggle('selected-p1', key === this.p1Key);
@@ -398,6 +408,8 @@ class FighterDemo {
 
     const stageChips = document.querySelectorAll<HTMLButtonElement>('.stage-chip');
     stageChips.forEach((chip) => {
+      const stage = STAGES[chip.dataset.stage!];
+      if (stage) chip.style.setProperty('--stage-art', `url("${base}${stage.imagePath}")`);
       chip.addEventListener('click', () => {
         const stageId = chip.dataset.stage;
         if (stageId && STAGES[stageId]) {
@@ -449,6 +461,9 @@ class FighterDemo {
       this.previousOnlineState = null;
       this.mode = mode.value === 'online' ? 'online' : mode.value === 'training' ? 'training' : 'bot';
       this.isBotEnabled = this.mode === 'bot';
+      document.querySelectorAll<HTMLButtonElement>('[data-fight-mode]').forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset.fightMode === this.mode));
+      });
       document.getElementById('online-lobby')!.hidden = this.mode !== 'online';
       (document.getElementById('bot-difficulty') as HTMLSelectElement).disabled = this.mode !== 'bot';
       document.querySelectorAll<HTMLButtonElement>('[data-select-slot]').forEach((button) => {
@@ -457,6 +472,14 @@ class FighterDemo {
       this.receiveRoom(null);
     };
     mode.addEventListener('change', changeMode);
+    document.querySelectorAll<HTMLButtonElement>('[data-fight-mode]').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (mode.value === button.dataset.fightMode) return;
+        mode.value = button.dataset.fightMode!;
+        changeMode();
+        this.audio.playUi();
+      });
+    });
     document.getElementById('online-create')!.addEventListener('click', () => this.online.open('create'));
     document.getElementById('online-join')!.addEventListener('click', () => {
       const code = (document.getElementById('online-code') as HTMLInputElement).value.trim().toUpperCase();
@@ -515,7 +538,7 @@ class FighterDemo {
       ? room?.players[this.online.seat]?.ready
         ? 'COFNIJ GOTOWOŚĆ'
         : 'JESTEM GOTOWY'
-      : 'ROZPOCZNIJ WALKĘ';
+      : 'WRZUĆ COMBO / START';
     for (const id of ['online-copy', 'online-leave'])
       (document.getElementById(id) as HTMLButtonElement).disabled = !room;
     for (const id of ['online-create', 'online-join'])

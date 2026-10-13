@@ -69,10 +69,6 @@ body {
   line-height: 1.5;
   font-size: 13px;
 }
-.move-timing-list {
-  border-left: 2px solid #f59e0b;
-  padding-left: 10px;
-}
 .selection-slots {
   display: flex;
   gap: 10px;
