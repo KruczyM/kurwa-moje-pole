@@ -40,7 +40,10 @@ export function locomotionPose(
     if (clip === 'walk_stop' && elapsed >= 8) clip = 'idle';
   }
   if (moving && previous && !frozen) {
-    const distance = Math.min(30, Math.abs(fighter.x - previous.x));
+    const rawDist = Math.abs(fighter.x - previous.x);
+    // If the fighter is moving into a wall or against opponent pushbox / camera-wall,
+    // rawDist may be near 0. We advance using nominal walking stride so footwork stays alive.
+    const distance = rawDist > 0.1 ? Math.min(30, rawDist) : Math.min(30, 4.2 * Math.max(1, delta));
     phase =
       (phase + (distance / WALK_CYCLE_DISTANCE) * 12 * (fighter.state === 'walk_back' ? -1 : 1) + 12) % 12;
   }

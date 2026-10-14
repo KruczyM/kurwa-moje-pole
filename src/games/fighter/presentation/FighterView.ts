@@ -3,7 +3,7 @@ import { CameraRig2D } from './CameraRig2D';
 import { SimulationEvent } from '../simulation/FighterSimulation';
 import { STAGES, StageDefinition } from '../data/stages';
 import { SuperCinematicEngine } from './SuperCinematicEngine';
-import { fightFraming, stageLayout } from './stageLayout';
+import { GROUND_SCREEN_RATIO, stageLayout } from './stageLayout';
 import { CombatSpriteBank } from './CombatSpriteBank';
 import { cinematicTick, ultimateBodyPose } from './ultimateChoreography';
 
@@ -248,15 +248,14 @@ export class FighterView {
     // 2. Camera transform
     const shake = camera.getShakeOffset();
     const screenCenterX = width / 2 + shake.x;
-    const screenGroundY = height * 0.74 + shake.y;
-    const framing = fightFraming(width, camera.zoom, camera.x, match.p1.x, match.p2.x);
+    const screenGroundY = height * GROUND_SCREEN_RATIO + shake.y;
 
     ctx.translate(screenCenterX, screenGroundY);
-    ctx.scale(framing.zoom, framing.zoom);
-    ctx.translate(-framing.x, 0);
+    ctx.scale(camera.zoom, camera.zoom);
+    ctx.translate(-camera.x, 0);
 
     // Background and feet share the same transform and world ground.
-    this.drawStageBackground(ctx, framing.x, width, height, framing.zoom);
+    this.drawStageBackground(ctx, width, height, camera.zoom);
 
     // 4. Render Fighters
     this.superCinematic.renderBehind(ctx);
@@ -325,7 +324,6 @@ export class FighterView {
 
   private drawStageBackground(
     ctx: CanvasRenderingContext2D,
-    camX: number,
     width: number,
     height: number,
     zoom: number,
@@ -334,7 +332,7 @@ export class FighterView {
     const img = this.getStageImage(stage.id);
 
     const aspect = img && img.naturalWidth > 0 ? img.naturalHeight / img.naturalWidth : 9 / 16;
-    const layout = stageLayout(width, height, zoom, camX, aspect, stage.groundOffsetRatio);
+    const layout = stageLayout(width, height, zoom, aspect, stage.groundOffsetRatio);
 
     if (img && img.complete && img.naturalWidth > 0) {
       // 1. Draw detailed stage background graphic
