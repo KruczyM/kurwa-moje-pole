@@ -1,4 +1,4 @@
-import { CAMERA_SHAKE_MARGIN } from './stageLayout';
+import { arenaCameraX, arenaZoom, CAMERA_SHAKE_MARGIN, cinematicZoom } from './stageLayout';
 
 export class CameraRig2D {
   public reducedEffects = false;
@@ -6,19 +6,22 @@ export class CameraRig2D {
   public x = 0;
   public y = 140; // Ground line height offset in canvas
   public zoom = 1.0;
+  private cinematicBlend = 0;
   private shakeTime = 0;
   private shakeIntensity = 0;
 
-  update(p1x: number, p2x: number, dt: number): void {
-    const targetX = (p1x + p2x) / 2;
-    // Smooth camera lag
-    this.x += (targetX - this.x) * Math.min(1.0, dt * 8.0);
-
-    // Zoom based on distance
-    const dist = Math.abs(p2x - p1x);
-    // When close (dist < 200), zoom in to 1.15. When far (dist > 600), zoom out to 0.85
-    const targetZoom = this.cinematic ? 1.22 : Math.max(0.82, Math.min(1.15, 1.25 - (dist / 800) * 0.4));
-    this.zoom += (targetZoom - this.zoom) * Math.min(1.0, dt * 6.0);
+  /**
+   * Arcade fighting camera: constant zoom for the viewport, follows the (interpolated)
+   * midpoint without lag and stops at the arena edges. Only the super-freeze punch-in eases.
+   */
+  update(p1x: number, p2x: number, dt: number, width = 1280, height = 720): void {
+    const base = arenaZoom(width, height);
+    const target = this.cinematic ? 1 : 0;
+    this.cinematicBlend += (target - this.cinematicBlend) * Math.min(1.0, dt * 6.0);
+    if (Math.abs(target - this.cinematicBlend) < 0.001) this.cinematicBlend = target;
+    const punchIn = cinematicZoom(width, base, p1x, p2x);
+    this.zoom = base + (punchIn - base) * this.cinematicBlend;
+    this.x = arenaCameraX((p1x + p2x) / 2, width, this.zoom);
 
     if (this.shakeTime > 0) {
       this.shakeTime -= dt;

@@ -44,6 +44,7 @@ class FighterDemo {
   private inSelectScreen = true;
   private lastTime = performance.now();
   private accumulator = 0;
+  private previousLocalState: MatchState | null = null;
   private heldKeys = new Set<string>();
   private pointerInputs = new Map<number, number>();
   private readonly step = 1 / 60;
@@ -146,6 +147,7 @@ class FighterDemo {
   private startMatch(): void {
     this.clearInput();
     this.accumulator = 0;
+    this.previousLocalState = null;
     this.view.reset();
     this.p1CinematicPlayed = this.p2CinematicPlayed = false;
     this.view.retainFighters([this.p1Key, this.p2Key]);
@@ -669,6 +671,7 @@ class FighterDemo {
       this.clearInput();
       this.view.reset();
       this.accumulator = 0;
+      this.previousLocalState = null;
       this.sim.restartMatch();
       rematchModal?.setAttribute('hidden', '');
       this.isPaused = false;
@@ -682,6 +685,7 @@ class FighterDemo {
     this.isPaused = !this.isPaused;
     this.clearInput();
     this.accumulator = 0;
+    this.previousLocalState = null;
     const pauseModal = document.getElementById('pause-modal');
     if (this.isPaused) {
       if (this.mode === 'online') this.onlineStatus('Menu otwarte — walka online trwa.');
@@ -734,6 +738,11 @@ class FighterDemo {
       return;
     }
     const state = this.sim.getState();
+    this.previousLocalState = {
+      ...state,
+      p1: { ...state.p1 },
+      p2: { ...state.p2 },
+    };
 
     const p1Input = this.keyMask | this.touchMask;
     const p2Input = this.isBotEnabled ? this.bot.update(state.p2, state.p1) : 0;
@@ -876,13 +885,14 @@ class FighterDemo {
     const width = window.innerWidth;
     const height = window.innerHeight;
     const current = this.sim.getState();
+    const alpha = this.step > 0 ? Math.max(0, Math.min(1, this.accumulator / this.step)) : 1;
     const state =
       this.mode === 'online'
         ? interpolateMatch(this.previousOnlineState, current, (performance.now() - this.onlineFrameAt) / 50)
-        : current;
+        : interpolateMatch(this.previousLocalState, current, alpha);
 
     this.camera.cinematic = (state.superFreezeTicks ?? 0) > 0;
-    this.camera.update(state.p1.x, state.p2.x, dt);
+    this.camera.update(state.p1.x, state.p2.x, dt, width, height);
 
     // Render 2D Fighting Stage & Characters with individual theme colors
     this.view.render(

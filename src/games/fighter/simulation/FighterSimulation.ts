@@ -8,7 +8,7 @@ import {
 } from './CombatTypes';
 import { InputBuffer } from './InputBuffer';
 import { resolveCombatPair } from './CombatResolver';
-import { resolveFacing, resolvePushboxes, updatePhysics } from './Movement';
+import { enforceMaxSeparation, resolveFacing, resolvePushboxes, updatePhysics } from './Movement';
 import { prepareFighter } from './combatTiming';
 
 export interface SimulationEvent {
@@ -167,6 +167,7 @@ export class FighterSimulation {
           this.events.push({ type: 'land', tick: this.state.tick, data: { slot: slot + 1 } });
       });
       resolvePushboxes(this.state.p1, this.def1, this.state.p2, this.def2);
+      enforceMaxSeparation(this.state.p1, this.def1, this.state.p2, this.def2);
       resolveFacing(this.state.p1, this.state.p2);
 
       // Training keeps reactions and damage events, but never permits a KO.

@@ -2,7 +2,41 @@ import { FighterDefinition, FighterState } from './CombatTypes';
 
 export const STAGE_WIDTH = 1200;
 export const STAGE_HALF_WIDTH = STAGE_WIDTH / 2;
+/** Minimum world width visible on any screen; zoom never depends on fighter distance. */
+export const CAMERA_VIEW_WIDTH = 820;
+/** Fighting-game "camera wall": leaves 150 units per side for the sprite and its reach. */
+export const MAX_FIGHTER_SEPARATION = 520;
 export const GRAVITY = 0.85;
+
+function clampToStage(fighter: FighterState, def: FighterDefinition): void {
+  const half = def.pushbox.w / 2;
+  fighter.x = Math.max(-STAGE_HALF_WIDTH + half, Math.min(STAGE_HALF_WIDTH - half, fighter.x));
+}
+
+/**
+ * Hold the fighter who is moving away once the pair reaches the camera wall.
+ * The other fighter is never dragged; if both (or neither) retreat the excess is shared.
+ */
+export function enforceMaxSeparation(
+  p1: FighterState,
+  def1: FighterDefinition,
+  p2: FighterState,
+  def2: FighterDefinition,
+): void {
+  const dx = p2.x - p1.x;
+  const excess = Math.abs(dx) - MAX_FIGHTER_SEPARATION;
+  if (excess <= 0) return;
+  const away = dx >= 0 ? 1 : -1;
+  const p1Leaving = p1.vx * -away > 0;
+  const p2Leaving = p2.vx * away > 0;
+  const share1 = p1Leaving && !p2Leaving ? 1 : !p1Leaving && p2Leaving ? 0 : 0.5;
+  p1.x += away * excess * share1;
+  p2.x -= away * excess * (1 - share1);
+  if (p1Leaving) p1.vx = 0;
+  if (p2Leaving) p2.vx = 0;
+  clampToStage(p1, def1);
+  clampToStage(p2, def2);
+}
 
 export function resolveFacing(p1: FighterState, p2: FighterState): void {
   // If either player is airborne or in active attack/hitstun, preserve facing to prevent abrupt flips
