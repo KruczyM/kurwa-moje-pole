@@ -1,13 +1,28 @@
+const REVISED_PROPS: Record<string, string> = {
+  gruczol: 'wc_tron_open',
+  gruczol_right: 'wc_tron_open_right',
+  chlebak: 'dj_operator_side',
+  jeczmien: 'lighter',
+  ambona: 'pinecone',
+  pien: 'megaphone',
+  krwiak: 'summer_contrast',
+};
+const propKey = (id: string): string =>
+  id.startsWith('legacy_') && !REVISED_PROPS[id.slice(7)] ? id.slice(7) : id;
+
 /** Cached AI illustrations; only the active pair owns decoded prop images. */
 export class SuperPropsRenderer {
   private propImages = new Map<string, HTMLImageElement>();
 
   retain(ids: string[]): void {
-    const wanted = new Set([
-      ...ids,
-      ...(ids.includes('gruczol') ? ['paper'] : []),
-      ...(ids.some((id) => ['pierscien', 'pien', 'chlebak'].includes(id)) ? ['soundwave'] : []),
-    ]);
+    const wanted = new Set(
+      [
+        ...ids.filter((id) => !['kobra', 'klatwa', 'antena'].includes(id)),
+        ...ids.map((id) => `legacy_${id}`),
+        ...(ids.includes('gruczol') ? ['paper', 'gruczol_right'] : []),
+        ...(ids.some((id) => ['chlebak', 'pien', 'pierscien'].includes(id)) ? ['soundwave'] : []),
+      ].map(propKey),
+    );
     for (const [id, image] of this.propImages) {
       if (!wanted.has(id)) {
         image.removeAttribute('src');
@@ -19,11 +34,14 @@ export class SuperPropsRenderer {
 
   getPropImage(id: string): HTMLImageElement | null {
     if (typeof Image === 'undefined') return null;
+    id = propKey(id);
     let image = this.propImages.get(id);
     if (!image) {
       image = new Image();
       image.decoding = 'async';
-      image.src = `${import.meta.env.BASE_URL}game-assets/2d/fighter/art-v3/props/${encodeURIComponent(id)}.webp`;
+      const folder = REVISED_PROPS[id] ? 'motion-v4/props' : 'art-v3/props';
+      const assetId = id.startsWith('legacy_') ? id.slice(7) : (REVISED_PROPS[id] ?? id);
+      image.src = `${import.meta.env.BASE_URL}game-assets/2d/fighter/${folder}/${encodeURIComponent(assetId)}.webp`;
       this.propImages.set(id, image);
     }
     return image.complete && image.naturalWidth > 0 ? image : null;
@@ -38,17 +56,50 @@ export class SuperPropsRenderer {
     height: number,
     angle = 0,
     facing = 1,
+    frame = 0,
+    columns = 1,
   ): void {
+    if (id === 'vinyl') {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.scale(width / 40, height / 40);
+      ctx.fillStyle = '#111318';
+      ctx.beginPath();
+      ctx.arc(0, 0, 19, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#70747e';
+      ctx.lineWidth = 0.7;
+      for (const radius of [11, 14, 17]) {
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#f72585';
+      ctx.beginPath();
+      ctx.arc(0, 0, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff5da';
+      ctx.beginPath();
+      ctx.arc(0, 0, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
     const image = this.getPropImage(id);
     if (!image) return;
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(angle);
     ctx.scale(facing, 1);
-    const fit = Math.min(width / image.naturalWidth, height / image.naturalHeight);
-    const w = image.naturalWidth * fit,
+    const sourceWidth = image.naturalWidth / columns;
+    const fit = Math.min(width / sourceWidth, height / image.naturalHeight);
+    const w = sourceWidth * fit,
       h = image.naturalHeight * fit;
-    ctx.drawImage(image, -w / 2, -h / 2, w, h);
+    if (columns > 1) {
+      const cell = Math.max(0, Math.min(columns - 1, Math.floor(frame)));
+      ctx.drawImage(image, cell * sourceWidth, 0, sourceWidth, image.naturalHeight, -w / 2, -h / 2, w, h);
+    } else ctx.drawImage(image, -w / 2, -h / 2, w, h);
     ctx.restore();
   }
 }

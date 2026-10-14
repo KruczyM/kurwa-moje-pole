@@ -1,5 +1,8 @@
 import type { FighterState } from '../simulation/CombatTypes';
 
+// The authored foot span is about 60 world units per step, two steps per cycle.
+export const WALK_CYCLE_DISTANCE = 120;
+
 export interface LocomotionPose {
   tick: number;
   x: number;
@@ -38,7 +41,8 @@ export function locomotionPose(
   }
   if (moving && previous && !frozen) {
     const distance = Math.min(30, Math.abs(fighter.x - previous.x));
-    phase = (phase + (distance / 65) * 12 * (fighter.state === 'walk_back' ? -1 : 1) + 12) % 12;
+    phase =
+      (phase + (distance / WALK_CYCLE_DISTANCE) * 12 * (fighter.state === 'walk_back' ? -1 : 1) + 12) % 12;
   }
   return { tick, x: fighter.x, moving, elapsed, phase, clip };
 }

@@ -1,7 +1,7 @@
 /* Screen-printed cabinet fascia. All decoration is CSS, with existing game art. */
 #char-select-screen {
   background:
-    linear-gradient(#07120c66, #07120c99),
+    linear-gradient(#07120c22, #07120c55),
     url('../../../../public/game-assets/2d/fighter/art-v3/wristbands-wide.webp') center / cover;
 }
 
@@ -17,7 +17,10 @@
   padding: 18px 24px;
   background:
     repeating-linear-gradient(173deg, transparent 0 41px, #ffffff05 42px 43px),
-    radial-gradient(ellipse at top right, #39423a, transparent 60%), #171e1c;
+    radial-gradient(ellipse at top right, #39423a33, transparent 60%), #10191455;
+  text-shadow:
+    0 1px 2px #000,
+    0 0 5px #000;
   box-shadow:
     0 0 0 3px #090e0c,
     0 20px 70px #000b;
@@ -40,8 +43,9 @@
   padding: 16px 24px;
   border: 2px solid #e8b54b;
   background:
-    repeating-linear-gradient(0deg, #0000 0 3px, #0002 3px 4px), linear-gradient(115deg, #183c36, #102723 70%);
-  box-shadow: inset 0 0 30px #070e0c;
+    repeating-linear-gradient(0deg, #0000 0 3px, #0001 3px 4px),
+    linear-gradient(115deg, #183c3655, #10272333 70%);
+  box-shadow: inset 0 0 30px #070e0c55;
   overflow: hidden;
 }
 
@@ -81,6 +85,7 @@
   top: 40px;
   padding: 14px;
   background: #f0d391;
+  text-shadow: none;
   color: #19231c;
   font:
     900 20px / 1.05 Impact,
@@ -101,7 +106,7 @@
   padding: 12px;
   text-align: left;
   color: #ebe0c4;
-  background: #26302a;
+  background: #14231bbb;
   border: 1px solid #78816c;
   border-bottom: 4px solid #090f0c;
   font-weight: 800;
@@ -124,6 +129,7 @@
 .mode-buttons button[aria-pressed='true'] {
   color: #101b17;
   background: #e7bd5e;
+  text-shadow: none;
   border-color: #ffda7c;
   border-bottom-color: #90622c;
 }
@@ -139,7 +145,7 @@
 #char-select-screen .selection-slots button {
   border-radius: 0;
   border: 1px solid #6f8274;
-  background: #202c25;
+  background: #14231bbb;
   color: #e9e0c8;
 }
 
@@ -163,7 +169,7 @@
   padding: 6px;
   align-content: start;
   overflow: visible;
-  background: #0b1410;
+  background: #0b141033;
   border: 2px inset #6c7566;
 }
 
@@ -173,7 +179,7 @@
   aspect-ratio: 0.9;
   padding: 3px;
   border-radius: 0;
-  background: linear-gradient(145deg, #445044, #1a281e);
+  background: linear-gradient(145deg, #44504466, #1a281e44);
   border: 2px solid #6c7566;
   box-shadow: none;
   transform: none;
@@ -212,8 +218,8 @@
   grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr);
   align-items: center;
   background:
-    repeating-linear-gradient(125deg, #0000 0 19px, #060e0b55 20px 22px),
-    linear-gradient(110deg, #1b5c50 49%, #5d4828 50%);
+    repeating-linear-gradient(125deg, #0000 0 19px, #060e0b22 20px 22px),
+    linear-gradient(110deg, #1b5c5033 49%, #5d482833 50%);
   border: 2px solid #7a856b;
   padding: 10px;
   overflow: hidden;
@@ -259,8 +265,8 @@
 #char-select-screen .fighter-preview-card {
   display: block;
   padding: 10px 14px;
-  background: #ddd0a9;
-  color: #20291f;
+  background: #0b1912a6;
+  color: #fff2d1;
   border: 0;
   border-radius: 0;
   box-shadow: 3px 3px #060e0b;
@@ -275,14 +281,14 @@
 }
 
 #char-select-screen .preview-info h3 {
-  color: #182a22;
+  color: #fff2d1;
   font-family: Impact, 'Arial Black', sans-serif;
 }
 
 #char-select-screen .preview-info h4,
 #char-select-screen .preview-style,
 #char-select-screen .preview-info p {
-  color: #344535;
+  color: #f1e8d2;
 }
 
 #char-select-screen .preview-info p {
@@ -291,7 +297,7 @@
 }
 
 #char-select-screen .preview-moves {
-  background: #1b3029;
+  background: #10231a88;
   border-radius: 0;
   border-left-color: #bc7b2c;
   line-height: 1.6;
@@ -355,7 +361,7 @@
 
 #char-select-screen .controls-helper-box,
 #char-select-screen .audio-settings {
-  background: #111e17;
+  background: #111e17bb;
   border: 0;
   border-radius: 0;
   margin: 0 0 10px;
@@ -386,6 +392,7 @@
 
 #char-select-screen .btn-start {
   background: #edc25f;
+  text-shadow: none;
   color: #16251b;
   border: 2px solid #ffe4a0;
   border-bottom: 5px solid #976a28;
@@ -420,7 +427,7 @@
 @media (max-width: 700px) {
   #char-select-screen {
     background-image:
-      linear-gradient(#07120c66, #07120c99),
+      linear-gradient(#07120c22, #07120c55),
       url('../../../../public/game-assets/2d/fighter/art-v3/wristbands-portrait.webp');
   }
   #char-select-screen .select-container {

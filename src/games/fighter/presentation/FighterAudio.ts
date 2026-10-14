@@ -252,7 +252,7 @@ export class FighterAudio {
     this.play('charge', 0.7);
   }
   playUltimateImpact(id: string): void {
-    this.play('ultimate-' + id);
+    this.play(id === 'antena' ? 'heavy' : 'ultimate-' + id);
   }
 
   dispose(): void {
