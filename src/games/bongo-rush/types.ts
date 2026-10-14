@@ -106,6 +106,8 @@ export interface World {
   trapped: boolean;
   bushRoots: Point[];
   nextBushGrowth?: number;
+  /** Actual births drive presentation even when growth happens outside the camera or in another room. */
+  bushBirths?: { at: Point; from: Point; tick: number }[];
   lootSources?: { definition: LootSource; activated: boolean; remaining: number }[];
 }
 export type SoundEvent = 'pickup' | 'dig' | 'push' | 'impact' | 'lost' | 'exit' | 'won' | 'trap';

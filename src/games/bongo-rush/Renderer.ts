@@ -3,6 +3,8 @@ import { SpriteAnimator } from '../after/presentation/SpriteAnimator';
 import { PatrolAnimator } from './PatrolAnimator';
 import { PatrolMotion } from './PatrolMotion';
 import { CAMPAIGN_LEVEL_COUNT } from './Campaign';
+import { colonyPose, COLONY_SHAKE_SECONDS } from './ColonyMotion';
+import type { ColonyPose } from './ColonyMotion';
 import type { SpriteMetadata } from '../after/presentation/SpriteAnimator';
 import type { Facing } from '../after/simulation/WorldState';
 import { BIOMES } from './Levels';
@@ -10,7 +12,7 @@ import { paintCaveTile } from './CaveVisuals';
 import { biomeTileRect, paintBiomeTile, terrainVariant } from './BiomeTiles';
 import { drawAmarena } from './AmarenaArt';
 import { caveTileSize, collectibleCell, raveTabletRect } from './ArtDirection';
-import { same } from './types';
+import { same, STEP_SECONDS } from './types';
 import { DEPTH_LAYERS, depthFrame, foregroundBands } from './Depth';
 import { paintSceneMotion } from './LivingScene';
 import { punchSoil, terrainEdges, paintTerrainEdges } from './TerrainDetails';
@@ -37,7 +39,8 @@ export class CaveRenderer {
   private atlas?: HeroAtlas;
   private bushAtlas?: HeroAtlas;
   private colonyFace?: HTMLCanvasElement;
-  private readonly colonyBirths = new WeakMap<World, Map<number, number>>();
+  private readonly colonyBirthIndex = new Map<number, NonNullable<World['bushBirths']>[number]>();
+  private colonyBirthCount = -1;
   private readonly patrolMotion = new PatrolMotion();
   private enemyAtlases = new Map<string, HeroAtlas>();
   private enemyAnimators = new Map<number, PatrolAnimator>();
@@ -213,6 +216,7 @@ export class CaveRenderer {
     this.bushAtlas = undefined;
     if (this.colonyFace) this.colonyFace.width = this.colonyFace.height = 0;
     this.colonyFace = undefined;
+    this.colonyBirthIndex.clear();
     this.patrolMotion.clear();
     this.enemyAtlases.clear();
     this.enemyAnimators.clear();
@@ -330,6 +334,7 @@ export class CaveRenderer {
     }
     const playerPoint = this.interpolate(world.player, alpha);
     if (this.world !== world) {
+      this.colonyBirthCount = -1;
       this.world = world;
       this.terrainLayout = buildTerrainLayout(
         world,
@@ -372,6 +377,12 @@ export class CaveRenderer {
     ctx.clip();
     ctx.translate(0, this.topInset);
     const origin = this.camera.project({ x: 0, y: 0 });
+    if (this.colonyBirthCount !== (world.bushBirths?.length ?? 0)) {
+      this.colonyBirthIndex.clear();
+      for (const birth of world.bushBirths ?? [])
+        this.colonyBirthIndex.set(birth.at.y * world.width + birth.at.x, birth);
+      this.colonyBirthCount = world.bushBirths?.length ?? 0;
+    }
     const firstX = Math.floor(-origin.x / this.tile) - 1;
     const firstY = Math.floor(-origin.y / this.tile) - 1;
     const lastX = Math.ceil((this.width - origin.x) / this.tile) + 1;
@@ -454,16 +465,22 @@ export class CaveRenderer {
           ctx.save();
           ctx.translate(position.x, position.y);
           ctx.scale(this.tile / 64, this.tile / 64);
-          let births = this.colonyBirths.get(world);
-          if (!births) {
-            births = new Map();
-            this.colonyBirths.set(world, births);
-          }
-          const index = y * world.width + x;
-          if (!births.has(index)) births.set(index, world.tick === 0 ? -10 : world.tick);
+          const point = { x, y };
+          const closeToWave =
+            world.nextBushGrowth !== undefined &&
+            (world.nextBushGrowth - world.tick - alpha) * STEP_SECONDS <= COLONY_SHAKE_SECONDS;
+          const birth = this.colonyBirthIndex.get(y * world.width + x);
           this.bush(
             cell === 'buried-bush',
-            reduced ? 1 : Math.min(1, (world.tick + alpha - births.get(index)!) / 1.2),
+            colonyPose(
+              point,
+              world.tick,
+              alpha,
+              world.nextBushGrowth,
+              !reduced && closeToWave && game.canSpreadFrom(point),
+              birth,
+              reduced,
+            ),
           );
           ctx.restore();
         }
@@ -657,14 +674,25 @@ export class CaveRenderer {
   }
 
   /** Distinguishes a dormant rooted sprout from the solid, impassable adult bush tile. */
-  private bush(buried: boolean, growth = 1): void {
+  private bush(buried: boolean, pose?: ColonyPose): void {
     const ctx = this.context;
     if (!buried && this.colonyFace) {
-      const scale = 0.72 + 0.28 * Math.max(0, growth);
       ctx.save();
-      ctx.translate(32, 32);
-      ctx.scale(scale, scale);
+      ctx.translate(32 + (pose?.x ?? 0), 32 + (pose?.y ?? 0));
+      ctx.rotate(pose?.angle ?? 0);
+      ctx.scale(pose?.scaleX ?? 1, pose?.scaleY ?? 1);
       ctx.drawImage(this.colonyFace, -31, -31, 62, 62);
+      if (pose && pose.crack > 0) {
+        ctx.strokeStyle = `rgba(226,255,135,${pose.crack * 0.9})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-3, -24);
+        ctx.lineTo(3, -10);
+        ctx.lineTo(-2, 2);
+        ctx.lineTo(4, 13);
+        ctx.lineTo(0, 25);
+        ctx.stroke();
+      }
       ctx.restore();
       return;
     }

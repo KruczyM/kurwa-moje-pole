@@ -20,6 +20,7 @@ export function createWorld(level: LevelDefinition, chamber = false): World {
     reason: '',
     trapped: false,
     bushRoots: [],
+    bushBirths: [],
     lootSources: level.lootSources?.map((definition) => ({
       definition,
       activated: false,
@@ -525,14 +526,27 @@ export class Simulation {
     w.cells.forEach((cell, index) => {
       if (cell === 'bush') sources.push({ x: index % w.width, y: Math.floor(index / w.width) });
     });
-    const additions = new Set<number>();
+    const additions = new Map<number, Point>();
     for (const source of sources) {
       for (const target of [source, ...DIRECTIONS.map((direction) => neighbour(source, direction))]) {
-        if (this.empty(target)) additions.add(target.y * w.width + target.x);
+        const index = target.y * w.width + target.x;
+        if (this.empty(target) && !additions.has(index)) additions.set(index, source);
       }
     }
-    for (const index of additions) w.cells[index] = 'bush';
+    for (const [index, parent] of additions) {
+      w.cells[index] = 'bush';
+      (w.bushBirths ??= []).push({
+        at: { x: index % w.width, y: Math.floor(index / w.width) },
+        from: { ...parent },
+        tick: w.tick,
+      });
+    }
     w.nextBushGrowth = w.tick + Math.ceil((this.level.bushGrowthSeconds ?? 5) / STEP_SECONDS);
+  }
+
+  /** Presentation queries the exact vacant-air rule; it never predicts growth through occupied tiles. */
+  canSpreadFrom(point: Point): boolean {
+    return DIRECTIONS.some((direction) => this.empty(neighbour(point, direction)));
   }
 
   /** Bottom-up stable ordering prevents double falls and makes replays independent of array order. */
