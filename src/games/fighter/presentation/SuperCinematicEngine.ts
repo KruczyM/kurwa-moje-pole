@@ -2,6 +2,17 @@ import { SuperPropsRenderer, ultimatePropPose } from './SuperPropsRenderer';
 import { FighterAudio } from './FighterAudio';
 import { CameraRig2D } from './CameraRig2D';
 import { FighterState, MatchState } from '../simulation/CombatTypes';
+import {
+  cinematicTick,
+  clamp01,
+  djConsolePose,
+  floatingCabin,
+  projectilePoint,
+  ultimateBodyPose,
+  ultimateHand,
+  ultimateProjectiles,
+  vehicleStageX,
+} from './ultimateChoreography';
 
 export interface SuperCinematicState {
   attackerId: string;
@@ -100,15 +111,7 @@ export class SuperCinematicEngine {
         this.reset();
         return;
       }
-      const tick = attacker.moveTick;
-      s.currentTick =
-        (match.superFreezeTicks ?? 0) > 0 && s.moveId === 'ultimate'
-          ? 35 * (1 - match.superFreezeTicks! / (match.superFreezeTotal || 48))
-          : tick <= move.startup
-            ? 35 + (40 * tick) / Math.max(1, move.startup)
-            : tick <= move.startup + move.active
-              ? 76 + (16 * (tick - move.startup - 1)) / Math.max(1, move.active - 1)
-              : 93 + (12 * (tick - move.startup - move.active - 1)) / Math.max(1, move.recovery - 1);
+      s.currentTick = cinematicTick(attacker, match);
       // Follow live positions and hitstop; presentation never moves a fighter.
       s.attackerX = attacker.x;
       s.attackerY = attacker.y;
@@ -162,6 +165,84 @@ export class SuperCinematicEngine {
     audio.playUltimateImpact(charId);
   }
 
+  /** Large scenery belongs behind the fighters, never on top of their bodies. */
+  public renderBehind(ctx: CanvasRenderingContext2D): void {
+    const s = this.activeState;
+    if (!s) return;
+    ctx.save();
+    if (s.phase === 'freeze' || s.phase === 'action') {
+      ctx.fillStyle = 'rgba(2, 6, 23, 0.55)';
+      ctx.fillRect(-1200, -900, 2400, 1500);
+    }
+    const drawScenery = (
+      id: string,
+      x: number,
+      y: number,
+      targetX: number,
+      targetY: number,
+      facing: number,
+      t: number,
+    ) => {
+      if (t < 35) return;
+      ctx.save();
+      ctx.globalAlpha *= clamp01((t - 35) / 7) * clamp01((105 - t) / 8);
+      if (id === 'gruczol') {
+        const cabin = floatingCabin(t, x, y, facing);
+        this.propsRenderer.drawProp(
+          ctx,
+          cabin.propId,
+          cabin.x,
+          cabin.y,
+          160,
+          220,
+          0,
+          cabin.facing,
+          cabin.frame,
+          4,
+        );
+      } else if (id === 'hemoroid' && t >= 43) {
+        this.propsRenderer.drawProp(
+          ctx,
+          id,
+          vehicleStageX(t, facing, targetX),
+          -(y + 150),
+          480,
+          300,
+          0,
+          facing,
+        );
+      } else if (id === 'korba') {
+        const braid = ultimatePropPose(t, x, y, targetX, targetY, id);
+        this.propsRenderer.drawProp(
+          ctx,
+          id,
+          braid.x,
+          braid.y - 75,
+          220,
+          160,
+          this.reducedEffects ? 0 : braid.angle,
+          facing,
+        );
+      }
+      ctx.restore();
+    };
+    if (s.moveId === 'ultimate')
+      drawScenery(s.attackerId, s.attackerX, s.attackerY, s.defenderX, s.defenderY, s.facing, s.currentTick);
+    if (this.boundDefender?.currentMove?.id === 'ultimate') {
+      const f = this.boundDefender;
+      drawScenery(
+        f.id,
+        f.x,
+        f.y,
+        s.attackerX,
+        s.attackerY,
+        f.facing,
+        s.phase === 'freeze' ? s.currentTick : cinematicTick(f),
+      );
+    }
+    ctx.restore();
+  }
+
   public render(ctx: CanvasRenderingContext2D, _width: number, _height: number): void {
     void _width;
     void _height;
@@ -174,9 +255,6 @@ export class SuperCinematicEngine {
 
     // 1. Dim background during Super Freeze & Action
     if (s.phase === 'freeze' || s.phase === 'action') {
-      ctx.fillStyle = 'rgba(2, 6, 23, 0.72)';
-      ctx.fillRect(-1200, -900, 2400, 1500);
-
       // Speed lines cutting diagonally
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
       ctx.lineWidth = 2;
@@ -261,7 +339,7 @@ export class SuperCinematicEngine {
           defenderY: s.attackerY,
           facing: concurrent.facing,
         },
-        propTick,
+        s.phase === 'freeze' ? propTick : cinematicTick(concurrent),
       );
       if (s.phase === 'freeze') {
         ctx.font = 'bold 18px sans-serif';
@@ -277,9 +355,11 @@ export class SuperCinematicEngine {
       ctx.globalAlpha *= 1 - progress;
       ctx.strokeStyle = s.themeColor;
       ctx.lineWidth = this.reducedEffects ? 2 : 5;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 25 + progress * 145, 20 + progress * 90, 0, 0, Math.PI * 2);
-      ctx.stroke();
+      if (s.attackerId !== 'chlebak') {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 25 + progress * 145, 20 + progress * 90, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       const count = this.reducedEffects ? 6 : 24;
       for (let i = 0; i < count; i++) {
         const angle = (i * Math.PI * 2) / count;
@@ -300,25 +380,271 @@ export class SuperCinematicEngine {
   }
 
   private renderCharacterSuperProps(ctx: CanvasRenderingContext2D, s: SuperCinematicState, t: number): void {
+    if (s.moveId !== 'ultimate') {
+      this.renderSpecialProps(ctx, s, t);
+      return;
+    }
+    const id = s.attackerId.toLowerCase();
+    if (t < 35 || (id === 'szerszen' && t < 50)) return;
+    const pose = ultimatePropPose(t, s.attackerX, s.attackerY, s.defenderX, s.defenderY, id);
+    const p = this.propsRenderer;
+    const angle = this.reducedEffects ? 0 : pose.angle;
+    const body = ultimateBodyPose(id, t, s.attackerX, s.attackerY, s.defenderX, s.facing);
+    const x = body.x,
+      y = -body.y,
+      f = s.facing;
+    const handX = x + f * 32,
+      handY = y - 80;
+    const targetY = -(s.defenderY + 75);
+    const flight = (release = 66, arrival = 76, fromX = handX, fromY = handY, arc = 16) =>
+      projectilePoint(fromX, fromY, s.defenderX, targetY, (t - release) / (arrival - release), arc);
+    const battleText = (text: string, tx: number, ty: number, size: number, color: string) => {
+      ctx.save();
+      ctx.translate(tx, ty);
+      // Text uses world coordinates: facing never mirrors its letters.
+      ctx.font = `900 ${size}px Impact, "Arial Black", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#15121b';
+      ctx.lineWidth = 5;
+      ctx.strokeText(text, 0, 0);
+      ctx.fillStyle = color;
+      ctx.fillText(text, 0, 0);
+      ctx.restore();
+    };
+    if (id === 'gruczol') {
+      const cabin = floatingCabin(t, x, body.y, f);
+      for (let roll = 0; roll < 8; roll++) {
+        const release = 58 + roll * 2;
+        if (t < release || t > release + 18) continue;
+        const point = projectilePoint(
+          cabin.outletX,
+          cabin.outletY,
+          s.defenderX,
+          targetY + ((roll % 3) - 1) * 12,
+          (t - release) / 18,
+          20 + roll * 3,
+        );
+        p.drawProp(ctx, 'paper', point.x, point.y, 30, 33, (t - release) * 0.35 + roll);
+      }
+      for (let roll = 0; roll < 6; roll++) {
+        const release = 62 + roll * 3;
+        if (t < release || t > release + 14) continue;
+        const point = flight(release, release + 14, handX, handY, 20 + roll * 5);
+        p.drawProp(ctx, 'paper', point.x, point.y, 24, 26, angle + roll);
+      }
+    } else if (id === 'chlebak') {
+      const deck = djConsolePose(x, body.y, f);
+      p.drawProp(ctx, id, deck.x, deck.y, deck.width, deck.height, 0, deck.facing);
+      const grip = ultimateHand(id, t);
+      if (t >= 52 && t < 66) p.drawProp(ctx, 'vinyl', x + f * grip.x, y - grip.y, 28, 28);
+      if (t >= 66 && t <= 82) {
+        const releaseGrip = ultimateHand(id, 66);
+        const point = flight(66, 76, x + f * releaseGrip.x, y - releaseGrip.y);
+        p.drawProp(ctx, 'vinyl', point.x, point.y, 32, 32, (t - 66) * 0.7);
+      }
+    } else if (id === 'jeczmien' || id === 'ambona') {
+      for (const projectile of ultimateProjectiles(id, t)) {
+        const grip = ultimateHand(id, t < projectile.release ? t : projectile.release, projectile.hand);
+        const hx = x + f * grip.x;
+        const hy = y - grip.y;
+        const fan = id === 'jeczmien' ? ((projectile.index % 3) - 1) * 26 : 0;
+        if (t >= 52 && t < projectile.release) {
+          // The remaining objects stay in the appropriate hand until release.
+          p.drawProp(ctx, id, hx + f * fan * 0.3, hy + Math.abs(fan) * 0.06, 11, 18, fan * 0.03);
+        } else if (projectile.flying) {
+          const point = projectilePoint(
+            hx,
+            hy + fan * 0.4,
+            s.defenderX,
+            targetY + fan,
+            projectile.progress,
+            12,
+          );
+          p.drawProp(
+            ctx,
+            id,
+            point.x,
+            point.y,
+            id === 'ambona' ? 18 : 13,
+            21,
+            projectile.progress * Math.PI * 4,
+          );
+        }
+      }
+      if (id === 'ambona' && t >= 60 && t < 96)
+        battleText('KOSTRZYN', (x + s.defenderX) / 2, Math.min(y, -s.defenderY) - 190, 34, '#e7c990');
+    } else if (id === 'klatwa') {
+      if (t >= 63 && t <= 92) {
+        const point = flight(63, 76, x + f * 35, y - 126, 0);
+        battleText('KURWA MOJE POLE', point.x, point.y, 19 + clamp01((t - 63) / 13) * 7, '#f8e8a3');
+      }
+    } else if (id === 'kobra') {
+      if (t >= 63 && t <= 92) this.drawLiquidStream(ctx, x + f * 23, y - 62, s.defenderX, targetY, t);
+    } else if (id === 'antena') {
+      // The embrace is performed by the authored arms, not by a giant prop.
+      if (t >= 76 && t < 93 && s.damageApplied)
+        battleText('ŚCISK!', s.defenderX, targetY - 90, 23, '#ffb5ce');
+    } else if (id === 'zawor') {
+      if (t >= 98 && t < 104) {
+        const bite = clamp01((t - 98) / 4);
+        ctx.save();
+        ctx.globalAlpha = 1;
+        p.drawProp(
+          ctx,
+          id,
+          x + f * (28 - bite * 10),
+          y - (140 - bite * 23),
+          22 * (1 - bite * 0.45),
+          28 * (1 - bite * 0.45),
+        );
+        ctx.restore();
+      }
+    } else if (id === 'pien') {
+      if (t >= 52 && t < 99) {
+        const megaphoneX = x + f * 60,
+          mouthX = megaphoneX + f * 30,
+          mouthY = y - 113;
+        p.drawProp(ctx, id, megaphoneX, mouthY, 65, 44, 0, f);
+        if (t >= 63 && t <= 92) {
+          ctx.save();
+          ctx.strokeStyle = '#ffd66b';
+          ctx.lineWidth = 3;
+          const distance = Math.abs(s.defenderX - mouthX);
+          const reach = clamp01((t - 63) / 13) * distance;
+          const rings = this.reducedEffects ? 4 : Math.min(12, Math.max(3, Math.ceil(reach / 36)));
+          for (let i = 0; i < rings; i++) {
+            // The first arc stays at the physical outlet; the train grows outward.
+            const d = (reach * i) / Math.max(1, rings - 1);
+            ctx.beginPath();
+            ctx.ellipse(
+              mouthX + f * d,
+              mouthY,
+              4 + d * 0.07,
+              9 + d * 0.13,
+              0,
+              -Math.PI / 2,
+              Math.PI / 2,
+              f < 0,
+            );
+            ctx.strokeStyle = '#e6a825';
+            ctx.lineWidth = this.reducedEffects ? 3 : 6;
+            ctx.stroke();
+            ctx.strokeStyle = '#fff1a8';
+            ctx.lineWidth = this.reducedEffects ? 1 : 2;
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+      }
+    } else if (id === 'pierscien') {
+      const speakerX = x + f * 130,
+        speakerY = y - 58;
+      p.drawProp(ctx, id, speakerX, speakerY, 175, 125, 0, f);
+      if (t >= 63 && t <= 92) {
+        const point = flight(63, 76, speakerX + f * 20, speakerY, 5);
+        battleText('dobrze dobrze', point.x, point.y, 24, '#b7e6ff');
+      }
+    } else if (id === 'krwiak') {
+      if (t < 97) {
+        for (const [offsetX, height] of [
+          [-105, 190],
+          [0, 270],
+          [105, 190],
+        ])
+          battleText('summer', x + offsetX, y - height + Math.sin(t * 0.12 + offsetX) * 9, 23, '#f2dfaa');
+      }
+      const point = t < 66 ? { x: x + f * 15, y: y - 190 } : flight(66, 76, x + f * 15, y - 190, 12);
+      p.drawProp(ctx, id, point.x, point.y, 110, 72, 0, 1);
+    } else if (id === 'hemoroid' || id === 'korba') {
+      // Their large moving props are rendered behind bodies in renderBehind().
+      return;
+    } else {
+      const size = id === 'szerszen' ? 105 : id === 'dziaslo' ? 100 : 65;
+      p.drawProp(
+        ctx,
+        id,
+        pose.x + (t < 55 ? f * 65 : 0),
+        pose.y,
+        size,
+        size,
+        angle,
+        id === 'szerszen' ? 1 : f,
+      );
+    }
+  }
+
+  /** Specials retain their existing art and choreography; this task changes ultimates. */
+  private renderSpecialProps(ctx: CanvasRenderingContext2D, s: SuperCinematicState, t: number): void {
     const id = s.attackerId.toLowerCase();
     if (id === 'szerszen' && t < 50) return;
     const pose = ultimatePropPose(t, s.attackerX, s.attackerY, s.defenderX, s.defenderY, id);
     const p = this.propsRenderer;
     const angle = this.reducedEffects ? 0 : pose.angle;
+    const asset = `legacy_${id}`;
     if (id === 'gruczol') {
-      p.drawProp(ctx, id, s.attackerX - s.facing * 65, -(s.attackerY + 115), 175, 230);
+      p.drawProp(ctx, asset, s.attackerX - s.facing * 65, -(s.attackerY + 115), 175, 230);
       for (let roll = 0; roll < 6; roll++) {
         const offset = Math.sin(roll * 2.4) * (1 - pose.progress) * 65;
         p.drawProp(ctx, 'paper', pose.x + offset, pose.y - Math.sin(roll * 1.5) * 35, 70, 80, angle + roll);
       }
     } else if (['pierscien', 'pien', 'chlebak'].includes(id)) {
-      p.drawProp(ctx, id, s.attackerX + s.facing * 65, -(s.attackerY + 60), 135, 120, 0, s.facing);
+      p.drawProp(ctx, asset, s.attackerX + s.facing * 65, -(s.attackerY + 60), 135, 120, 0, s.facing);
       p.drawProp(ctx, 'soundwave', pose.x, pose.y, 155, 180, 0, s.facing);
     } else if (id === 'hemoroid') {
-      p.drawProp(ctx, id, pose.x, -(s.attackerY + 65), 245, 150, 0, s.facing);
+      p.drawProp(ctx, asset, pose.x, -(s.attackerY + 65), 245, 150, 0, s.facing);
     } else {
       const size = id === 'szerszen' ? 135 : id === 'dziaslo' ? 195 : 145;
-      p.drawProp(ctx, id, pose.x, pose.y, size, size, angle, id === 'szerszen' ? 1 : s.facing);
+      p.drawProp(ctx, asset, pose.x, pose.y, size, size, angle, id === 'szerszen' ? 1 : s.facing);
     }
+  }
+
+  private drawLiquidStream(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    targetX: number,
+    targetY: number,
+    t: number,
+  ): void {
+    ctx.save();
+    const reach = clamp01((t - 63) / 13);
+    // A narrow parabolic jet, never a detached wave sprite. No randomness: hitstop freezes it.
+    for (const [width, color] of [
+      [7, '#c69d29'],
+      [4, '#f8db60'],
+      [1.5, '#fff5b6'],
+    ] as const) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (let i = 0; i <= 32; i++) {
+        const p = (i / 32) * reach;
+        const point = projectilePoint(x, y, targetX, targetY, p, 40);
+        if (!i) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      }
+      ctx.stroke();
+    }
+    const count = this.reducedEffects ? 5 : 12;
+    ctx.fillStyle = '#ffe68a';
+    for (let i = 0; i < count; i++) {
+      const p = ((t * 0.045 + i / count) % 1) * reach;
+      const point = projectilePoint(x, y, targetX, targetY, p, 40);
+      ctx.beginPath();
+      ctx.ellipse(point.x, point.y + 5 + Math.sin(i * 2.4) * 4, 2, 3, p, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (reach === 1) {
+      for (let i = 0; i < 7; i++) {
+        const a = i * 2.4 + t * 0.13;
+        ctx.beginPath();
+        ctx.arc(targetX + Math.cos(a) * 13, targetY + Math.sin(a) * 17, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
   }
 }

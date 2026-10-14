@@ -1,0 +1,3505 @@
+{
+  "version": 4,
+  "fighters": {
+    "ambona": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 220.81979444353425,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 220.81979444353425,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 220.81979444353425,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 220.81979444353425,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 220.81979444353425,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "ultimate": {
+        "file": "ultimate.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 220.81979444353425,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "amper": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 227.0962732919254,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 227.0962732919254,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 227.0962732919254,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 227.0962732919254,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 227.0962732919254,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "antena": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 253.5714285714286,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 253.5714285714286,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 253.5714285714286,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 253.5714285714286,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 253.5714285714286,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "ultimate": {
+        "file": "ultimate.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 253.5714285714286,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "chlebak": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 220.9883720930233,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 220.9883720930233,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 220.9883720930233,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 220.9883720930233,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 220.9883720930233,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "ultimate": {
+        "file": "ultimate.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 220.9883720930233,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "dziaslo": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 247.04950034904965,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 247.04950034904965,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 247.04950034904965,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 247.04950034904965,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 247.04950034904965,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "gruczol": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 299.066091954023,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 299.066091954023,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 299.066091954023,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 299.066091954023,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 299.066091954023,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "ultimate": {
+        "file": "ultimate.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 299.066091954023,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "hemoroid": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 221.26290457589286,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 221.26290457589286,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 221.26290457589286,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 221.26290457589286,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 221.26290457589286,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "jeczmien": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 227.23634500864446,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 227.23634500864446,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 227.23634500864446,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 227.23634500864446,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 227.23634500864446,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "ultimate": {
+        "file": "ultimate.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 227.23634500864446,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "klatwa": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 213.937074829932,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 213.937074829932,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 213.937074829932,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 213.937074829932,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 213.937074829932,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "ultimate": {
+        "file": "ultimate.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 213.937074829932,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "kobra": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 206.8023607748184,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 206.8023607748184,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 206.8023607748184,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 206.8023607748184,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 206.8023607748184,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "ultimate": {
+        "file": "ultimate.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 206.8023607748184,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "korba": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 197.66264238729343,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 197.66264238729343,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 197.66264238729343,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 197.66264238729343,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 197.66264238729343,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "krwiak": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 247.42502480796796,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 247.42502480796796,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 247.42502480796796,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 247.42502480796796,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 247.42502480796796,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "ultimate": {
+        "file": "ultimate.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 247.42502480796796,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "pien": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 342.6099732683387,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 342.6099732683387,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 342.6099732683387,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 342.6099732683387,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 342.6099732683387,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "ultimate": {
+        "file": "ultimate.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 342.6099732683387,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "pierscien": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 296.5966386554622,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 296.5966386554622,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 296.5966386554622,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 296.5966386554622,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 296.5966386554622,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "ultimate": {
+        "file": "ultimate.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 296.5966386554622,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "szerszen": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 231.2984855533482,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 231.2984855533482,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 231.2984855533482,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 231.2984855533482,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 231.2984855533482,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    },
+    "zawor": {
+      "walk": {
+        "file": "walk.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 307.0856489048709,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_start": {
+        "file": "walk_start.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 307.0856489048709,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "walk_stop": {
+        "file": "walk_stop.png",
+        "frames": 2,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 307.0856489048709,
+        "facing": 1,
+        "motion": true,
+        "locomotion": true
+      },
+      "fall": {
+        "file": "fall.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 307.0856489048709,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "get_up": {
+        "file": "get_up.png",
+        "frames": 4,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 307.0856489048709,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      },
+      "ultimate": {
+        "file": "ultimate.png",
+        "frames": 8,
+        "durationTicks": 48,
+        "size": 256,
+        "pivot": [
+          0.5,
+          0.8984375
+        ],
+        "worldSize": 307.0856489048709,
+        "facing": 1,
+        "motion": true,
+        "locomotion": false
+      }
+    }
+  },
+  "sources": {
+    "ambona": {
+      "file": "ambona.png",
+      "sha256": "70b6a2828b10dc0ca4be71c6ce87bb8cacb16df7467dd3e6dd9e35e6dcf0e194",
+      "boxes": [
+        [
+          49,
+          55,
+          213,
+          288
+        ],
+        [
+          323,
+          55,
+          483,
+          287
+        ],
+        [
+          580,
+          50,
+          703,
+          289
+        ],
+        [
+          807,
+          55,
+          967,
+          286
+        ],
+        [
+          56,
+          311,
+          222,
+          545
+        ],
+        [
+          329,
+          315,
+          453,
+          544
+        ],
+        [
+          570,
+          313,
+          728,
+          543
+        ],
+        [
+          807,
+          311,
+          973,
+          544
+        ],
+        [
+          43,
+          565,
+          235,
+          794
+        ],
+        [
+          284,
+          614,
+          502,
+          793
+        ],
+        [
+          535,
+          664,
+          761,
+          789
+        ],
+        [
+          777,
+          700,
+          1003,
+          788
+        ],
+        [
+          35,
+          919,
+          282,
+          1032
+        ],
+        [
+          330,
+          884,
+          509,
+          1031
+        ],
+        [
+          554,
+          834,
+          740,
+          1026
+        ],
+        [
+          816,
+          817,
+          974,
+          1033
+        ],
+        [
+          59,
+          1065,
+          246,
+          1271
+        ],
+        [
+          297,
+          1065,
+          509,
+          1271
+        ],
+        [
+          541,
+          1069,
+          766,
+          1270
+        ],
+        [
+          816,
+          1065,
+          974,
+          1274
+        ],
+        [
+          47,
+          1301,
+          230,
+          1510
+        ],
+        [
+          285,
+          1300,
+          505,
+          1508
+        ],
+        [
+          533,
+          1300,
+          733,
+          1510
+        ],
+        [
+          812,
+          1302,
+          975,
+          1510
+        ]
+      ],
+      "scale": 0.7088607594936709,
+      "worldSize": 220.81979444353425
+    },
+    "amper": {
+      "file": "amper.png",
+      "sha256": "ef5a6fd013bcd9e72ac5c86aeb77260351c79e0e59af4bd05b9809a6dfd8f8ff",
+      "boxes": [
+        [
+          79,
+          59,
+          270,
+          325
+        ],
+        [
+          401,
+          59,
+          578,
+          324
+        ],
+        [
+          705,
+          51,
+          858,
+          326
+        ],
+        [
+          1001,
+          57,
+          1199,
+          328
+        ],
+        [
+          76,
+          361,
+          278,
+          633
+        ],
+        [
+          393,
+          361,
+          577,
+          632
+        ],
+        [
+          706,
+          363,
+          866,
+          633
+        ],
+        [
+          1001,
+          362,
+          1196,
+          632
+        ],
+        [
+          70,
+          673,
+          270,
+          931
+        ],
+        [
+          338,
+          717,
+          607,
+          928
+        ],
+        [
+          638,
+          746,
+          922,
+          928
+        ],
+        [
+          949,
+          832,
+          1236,
+          921
+        ],
+        [
+          43,
+          1109,
+          338,
+          1201
+        ],
+        [
+          364,
+          1058,
+          638,
+          1206
+        ],
+        [
+          703,
+          1002,
+          904,
+          1207
+        ],
+        [
+          1004,
+          951,
+          1195,
+          1211
+        ]
+      ],
+      "scale": 0.6045883940620783,
+      "worldSize": 227.0962732919254
+    },
+    "antena": {
+      "file": "antena.png",
+      "sha256": "6f06c728ec5a09fd6320cc677c961319477f4fd70ccb71d31a8ae7ae9bd2d94c",
+      "boxes": [
+        [
+          101,
+          13,
+          255,
+          194
+        ],
+        [
+          485,
+          14,
+          598,
+          193
+        ],
+        [
+          862,
+          13,
+          967,
+          193
+        ],
+        [
+          1207,
+          13,
+          1363,
+          193
+        ],
+        [
+          112,
+          209,
+          277,
+          389
+        ],
+        [
+          482,
+          209,
+          621,
+          389
+        ],
+        [
+          864,
+          209,
+          982,
+          390
+        ],
+        [
+          1196,
+          208,
+          1339,
+          391
+        ],
+        [
+          101,
+          393,
+          299,
+          568
+        ],
+        [
+          456,
+          420,
+          662,
+          567
+        ],
+        [
+          818,
+          446,
+          1040,
+          566
+        ],
+        [
+          1157,
+          497,
+          1401,
+          569
+        ],
+        [
+          73,
+          669,
+          319,
+          743
+        ],
+        [
+          488,
+          613,
+          670,
+          737
+        ],
+        [
+          836,
+          584,
+          999,
+          738
+        ],
+        [
+          1202,
+          578,
+          1362,
+          745
+        ],
+        [
+          97,
+          755,
+          284,
+          909
+        ],
+        [
+          455,
+          746,
+          626,
+          908
+        ],
+        [
+          818,
+          750,
+          996,
+          906
+        ],
+        [
+          1190,
+          751,
+          1379,
+          908
+        ],
+        [
+          124,
+          915,
+          256,
+          1080
+        ],
+        [
+          470,
+          931,
+          634,
+          1080
+        ],
+        [
+          849,
+          909,
+          1002,
+          1080
+        ],
+        [
+          1205,
+          919,
+          1365,
+          1080
+        ]
+      ],
+      "scale": 0.7887323943661971,
+      "worldSize": 253.5714285714286
+    },
+    "chlebak": {
+      "file": "chlebak.png",
+      "sha256": "8794cadebac8cb75a6413ae16fc609e80d03f16c2ec60971b6ca358deae1a93c",
+      "boxes": [
+        [
+          60,
+          53,
+          223,
+          268
+        ],
+        [
+          318,
+          52,
+          467,
+          268
+        ],
+        [
+          590,
+          52,
+          708,
+          268
+        ],
+        [
+          814,
+          52,
+          967,
+          268
+        ],
+        [
+          61,
+          313,
+          223,
+          535
+        ],
+        [
+          321,
+          313,
+          478,
+          534
+        ],
+        [
+          585,
+          313,
+          712,
+          538
+        ],
+        [
+          810,
+          311,
+          979,
+          535
+        ],
+        [
+          55,
+          579,
+          228,
+          784
+        ],
+        [
+          293,
+          589,
+          493,
+          784
+        ],
+        [
+          541,
+          647,
+          758,
+          784
+        ],
+        [
+          779,
+          703,
+          1001,
+          782
+        ],
+        [
+          31,
+          941,
+          269,
+          1019
+        ],
+        [
+          316,
+          896,
+          527,
+          1014
+        ],
+        [
+          560,
+          817,
+          721,
+          1024
+        ],
+        [
+          814,
+          808,
+          977,
+          1023
+        ],
+        [
+          32,
+          1072,
+          211,
+          1256
+        ],
+        [
+          291,
+          1073,
+          474,
+          1255
+        ],
+        [
+          571,
+          1069,
+          717,
+          1257
+        ],
+        [
+          810,
+          1068,
+          992,
+          1257
+        ],
+        [
+          35,
+          1284,
+          246,
+          1506
+        ],
+        [
+          308,
+          1287,
+          519,
+          1505
+        ],
+        [
+          563,
+          1288,
+          734,
+          1505
+        ],
+        [
+          818,
+          1287,
+          989,
+          1505
+        ]
+      ],
+      "scale": 0.7619047619047619,
+      "worldSize": 220.9883720930233
+    },
+    "dziaslo": {
+      "file": "dziaslo.png",
+      "sha256": "52bae70b547183a3441a7146e1faec928bc4f21252ca773b67e0eb21749aef18",
+      "boxes": [
+        [
+          88,
+          101,
+          248,
+          342
+        ],
+        [
+          419,
+          99,
+          565,
+          339
+        ],
+        [
+          709,
+          97,
+          851,
+          344
+        ],
+        [
+          1014,
+          95,
+          1177,
+          340
+        ],
+        [
+          89,
+          401,
+          259,
+          640
+        ],
+        [
+          412,
+          400,
+          560,
+          637
+        ],
+        [
+          713,
+          400,
+          848,
+          641
+        ],
+        [
+          1027,
+          401,
+          1187,
+          638
+        ],
+        [
+          74,
+          695,
+          282,
+          932
+        ],
+        [
+          368,
+          737,
+          605,
+          928
+        ],
+        [
+          660,
+          775,
+          912,
+          932
+        ],
+        [
+          947,
+          833,
+          1217,
+          926
+        ],
+        [
+          54,
+          1105,
+          336,
+          1199
+        ],
+        [
+          386,
+          1060,
+          622,
+          1201
+        ],
+        [
+          688,
+          992,
+          875,
+          1198
+        ],
+        [
+          1015,
+          979,
+          1169,
+          1201
+        ]
+      ],
+      "scale": 0.6111869031377899,
+      "worldSize": 247.04950034904965
+    },
+    "gruczol": {
+      "file": "gruczol.png",
+      "sha256": "2573616de30428a35065ceb26d35ffe06ada526f52edc4ffa0018a47e05bbd65",
+      "boxes": [
+        [
+          130,
+          10,
+          280,
+          184
+        ],
+        [
+          513,
+          10,
+          628,
+          183
+        ],
+        [
+          880,
+          10,
+          1024,
+          185
+        ],
+        [
+          1259,
+          10,
+          1409,
+          185
+        ],
+        [
+          128,
+          195,
+          275,
+          373
+        ],
+        [
+          519,
+          194,
+          643,
+          371
+        ],
+        [
+          897,
+          195,
+          1018,
+          374
+        ],
+        [
+          1261,
+          195,
+          1418,
+          376
+        ],
+        [
+          150,
+          375,
+          275,
+          539
+        ],
+        [
+          502,
+          397,
+          695,
+          530
+        ],
+        [
+          860,
+          414,
+          1068,
+          529
+        ],
+        [
+          1215,
+          448,
+          1469,
+          525
+        ],
+        [
+          95,
+          608,
+          349,
+          683
+        ],
+        [
+          514,
+          577,
+          713,
+          683
+        ],
+        [
+          886,
+          543,
+          1032,
+          684
+        ],
+        [
+          1264,
+          536,
+          1399,
+          687
+        ],
+        [
+          126,
+          693,
+          274,
+          851
+        ],
+        [
+          513,
+          691,
+          660,
+          851
+        ],
+        [
+          837,
+          694,
+          1014,
+          852
+        ],
+        [
+          1263,
+          697,
+          1410,
+          851
+        ],
+        [
+          122,
+          854,
+          306,
+          1012
+        ],
+        [
+          510,
+          855,
+          691,
+          1014
+        ],
+        [
+          888,
+          851,
+          1020,
+          1016
+        ],
+        [
+          1257,
+          855,
+          1399,
+          1014
+        ]
+      ],
+      "scale": 0.6956521739130435,
+      "worldSize": 299.066091954023
+    },
+    "hemoroid": {
+      "file": "hemoroid.png",
+      "sha256": "aa6077d908e5dd63f8aa002094cf2597df01aed02425a6cb6b6e7a7548cec9ef",
+      "boxes": [
+        [
+          86,
+          64,
+          271,
+          320
+        ],
+        [
+          425,
+          63,
+          590,
+          320
+        ],
+        [
+          714,
+          63,
+          883,
+          321
+        ],
+        [
+          1024,
+          64,
+          1200,
+          321
+        ],
+        [
+          83,
+          362,
+          272,
+          623
+        ],
+        [
+          415,
+          366,
+          584,
+          622
+        ],
+        [
+          723,
+          363,
+          900,
+          623
+        ],
+        [
+          1020,
+          363,
+          1214,
+          622
+        ],
+        [
+          60,
+          665,
+          285,
+          918
+        ],
+        [
+          371,
+          727,
+          620,
+          918
+        ],
+        [
+          654,
+          755,
+          920,
+          918
+        ],
+        [
+          954,
+          841,
+          1239,
+          918
+        ],
+        [
+          45,
+          1139,
+          328,
+          1215
+        ],
+        [
+          366,
+          1058,
+          625,
+          1204
+        ],
+        [
+          701,
+          1009,
+          917,
+          1211
+        ],
+        [
+          1006,
+          956,
+          1184,
+          1208
+        ]
+      ],
+      "scale": 0.6390870185449358,
+      "worldSize": 221.26290457589286
+    },
+    "jeczmien": {
+      "file": "jeczmien.png",
+      "sha256": "9408aef39e76655dd500d63e0e3e641c5b889be5a991a74ab4c6e7d342fae73b",
+      "boxes": [
+        [
+          54,
+          49,
+          201,
+          243
+        ],
+        [
+          310,
+          49,
+          448,
+          243
+        ],
+        [
+          567,
+          49,
+          704,
+          252
+        ],
+        [
+          828,
+          52,
+          976,
+          244
+        ],
+        [
+          63,
+          288,
+          199,
+          487
+        ],
+        [
+          302,
+          289,
+          454,
+          487
+        ],
+        [
+          573,
+          287,
+          718,
+          494
+        ],
+        [
+          835,
+          288,
+          976,
+          493
+        ],
+        [
+          42,
+          527,
+          208,
+          746
+        ],
+        [
+          266,
+          569,
+          477,
+          744
+        ],
+        [
+          525,
+          602,
+          760,
+          743
+        ],
+        [
+          788,
+          650,
+          1004,
+          747
+        ],
+        [
+          37,
+          857,
+          260,
+          975
+        ],
+        [
+          311,
+          817,
+          503,
+          973
+        ],
+        [
+          569,
+          774,
+          723,
+          974
+        ],
+        [
+          830,
+          772,
+          969,
+          983
+        ],
+        [
+          60,
+          1011,
+          203,
+          1244
+        ],
+        [
+          280,
+          1048,
+          457,
+          1244
+        ],
+        [
+          535,
+          1043,
+          704,
+          1246
+        ],
+        [
+          790,
+          1046,
+          980,
+          1247
+        ],
+        [
+          37,
+          1301,
+          239,
+          1504
+        ],
+        [
+          297,
+          1294,
+          498,
+          1505
+        ],
+        [
+          560,
+          1292,
+          722,
+          1505
+        ],
+        [
+          815,
+          1294,
+          976,
+          1505
+        ]
+      ],
+      "scale": 0.8235294117647058,
+      "worldSize": 227.23634500864446
+    },
+    "klatwa": {
+      "file": "klatwa.png",
+      "sha256": "da850f50c1399870b50c6b9c04edf23834ef377e83f6370370b1759ed23af9fa",
+      "boxes": [
+        [
+          32,
+          42,
+          204,
+          252
+        ],
+        [
+          299,
+          41,
+          464,
+          251
+        ],
+        [
+          560,
+          41,
+          727,
+          254
+        ],
+        [
+          806,
+          41,
+          983,
+          251
+        ],
+        [
+          27,
+          286,
+          198,
+          503
+        ],
+        [
+          292,
+          286,
+          464,
+          505
+        ],
+        [
+          551,
+          286,
+          718,
+          508
+        ],
+        [
+          797,
+          285,
+          980,
+          505
+        ],
+        [
+          41,
+          541,
+          235,
+          754
+        ],
+        [
+          293,
+          569,
+          504,
+          749
+        ],
+        [
+          528,
+          601,
+          773,
+          748
+        ],
+        [
+          775,
+          664,
+          1016,
+          742
+        ],
+        [
+          17,
+          902,
+          263,
+          980
+        ],
+        [
+          267,
+          850,
+          499,
+          985
+        ],
+        [
+          525,
+          800,
+          724,
+          982
+        ],
+        [
+          805,
+          797,
+          967,
+          999
+        ],
+        [
+          43,
+          1047,
+          211,
+          1257
+        ],
+        [
+          289,
+          1047,
+          470,
+          1256
+        ],
+        [
+          568,
+          1041,
+          743,
+          1260
+        ],
+        [
+          787,
+          1045,
+          978,
+          1258
+        ],
+        [
+          19,
+          1288,
+          215,
+          1484
+        ],
+        [
+          274,
+          1290,
+          484,
+          1481
+        ],
+        [
+          564,
+          1293,
+          731,
+          1497
+        ],
+        [
+          811,
+          1288,
+          976,
+          1489
+        ]
+      ],
+      "scale": 0.8057553956834532,
+      "worldSize": 213.937074829932
+    },
+    "kobra": {
+      "file": "kobra.png",
+      "sha256": "bca9a620c1b8797f6dbf3463e4e1640dd09342abd8f1b6bdc29082d5c44c435d",
+      "boxes": [
+        [
+          58,
+          25,
+          214,
+          261
+        ],
+        [
+          310,
+          30,
+          469,
+          261
+        ],
+        [
+          579,
+          22,
+          721,
+          261
+        ],
+        [
+          822,
+          29,
+          995,
+          260
+        ],
+        [
+          43,
+          289,
+          208,
+          527
+        ],
+        [
+          308,
+          293,
+          453,
+          529
+        ],
+        [
+          569,
+          294,
+          722,
+          530
+        ],
+        [
+          820,
+          293,
+          993,
+          527
+        ],
+        [
+          58,
+          545,
+          220,
+          777
+        ],
+        [
+          286,
+          559,
+          488,
+          774
+        ],
+        [
+          525,
+          626,
+          749,
+          766
+        ],
+        [
+          787,
+          687,
+          1010,
+          764
+        ],
+        [
+          24,
+          867,
+          275,
+          997
+        ],
+        [
+          313,
+          830,
+          499,
+          999
+        ],
+        [
+          574,
+          830,
+          742,
+          994
+        ],
+        [
+          828,
+          789,
+          976,
+          1007
+        ],
+        [
+          71,
+          1027,
+          187,
+          1253
+        ],
+        [
+          323,
+          1031,
+          446,
+          1253
+        ],
+        [
+          570,
+          1039,
+          713,
+          1252
+        ],
+        [
+          840,
+          1047,
+          976,
+          1251
+        ],
+        [
+          76,
+          1262,
+          205,
+          1511
+        ],
+        [
+          322,
+          1268,
+          448,
+          1511
+        ],
+        [
+          581,
+          1270,
+          709,
+          1511
+        ],
+        [
+          827,
+          1276,
+          978,
+          1511
+        ]
+      ],
+      "scale": 0.7417218543046358,
+      "worldSize": 206.8023607748184
+    },
+    "korba": {
+      "file": "korba.png",
+      "sha256": "f59c34d4b2ff3107502677767103b157e497677fd0083dc62566753b509af2e2",
+      "boxes": [
+        [
+          76,
+          59,
+          262,
+          330
+        ],
+        [
+          410,
+          62,
+          564,
+          330
+        ],
+        [
+          725,
+          58,
+          860,
+          328
+        ],
+        [
+          1015,
+          61,
+          1200,
+          329
+        ],
+        [
+          79,
+          366,
+          270,
+          643
+        ],
+        [
+          390,
+          368,
+          563,
+          643
+        ],
+        [
+          722,
+          368,
+          857,
+          643
+        ],
+        [
+          1015,
+          368,
+          1207,
+          645
+        ],
+        [
+          59,
+          669,
+          268,
+          923
+        ],
+        [
+          344,
+          716,
+          601,
+          919
+        ],
+        [
+          646,
+          758,
+          904,
+          921
+        ],
+        [
+          947,
+          843,
+          1239,
+          923
+        ],
+        [
+          27,
+          1128,
+          319,
+          1209
+        ],
+        [
+          376,
+          1056,
+          623,
+          1205
+        ],
+        [
+          713,
+          997,
+          896,
+          1208
+        ],
+        [
+          1008,
+          957,
+          1191,
+          1212
+        ]
+      ],
+      "scale": 0.6736842105263158,
+      "worldSize": 197.66264238729343
+    },
+    "krwiak": {
+      "file": "krwiak.png",
+      "sha256": "e24bf3677dc8f7d4c5f8c9fc482fc146946c9a8613a8ef8f73129ebbdeefad28",
+      "boxes": [
+        [
+          135,
+          10,
+          272,
+          179
+        ],
+        [
+          491,
+          9,
+          611,
+          178
+        ],
+        [
+          848,
+          9,
+          971,
+          178
+        ],
+        [
+          1205,
+          10,
+          1338,
+          179
+        ],
+        [
+          135,
+          188,
+          273,
+          358
+        ],
+        [
+          497,
+          188,
+          622,
+          358
+        ],
+        [
+          863,
+          188,
+          963,
+          358
+        ],
+        [
+          1207,
+          188,
+          1338,
+          358
+        ],
+        [
+          105,
+          375,
+          272,
+          544
+        ],
+        [
+          455,
+          403,
+          634,
+          544
+        ],
+        [
+          797,
+          443,
+          1016,
+          544
+        ],
+        [
+          1157,
+          491,
+          1382,
+          543
+        ],
+        [
+          81,
+          668,
+          306,
+          721
+        ],
+        [
+          458,
+          598,
+          655,
+          716
+        ],
+        [
+          828,
+          574,
+          978,
+          719
+        ],
+        [
+          1200,
+          556,
+          1326,
+          721
+        ],
+        [
+          126,
+          738,
+          254,
+          905
+        ],
+        [
+          478,
+          729,
+          613,
+          905
+        ],
+        [
+          828,
+          760,
+          972,
+          904
+        ],
+        [
+          1182,
+          736,
+          1347,
+          903
+        ],
+        [
+          101,
+          931,
+          280,
+          1079
+        ],
+        [
+          467,
+          925,
+          643,
+          1081
+        ],
+        [
+          840,
+          920,
+          978,
+          1082
+        ],
+        [
+          1200,
+          918,
+          1325,
+          1082
+        ]
+      ],
+      "scale": 0.8682170542635659,
+      "worldSize": 247.42502480796796
+    },
+    "pien": {
+      "file": "pien.png",
+      "sha256": "63cd23a278ef943d034f6a5d03228832740d736c64d271ec202130b3d2f334a1",
+      "boxes": [
+        [
+          142,
+          28,
+          286,
+          186
+        ],
+        [
+          501,
+          27,
+          636,
+          188
+        ],
+        [
+          878,
+          28,
+          1007,
+          187
+        ],
+        [
+          1245,
+          30,
+          1387,
+          187
+        ],
+        [
+          145,
+          195,
+          288,
+          361
+        ],
+        [
+          507,
+          196,
+          651,
+          361
+        ],
+        [
+          875,
+          196,
+          1012,
+          368
+        ],
+        [
+          1243,
+          195,
+          1393,
+          365
+        ],
+        [
+          146,
+          381,
+          314,
+          538
+        ],
+        [
+          496,
+          389,
+          680,
+          534
+        ],
+        [
+          853,
+          418,
+          1064,
+          535
+        ],
+        [
+          1209,
+          461,
+          1441,
+          533
+        ],
+        [
+          121,
+          627,
+          355,
+          698
+        ],
+        [
+          475,
+          565,
+          678,
+          693
+        ],
+        [
+          875,
+          552,
+          1031,
+          693
+        ],
+        [
+          1242,
+          545,
+          1384,
+          697
+        ],
+        [
+          147,
+          708,
+          287,
+          859
+        ],
+        [
+          493,
+          706,
+          648,
+          860
+        ],
+        [
+          874,
+          704,
+          1017,
+          859
+        ],
+        [
+          1228,
+          703,
+          1411,
+          859
+        ],
+        [
+          120,
+          861,
+          277,
+          1016
+        ],
+        [
+          487,
+          864,
+          656,
+          1016
+        ],
+        [
+          865,
+          862,
+          1023,
+          1016
+        ],
+        [
+          1248,
+          863,
+          1394,
+          1016
+        ]
+      ],
+      "scale": 0.6706586826347305,
+      "worldSize": 342.6099732683387
+    },
+    "pierscien": {
+      "file": "pierscien.png",
+      "sha256": "83eb91a148edb242774e5d68bd222e69a7b3e39482a25de9700e5b34c6afcd84",
+      "boxes": [
+        [
+          168,
+          10,
+          312,
+          180
+        ],
+        [
+          522,
+          10,
+          643,
+          180
+        ],
+        [
+          891,
+          10,
+          1017,
+          180
+        ],
+        [
+          1248,
+          10,
+          1380,
+          179
+        ],
+        [
+          176,
+          186,
+          317,
+          358
+        ],
+        [
+          519,
+          186,
+          644,
+          358
+        ],
+        [
+          895,
+          187,
+          1014,
+          358
+        ],
+        [
+          1247,
+          186,
+          1384,
+          357
+        ],
+        [
+          166,
+          367,
+          314,
+          523
+        ],
+        [
+          522,
+          384,
+          687,
+          522
+        ],
+        [
+          861,
+          409,
+          1040,
+          521
+        ],
+        [
+          1212,
+          436,
+          1433,
+          511
+        ],
+        [
+          132,
+          609,
+          344,
+          679
+        ],
+        [
+          519,
+          573,
+          709,
+          676
+        ],
+        [
+          882,
+          535,
+          1025,
+          678
+        ],
+        [
+          1249,
+          528,
+          1375,
+          681
+        ],
+        [
+          167,
+          689,
+          290,
+          847
+        ],
+        [
+          524,
+          721,
+          674,
+          845
+        ],
+        [
+          865,
+          709,
+          1008,
+          843
+        ],
+        [
+          1237,
+          689,
+          1394,
+          848
+        ],
+        [
+          172,
+          854,
+          318,
+          1012
+        ],
+        [
+          532,
+          854,
+          664,
+          1012
+        ],
+        [
+          860,
+          844,
+          1037,
+          1012
+        ],
+        [
+          1247,
+          853,
+          1373,
+          1012
+        ]
+      ],
+      "scale": 0.717948717948718,
+      "worldSize": 296.5966386554622
+    },
+    "szerszen": {
+      "file": "szerszen.png",
+      "sha256": "36ac9404d08bf79291b908311b9a1e4c80b3b058409f11e84bf758507d5c3264",
+      "boxes": [
+        [
+          87,
+          65,
+          254,
+          312
+        ],
+        [
+          406,
+          65,
+          556,
+          310
+        ],
+        [
+          709,
+          65,
+          858,
+          311
+        ],
+        [
+          1017,
+          65,
+          1194,
+          310
+        ],
+        [
+          84,
+          372,
+          267,
+          623
+        ],
+        [
+          403,
+          371,
+          549,
+          624
+        ],
+        [
+          709,
+          374,
+          863,
+          624
+        ],
+        [
+          1021,
+          372,
+          1201,
+          622
+        ],
+        [
+          62,
+          680,
+          270,
+          913
+        ],
+        [
+          347,
+          714,
+          612,
+          913
+        ],
+        [
+          634,
+          761,
+          908,
+          911
+        ],
+        [
+          925,
+          825,
+          1226,
+          909
+        ],
+        [
+          21,
+          1119,
+          323,
+          1207
+        ],
+        [
+          348,
+          1052,
+          616,
+          1197
+        ],
+        [
+          697,
+          998,
+          885,
+          1199
+        ],
+        [
+          1013,
+          955,
+          1185,
+          1205
+        ]
+      ],
+      "scale": 0.6354609929078014,
+      "worldSize": 231.2984855533482
+    },
+    "zawor": {
+      "file": "zawor.png",
+      "sha256": "5eebaf04590572dc6ccfa97a9dfc610e129d1f7756d287cf47e5f12f48ef5fb7",
+      "boxes": [
+        [
+          134,
+          4,
+          274,
+          175
+        ],
+        [
+          505,
+          4,
+          630,
+          174
+        ],
+        [
+          834,
+          4,
+          960,
+          176
+        ],
+        [
+          1159,
+          4,
+          1306,
+          175
+        ],
+        [
+          144,
+          183,
+          278,
+          357
+        ],
+        [
+          486,
+          183,
+          621,
+          357
+        ],
+        [
+          843,
+          183,
+          969,
+          358
+        ],
+        [
+          1161,
+          183,
+          1307,
+          357
+        ],
+        [
+          120,
+          367,
+          301,
+          538
+        ],
+        [
+          451,
+          392,
+          632,
+          534
+        ],
+        [
+          776,
+          414,
+          1000,
+          536
+        ],
+        [
+          1131,
+          454,
+          1369,
+          534
+        ],
+        [
+          98,
+          636,
+          339,
+          713
+        ],
+        [
+          471,
+          580,
+          670,
+          704
+        ],
+        [
+          805,
+          549,
+          962,
+          712
+        ],
+        [
+          1179,
+          543,
+          1312,
+          718
+        ],
+        [
+          111,
+          728,
+          293,
+          893
+        ],
+        [
+          502,
+          717,
+          620,
+          883
+        ],
+        [
+          779,
+          734,
+          988,
+          862
+        ],
+        [
+          1112,
+          733,
+          1330,
+          862
+        ],
+        [
+          90,
+          934,
+          306,
+          1074
+        ],
+        [
+          459,
+          910,
+          629,
+          1075
+        ],
+        [
+          832,
+          886,
+          955,
+          1078
+        ],
+        [
+          1181,
+          889,
+          1301,
+          1077
+        ]
+      ],
+      "scale": 0.691358024691358,
+      "worldSize": 307.0856489048709
+    }
+  }
+}

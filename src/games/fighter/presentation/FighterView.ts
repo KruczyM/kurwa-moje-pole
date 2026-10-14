@@ -3,8 +3,9 @@ import { CameraRig2D } from './CameraRig2D';
 import { SimulationEvent } from '../simulation/FighterSimulation';
 import { STAGES, StageDefinition } from '../data/stages';
 import { SuperCinematicEngine } from './SuperCinematicEngine';
-import { stageLayout } from './stageLayout';
+import { fightFraming, stageLayout } from './stageLayout';
 import { CombatSpriteBank } from './CombatSpriteBank';
+import { cinematicTick, ultimateBodyPose } from './ultimateChoreography';
 
 interface VisualEffect {
   x: number;
@@ -50,6 +51,7 @@ export class FighterView {
     this.effects = [];
     this.comicTexts = [];
     this.superCinematic.reset();
+    this.combatSprites.resetMotion();
   }
 
   /** Presentation advances with fixed game ticks, never with display refresh rate. */
@@ -247,17 +249,70 @@ export class FighterView {
     const shake = camera.getShakeOffset();
     const screenCenterX = width / 2 + shake.x;
     const screenGroundY = height * 0.74 + shake.y;
+    const framing = fightFraming(width, camera.zoom, camera.x, match.p1.x, match.p2.x);
 
     ctx.translate(screenCenterX, screenGroundY);
-    ctx.scale(camera.zoom, camera.zoom);
-    ctx.translate(-camera.x, 0);
+    ctx.scale(framing.zoom, framing.zoom);
+    ctx.translate(-framing.x, 0);
 
     // Background and feet share the same transform and world ground.
-    this.drawStageBackground(ctx, camera.x, width, height, camera.zoom);
+    this.drawStageBackground(ctx, framing.x, width, height, framing.zoom);
 
     // 4. Render Fighters
-    this.drawFighter(ctx, match.p1, def1, p1Glow, p1Color, match.tick, 1, (match.superFreezeTicks ?? 0) > 0);
-    this.drawFighter(ctx, match.p2, def2, p2Glow, p2Color, match.tick, 2, (match.superFreezeTicks ?? 0) > 0);
+    this.superCinematic.renderBehind(ctx);
+    const hugging = (fighter: FighterState, other: FighterState): boolean =>
+      fighter.id === 'antena' &&
+      fighter.state === 'attack' &&
+      fighter.currentMove?.id === 'ultimate' &&
+      !!fighter.hasHit &&
+      other.state === 'hit_stun' &&
+      cinematicTick(fighter, match) >= 76 &&
+      cinematicTick(fighter, match) < 93;
+    const visualFighter = (fighter: FighterState, other: FighterState): FighterState => {
+      if (hugging(other, fighter)) return { ...fighter, y: 0, isAirJuggle: false, lastHitHeight: 'mid' };
+      if (fighter.state !== 'attack' || fighter.currentMove?.id !== 'ultimate') return fighter;
+      const pose = ultimateBodyPose(
+        fighter.id,
+        cinematicTick(fighter, match),
+        fighter.x,
+        fighter.y,
+        other.x,
+        fighter.facing,
+      );
+      return { ...fighter, ...pose };
+    };
+    const draw1 = () =>
+      this.drawFighter(
+        ctx,
+        visualFighter(match.p1, match.p2),
+        def1,
+        p1Glow,
+        p1Color,
+        match.tick,
+        1,
+        (match.superFreezeTicks ?? 0) > 0,
+        hugging(match.p2, match.p1),
+      );
+    const draw2 = () =>
+      this.drawFighter(
+        ctx,
+        visualFighter(match.p2, match.p1),
+        def2,
+        p2Glow,
+        p2Color,
+        match.tick,
+        2,
+        (match.superFreezeTicks ?? 0) > 0,
+        hugging(match.p1, match.p2),
+      );
+    // Forearms of the embracing fighter remain visible over the opponent.
+    if (hugging(match.p1, match.p2)) {
+      draw2();
+      draw1();
+    } else {
+      draw1();
+      draw2();
+    }
 
     // 5. Render VFX
     this.drawEffects(ctx);
@@ -551,6 +606,7 @@ export class FighterView {
     simulationTick: number,
     slot: number,
     frozen: boolean,
+    squeezed = false,
   ): void {
     ctx.save();
     ctx.translate(fighter.x, 0);
@@ -594,6 +650,7 @@ export class FighterView {
     // Flip if facing left
     ctx.translate(0, -fighter.y);
     ctx.scale(fighter.facing, 1);
+    if (squeezed) ctx.scale(0.9, 0.95);
 
     // Genuine retargeted frames, fixed feet pivot; legacy poses only during loading.
     ctx.save();

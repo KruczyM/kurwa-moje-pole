@@ -1,4 +1,6 @@
 import aiLocomotion from '../../../../public/game-assets/2d/fighter/art-v3/locomotion.json';
+import authoredMotion from '../../../../public/game-assets/2d/fighter/motion-v4/manifest.json';
+import { cinematicTick, ultimateFrame } from './ultimateChoreography';
 import { locomotionPose, type LocomotionPose } from './locomotion';
 import type { FighterState } from '../simulation/CombatTypes';
 
@@ -13,6 +15,7 @@ interface Clip {
   pivot?: [number, number];
   worldSize?: number;
   facing?: number;
+  motion?: boolean;
 }
 interface Manifest {
   version: number;
@@ -123,6 +126,10 @@ export class CombatSpriteBank {
   private entries = new Map<string, Entry>();
   private locomotion = new Map<number, LocomotionPose>();
 
+  resetMotion(): void {
+    this.locomotion.clear();
+  }
+
   retain(ids: string[]): void {
     this.locomotion.clear();
     for (const [id, entry] of this.entries) {
@@ -153,18 +160,21 @@ export class CombatSpriteBank {
         if (manifest.version !== 1 || manifest.size <= 0 || manifest.columns > 12 || !manifest.clips?.idle)
           throw new Error('Invalid combat atlas');
         const aiClips = aiLocomotion.fighters as unknown as Record<string, Record<string, Clip>>;
-        manifest.clips = { ...manifest.clips, ...aiClips[id] };
+        const newClips = authoredMotion.fighters as unknown as Record<string, Record<string, Clip>>;
+        manifest.clips = { ...manifest.clips, ...aiClips[id], ...newClips[id] };
         entry.manifest = manifest;
         for (const [name, clip] of Object.entries(manifest.clips)) {
           if (!/^[a-z_]+\.png$/.test(clip.file)) throw new Error('Invalid atlas path');
           const image = new Image();
-          const clipBase = clip.locomotion
-            ? `${root}art-v3/locomotion/${encodeURIComponent(id)}/`
-            : clip.powers
-              ? `${root}combat-powers-v2/${encodeURIComponent(id)}/`
-              : clip.legacy
-                ? legacyBase
-                : base;
+          const clipBase = clip.motion
+            ? `${root}motion-v4/${encodeURIComponent(id)}/`
+            : clip.locomotion
+              ? `${root}art-v3/locomotion/${encodeURIComponent(id)}/`
+              : clip.powers
+                ? `${root}combat-powers-v2/${encodeURIComponent(id)}/`
+                : clip.legacy
+                  ? legacyBase
+                  : base;
           image.src = `${clipBase}${clip.file}`;
           entry.images.set(name, image);
         }
@@ -206,9 +216,10 @@ export class CombatSpriteBank {
     let frame =
       clip.locomotion && clipId.startsWith('walk')
         ? clipId === 'walk'
-          ? Math.floor(pose.phase) % clip.frames
-          : Math.min(clip.frames - 1, Math.floor(pose.elapsed / 2))
+          ? Math.floor((pose.phase / 12) * clip.frames) % clip.frames
+          : Math.min(clip.frames - 1, Math.floor((pose.elapsed / 8) * clip.frames))
         : combatFrame(fighter, clip.frames, clip.durationTicks);
+    if (clip.motion && clipId === 'ultimate') frame = ultimateFrame(fighter.id, cinematicTick(fighter));
     if (fighter.id === 'szerszen' && clipId === 'ultimate' && fighter.currentMove) {
       const move = fighter.currentMove;
       frame =

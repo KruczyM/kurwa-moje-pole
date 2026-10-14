@@ -163,6 +163,10 @@ class FighterDemo {
       .querySelectorAll<HTMLElement>('.controls-helper-box, .pause-controls-guide')
       .forEach((host) => renderFighterHelp(host, this.p1Entry.definition));
     (window as any).__fighterSim = this.sim;
+    if (import.meta.env.DEV) {
+      (window as any).__fighterView = this.view;
+      (window as any).__fighterCamera = this.camera;
+    }
   }
 
   private setupResize(): void {

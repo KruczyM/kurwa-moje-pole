@@ -1,0 +1,75 @@
+{
+  "fighters": {
+    "amper": {
+      "file": "amper.png",
+      "rows": 4
+    },
+    "antena": {
+      "file": "antena.png",
+      "rows": 6
+    },
+    "gruczol": {
+      "file": "gruczol.png",
+      "rows": 6
+    },
+    "klatwa": {
+      "file": "klatwa.png",
+      "rows": 6
+    },
+    "krwiak": {
+      "file": "krwiak.png",
+      "rows": 6
+    },
+    "pien": {
+      "file": "pien.png",
+      "rows": 6
+    },
+    "pierscien": {
+      "file": "pierscien.png",
+      "rows": 6
+    },
+    "zawor": {
+      "file": "zawor.png",
+      "rows": 6
+    },
+    "ambona": {
+      "file": "ambona.png",
+      "rows": 6
+    },
+    "chlebak": {
+      "file": "chlebak.png",
+      "rows": 6
+    },
+    "dziaslo": {
+      "file": "dziaslo.png",
+      "rows": 4
+    },
+    "hemoroid": {
+      "file": "hemoroid.png",
+      "rows": 4
+    },
+    "jeczmien": {
+      "file": "jeczmien.png",
+      "rows": 6
+    },
+    "kobra": {
+      "file": "kobra.png",
+      "rows": 6
+    },
+    "korba": {
+      "file": "korba.png",
+      "rows": 4
+    },
+    "szerszen": {
+      "file": "szerszen.png",
+      "rows": 4
+    }
+  },
+  "props": {
+    "wc_tron": "prop-wc_tron.png",
+    "lighter": "prop-lighter.png",
+    "pinecone": "prop-pinecone.png",
+    "megaphone": "prop-megaphone.png",
+    "summer_contrast": "prop-summer_contrast.png"
+  }
+}
