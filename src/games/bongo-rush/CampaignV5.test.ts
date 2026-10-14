@@ -100,6 +100,38 @@ describe('authored twenty-four cave campaign', () => {
     expect(main.tick).toBe(game.ticks);
   });
 
+  it('advances both rooms exactly once on the portal entry tick', () => {
+    const rows = ['#########', '#P    OE#', '#    R  #', '#       #', '# V     #', '#########'];
+    const level: LevelDefinition = {
+      id: 1,
+      title: '',
+      hint: '',
+      biome: 0,
+      quota: 1,
+      solution: [],
+      bushGrowthSeconds: 0.4,
+      rows,
+      chambers: [{ id: 'side', name: '', hint: '', rows: rows.map((row) => row.replace('E', ' ')) }],
+      portals: [{ name: '', a: { chamber: 'main', x: 2, y: 1 }, b: { chamber: 'side', x: 2, y: 1 } }],
+    };
+    const game = new Simulation(level),
+      main = game.world;
+    game.step('right');
+    const side = game.world;
+    expect(game.chamberId).toBe('side');
+    for (const room of [main, side]) {
+      expect(room.tick).toBe(1);
+      expect(room.objects.find((o) => o.kind === 'rock')!.y).toBe(3);
+    }
+    game.step('right');
+    game.step('left');
+    expect(game.chamberId).toBe('main');
+    for (const room of [main, side]) {
+      expect(room.tick).toBe(3);
+      expect(room.cells[4 * room.width + 1]).toBe('bush');
+    }
+  });
+
   it('places no random architecture in an undecorated room', () => {
     const world = createWorld(LEVELS[0]);
     for (const seed of [0, 1, 66]) {

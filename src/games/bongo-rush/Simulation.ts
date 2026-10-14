@@ -305,7 +305,7 @@ export class Simulation {
 
   /** Advances one stable tick: player, gravity, enemies, trap and exit checks. */
   step(input?: Direction): void {
-    const w = this.world;
+    let w = this.world;
     if (w.status !== 'playing') return;
     for (const body of [w.player, ...w.objects, ...w.enemies]) body.previous = { x: body.x, y: body.y };
     this.elapsedTicks++;
@@ -315,8 +315,9 @@ export class Simulation {
     const moved = new Set<number>();
     if (input) this.movePlayer(input, moved);
     if (this.world !== w) {
-      this.advanceBackground();
-      return;
+      w = this.world;
+      moved.clear();
+      for (const body of [...w.objects, ...w.enemies]) body.previous = { x: body.x, y: body.y };
     }
     if (w.status === 'playing') this.emitLoot();
     if (w.status !== 'playing') return;
@@ -351,7 +352,7 @@ export class Simulation {
     this.opened = undefined;
     this.background = true;
     for (const room of this.rooms.values()) {
-      if (room === foreground || room.tick === this.elapsedTicks) continue;
+      if (room === foreground) continue;
       this.activeWorld = room;
       room.tick = this.elapsedTicks;
       room.collected = foreground.collected;
