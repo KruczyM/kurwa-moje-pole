@@ -210,9 +210,133 @@ h1 i {
   position: absolute;
   left: 50%;
   top: 50%;
-  font-size: 20px;
   transform: translate(-50%, -50%);
-  text-shadow: 1px 1px #000;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  z-index: 100;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
+}
+
+#crosshair .crosshair-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%) scale(0.6);
+  border: 2px solid rgba(255, 215, 0, 0);
+  border-radius: 50%;
+  pointer-events: none;
+  transition:
+    transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    border-color 0.2s ease;
+}
+
+#crosshair.interactive {
+  background: #ffeb3b;
+  transform: translate(-50%, -50%) scale(1.2);
+}
+
+#crosshair.interactive .crosshair-ring {
+  border-color: rgba(255, 215, 0, 0.85);
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.crosshair-label {
+  position: absolute;
+  left: 50%;
+  top: 24px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffeb3b;
+  background: rgba(15, 12, 25, 0.82);
+  border: 1px solid rgba(255, 235, 59, 0.4);
+  padding: 3px 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.hud-hotbar {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  background: rgba(18, 16, 28, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 6px 10px;
+  backdrop-filter: blur(8px);
+  z-index: 50;
+  pointer-events: auto;
+}
+
+.hotbar-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  padding: 2px;
+}
+
+.hotbar-slot:hover:not(:disabled) {
+  background: rgba(255, 215, 0, 0.18);
+  border-color: #ffd700;
+  transform: translateY(-2px);
+}
+
+.hotbar-slot:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.hotbar-slot kbd {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 9px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.65);
+  font-family: inherit;
+}
+
+.hotbar-slot .slot-icon {
+  font-size: 18px;
+  line-height: 1;
+  margin-top: 6px;
+}
+
+.hotbar-slot .slot-count {
+  font-size: 10px;
+  font-weight: bold;
+  color: #e2e8f0;
+}
+
+.hotbar-slot:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  filter: grayscale(0.8);
+}
+
+.hotbar-slot.has-items {
+  border-color: rgba(255, 215, 0, 0.4);
 }
 #cancel-effect,
 #cancel-use-sequence {

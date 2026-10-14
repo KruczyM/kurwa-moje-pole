@@ -46,7 +46,7 @@
   }
   .start-actions {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 8px;
     width: 100%;
   }

@@ -13,7 +13,7 @@
       <section id="start">
         <p class="eyebrow">FESTIWALOWY VERTICAL SLICE · 3D</p>
         <h1>Kurwa,<br /><i>moje pole!</i></h1>
-        <p>Wybierz postać, którą obserwujesz z perspektywy pierwszej osoby.</p>
+        <p>Wybierz swojego festiwalowicza (widocznego dla innych w obozie i w przerywnikach).</p>
         <div class="nickname-form">
           <label for="player-nickname">Twój pseudonim (nazwa wyświetlana):</label>
           <div class="nickname-input-wrap">
@@ -24,28 +24,34 @@
               placeholder="Wpisz swój nick..."
               autocomplete="nickname"
             />
+            <button id="random-nickname-btn" type="button" class="btn-random-nick" title="Wylosuj festiwalową ksywkę">🎲 Losuj</button>
             <span id="nickname-count">0/18</span>
           </div>
           <span id="nickname-error" class="error-hint" hidden></span>
         </div>
         <div id="character-select"></div>
-        <div id="network-status-badge" class="network-status-badge">
+        <div id="network-status-badge" class="network-status-badge" title="Tryb lokalny (Obóz z botami NPC) lub Online (Główny obóz)">
           <span class="status-dot"></span>
           <span id="network-status-text">Tryb lokalny</span>
         </div>
         <p id="character-preview-status" role="status" hidden></p>
         <div id="character-preview-layer" class="character-preview-layer"></div>
         <div class="start-actions">
-          <a id="play-fighter" class="minigame-link" href="./fighter-demo.html"
-            >KURWA, MOJE COMBO! · BIJATYKA 2D</a
-          >
-          <a id="play-bongo-rush" class="minigame-link" href="./bongo-rush.html"
-            >WALKA O TASIOROWE BONGO · MINIGRA 2D</a
-          >
-          <button id="play">WEJDŹ NA POLE</button>
-          <button id="play-freecam" type="button" class="freecam-btn">SWOBODNA KAMERA (Ctrl+K)</button>
-          <button id="start-guide-btn" type="button" class="guide-btn">📖 PRZEWODNIK I SKRÓTY (H)</button>
-          <button id="start-map-btn" type="button" class="map-btn">🗺️ MAPA FESTIWALU (M)</button>
+          <button id="play" class="btn-primary-play">WEJDŹ NA POLE</button>
+          <div class="start-secondary-actions">
+            <button id="play-freecam" type="button" class="freecam-btn">SWOBODNA KAMERA (Ctrl+K)</button>
+            <button id="start-guide-btn" type="button" class="guide-btn">📖 PRZEWODNIK I SKRÓTY (H)</button>
+            <button id="start-map-btn" type="button" class="map-btn">🗺️ MAPA FESTIWALU (M)</button>
+          </div>
+          <div class="start-arcade-bar" aria-label="Automaty 2D">
+            <span class="arcade-label">🕹️ SALON GIER 2D:</span>
+            <a id="play-fighter" class="minigame-link" href="./fighter-demo.html" target="_blank" rel="noopener"
+              >KURWA, MOJE COMBO! · BIJATYKA 2D ↗</a
+            >
+            <a id="play-bongo-rush" class="minigame-link" href="./bongo-rush.html" target="_blank" rel="noopener"
+              >WALKA O TASIOROWE BONGO · MINIGRA 2D ↗</a
+            >
+          </div>
         </div>
         <small id="start-controls"></small>
       </section>
@@ -80,6 +86,7 @@
             <button id="mobile-inventory" type="button" aria-label="Otwórz ekwipunek">PLECAK</button>
             <button id="mobile-guide" type="button" aria-label="Otwórz przewodnik">POMOC</button>
             <button id="mobile-map" type="button" aria-label="Otwórz mapę">MAPA</button>
+            <button id="mobile-fullscreen" type="button" aria-label="Pełny ekran">⛶</button>
           </div>
           <div class="mobile-movement">
             <div class="mobile-joystick" aria-label="Joystick ruchu">
@@ -90,7 +97,13 @@
           <button id="mobile-interact" type="button">UŻYJ</button>
           <button id="mobile-jump" type="button" aria-label="Skok">SKOK</button>
         </div>
-        <div id="effect-hud">Brak aktywnego efektu</div>
+        <div id="effect-hud" hidden></div>
+        <div id="hud-hotbar" class="hud-hotbar" aria-label="Pasek szybkiego wyboru">
+          <button class="hotbar-slot" data-slot="0" type="button" title="Użyj: Piwo [1]"><kbd>1</kbd><span class="slot-icon">🍺</span><span class="slot-count">×0</span></button>
+          <button class="hotbar-slot" data-slot="1" type="button" title="Użyj: Papieros [2]"><kbd>2</kbd><span class="slot-icon">🚬</span><span class="slot-count">×0</span></button>
+          <button class="hotbar-slot" data-slot="2" type="button" title="Użyj: Joint [3]"><kbd>3</kbd><span class="slot-icon">🌿</span><span class="slot-count">×0</span></button>
+          <button class="hotbar-slot" data-slot="3" type="button" title="Użyj: Woda [4]"><kbd>4</kbd><span class="slot-icon">💧</span><span class="slot-count">×0</span></button>
+        </div>
         <div id="controls-hud"></div>
         <div id="flanki-hud" class="flanki-hud" hidden>
           <div class="flanki-header">
@@ -168,33 +181,37 @@
                 <ul id="flanki-team-b-players" class="flanki-player-list"></ul>
               </div>
             </div>
-            <div class="flanki-rules-box">
-              <strong>Zasady Flanków Pol'and'Rock:</strong>
+            <div class="flanki-rules-cards">
+              <div class="flanki-rule-card">
+                <span class="card-step">1</span>
+                <span class="card-icon">🎯</span>
+                <strong class="card-title">Rzucaj w puszkę</strong>
+                <p class="card-desc">Wyceluj i przytrzymaj [LPM] / [Spacja]. Puść w zielonym polu, by strącić puszkę.</p>
+              </div>
+              <div class="flanki-rule-card">
+                <span class="card-step">2</span>
+                <span class="card-icon">🍺</span>
+                <strong class="card-title">Pij po trafieniu</strong>
+                <p class="card-desc">Przytrzymaj [E], aby pić piwo, dopóki biegacz rywali nie postawi puszki i nie krzyknie STOP!</p>
+              </div>
+              <div class="flanki-rule-card">
+                <span class="card-step">3</span>
+                <span class="card-icon">⚡</span>
+                <strong class="card-title">Biegaj i broń</strong>
+                <p class="card-desc">Gdy puszka spadnie: podbiegnij [WASD], postaw [E] i wracaj za linię drużyny!</p>
+              </div>
+            </div>
+            <details class="flanki-rules-details">
+              <summary>📖 Pełny regulamin Pol'and'Rock (6 zasad)</summary>
               <ol>
                 <li>Rzucający na przemian celują puszkę na środku boiska tenisówką.</li>
-                <li>
-                  Wyceluj łukiem w puszkę. Przytrzymaj LPM lub Spację: trajektoria się blokuje, a siła
-                  spokojnie rośnie. Puść w zielonym zakresie zalecanej siły. Rzut nadal wymaga dobrego
-                  kierunku.
-                </li>
-                <li>
-                  Trafienie przewraca puszkę: drużyna rzucająca pije piwo, a
-                  <strong>stały biegacz rywali</strong> pędzi ją postawić.
-                </li>
-                <li>
-                  Picie wolno kontynuować tylko do momentu, gdy biegacz postawi puszkę i wróci za swoją linię
-                  krzycząc <strong>STOP!</strong>
-                </li>
-                <li>
-                  Rzucający stoją na liniach i piją przez przytrzymanie [E]. Wybierz stałego biegacza w
-                  składzie: jako biegacz podbiegasz WASD, stawiasz puszkę [E] i wracasz za swoją linię.
-                </li>
-                <li>
-                  STOP kończy picie automatycznie. Wygrywa drużyna, której wszyscy rzucający wypiją piwo do
-                  dna.
-                </li>
+                <li>Wyceluj łukiem w puszkę. Przytrzymaj LPM lub Spację: trajektoria się blokuje, a siła rośnie. Puść w zielonym zakresie zalecanej siły.</li>
+                <li>Trafienie przewraca puszkę: drużyna rzucająca pije piwo, a stały biegacz rywali pędzi ją postawić.</li>
+                <li>Picie wolno kontynuować tylko do momentu, gdy biegacz postawi puszkę i wróci za swoją linię krzycząc STOP!</li>
+                <li>Rzucający stoją na liniach i piją przez przytrzymanie [E]. Jako biegacz podbiegasz WASD, stawiasz puszkę [E] i wracasz za linię.</li>
+                <li>Wygrywa drużyna, której wszyscy rzucający jako pierwsi wypiją piwo do dna.</li>
               </ol>
-            </div>
+            </details>
             <div class="flanki-roster-actions">
               <button id="flanki-cancel-btn" type="button" class="btn-secondary">ANULUJ [Esc]</button>
               <button id="flanki-start-btn" type="button" class="btn-primary">🍻 ROZPOCZNIJ MECZ</button>
@@ -202,10 +219,10 @@
           </div>
         </section>
         <section id="eco-panel" class="eco-panel" hidden aria-label="Eko-Zagroda">
-          <h2>♻ EKO-ZAGRODA</h2>
+          <h2>♻️ EKO-ZAGRODA</h2>
           <p>
-            Lody: +35% szybkości przez 12 s. Hamburger: 3 punkty. Co 30 s ostatnie 10 s to EKO-FALA ×2! Na
-            mapie bonusy oznaczone S i 3.
+            🍦 Lody: +35% szybkości przez 12 s. 🍔 Hamburger: 3 punkty. Co 30 s ostatnie 10 s to EKO-FALA ×2!
+            Bonusy oznaczone na mapie ikonami 🍦 i 🍔.
           </p>
           <p>
             Zbieraj puszki, butelki i papier przez 180 sekund. Każdy zbiera własne śmieci. Wygrywa największa
@@ -236,7 +253,13 @@
           <div class="guitar-stats-row">
             <div class="guitar-stat">Wynik: <strong id="guitar-score-val">0</strong></div>
             <div class="guitar-stat">Combo: <strong id="guitar-combo-val">0</strong></div>
-            <div class="guitar-stat">Klimat ogniska: <strong id="guitar-cheer-val">50%</strong></div>
+            <div class="guitar-stat guitar-flame-stat">
+              <span>🔥 Klimat ogniska:</span>
+              <div class="guitar-flame-meter">
+                <div id="guitar-flame-bar" class="guitar-flame-bar" style="width: 50%;"></div>
+              </div>
+              <strong id="guitar-cheer-val">50%</strong>
+            </div>
           </div>
           <div id="guitar-fretboard" class="guitar-fretboard">
             <div class="guitar-lane" data-lane="0"><div class="guitar-string"></div></div>
@@ -244,7 +267,13 @@
             <div class="guitar-lane" data-lane="2"><div class="guitar-string"></div></div>
             <div class="guitar-lane" data-lane="3"><div class="guitar-string"></div></div>
             <div class="guitar-lane" data-lane="4"><div class="guitar-string"></div></div>
-            <div id="guitar-target-line" class="guitar-target-line"></div>
+            <div id="guitar-target-line" class="guitar-target-line">
+              <span class="target-lane-badge" data-lane="0">A</span>
+              <span class="target-lane-badge" data-lane="1">S</span>
+              <span class="target-lane-badge" data-lane="2">D</span>
+              <span class="target-lane-badge" data-lane="3">F</span>
+              <span class="target-lane-badge" data-lane="4">G</span>
+            </div>
             <div id="guitar-notes-container" class="guitar-notes-container"></div>
           </div>
           <div class="guitar-buttons-row">
@@ -266,14 +295,17 @@
         <div id="can-rush-hud" class="can-rush-hud" hidden>
           <div class="can-rush-title">♻️ EKO-RUSH CHALLENGE</div>
           <div class="can-rush-row">
-            <span class="can-rush-timer">⏳ Czas: <strong id="can-rush-time-val">90s</strong></span>
+            <span class="can-rush-timer">⏳ Czas: <strong id="can-rush-time-val">180s</strong></span>
             <span class="can-rush-count">♻ Wynik: <strong id="can-rush-count-val">0</strong></span>
           </div>
         </div>
         <div id="prompt" role="status" aria-live="polite" hidden></div>
         <div id="toast" role="status" aria-live="polite"></div>
         <div id="freecam-badge" hidden>SWOBODNA KAMERA [Ctrl+K] · Rolka: prędkość</div>
-        <div id="crosshair">+</div>
+        <div id="crosshair" class="crosshair-dot">
+          <div class="crosshair-ring"></div>
+          <div id="crosshair-label" class="crosshair-label" hidden></div>
+        </div>
         <div id="smoke" hidden></div>
         <div id="lsd-overlay" aria-hidden="true" hidden></div>
         <div id="use-sequence" role="status" hidden>

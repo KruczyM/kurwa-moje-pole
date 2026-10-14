@@ -78,6 +78,43 @@ if (nicknameInput) {
   };
 }
 
+const randomNickBtn = document.querySelector<HTMLButtonElement>('#random-nickname-btn');
+const FESTIVAL_NICKNAMES = [
+  'Tasior',
+  'Dziąsło',
+  'Szef Pola',
+  'Błotny Książę',
+  'Koneser Amareny',
+  'Król Flanków',
+  'Leśny Dzik',
+  'Mistrz Namiotu',
+  'Woodstockowicz',
+  'Złoty Bażant',
+  'Piwny Wojownik',
+  'Pogo Maniak',
+  'Słomiany Kapelusz',
+  'Siwy Dym',
+  'Glana Mistrz',
+  'Wędrowiec Zlotu',
+  'Nocny Marek',
+  'Festiwalowy Lis',
+  'Spokojny Gracz',
+  'Turbo Ślimak',
+  'Błotny Rycerz',
+  'Pankejk',
+  'Kombajnista',
+  'Poranny Ptak',
+  'Ogniskowy Bard',
+];
+
+if (randomNickBtn && nicknameInput) {
+  randomNickBtn.onclick = () => {
+    const randomNick = FESTIVAL_NICKNAMES[Math.floor(Math.random() * FESTIVAL_NICKNAMES.length)];
+    nicknameInput.value = randomNick;
+    nicknameInput.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+}
+
 let hasInitialReservation = false;
 
 // UI Statusu sieci:
@@ -102,6 +139,25 @@ names.forEach((name) => {
   const button = document.createElement('button');
   button.textContent = name;
   button.className = name === selected ? 'selected' : '';
+  button.classList.add('character-card');
+
+  // 3D Tilt & Glow
+  button.addEventListener('pointermove', (e: PointerEvent) => {
+    const rect = button.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -10;
+    const rotateY = ((x - centerX) / centerX) * 10;
+    button.style.transform = `perspective(600px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.04, 1.04, 1.04)`;
+    button.style.setProperty('--mx', `${((x / rect.width) * 100).toFixed(1)}%`);
+    button.style.setProperty('--my', `${((y / rect.height) * 100).toFixed(1)}%`);
+  });
+  button.addEventListener('pointerleave', () => {
+    button.style.transform = '';
+  });
+
   button.onclick = () => {
     if (button.disabled) return;
     selected = name;

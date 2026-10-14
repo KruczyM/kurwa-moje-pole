@@ -174,4 +174,23 @@ describe('SpeakerAudio spatial attenuation & playback lifecycle', () => {
 
     speaker.dispose();
   });
+
+  it('manages tent muffled mode state and transitions', () => {
+    const fake = new FakeAudio('/music.mp4');
+    const speaker = new SpeakerAudio('/music.mp4', { factory: () => fake });
+
+    expect(speaker.isTentMuffled()).toBe(true);
+
+    speaker.setTentMuffled(false);
+    expect(speaker.isTentMuffled()).toBe(false);
+
+    // Update with dt to advance progress
+    speaker.update({ x: 0, y: 0, z: 0 }, 0.6);
+    speaker.update({ x: 0, y: 0, z: 0 }, 0.6);
+
+    speaker.setTentMuffled(true);
+    expect(speaker.isTentMuffled()).toBe(true);
+
+    speaker.dispose();
+  });
 });
