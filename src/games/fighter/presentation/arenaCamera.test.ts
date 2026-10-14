@@ -36,9 +36,9 @@ describe('Arcade fighting camera and arena layout', () => {
 
   it('keeps both fighters and reach margins visible on screen across viewports', () => {
     const viewports = [
-      { width: 390, height: 844 },   // Mobile portrait
-      { width: 844, height: 390 },   // Mobile landscape
-      { width: 1024, height: 768 },  // Tablet
+      { width: 390, height: 844 }, // Mobile portrait
+      { width: 844, height: 390 }, // Mobile landscape
+      { width: 1024, height: 768 }, // Tablet
       { width: 1920, height: 1080 }, // Desktop 1080p
     ];
 

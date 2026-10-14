@@ -322,7 +322,12 @@ export class FighterView {
     ctx.restore();
   }
 
-  private drawStageBackground(ctx: CanvasRenderingContext2D, width: number, height: number, zoom: number): void {
+  private drawStageBackground(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    zoom: number,
+  ): void {
     const stage = this.getActiveStage();
     const img = this.getStageImage(stage.id);
 
