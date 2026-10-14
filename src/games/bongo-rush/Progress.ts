@@ -40,26 +40,39 @@ export interface Progress {
   hero: string;
   muted: boolean;
   completed: boolean;
+  campaignRevision?: 2;
 }
 const KEY = 'after-bongo-rush:v1';
 
 /** Validates untrusted browser storage and tolerates private-mode/security failures. */
 export function loadProgress(storage: Pick<Storage, 'getItem'>): Progress {
-  const defaults: Progress = { version: 1, unlocked: 1, hero: 'amper', muted: false, completed: false };
+  const defaults: Progress = {
+    version: 1,
+    campaignRevision: 2,
+    unlocked: 1,
+    hero: 'amper',
+    muted: false,
+    completed: false,
+  };
   try {
     const data = JSON.parse(storage.getItem(KEY) ?? 'null');
     if (!data || data.version !== 1) return defaults;
+    const oldCampaign = data.campaignRevision !== 2;
+    const unlocked = Number.isInteger(data.unlocked) ? Math.max(1, data.unlocked) : 1;
+    const migrated =
+      oldCampaign && (unlocked >= 13 || data.completed === true)
+        ? Math.max(21, Math.min(24, unlocked + 8))
+        : unlocked;
     return {
       version: 1,
-      unlocked: Number.isInteger(data.unlocked)
-        ? Math.max(
-            data.completed === true ? CAMPAIGN_LEVEL_COUNT + 1 : 1,
-            Math.min(LEVEL_COUNT, data.unlocked),
-          )
-        : 1,
+      campaignRevision: 2,
+      unlocked: Math.max(
+        !oldCampaign && data.completed === true ? CAMPAIGN_LEVEL_COUNT + 1 : 1,
+        Math.min(LEVEL_COUNT, migrated),
+      ),
       hero: HEROES.includes(data.hero) ? data.hero : 'amper',
       muted: data.muted === true,
-      completed: data.completed === true,
+      completed: !oldCampaign && data.completed === true,
     };
   } catch {
     return defaults;

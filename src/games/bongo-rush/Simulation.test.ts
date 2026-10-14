@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS } from './Levels';
+import { LEGACY_LEVELS as LEVELS } from './Levels';
 import { createWorld, Simulation } from './Simulation';
 import type { LevelDefinition } from './types';
 import { neighbour } from './types';
@@ -15,7 +15,7 @@ describe('Bongo Rush original campaign', () => {
     expect(new Set(LEVELS.map((level) => level.rows.join('\n'))).size).toBe(16);
     for (let biome = 0; biome < 4; biome++)
       expect(LEVELS.filter((level) => level.biome === biome)).toHaveLength(4);
-    LEVELS.forEach(createWorld);
+    LEVELS.forEach((level) => createWorld(level));
   });
   for (const level of LEVELS) {
     it(`recorded solution completes ${level.id}: ${level.title} without teleporting`, () => {

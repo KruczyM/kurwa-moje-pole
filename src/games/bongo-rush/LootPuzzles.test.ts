@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { LOOT_PUZZLES } from './LootPuzzles';
-import { LEVELS } from './Levels';
+import { LEGACY_LEVELS as LEVELS } from './Levels';
 import { Simulation } from './Simulation';
 import { neighbour, same } from './types';
 import type { LevelDefinition } from './types';

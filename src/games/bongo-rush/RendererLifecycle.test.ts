@@ -43,7 +43,7 @@ describe('reopening the same cave on a phone', () => {
       renderer.resize(width, height, true);
       renderer.terrain(0, terrain);
       renderer.draw(new Simulation(LEVELS[0]), undefined, 0, 0, true);
-      expect(clips).toContainEqual([0, 58, width, Math.max(90, height - 58 - (height < 400 ? 115 : 150))]);
+      expect(clips).toContainEqual([0, 58, width, height - 58]);
     }
     const cachedTerrain = images
       .map((args) => args[0])

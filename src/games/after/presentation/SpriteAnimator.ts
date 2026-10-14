@@ -26,9 +26,13 @@ export class SpriteAnimator {
   private readonly meta: SpriteMetadata;
   private phase = 0;
   private moving = false;
+  private readonly clipPhases = { idle: 0, walk: 0 };
 
   /** Rejects invalid atlas geometry and copies metadata against later external mutation. */
-  constructor(meta: SpriteMetadata) {
+  constructor(
+    meta: SpriteMetadata,
+    private readonly timing: { preservePhase?: boolean; idleFps?: number; walkFps?: number } = {},
+  ) {
     const positive = (n: number) => Number.isSafeInteger(n) && n > 0;
     const rows = Object.values(DIRECTIONS).map((key) => meta.rows[key]);
     if (
@@ -51,11 +55,17 @@ export class SpriteAnimator {
   /** Advances phase from host delta time; direction changes preserve gait and pause freezes it. */
   update(dt: number, facing: Facing, moving: boolean, running = false, paused = false): SpriteFrame {
     if (!paused) {
-      if (moving !== this.moving) this.phase = 0;
+      if (moving !== this.moving)
+        this.phase = this.timing.preservePhase ? this.clipPhases[moving ? 'walk' : 'idle'] : 0;
       this.moving = moving;
       const columns = this.meta.animationColumns[moving ? 'walk' : 'idle'];
       if (Number.isFinite(dt) && dt > 0)
-        this.phase = (this.phase + Math.min(dt, 0.25) * (running ? 12 : 8)) % columns.length;
+        this.phase =
+          (this.phase +
+            Math.min(dt, 0.25) *
+              (running ? 12 : moving ? (this.timing.walkFps ?? 8) : (this.timing.idleFps ?? 8))) %
+          columns.length;
+      this.clipPhases[moving ? 'walk' : 'idle'] = this.phase;
     }
     const columns = this.meta.animationColumns[this.moving ? 'walk' : 'idle'];
     return {

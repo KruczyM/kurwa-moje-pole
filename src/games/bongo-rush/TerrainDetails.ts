@@ -34,7 +34,7 @@ export function terrainEdges(world: Pick<World, 'width' | 'height' | 'cells'>, x
   const open = (nx: number, ny: number) => {
     if (nx < 0 || ny < 0 || nx >= world.width || ny >= world.height) return false;
     const cell: Cell = world.cells[ny * world.width + nx];
-    return cell === 'air' || cell === 'exit';
+    return cell === 'air' || cell === 'exit' || cell === 'portal';
   };
   return (
     (open(x, y - 1) ? 1 : 0) | (open(x + 1, y) ? 2 : 0) | (open(x, y + 1) ? 4 : 0) | (open(x - 1, y) ? 8 : 0)

@@ -577,3 +577,102 @@ footer span {
     top: 26px;
   }
 }
+
+/* Map extends beneath controls; only local surfaces provide contrast. */
+#bongo-app {
+  position: relative;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  border: 0;
+  background: #080d18b0;
+  pointer-events: none;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  max-height: 52px;
+  overflow: hidden;
+}
+#touch-controls {
+  height: 220px;
+  padding: 0;
+  background: linear-gradient(transparent 45%, #080d1833);
+}
+#joystick-zone {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(44px, env(safe-area-inset-bottom));
+  width: min(240px, calc(100% - 144px));
+  min-width: 160px;
+  height: 160px;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+}
+#joystick {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  bottom: 8px;
+  width: 124px;
+  height: 124px;
+  clip-path: none;
+  border-radius: 50%;
+  pointer-events: none;
+  background: #10172866;
+  box-shadow: 0 3px 18px #0004;
+}
+#knob {
+  width: 52px;
+  height: 52px;
+  left: 34px;
+  top: 34px;
+  border-radius: 50%;
+}
+#touch-restart {
+  bottom: max(64px, calc(env(safe-area-inset-bottom) + 24px));
+  left: max(12px, env(safe-area-inset-left));
+}
+.toolbar button {
+  min-height: 48px;
+  min-width: 48px;
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #touch-controls {
+    height: 160px;
+  }
+  #joystick-zone {
+    bottom: max(28px, env(safe-area-inset-bottom));
+    height: 128px;
+  }
+  #joystick {
+    width: 112px;
+    height: 112px;
+    bottom: 0;
+  }
+  #knob {
+    width: 48px;
+    height: 48px;
+    left: 30px;
+    top: 30px;
+  }
+  footer {
+    max-height: 30px;
+    font-size: 10px;
+  }
+}
+
+footer p {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.3;
+}
+footer {
+  align-items: flex-start;
+}

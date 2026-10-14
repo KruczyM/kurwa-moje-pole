@@ -24,7 +24,7 @@
           aria-label="Kopalnia — poruszaj się klawiszami WASD lub strzałkami"
         ></canvas>
         <div class="hud">
-          <span id="level-title">16 poziomów · 4 biomy</span
+          <span id="level-title">24 poziomy · 4 biomy</span
           ><strong id="counter">Zbieraj. Kop. Nie daj się przygnieść.</strong><strong id="timer"></strong
           ><span id="exit-status"></span>
         </div>
@@ -75,11 +75,10 @@
             <p>
               WASD / strzałki lub gałka — ruch. Kop ziemię, zbierz wymagane przedmioty i znajdź wyjście ↑.
               Skały pchasz poziomo, tylko na wolne pole. Spadające skały i przedmioty przygniatają. Patrole
-              nie potrafią kopać. Odkopany Krzak zarasta sąsiednie wolne pola co około 5 sekund; dorosłych
-              krzaków nie można przekopać. Poziomy mają limit czasu — pauza go zatrzymuje. Nie zwlekaj, bo
-              krzaki mogą odciąć wyjście! Esc — pauza / powrót (zatrzymuje także wzrost). R — restart. Bez
-              limitu prób. Szukaj odnóg i skrótów; nie musisz zbierać wszystkich przedmiotów. M / Mapa —
-              minimapa.
+              nie potrafią kopać. Kobra powiela się na sąsiednie wolne pola, także od początku planszy.
+              Przedmioty i ziemia blokują wzrost; zebranie podpory może go uwolnić. Nie zwlekaj, bo krzaki
+              mogą odciąć wyjście! Esc — pauza / powrót (zatrzymuje także wzrost). R — restart. Bez limitu
+              prób. Szukaj odnóg i skrótów; nie musisz zbierać wszystkich przedmiotów. M / Mapa — minimapa.
             </p>
           </details>
           <div class="links">
@@ -93,6 +92,7 @@
         <section id="help-panel" class="panel compact help-panel" hidden aria-label="Pomoc">
           <button id="help-close" class="primary">Zamknij pomoc ×</button>
           <h2>Jak przejść jaskinię?</h2>
+          <p id="context-hint"></p>
           <p>
             Spadający głaz eliminuje patrole i kwadraty z siatką. Łup pojawia się nad głazem: wróć po niego po
             uderzeniu. Kwadrat obchodzi krawędzie przeszkód i nie kopie. W wyzwaniach obserwuj jego ruch przed
@@ -104,6 +104,15 @@
               Łup ze złotą obwódką w komorach skalnych jest obowiązkowy. Nadmiar zwykłych przedmiotów go nie
               zastąpi.
             </li>
+            <li>
+              Portale występują na dwóch planszach i łączą komory w pętle. Przygotuj złoże oraz drogę powrotu.
+              Łup i odkopane przejścia zostają zachowane, a grawitacja, patrole i Kobra działają także w
+              opuszczonych komorach.
+            </li>
+            <li>
+              Złoty kafelek z liczbą i literą K uwalnia tyle przedmiotów i może odsłonić miejsce dla Kobry.
+              Łup pojawia się w ujściu pojedynczo. Najpierw przygotuj drogę odwrotu.
+            </li>
             <li>Kop ziemię WASD, strzałkami lub gałką. M / Mapa pokazuje całą jaskinię.</li>
             <li>Skały pchasz tylko poziomo na puste pole. Najpierw przygotuj wnękę i odwrót.</li>
             <li>
@@ -111,11 +120,13 @@
               boczny odwrót.
             </li>
             <li>
-              Kobra z korzeniami zacznie rosnąć po odkopaniu. Na końcach biomów trzeba ją obudzić, by dojść do
-              zagadki — nie zawracaj bez planu.
+              Każda twarz Kobry jest kolonią. Rozmnaża się co 5 sekund, a w szybkich wariantach co 2,4
+              sekundy, jeśli obok jest puste pole. Drganie zapowiada podział. Nie trzeba niszczyć jej kafelka;
+              przygotuj odwrót przed odsłonięciem przestrzeni.
             </li>
             <li>
-              Rozwiąż komorę przy wyjściu ↑ zanim skończy się czas. W finale zamknij też zagrodę złotą skałą.
+              Rozwiąż komorę przy wyjściu ↑. Zegar obowiązuje tylko w dodatkowych wyzwaniach. W finale zamknij
+              też zagrodę złotą skałą.
             </li>
           </ol>
           <p>Esc — pauza. R / ↻ — restart bez limitu prób. Pauza i pomoc zatrzymują zegar oraz Kobrę.</p>
@@ -145,8 +156,10 @@
           <button id="victory-menu" class="primary">Wróć do odblokowanych poziomów</button>
         </section>
         <nav id="touch-controls" hidden aria-label="Sterowanie dotykowe">
-          <div id="joystick" role="group" aria-label="Gałka ruchu — przeciągnij palcem">
-            <span id="knob"></span>
+          <div id="joystick-zone">
+            <div id="joystick" role="group" aria-label="Gałka ruchu — przeciągnij palcem">
+              <span id="knob"></span>
+            </div>
           </div>
           <button id="touch-restart" aria-label="Restart poziomu">↻</button>
         </nav>

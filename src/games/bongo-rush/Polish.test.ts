@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Simulation } from './Simulation';
-import { LEVELS } from './Levels';
+import { LEGACY_LEVELS as LEVELS } from './Levels';
 import { ambientPhrase, musicPhrase, musicCycleBeats } from './Music';
 import { STEP_SECONDS } from './types';
 import type { LevelDefinition } from './types';
@@ -112,7 +112,7 @@ describe('ambient score', () => {
       for (let beat = 0; beat < 16; beat++) {
         const phrase = ambientPhrase(biome, beat);
         expect(phrase).toEqual(ambientPhrase(biome, beat + musicCycleBeats(biome)));
-        expect(phrase.length).toBeLessThanOrEqual(2);
+        expect(phrase.length).toBeLessThanOrEqual(3);
         for (const note of phrase) expect(note).toBeGreaterThan(40);
       }
     expect(new Set([0, 1, 2, 3].map((b) => JSON.stringify(musicPhrase(b, 0)))).size).toBe(4);

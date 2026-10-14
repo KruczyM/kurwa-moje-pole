@@ -1,9 +1,12 @@
 import { Simulation } from './Simulation';
 import { DIRECTIONS, neighbour, same } from './types';
-import type { Direction, LevelDefinition, Point } from './types';
+import type { Direction, LevelDefinition, Point, ReplayInput } from './types';
 
 /** Measures real patrol travel and drop recovery along an unmodified, input-only replay. */
-export function auditPatrols(level: LevelDefinition, inputs = level.solution) {
+export function auditPatrols(
+  level: LevelDefinition,
+  inputs: readonly ReplayInput[] = level.replay ?? level.solution,
+) {
   const game = new Simulation(level);
   const initial = game.world.enemies.map((enemy) => ({ ...enemy }));
   const paths = new Map(initial.map((enemy) => [enemy.id, new Set<string>()]));
@@ -11,13 +14,15 @@ export function auditPatrols(level: LevelDefinition, inputs = level.solution) {
   const drops = new Set<number>();
   let recovered = 0;
   for (const input of inputs) {
-    const target = neighbour(game.world.player, input);
+    const chamber = game.chamberId;
+    const target = input ? neighbour(game.world.player, input) : { ...game.world.player };
     const pickup = game.object(target);
     if (pickup && drops.has(pickup.id)) recovered++;
     const alive = new Set(game.world.enemies.map((enemy) => enemy.id));
     game.step(input);
-    if (!same(game.world.player, target) || game.world.status === 'lost')
+    if ((game.chamberId === chamber && !same(game.world.player, target)) || game.world.status === 'lost')
       throw new Error(`Invalid patrol replay ${level.id}: ${game.world.reason}`);
+    if (game.chamberId !== chamber || game.chamberId !== 'main') continue;
     for (const body of game.world.objects)
       if (body.kind === 'pickup' && alive.has(body.id)) drops.add(body.id);
     for (const enemy of game.world.enemies) {
@@ -56,27 +61,28 @@ export function auditDifficulty(level: LevelDefinition) {
   let harvests = 0;
   let previous: Direction | undefined;
   const opposite: Record<Direction, Direction> = { up: 'down', down: 'up', left: 'right', right: 'left' };
-  const rows = new Set<number>();
-  for (const direction of level.solution) {
-    const target = neighbour(game.world.player, direction);
+  const rows = new Set<string>();
+  for (const direction of level.replay ?? level.solution) {
+    const chamber = game.chamberId;
+    const target = direction ? neighbour(game.world.player, direction) : { ...game.world.player };
     const body = game.object(target);
     if (body?.kind === 'pickup' && game.object({ x: target.x, y: target.y - 1 })?.kind === 'rock') harvests++;
     if (body?.required) {
       requiredCollected++;
-      rows.add(target.y);
+      rows.add(`${chamber}:${target.y}`);
       if (game.object({ x: target.x, y: target.y - 1 })?.kind === 'rock') dangerousHarvests++;
     }
     if (previous && opposite[previous] === direction) reversals++;
     game.step(direction);
     pushes += game.drainSounds().filter((sound) => sound === 'push').length;
-    if (!same(game.world.player, target) || game.world.status === 'lost')
+    if ((game.chamberId === chamber && !same(game.world.player, target)) || game.world.status === 'lost')
       throw new Error(`Invalid difficulty replay ${level.id}: ${game.world.reason}`);
     previous = direction;
   }
   if (game.world.status !== 'won') throw new Error(`Unsolved difficulty replay ${level.id}`);
   return {
     level: level.id,
-    moves: level.solution.length,
+    moves: (level.replay ?? level.solution).length,
     pushes,
     dangerousHarvests,
     reversals,

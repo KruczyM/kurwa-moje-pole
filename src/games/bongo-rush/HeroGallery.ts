@@ -49,7 +49,11 @@ export class HeroGallery {
           const atlas = await this.load(hero);
           if (this.disposed) return;
           entry.atlas = atlas;
-          entry.animator = new SpriteAnimator(atlas.metadata);
+          entry.animator = new SpriteAnimator(atlas.metadata, {
+            preservePhase: true,
+            idleFps: 2,
+            walkFps: 10,
+          });
           entry.button.disabled = false;
           this.paint(hero, 0, true);
         } catch {

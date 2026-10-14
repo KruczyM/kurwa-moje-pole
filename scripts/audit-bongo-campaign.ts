@@ -8,19 +8,26 @@ const report = LEVELS.map((level) => {
     ...auditPatrols(level),
     title: level.title,
     style: level.style ?? 'challenge',
-    alternatives: level.alternatives?.map((route) => ({
+    alternatives: (level.alternateReplays ?? level.alternatives)?.map((route) => ({
       name: route.name,
       moves: route.inputs.length,
       ...auditPatrols(level, route.inputs),
     })),
   };
 });
-mkdirSync('reports/bongo-rhythm', { recursive: true });
-writeFileSync(`reports/bongo-rhythm/${process.argv[2] ?? 'audit'}.json`, JSON.stringify(report, null, 2));
+mkdirSync('reports/bongo-campaign-v4', { recursive: true });
 writeFileSync(
-  'reports/bongo-rhythm/browser-routes.json',
+  `reports/bongo-campaign-v4/${process.argv[2] ?? 'audit'}.json`,
+  JSON.stringify(report, null, 2),
+);
+writeFileSync(
+  'reports/bongo-campaign-v4/browser-routes.json',
   JSON.stringify(
-    LEVELS.map((level) => ({ id: level.id, style: level.style ?? 'challenge', solution: level.solution })),
+    LEVELS.map((level) => ({
+      id: level.id,
+      style: level.style ?? 'challenge',
+      solution: level.replay ?? level.solution,
+    })),
   ),
 );
 console.log(JSON.stringify(report));

@@ -1,0 +1,31 @@
+{
+  "character": "owsiak",
+  "frameWidth": 128,
+  "frameHeight": 128,
+  "framesPerDirection": 10,
+  "rows": {
+    "down": 0,
+    "right": 1,
+    "up": 2,
+    "left": 3
+  },
+  "animationColumns": {
+    "idle": [
+      0,
+      1
+    ],
+    "walk": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  "source": "source-assets/bongo-rush/models-v5/owsiak/npc-animations.glb",
+  "cameraFit": "all-evaluated-frames-sphere",
+  "rigStatus": "animated"
+}

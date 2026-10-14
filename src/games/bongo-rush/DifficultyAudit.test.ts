@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS } from './Levels';
+import { LEGACY_LEVELS as LEVELS } from './Levels';
 import { stoneLetters } from './ChallengeCaves';
 import { auditDifficulty, runGreedyProbe } from './DifficultyAudit';
 import { Simulation } from './Simulation';

@@ -3,7 +3,7 @@ import { MenuFlow } from './MenuFlow';
 import { HEROES } from './Progress';
 import { soilHoles, terrainEdges } from './TerrainDetails';
 import { VisualEffects } from './VisualEffects';
-import { musicPhrase, musicCycleBeats, MUSIC_BPM, MAIN_MOTIF } from './Music';
+import { musicPhrase, musicCycleBeats, MUSIC_BPM, BIOME_MELODIES } from './Music';
 import { sceneParticle } from './LivingScene';
 
 describe('explicit cosmetic menu navigation', () => {
@@ -94,10 +94,9 @@ describe('readable terrain and bounded decoration', () => {
 });
 
 describe('memorable two-minute compositions', () => {
-  it.each([0, 1, 2, 3])('retains the shared motif, rests and a quieter menu in biome %i', (biome) => {
+  it.each([0, 1, 2, 3])('has a distinct theme, rests and a quieter menu in biome %i', (biome) => {
     expect((musicCycleBeats(biome) * 60) / MUSIC_BPM[biome]).toBe(120);
-    for (let beat = 0; beat < 6; beat++)
-      expect(musicPhrase(biome, beat)[0].frequency).toBeCloseTo(220 * 2 ** (MAIN_MOTIF[beat] / 12));
+    expect(new Set(BIOME_MELODIES.map((melody) => melody.join(','))).size).toBe(4);
     let full = 0,
       menu = 0,
       rests = 0;

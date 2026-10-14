@@ -5,39 +5,55 @@ import { Simulation } from './Simulation';
 import { biomeTileRect } from './BiomeTiles';
 
 describe('world-anchored biome decoration', () => {
+  it('preserves authored visible landmarks and ignores a strip crossing an open tunnel', () => {
+    const world = { width: 8, height: 8, cells: Array(64).fill('wall') };
+    const art = buildTerrainLayout(world, 4, 0, [
+      { at: { x: 1, y: 1 }, kind: 'vertical', variant: 0 },
+      { at: { x: 4, y: 4 }, kind: 'horizontal', variant: 1 },
+      { at: { x: 4, y: 6 }, kind: 'accent', variant: 2 },
+    ]);
+    expect([0, 1, 2].map((n) => art.cells[(1 + n) * 8 + 1])).toEqual([34, 35, 36]);
+    expect([...art.cells.slice(36, 39)]).toEqual([25, 26, 27]);
+    expect(art.cells[52]).toBe(16);
+    const tunnel = { width: 3, height: 3, cells: Array(9).fill('wall') as ('wall' | 'air')[] };
+    tunnel.cells[4] = 'air';
+    const rejected = buildTerrainLayout(tunnel, 1, 0, [
+      { at: { x: 0, y: 1 }, kind: 'horizontal', variant: 0 },
+    ]);
+    expect(rejected.cells[4]).toBeGreaterThanOrEqual(8);
+    expect(rejected.cells[4]).toBeLessThan(14);
+  });
+
+  it('resolves all fifty v4 regions without sampling unused atlas cells', () => {
+    const rects = Array.from({ length: 50 }, (_, cell) => biomeTileRect(1024, 896, 'wall', cell));
+    expect(new Set(rects.map((rect) => `${rect.x},${rect.y}`)).size).toBe(50);
+    for (const rect of rects) expect(rect.y + rect.height).toBeLessThanOrEqual(896);
+    expect(
+      new Set(Array.from({ length: 6 }, (_, n) => JSON.stringify(biomeTileRect(1024, 896, 'soil', 8 + n))))
+        .size,
+    ).toBe(6);
+  });
   it.each(LEVELS)('keeps $id immutable and stable, with bounded accents and complete strips', (level) => {
     const world = new Simulation(level).world;
     const original = structuredClone(world);
-    const art = buildTerrainLayout(world, level.id * 4 + level.biome);
-    expect(art).toEqual(buildTerrainLayout(world, level.id * 4 + level.biome));
-    expect(world).toEqual(original);
-    expect(art.directional).toBeLessThanOrEqual(Math.floor(art.walls * 0.15));
-    expect(art.accents).toBeLessThanOrEqual(Math.floor(art.walls * 0.05));
-    expect([...art.cells].filter((cell) => cell === 11).length).toBeLessThanOrEqual(
-      Math.floor(art.walls * 0.02),
+    const art = buildTerrainLayout(world, level.id * 4 + level.biome, level.terrainTheme, level.decorations);
+    expect(art).toEqual(
+      buildTerrainLayout(world, level.id * 4 + level.biome, level.terrainTheme, level.decorations),
     );
+    expect(world).toEqual(original);
     let decorative = 0;
     for (let index = 0; index < art.cells.length; index++) {
       const cell = art.cells[index];
       if (world.cells[index] !== 'wall') {
-        expect(cell).toBeGreaterThanOrEqual(4);
-        expect(cell).toBeLessThanOrEqual(7);
+        expect(cell).toBeGreaterThanOrEqual(8);
+        expect(cell).toBeLessThanOrEqual(13);
         continue;
       }
-      if (cell < 8) continue;
+      if (cell < 14) continue;
       decorative++;
-      const x = index % world.width,
-        y = Math.floor(index / world.width);
-      for (const [dx, dy] of [
-        [0, -1],
-        [1, 0],
-        [0, 1],
-        [-1, 0],
-      ])
-        expect(world.cells[(y + dy) * world.width + x + dx]).toBe('wall');
-      if ([12, 15].includes(cell))
+      if ([22, 25, 28, 31].includes(cell))
         expect([...art.cells.slice(index, index + 3)]).toEqual([cell, cell + 1, cell + 2]);
-      if ([18, 21].includes(cell))
+      if ([34, 37, 40, 43].includes(cell))
         expect([0, 1, 2].map((n) => art.cells[index + n * world.width])).toEqual([cell, cell + 1, cell + 2]);
     }
     expect(decorative).toBe(art.accents + art.directional);
@@ -57,14 +73,18 @@ describe('world-anchored biome decoration', () => {
 
   it('fits narrow horizontal/vertical solid bands without dangling pieces at the boundary', () => {
     for (const [width, height, first] of [
-      [80, 3, 12],
-      [3, 80, 18],
+      [80, 3, 22],
+      [3, 80, 34],
     ]) {
-      const art = buildTerrainLayout({ width, height, cells: Array(width * height).fill('wall') }, 3);
-      expect([...art.cells].some((cell) => cell === first || cell === first + 3)).toBe(true);
-      expect([...art.cells].some((cell) => (first === 12 ? cell >= 18 : cell >= 12 && cell < 18))).toBe(
-        false,
+      const art = buildTerrainLayout({ width, height, cells: Array(width * height).fill('wall') }, 3, 0, [
+        { at: { x: 0, y: 0 }, kind: first === 22 ? 'horizontal' : 'vertical', variant: 0 },
+      ]);
+      expect([...art.cells].some((cell) => [first, first + 3, first + 6, first + 9].includes(cell))).toBe(
+        true,
       );
+      expect(
+        [...art.cells].some((cell) => (first === 22 ? cell >= 34 && cell < 46 : cell >= 22 && cell < 34)),
+      ).toBe(false);
     }
   });
 });
