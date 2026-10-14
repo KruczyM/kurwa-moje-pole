@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { SpriteAnimator } from '../after/presentation/SpriteAnimator';
 import { PatrolAnimator } from './PatrolAnimator';
 import { Simulation } from './Simulation';
-import { LEVELS } from './Levels';
+import { LEGACY_LEVELS as LEVELS } from './Levels';
 import { same } from './types';
 
 describe('fully animated detailed enemy atlases', () => {

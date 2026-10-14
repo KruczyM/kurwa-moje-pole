@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EXIT_PUZZLES } from './ExitPuzzles';
-import { LEVELS } from './Levels';
+import { LEGACY_LEVELS as LEVELS } from './Levels';
 import { Simulation } from './Simulation';
 import { DIRECTIONS, neighbour, same } from './types';
 import type { LevelDefinition } from './types';

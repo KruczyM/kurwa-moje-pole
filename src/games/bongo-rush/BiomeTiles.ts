@@ -1,13 +1,18 @@
 export const BIOME_TILE_ATLASES = [
-  '../materials-v3/amarena.png',
-  '../materials-v3/roots.png',
-  '../materials-v3/rave.png',
-  '../materials-v3/glass.png',
+  '../materials-v4/amarena.png',
+  '../materials-v4/roots.png',
+  '../materials-v4/rave.png',
+  '../materials-v4/glass.png',
 ] as const;
 export type TerrainKind = 'wall' | 'soil';
 
 /** Resolves a complete wall/soil quadrant, rejecting malformed sheets instead of sampling neighbouring art. */
 export function biomeTileRect(width: number, height: number, kind: TerrainKind, variant: number) {
+  if (width === 1024 && height === 896) {
+    const cell =
+      kind === 'soil' ? 8 + (Math.abs(Math.trunc(variant) - 8) % 6) : Math.abs(Math.trunc(variant)) % 50;
+    return { x: (cell % 8) * 128, y: Math.floor(cell / 8) * 128, width: 128, height: 128 };
+  }
   if (Number.isInteger(width) && width >= 6 && width % 6 === 0 && height === (width / 6) * 4) {
     const cell =
       kind === 'soil' ? 4 + (Math.abs(Math.trunc(variant)) % 4) : Math.abs(Math.trunc(variant)) % 24;

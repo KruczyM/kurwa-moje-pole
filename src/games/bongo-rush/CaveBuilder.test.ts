@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CAVE_SKETCHES, LEVELS } from './Levels';
+import { CAVE_SKETCHES, LEGACY_LEVELS as LEVELS } from './Levels';
 import { buildCave } from './CaveBuilder';
 import { createWorld, Simulation } from './Simulation';
 import { DIRECTIONS, neighbour } from './types';

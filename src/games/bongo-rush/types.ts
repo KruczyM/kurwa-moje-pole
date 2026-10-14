@@ -1,6 +1,38 @@
 /** Grid directions are shared by keyboard, joystick, physics and recorded solutions. */
 export type Direction = 'up' | 'right' | 'down' | 'left';
-export type Cell = 'wall' | 'soil' | 'air' | 'exit' | 'buried-bush' | 'bush';
+/** Recorded waits advance the same fixed simulation clock as movement. */
+export type ReplayInput = Direction | undefined;
+export interface TerrainMotif {
+  at: Point;
+  kind: 'horizontal' | 'vertical' | 'accent';
+  variant: number;
+}
+export interface LootSource {
+  tile: Point;
+  outlet: Point;
+  count: number;
+  required?: boolean;
+  roots: readonly Point[];
+}
+export interface ChamberDefinition {
+  id: string;
+  name: string;
+  hint: string;
+  rows: readonly string[];
+  requiredPickups?: readonly Point[];
+  lootSources?: readonly LootSource[];
+  decorations?: readonly TerrainMotif[];
+  colonies?: readonly Point[];
+}
+export interface PortalEndpoint extends Point {
+  chamber: string;
+}
+export interface PortalPair {
+  name: string;
+  a: PortalEndpoint;
+  b: PortalEndpoint;
+}
+export type Cell = 'wall' | 'soil' | 'air' | 'exit' | 'buried-bush' | 'bush' | 'portal';
 export type EnemyKind = 'red' | 'blue' | 'undercover' | 'boss' | 'sweeper';
 export interface Point {
   x: number;
@@ -46,6 +78,18 @@ export interface LevelDefinition {
     hint: string;
     stages?: readonly { entry: Point; name: string; hint: string }[];
   };
+  chambers?: readonly ChamberDefinition[];
+  portals?: readonly PortalPair[];
+  lootSources?: readonly LootSource[];
+  /** Expanded authored campaigns may include waits and portal transitions. */
+  replay?: readonly ReplayInput[];
+  alternateReplays?: readonly { name: string; inputs: readonly ReplayInput[] }[];
+  terrainTheme?: number;
+  decorations?: readonly TerrainMotif[];
+  /** Visible, solid colonies, independent of collecting/digging their own tile. */
+  colonies?: readonly Point[];
+  bushGrowthSeconds?: number;
+  failureReplays?: readonly { name: string; inputs: readonly ReplayInput[] }[];
 }
 export interface World {
   width: number;
@@ -62,6 +106,9 @@ export interface World {
   trapped: boolean;
   bushRoots: Point[];
   nextBushGrowth?: number;
+  /** Actual births drive presentation even when growth happens outside the camera or in another room. */
+  bushBirths?: { at: Point; from: Point; tick: number }[];
+  lootSources?: { definition: LootSource; activated: boolean; remaining: number }[];
 }
 export type SoundEvent = 'pickup' | 'dig' | 'push' | 'impact' | 'lost' | 'exit' | 'won' | 'trap';
 export const DIRECTIONS: readonly Direction[] = ['up', 'right', 'down', 'left'];
