@@ -19,6 +19,7 @@ export interface GuitarNote {
 export interface GuitarSong {
   license?: string;
   source?: string;
+  audioBackingUrl?: string;
   id: string;
   title: string;
   artist: string;
@@ -125,6 +126,9 @@ export class CampfireGuitarSynth {
   private lastBackingStep = -1;
   private readonly backingVoices = new Set<AudioScheduledSourceNode>();
   private shakerBuffer: AudioBuffer | null = null;
+  private backingAudio: HTMLAudioElement | null = null;
+  private backingAudioSource: MediaElementAudioSourceNode | null = null;
+  private hasActiveAudioTrack = false;
 
   constructor(audioContext?: AudioContext) {
     if (audioContext) {
@@ -161,9 +165,11 @@ export class CampfireGuitarSynth {
   }
 
   /**
-   * Rozpoczyna ciągły akompaniament (podkład w stylu Guitar Hero)
+   * Rozpoczyna ciągły akompaniament (podkład w stylu Guitar Hero).
+   * Jeśli podano audioUrl (i plik istnieje), odtwarzany jest prawdziwy podkład audio bez gitary.
+   * W przeciwnym razie wykorzystywany jest syntetyczny podkład proceduralny.
    */
-  public startBackingTrack(): void {
+  public startBackingTrack(audioUrl?: string): void {
     if (!this.ctx || !this.masterGain) {
       this.init();
       if (!this.ctx || !this.masterGain) return;
@@ -173,6 +179,38 @@ export class CampfireGuitarSynth {
     }
     this.backingActive = true;
     this.lastBackingStep = -1;
+    this.hasActiveAudioTrack = false;
+
+    if (audioUrl && typeof window !== 'undefined' && typeof Audio !== 'undefined') {
+      try {
+        if (!this.backingAudio) {
+          this.backingAudio = new Audio();
+          if (this.ctx && this.backingGain) {
+            try {
+              this.backingAudioSource = this.ctx.createMediaElementSource(this.backingAudio);
+              this.backingAudioSource.connect(this.backingGain);
+            } catch {
+              this.backingAudio.volume = 0.45;
+            }
+          }
+        }
+        this.backingAudio.src = audioUrl;
+        this.backingAudio.currentTime = 0;
+        const playPromise = this.backingAudio.play();
+        if (playPromise) {
+          playPromise
+            .then(() => {
+              this.hasActiveAudioTrack = true;
+            })
+            .catch(() => {
+              // Plik audio nie został jeszcze wgrany (np. 404) — płynny fallback na syntezę
+              this.hasActiveAudioTrack = false;
+            });
+        }
+      } catch {
+        this.hasActiveAudioTrack = false;
+      }
+    }
   }
 
   /**
@@ -181,6 +219,15 @@ export class CampfireGuitarSynth {
   public stopBackingTrack(): void {
     this.backingActive = false;
     this.lastBackingStep = -1;
+    this.hasActiveAudioTrack = false;
+    if (this.backingAudio) {
+      try {
+        this.backingAudio.pause();
+        this.backingAudio.currentTime = 0;
+      } catch {
+        // ignore
+      }
+    }
     for (const voice of this.backingVoices) {
       try {
         voice.stop();
@@ -212,6 +259,7 @@ export class CampfireGuitarSynth {
     melody?: readonly GuitarNote[],
   ): void {
     if (!this.backingActive || !this.ctx || !this.backingGain || chords.length === 0) return;
+    if (this.hasActiveAudioTrack) return;
     if (this.ctx.state === 'suspended') return;
     if (!Number.isFinite(currentTime) || currentTime < 0 || !Number.isFinite(bpm) || bpm <= 0) return;
 
@@ -548,6 +596,23 @@ export class CampfireGuitarSynth {
 
   public dispose(): void {
     this.stopBackingTrack();
+    if (this.backingAudio) {
+      try {
+        this.backingAudio.pause();
+        this.backingAudio.src = '';
+      } catch {
+        // ignore
+      }
+      this.backingAudio = null;
+    }
+    if (this.backingAudioSource) {
+      try {
+        this.backingAudioSource.disconnect();
+      } catch {
+        // ignore
+      }
+      this.backingAudioSource = null;
+    }
     if (this.ctx) {
       try {
         if (this.backingGain) this.backingGain.disconnect();
@@ -615,6 +680,19 @@ function createSongNotes(
   return notes;
 }
 
+const baseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
+
+export const GUITAR_AUDIO_BACKING_MAP: Record<string, string> = {
+  'czerwony-cegla-midi': 'game-assets/audio/guitar/czerwony-jak-cegla.mp3',
+  'sen-victoria-midi': 'game-assets/audio/guitar/sen-o-victorii.mp3',
+  'pila-tango-midi': 'game-assets/audio/guitar/pila-tango.mp3',
+  'czarny-chleb-midi': 'game-assets/audio/guitar/czarny-chleb.mp3',
+  'zegarmistrz-midi': 'game-assets/audio/guitar/zegarmistrz.mp3',
+  wehikul: 'game-assets/audio/guitar/wehikul-czasu.mp3',
+  arahja: 'game-assets/audio/guitar/arahja.mp3',
+  jolka: 'game-assets/audio/guitar/jolka.mp3',
+};
+
 export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = [
   ...(midiCharts as GuitarSong[]).map((song) => {
     // MIDI vocal tracks can begin minutes into the source. Keep their relative
@@ -666,11 +744,18 @@ export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = [
     chords: ['Dm', 'G', 'C', 'Am'],
     notes: createSongNotes(110, ['Dm', 'G', 'C', 'Am'], 13, 'Trudny'),
   },
-].map((song) => ({
-  ...song,
-  difficulty: song.difficulty as GuitarSong['difficulty'],
-  duration: Math.max(song.duration, song.notes.at(-1)!.time + 3),
-}));
+].map((song) => {
+  const relPath = GUITAR_AUDIO_BACKING_MAP[song.id];
+  const audioBackingUrl = relPath
+    ? `${baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`}${relPath}`
+    : undefined;
+  return {
+    ...song,
+    audioBackingUrl,
+    difficulty: song.difficulty as GuitarSong['difficulty'],
+    duration: Math.max(song.duration, song.notes.at(-1)!.time + 3),
+  };
+});
 
 export const NOTE_FALL_SPEED = 2.0; // Sekundy na przebycie od góry gryfu do linii uderzenia
 export const PERFECT_WINDOW = 0.09; // Sekundy dopuszczalnego błędu dla Perfect
@@ -738,7 +823,7 @@ export class CampfireGuitarGame {
     this.callbacks?.onToast?.(
       `🎸 ZACZYNAMY: „${song.title}”! Uderzaj klawisze [A, S, D, F, G] na linii ognia!`,
     );
-    this.synth.startBackingTrack();
+    this.synth.startBackingTrack(this.currentSong.audioBackingUrl);
     return true;
   }
 

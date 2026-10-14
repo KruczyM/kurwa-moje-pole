@@ -32,8 +32,9 @@ describe('CampfireGuitarGame', () => {
   });
   it('ships complete licensed MIDI charts with stable pitch lanes and no notes after song end', () => {
     const songs = new CampfireGuitarGame().getAvailableSongs();
-    for (const id of ['ode', 'amazing']) {
-      const song = songs.find((s) => s.id === id)!;
+    const midiSongs = songs.filter((s) => s.id.endsWith('-midi'));
+    expect(midiSongs.length).toBe(5);
+    for (const song of midiSongs) {
       expect(song.notes.length).toBeGreaterThan(50);
       const lanes = new Map<string, number>();
       for (const note of song.notes) {
@@ -241,6 +242,21 @@ describe('CampfireGuitarGame', () => {
       expect(lanes.has(0)).toBe(true);
       expect(lanes.has(4)).toBe(true);
     }
+  });
+
+  it('nie zawiera utworów klasycznych (ode, amazing) i przypisuje audioBackingUrl', () => {
+    const songs = game.getAvailableSongs();
+    expect(songs.some((s) => s.id === 'ode')).toBe(false);
+    expect(songs.some((s) => s.id === 'amazing')).toBe(false);
+
+    // Sprawdzamy czy każdy kluczowy utwór ma skonfigurowany relatywny URL do pliku audio
+    const cegla = songs.find((s) => s.id === 'czerwony-cegla-midi')!;
+    expect(cegla).toBeDefined();
+    expect(cegla.audioBackingUrl).toContain('game-assets/audio/guitar/czerwony-jak-cegla.mp3');
+
+    const victoria = songs.find((s) => s.id === 'sen-victoria-midi')!;
+    expect(victoria).toBeDefined();
+    expect(victoria.audioBackingUrl).toContain('game-assets/audio/guitar/sen-o-victorii.mp3');
   });
 
   it('dispose() bezpiecznie zwalnia zasoby', () => {

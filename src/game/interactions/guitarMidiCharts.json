@@ -1,1123 +1,5 @@
 [
   {
-    "id": "ode",
-    "title": "Oda do radości",
-    "artist": "L. van Beethoven · zapis: Peter Chubb",
-    "license": "Public Domain",
-    "source": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=528",
-    "bpm": 100,
-    "duration": 42.7,
-    "difficulty": "Średni",
-    "chords": ["A4", "B4", "C5", "D4", "D5", "F#4", "G4"],
-    "notes": [
-      {
-        "id": "ode-0",
-        "lane": 2,
-        "time": 2.5,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-1",
-        "lane": 2,
-        "time": 3.1,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-2",
-        "lane": 3,
-        "time": 3.7,
-        "chordName": "C5"
-      },
-      {
-        "id": "ode-3",
-        "lane": 4,
-        "time": 4.3,
-        "chordName": "D5"
-      },
-      {
-        "id": "ode-4",
-        "lane": 4,
-        "time": 4.9,
-        "chordName": "D5"
-      },
-      {
-        "id": "ode-5",
-        "lane": 3,
-        "time": 5.5,
-        "chordName": "C5"
-      },
-      {
-        "id": "ode-6",
-        "lane": 2,
-        "time": 5.8,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-7",
-        "lane": 2,
-        "time": 6.1,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-8",
-        "lane": 2,
-        "time": 6.7,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-9",
-        "lane": 1,
-        "time": 7.3,
-        "chordName": "G4"
-      },
-      {
-        "id": "ode-10",
-        "lane": 1,
-        "time": 7.9,
-        "chordName": "G4"
-      },
-      {
-        "id": "ode-11",
-        "lane": 2,
-        "time": 8.5,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-12",
-        "lane": 2,
-        "time": 9.1,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-13",
-        "lane": 2,
-        "time": 9.7,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-14",
-        "lane": 2,
-        "time": 10.6,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-15",
-        "lane": 2,
-        "time": 10.9,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-16",
-        "lane": 2,
-        "time": 12.1,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-17",
-        "lane": 2,
-        "time": 12.7,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-18",
-        "lane": 3,
-        "time": 13.3,
-        "chordName": "C5"
-      },
-      {
-        "id": "ode-19",
-        "lane": 4,
-        "time": 13.9,
-        "chordName": "D5"
-      },
-      {
-        "id": "ode-20",
-        "lane": 4,
-        "time": 14.5,
-        "chordName": "D5"
-      },
-      {
-        "id": "ode-21",
-        "lane": 3,
-        "time": 15.1,
-        "chordName": "C5"
-      },
-      {
-        "id": "ode-22",
-        "lane": 2,
-        "time": 15.4,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-23",
-        "lane": 2,
-        "time": 15.7,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-24",
-        "lane": 2,
-        "time": 16.3,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-25",
-        "lane": 1,
-        "time": 16.9,
-        "chordName": "G4"
-      },
-      {
-        "id": "ode-26",
-        "lane": 1,
-        "time": 17.5,
-        "chordName": "G4"
-      },
-      {
-        "id": "ode-27",
-        "lane": 2,
-        "time": 18.1,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-28",
-        "lane": 2,
-        "time": 18.7,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-29",
-        "lane": 2,
-        "time": 19.3,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-30",
-        "lane": 0,
-        "time": 19.9,
-        "chordName": "F#4"
-      },
-      {
-        "id": "ode-31",
-        "lane": 1,
-        "time": 20.2,
-        "chordName": "G4"
-      },
-      {
-        "id": "ode-32",
-        "lane": 1,
-        "time": 20.5,
-        "chordName": "G4"
-      },
-      {
-        "id": "ode-33",
-        "lane": 2,
-        "time": 21.7,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-34",
-        "lane": 2,
-        "time": 22.3,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-35",
-        "lane": 2,
-        "time": 22.9,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-36",
-        "lane": 1,
-        "time": 23.5,
-        "chordName": "G4"
-      },
-      {
-        "id": "ode-37",
-        "lane": 2,
-        "time": 24.1,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-38",
-        "lane": 2,
-        "time": 24.7,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-39",
-        "lane": 3,
-        "time": 25.0,
-        "chordName": "C5"
-      },
-      {
-        "id": "ode-40",
-        "lane": 2,
-        "time": 25.3,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-41",
-        "lane": 1,
-        "time": 25.9,
-        "chordName": "G4"
-      },
-      {
-        "id": "ode-42",
-        "lane": 2,
-        "time": 26.5,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-43",
-        "lane": 2,
-        "time": 27.1,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-44",
-        "lane": 3,
-        "time": 27.4,
-        "chordName": "C5"
-      },
-      {
-        "id": "ode-45",
-        "lane": 2,
-        "time": 27.7,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-46",
-        "lane": 2,
-        "time": 28.3,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-47",
-        "lane": 1,
-        "time": 28.9,
-        "chordName": "G4"
-      },
-      {
-        "id": "ode-48",
-        "lane": 2,
-        "time": 29.5,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-49",
-        "lane": 0,
-        "time": 30.1,
-        "chordName": "D4"
-      },
-      {
-        "id": "ode-50",
-        "lane": 2,
-        "time": 31.3,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-51",
-        "lane": 2,
-        "time": 31.9,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-52",
-        "lane": 3,
-        "time": 32.5,
-        "chordName": "C5"
-      },
-      {
-        "id": "ode-53",
-        "lane": 4,
-        "time": 33.1,
-        "chordName": "D5"
-      },
-      {
-        "id": "ode-54",
-        "lane": 4,
-        "time": 33.7,
-        "chordName": "D5"
-      },
-      {
-        "id": "ode-55",
-        "lane": 3,
-        "time": 34.3,
-        "chordName": "C5"
-      },
-      {
-        "id": "ode-56",
-        "lane": 2,
-        "time": 34.6,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-57",
-        "lane": 2,
-        "time": 34.9,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-58",
-        "lane": 2,
-        "time": 35.5,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-59",
-        "lane": 1,
-        "time": 36.1,
-        "chordName": "G4"
-      },
-      {
-        "id": "ode-60",
-        "lane": 1,
-        "time": 36.7,
-        "chordName": "G4"
-      },
-      {
-        "id": "ode-61",
-        "lane": 2,
-        "time": 37.3,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-62",
-        "lane": 2,
-        "time": 37.9,
-        "chordName": "B4"
-      },
-      {
-        "id": "ode-63",
-        "lane": 2,
-        "time": 38.5,
-        "chordName": "A4"
-      },
-      {
-        "id": "ode-64",
-        "lane": 0,
-        "time": 39.1,
-        "chordName": "F#4"
-      },
-      {
-        "id": "ode-65",
-        "lane": 1,
-        "time": 39.4,
-        "chordName": "G4"
-      },
-      {
-        "id": "ode-66",
-        "lane": 1,
-        "time": 39.7,
-        "chordName": "G4"
-      }
-    ]
-  },
-  {
-    "id": "amazing",
-    "title": "Amazing Grace",
-    "artist": "Traditional · arr. Breizh Partitions",
-    "license": "CC BY-SA 3.0",
-    "source": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1832",
-    "bpm": 60,
-    "duration": 75.99999999999997,
-    "difficulty": "Średni",
-    "chords": ["A#3", "A#4", "C4", "D#4", "D4", "F4", "G#3", "G#4", "G4"],
-    "notes": [
-      {
-        "id": "amazing-0",
-        "lane": 0,
-        "time": 2.5,
-        "chordName": "A#3"
-      },
-      {
-        "id": "amazing-1",
-        "lane": 2,
-        "time": 3.5,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-2",
-        "lane": 3,
-        "time": 3.830729,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-3",
-        "lane": 2,
-        "time": 3.885417,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-4",
-        "lane": 1,
-        "time": 3.942708,
-        "chordName": "D4"
-      },
-      {
-        "id": "amazing-5",
-        "lane": 2,
-        "time": 4.0,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-6",
-        "lane": 3,
-        "time": 6.942708,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-7",
-        "lane": 3,
-        "time": 7.0,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-8",
-        "lane": 2,
-        "time": 7.75,
-        "chordName": "F4"
-      },
-      {
-        "id": "amazing-9",
-        "lane": 2,
-        "time": 8.0,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-10",
-        "lane": 3,
-        "time": 8.330729,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-11",
-        "lane": 3,
-        "time": 8.385417,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-12",
-        "lane": 3,
-        "time": 8.442708,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-13",
-        "lane": 3,
-        "time": 8.5,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-14",
-        "lane": 3,
-        "time": 11.442708,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-15",
-        "lane": 3,
-        "time": 11.5,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-16",
-        "lane": 2,
-        "time": 12.5,
-        "chordName": "F4"
-      },
-      {
-        "id": "amazing-17",
-        "lane": 0,
-        "time": 12.773438,
-        "chordName": "G#3"
-      },
-      {
-        "id": "amazing-18",
-        "lane": 2,
-        "time": 12.830729,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-19",
-        "lane": 0,
-        "time": 12.885417,
-        "chordName": "G#3"
-      },
-      {
-        "id": "amazing-20",
-        "lane": 1,
-        "time": 12.942708,
-        "chordName": "D4"
-      },
-      {
-        "id": "amazing-21",
-        "lane": 2,
-        "time": 13.0,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-22",
-        "lane": 3,
-        "time": 15.830729,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-23",
-        "lane": 1,
-        "time": 15.885417,
-        "chordName": "C4"
-      },
-      {
-        "id": "amazing-24",
-        "lane": 2,
-        "time": 15.942708,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-25",
-        "lane": 1,
-        "time": 16.0,
-        "chordName": "C4"
-      },
-      {
-        "id": "amazing-26",
-        "lane": 0,
-        "time": 17.330729,
-        "chordName": "G#3"
-      },
-      {
-        "id": "amazing-27",
-        "lane": 1,
-        "time": 17.385417,
-        "chordName": "C4"
-      },
-      {
-        "id": "amazing-28",
-        "lane": 0,
-        "time": 17.442708,
-        "chordName": "G#3"
-      },
-      {
-        "id": "amazing-29",
-        "lane": 0,
-        "time": 17.5,
-        "chordName": "A#3"
-      },
-      {
-        "id": "amazing-30",
-        "lane": 3,
-        "time": 20.442708,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-31",
-        "lane": 0,
-        "time": 20.5,
-        "chordName": "A#3"
-      },
-      {
-        "id": "amazing-32",
-        "lane": 2,
-        "time": 21.5,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-33",
-        "lane": 3,
-        "time": 21.830729,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-34",
-        "lane": 2,
-        "time": 21.885417,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-35",
-        "lane": 1,
-        "time": 21.942708,
-        "chordName": "D4"
-      },
-      {
-        "id": "amazing-36",
-        "lane": 2,
-        "time": 22.0,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-37",
-        "lane": 3,
-        "time": 24.942708,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-38",
-        "lane": 3,
-        "time": 25.0,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-39",
-        "lane": 2,
-        "time": 25.75,
-        "chordName": "F4"
-      },
-      {
-        "id": "amazing-40",
-        "lane": 2,
-        "time": 26.0,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-41",
-        "lane": 3,
-        "time": 26.330729,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-42",
-        "lane": 3,
-        "time": 26.385417,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-43",
-        "lane": 3,
-        "time": 26.442708,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-44",
-        "lane": 3,
-        "time": 26.5,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-45",
-        "lane": 3,
-        "time": 29.385417,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-46",
-        "lane": 3,
-        "time": 29.442708,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-47",
-        "lane": 2,
-        "time": 29.5,
-        "chordName": "F4"
-      },
-      {
-        "id": "amazing-48",
-        "lane": 3,
-        "time": 30.5,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-49",
-        "lane": 4,
-        "time": 30.885417,
-        "chordName": "A#4"
-      },
-      {
-        "id": "amazing-50",
-        "lane": 3,
-        "time": 30.942708,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-51",
-        "lane": 4,
-        "time": 31.0,
-        "chordName": "A#4"
-      },
-      {
-        "id": "amazing-52",
-        "lane": 3,
-        "time": 33.942708,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-53",
-        "lane": 4,
-        "time": 34.0,
-        "chordName": "A#4"
-      },
-      {
-        "id": "amazing-54",
-        "lane": 0,
-        "time": 35.330729,
-        "chordName": "G#3"
-      },
-      {
-        "id": "amazing-55",
-        "lane": 2,
-        "time": 35.385417,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-56",
-        "lane": 0,
-        "time": 35.442708,
-        "chordName": "G#3"
-      },
-      {
-        "id": "amazing-57",
-        "lane": 4,
-        "time": 35.5,
-        "chordName": "A#4"
-      },
-      {
-        "id": "amazing-58",
-        "lane": 3,
-        "time": 38.5,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-59",
-        "lane": 4,
-        "time": 39.5,
-        "chordName": "A#4"
-      },
-      {
-        "id": "amazing-60",
-        "lane": 4,
-        "time": 39.885417,
-        "chordName": "A#4"
-      },
-      {
-        "id": "amazing-61",
-        "lane": 3,
-        "time": 39.942708,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-62",
-        "lane": 4,
-        "time": 40.0,
-        "chordName": "A#4"
-      },
-      {
-        "id": "amazing-63",
-        "lane": 3,
-        "time": 43.0,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-64",
-        "lane": 2,
-        "time": 43.75,
-        "chordName": "F4"
-      },
-      {
-        "id": "amazing-65",
-        "lane": 2,
-        "time": 44.0,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-66",
-        "lane": 3,
-        "time": 44.330729,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-67",
-        "lane": 3,
-        "time": 44.385417,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-68",
-        "lane": 3,
-        "time": 44.442708,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-69",
-        "lane": 3,
-        "time": 44.5,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-70",
-        "lane": 3,
-        "time": 47.442708,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-71",
-        "lane": 3,
-        "time": 47.5,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-72",
-        "lane": 2,
-        "time": 48.5,
-        "chordName": "F4"
-      },
-      {
-        "id": "amazing-73",
-        "lane": 0,
-        "time": 48.773437,
-        "chordName": "G#3"
-      },
-      {
-        "id": "amazing-74",
-        "lane": 2,
-        "time": 48.830729,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-75",
-        "lane": 0,
-        "time": 48.885417,
-        "chordName": "G#3"
-      },
-      {
-        "id": "amazing-76",
-        "lane": 1,
-        "time": 48.942708,
-        "chordName": "D4"
-      },
-      {
-        "id": "amazing-77",
-        "lane": 2,
-        "time": 49.0,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-78",
-        "lane": 3,
-        "time": 51.830729,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-79",
-        "lane": 1,
-        "time": 51.885417,
-        "chordName": "C4"
-      },
-      {
-        "id": "amazing-80",
-        "lane": 2,
-        "time": 51.942708,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-81",
-        "lane": 1,
-        "time": 52.0,
-        "chordName": "C4"
-      },
-      {
-        "id": "amazing-82",
-        "lane": 0,
-        "time": 53.330729,
-        "chordName": "G#3"
-      },
-      {
-        "id": "amazing-83",
-        "lane": 1,
-        "time": 53.385417,
-        "chordName": "C4"
-      },
-      {
-        "id": "amazing-84",
-        "lane": 0,
-        "time": 53.442708,
-        "chordName": "G#3"
-      },
-      {
-        "id": "amazing-85",
-        "lane": 0,
-        "time": 53.5,
-        "chordName": "A#3"
-      },
-      {
-        "id": "amazing-86",
-        "lane": 3,
-        "time": 56.442708,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-87",
-        "lane": 0,
-        "time": 56.5,
-        "chordName": "A#3"
-      },
-      {
-        "id": "amazing-88",
-        "lane": 2,
-        "time": 57.5,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-89",
-        "lane": 3,
-        "time": 57.830729,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-90",
-        "lane": 2,
-        "time": 57.885417,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-91",
-        "lane": 1,
-        "time": 57.942708,
-        "chordName": "D4"
-      },
-      {
-        "id": "amazing-92",
-        "lane": 2,
-        "time": 58.0,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-93",
-        "lane": 3,
-        "time": 60.942708,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-94",
-        "lane": 3,
-        "time": 61.0,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-95",
-        "lane": 2,
-        "time": 61.75,
-        "chordName": "F4"
-      },
-      {
-        "id": "amazing-96",
-        "lane": 2,
-        "time": 62.0,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-97",
-        "lane": 3,
-        "time": 62.330729,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-98",
-        "lane": 3,
-        "time": 62.385417,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-99",
-        "lane": 3,
-        "time": 62.442708,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-100",
-        "lane": 3,
-        "time": 62.5,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-101",
-        "lane": 3,
-        "time": 65.385417,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-102",
-        "lane": 3,
-        "time": 65.442708,
-        "chordName": "G4"
-      },
-      {
-        "id": "amazing-103",
-        "lane": 2,
-        "time": 65.5,
-        "chordName": "F4"
-      },
-      {
-        "id": "amazing-104",
-        "lane": 0,
-        "time": 66.773437,
-        "chordName": "G#3"
-      },
-      {
-        "id": "amazing-105",
-        "lane": 2,
-        "time": 66.830729,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-106",
-        "lane": 0,
-        "time": 66.885417,
-        "chordName": "G#3"
-      },
-      {
-        "id": "amazing-107",
-        "lane": 1,
-        "time": 66.942708,
-        "chordName": "D4"
-      },
-      {
-        "id": "amazing-108",
-        "lane": 2,
-        "time": 67.0,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-109",
-        "lane": 1,
-        "time": 69.942708,
-        "chordName": "D4"
-      },
-      {
-        "id": "amazing-110",
-        "lane": 2,
-        "time": 70.0,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-111",
-        "lane": 3,
-        "time": 71.330729,
-        "chordName": "G#4"
-      },
-      {
-        "id": "amazing-112",
-        "lane": 2,
-        "time": 71.385417,
-        "chordName": "D#4"
-      },
-      {
-        "id": "amazing-113",
-        "lane": 1,
-        "time": 71.442708,
-        "chordName": "D4"
-      },
-      {
-        "id": "amazing-114",
-        "lane": 2,
-        "time": 71.5,
-        "chordName": "D#4"
-      }
-    ]
-  },
-  {
     "id": "zegarmistrz-midi",
     "title": "Zegarmistrz światła purpurowy",
     "artist": "Tadeusz Woźniak",
@@ -3455,7 +2337,7 @@
       {
         "id": "pila-tango-midi-17",
         "lane": 0,
-        "time": 141.0,
+        "time": 141,
         "chordName": "A3"
       },
       {
@@ -3467,7 +2349,7 @@
       {
         "id": "pila-tango-midi-19",
         "lane": 1,
-        "time": 142.0,
+        "time": 142,
         "chordName": "D4"
       },
       {
@@ -3479,7 +2361,7 @@
       {
         "id": "pila-tango-midi-21",
         "lane": 1,
-        "time": 143.0,
+        "time": 143,
         "chordName": "D4"
       },
       {
@@ -3497,7 +2379,7 @@
       {
         "id": "pila-tango-midi-24",
         "lane": 0,
-        "time": 144.0,
+        "time": 144,
         "chordName": "B3"
       },
       {
@@ -3515,7 +2397,7 @@
       {
         "id": "pila-tango-midi-27",
         "lane": 0,
-        "time": 149.0,
+        "time": 149,
         "chordName": "A3"
       },
       {
@@ -3527,7 +2409,7 @@
       {
         "id": "pila-tango-midi-29",
         "lane": 1,
-        "time": 150.0,
+        "time": 150,
         "chordName": "D4"
       },
       {
@@ -3539,7 +2421,7 @@
       {
         "id": "pila-tango-midi-31",
         "lane": 1,
-        "time": 151.0,
+        "time": 151,
         "chordName": "D4"
       },
       {
@@ -3557,7 +2439,7 @@
       {
         "id": "pila-tango-midi-34",
         "lane": 0,
-        "time": 152.0,
+        "time": 152,
         "chordName": "B3"
       },
       {
@@ -3575,7 +2457,7 @@
       {
         "id": "pila-tango-midi-37",
         "lane": 0,
-        "time": 157.0,
+        "time": 157,
         "chordName": "A3"
       },
       {
@@ -3587,7 +2469,7 @@
       {
         "id": "pila-tango-midi-39",
         "lane": 1,
-        "time": 158.0,
+        "time": 158,
         "chordName": "D4"
       },
       {
@@ -3599,7 +2481,7 @@
       {
         "id": "pila-tango-midi-41",
         "lane": 1,
-        "time": 159.0,
+        "time": 159,
         "chordName": "D4"
       },
       {
@@ -3617,7 +2499,7 @@
       {
         "id": "pila-tango-midi-44",
         "lane": 0,
-        "time": 160.0,
+        "time": 160,
         "chordName": "B3"
       },
       {
@@ -3635,7 +2517,7 @@
       {
         "id": "pila-tango-midi-47",
         "lane": 0,
-        "time": 165.0,
+        "time": 165,
         "chordName": "A3"
       },
       {
@@ -3647,7 +2529,7 @@
       {
         "id": "pila-tango-midi-49",
         "lane": 1,
-        "time": 166.0,
+        "time": 166,
         "chordName": "D4"
       },
       {
@@ -3659,7 +2541,7 @@
       {
         "id": "pila-tango-midi-51",
         "lane": 1,
-        "time": 167.0,
+        "time": 167,
         "chordName": "D4"
       },
       {
@@ -3677,7 +2559,7 @@
       {
         "id": "pila-tango-midi-54",
         "lane": 0,
-        "time": 168.0,
+        "time": 168,
         "chordName": "B3"
       },
       {
@@ -3695,7 +2577,7 @@
       {
         "id": "pila-tango-midi-57",
         "lane": 1,
-        "time": 170.0,
+        "time": 170,
         "chordName": "E4"
       },
       {
@@ -3713,7 +2595,7 @@
       {
         "id": "pila-tango-midi-60",
         "lane": 2,
-        "time": 171.0,
+        "time": 171,
         "chordName": "F4"
       },
       {
@@ -3731,7 +2613,7 @@
       {
         "id": "pila-tango-midi-63",
         "lane": 2,
-        "time": 172.0,
+        "time": 172,
         "chordName": "F4"
       },
       {
@@ -3761,7 +2643,7 @@
       {
         "id": "pila-tango-midi-68",
         "lane": 4,
-        "time": 176.0,
+        "time": 176,
         "chordName": "E5"
       },
       {
@@ -3797,7 +2679,7 @@
       {
         "id": "pila-tango-midi-74",
         "lane": 0,
-        "time": 209.0,
+        "time": 209,
         "chordName": "A3"
       },
       {
@@ -3809,7 +2691,7 @@
       {
         "id": "pila-tango-midi-76",
         "lane": 1,
-        "time": 210.0,
+        "time": 210,
         "chordName": "D4"
       },
       {
@@ -3821,7 +2703,7 @@
       {
         "id": "pila-tango-midi-78",
         "lane": 1,
-        "time": 211.0,
+        "time": 211,
         "chordName": "D4"
       },
       {
@@ -3839,7 +2721,7 @@
       {
         "id": "pila-tango-midi-81",
         "lane": 0,
-        "time": 212.0,
+        "time": 212,
         "chordName": "B3"
       },
       {
@@ -3857,7 +2739,7 @@
       {
         "id": "pila-tango-midi-84",
         "lane": 0,
-        "time": 217.0,
+        "time": 217,
         "chordName": "A3"
       },
       {
@@ -3869,7 +2751,7 @@
       {
         "id": "pila-tango-midi-86",
         "lane": 1,
-        "time": 218.0,
+        "time": 218,
         "chordName": "D4"
       },
       {
@@ -3881,7 +2763,7 @@
       {
         "id": "pila-tango-midi-88",
         "lane": 1,
-        "time": 219.0,
+        "time": 219,
         "chordName": "D4"
       },
       {
@@ -3899,7 +2781,7 @@
       {
         "id": "pila-tango-midi-91",
         "lane": 0,
-        "time": 220.0,
+        "time": 220,
         "chordName": "B3"
       },
       {
@@ -3917,7 +2799,7 @@
       {
         "id": "pila-tango-midi-94",
         "lane": 0,
-        "time": 225.0,
+        "time": 225,
         "chordName": "A3"
       },
       {
@@ -3929,7 +2811,7 @@
       {
         "id": "pila-tango-midi-96",
         "lane": 1,
-        "time": 226.0,
+        "time": 226,
         "chordName": "D4"
       },
       {
@@ -3941,7 +2823,7 @@
       {
         "id": "pila-tango-midi-98",
         "lane": 1,
-        "time": 227.0,
+        "time": 227,
         "chordName": "D4"
       },
       {
@@ -3959,7 +2841,7 @@
       {
         "id": "pila-tango-midi-101",
         "lane": 0,
-        "time": 228.0,
+        "time": 228,
         "chordName": "B3"
       },
       {
@@ -3977,7 +2859,7 @@
       {
         "id": "pila-tango-midi-104",
         "lane": 0,
-        "time": 233.0,
+        "time": 233,
         "chordName": "A3"
       },
       {
@@ -3989,7 +2871,7 @@
       {
         "id": "pila-tango-midi-106",
         "lane": 1,
-        "time": 234.0,
+        "time": 234,
         "chordName": "D4"
       },
       {
@@ -4001,7 +2883,7 @@
       {
         "id": "pila-tango-midi-108",
         "lane": 1,
-        "time": 235.0,
+        "time": 235,
         "chordName": "D4"
       },
       {
@@ -4019,7 +2901,7 @@
       {
         "id": "pila-tango-midi-111",
         "lane": 0,
-        "time": 236.0,
+        "time": 236,
         "chordName": "B3"
       },
       {
@@ -4037,7 +2919,7 @@
       {
         "id": "pila-tango-midi-114",
         "lane": 1,
-        "time": 238.0,
+        "time": 238,
         "chordName": "E4"
       },
       {
@@ -4055,7 +2937,7 @@
       {
         "id": "pila-tango-midi-117",
         "lane": 2,
-        "time": 239.0,
+        "time": 239,
         "chordName": "F4"
       },
       {
@@ -4073,7 +2955,7 @@
       {
         "id": "pila-tango-midi-120",
         "lane": 2,
-        "time": 240.0,
+        "time": 240,
         "chordName": "F4"
       },
       {
@@ -4139,7 +3021,7 @@
       {
         "id": "pila-tango-midi-131",
         "lane": 0,
-        "time": 277.0,
+        "time": 277,
         "chordName": "A3"
       },
       {
@@ -4151,7 +3033,7 @@
       {
         "id": "pila-tango-midi-133",
         "lane": 1,
-        "time": 278.0,
+        "time": 278,
         "chordName": "D4"
       },
       {
@@ -4163,7 +3045,7 @@
       {
         "id": "pila-tango-midi-135",
         "lane": 1,
-        "time": 279.0,
+        "time": 279,
         "chordName": "D4"
       },
       {
@@ -4181,7 +3063,7 @@
       {
         "id": "pila-tango-midi-138",
         "lane": 0,
-        "time": 280.0,
+        "time": 280,
         "chordName": "B3"
       },
       {
@@ -4199,7 +3081,7 @@
       {
         "id": "pila-tango-midi-141",
         "lane": 0,
-        "time": 285.0,
+        "time": 285,
         "chordName": "A3"
       },
       {
@@ -4211,7 +3093,7 @@
       {
         "id": "pila-tango-midi-143",
         "lane": 1,
-        "time": 286.0,
+        "time": 286,
         "chordName": "D4"
       },
       {
@@ -4223,7 +3105,7 @@
       {
         "id": "pila-tango-midi-145",
         "lane": 1,
-        "time": 287.0,
+        "time": 287,
         "chordName": "D4"
       },
       {
@@ -4241,7 +3123,7 @@
       {
         "id": "pila-tango-midi-148",
         "lane": 0,
-        "time": 288.0,
+        "time": 288,
         "chordName": "B3"
       },
       {
@@ -4259,7 +3141,7 @@
       {
         "id": "pila-tango-midi-151",
         "lane": 0,
-        "time": 293.0,
+        "time": 293,
         "chordName": "A3"
       },
       {
@@ -4271,7 +3153,7 @@
       {
         "id": "pila-tango-midi-153",
         "lane": 1,
-        "time": 294.0,
+        "time": 294,
         "chordName": "D4"
       },
       {
@@ -4283,7 +3165,7 @@
       {
         "id": "pila-tango-midi-155",
         "lane": 1,
-        "time": 295.0,
+        "time": 295,
         "chordName": "D4"
       },
       {
@@ -4301,7 +3183,7 @@
       {
         "id": "pila-tango-midi-158",
         "lane": 0,
-        "time": 296.0,
+        "time": 296,
         "chordName": "B3"
       },
       {
@@ -4319,7 +3201,7 @@
       {
         "id": "pila-tango-midi-161",
         "lane": 0,
-        "time": 301.0,
+        "time": 301,
         "chordName": "A3"
       },
       {
@@ -4331,7 +3213,7 @@
       {
         "id": "pila-tango-midi-163",
         "lane": 1,
-        "time": 302.0,
+        "time": 302,
         "chordName": "D4"
       },
       {
@@ -4343,7 +3225,7 @@
       {
         "id": "pila-tango-midi-165",
         "lane": 1,
-        "time": 303.0,
+        "time": 303,
         "chordName": "D4"
       },
       {
@@ -4361,7 +3243,7 @@
       {
         "id": "pila-tango-midi-168",
         "lane": 0,
-        "time": 304.0,
+        "time": 304,
         "chordName": "B3"
       },
       {
@@ -4379,7 +3261,7 @@
       {
         "id": "pila-tango-midi-171",
         "lane": 1,
-        "time": 306.0,
+        "time": 306,
         "chordName": "E4"
       },
       {
@@ -4397,7 +3279,7 @@
       {
         "id": "pila-tango-midi-174",
         "lane": 2,
-        "time": 307.0,
+        "time": 307,
         "chordName": "F4"
       },
       {
@@ -4415,7 +3297,7 @@
       {
         "id": "pila-tango-midi-177",
         "lane": 2,
-        "time": 308.0,
+        "time": 308,
         "chordName": "F4"
       },
       {
