@@ -1,6 +1,8 @@
 import { CameraRig } from '../after/presentation/CameraRig';
 import { SpriteAnimator } from '../after/presentation/SpriteAnimator';
 import { PatrolAnimator } from './PatrolAnimator';
+import { PatrolMotion } from './PatrolMotion';
+import { CAMPAIGN_LEVEL_COUNT } from './Campaign';
 import type { SpriteMetadata } from '../after/presentation/SpriteAnimator';
 import type { Facing } from '../after/simulation/WorldState';
 import { BIOMES } from './Levels';
@@ -34,12 +36,16 @@ export class CaveRenderer {
   private animator?: SpriteAnimator;
   private atlas?: HeroAtlas;
   private bushAtlas?: HeroAtlas;
+  private colonyFace?: HTMLCanvasElement;
+  private readonly colonyBirths = new WeakMap<World, Map<number, number>>();
+  private readonly patrolMotion = new PatrolMotion();
   private enemyAtlases = new Map<string, HeroAtlas>();
   private enemyAnimators = new Map<number, PatrolAnimator>();
   private enemyAnimationTick = -1;
   private terrainLayout?: TerrainPlacement;
   private width = 1;
   private height = 1;
+  private touch = false;
   private tile = 40;
   private tiles = new Map<string, HTMLCanvasElement>();
   private terrainAtlases = new Map<number, HTMLImageElement>();
@@ -142,12 +148,20 @@ export class CaveRenderer {
   /** Swaps cosmetic art only; there is no character-specific simulation configuration. */
   hero(atlas: HeroAtlas): void {
     this.atlas = atlas;
-    this.animator = new SpriteAnimator(atlas.metadata);
+    this.animator = new SpriteAnimator(atlas.metadata, { preservePhase: true, idleFps: 2, walkFps: 10 });
   }
 
   /** Uses Kobra's existing artwork exclusively for the non-playable spreading Krzak. */
   bushHero(atlas: HeroAtlas): void {
     this.bushAtlas = atlas;
+  }
+
+  bushFace(image: HTMLImageElement): void {
+    if (this.colonyFace) this.colonyFace.width = this.colonyFace.height = 0;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 128;
+    canvas.getContext('2d')!.drawImage(image, 0, 0, 128, 128);
+    this.colonyFace = canvas;
   }
 
   /** Installs baked views of the generated 3D models without loading heavy GLBs during gameplay. */
@@ -173,6 +187,7 @@ export class CaveRenderer {
 
   /** Fits desktop caves and keeps mobile tiles large enough to read while the camera follows. */
   resize(width: number, height: number, touch = false): void {
+    this.touch = touch;
     this.width = width;
     this.height = height;
     const bottomInset = touch ? (height < 400 ? 160 : 220) : 12;
@@ -196,6 +211,9 @@ export class CaveRenderer {
     this.animator = undefined;
     this.atlas = undefined;
     this.bushAtlas = undefined;
+    if (this.colonyFace) this.colonyFace.width = this.colonyFace.height = 0;
+    this.colonyFace = undefined;
+    this.patrolMotion.clear();
     this.enemyAtlases.clear();
     this.enemyAnimators.clear();
     this.terrainLayout = undefined;
@@ -320,6 +338,7 @@ export class CaveRenderer {
         game.currentDecorations,
       );
       this.enemyAnimators.clear();
+      this.patrolMotion.clear();
       this.enemyAnimationTick = -1;
       this.debris.clear();
       // One active instance of the existing camera, with this cave's real bounds rather than 24x18.
@@ -336,6 +355,7 @@ export class CaveRenderer {
     this.camera.follow({ x: playerPoint.x + 0.5, y: playerPoint.y + 0.5 }, dt, paused);
     if (this.enemyAnimationTick !== world.tick) {
       this.enemyAnimationTick = world.tick;
+      this.patrolMotion.retain(world.enemies);
       for (const id of this.enemyAnimators.keys())
         if (!world.enemies.some((enemy) => enemy.id === id)) this.enemyAnimators.delete(id);
     }
@@ -379,8 +399,7 @@ export class CaveRenderer {
               cell === 'wall' ? 'wall' : 'soil',
               inside
                 ? (this.terrainLayout?.cells[y * world.width + x] ?? terrainVariant(x, y))
-                : (Math.abs(Math.floor(x / 4) + Math.floor(y / 5) + game.currentTerrainTheme) % 4) * 2 +
-                    terrainVariant(x, y),
+                : (game.currentTerrainTheme % 4) * 2 + (terrainVariant(x, y) % 2),
               terrainEdges(world, x, y),
             ),
             position.x,
@@ -391,7 +410,8 @@ export class CaveRenderer {
         } else {
           ctx.fillStyle = '#090f1966';
           ctx.fillRect(position.x, position.y, this.tile + 0.5, this.tile + 0.5);
-          if (cell === 'exit') this.exit(position, game.exitOpen, game.level.id === 12, biome.accent);
+          if (cell === 'exit')
+            this.exit(position, game.exitOpen, game.level.id === CAMPAIGN_LEVEL_COUNT, biome.accent);
           if (cell === 'portal') {
             const portal = game.activePortals.find((end) => same(end, { x, y }));
             ctx.strokeStyle = portal?.name.startsWith('Wymagany') ? '#f6c85f' : '#9fe9ec';
@@ -434,7 +454,17 @@ export class CaveRenderer {
           ctx.save();
           ctx.translate(position.x, position.y);
           ctx.scale(this.tile / 64, this.tile / 64);
-          this.bush(cell === 'buried-bush');
+          let births = this.colonyBirths.get(world);
+          if (!births) {
+            births = new Map();
+            this.colonyBirths.set(world, births);
+          }
+          const index = y * world.width + x;
+          if (!births.has(index)) births.set(index, world.tick === 0 ? -10 : world.tick);
+          this.bush(
+            cell === 'buried-bush',
+            reduced ? 1 : Math.min(1, (world.tick + alpha - births.get(index)!) / 1.2),
+          );
           ctx.restore();
         }
       }
@@ -451,7 +481,11 @@ export class CaveRenderer {
     ];
     bodies.sort((a, b) => this.interpolate(a, alpha).y - this.interpolate(b, alpha).y || a.id - b.id);
     for (const body of bodies) {
-      const position = this.camera.project(this.interpolate(body, alpha));
+      const isEnemy = 'kind' in body && !['rock', 'pickup'].includes(body.kind);
+      const rendered = isEnemy
+        ? this.patrolMotion.position(body as Enemy, world.tick, alpha)
+        : this.interpolate(body, alpha);
+      const position = this.camera.project(rendered);
       if (
         position.x < -this.tile * 2 ||
         position.y < -this.tile * 2 ||
@@ -460,6 +494,12 @@ export class CaveRenderer {
       )
         continue;
       ctx.save();
+      if (isEnemy && !same(rendered, body)) {
+        const logical = this.camera.project(body);
+        ctx.strokeStyle = '#ffb66b88';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(logical.x + 5, logical.y + 5, this.tile - 10, this.tile - 10);
+      }
       ctx.translate(position.x, position.y);
       ctx.scale(this.tile / 64, this.tile / 64);
       this.shadow();
@@ -475,7 +515,7 @@ export class CaveRenderer {
             ctx.arc(32, 31, 27, 0, Math.PI * 2);
             ctx.stroke();
           }
-        } else this.patrol(body as Enemy, world.trapped, dt, paused);
+        } else this.patrol(body as Enemy, world.trapped, dt, paused, !same(rendered, body));
       } else if (this.atlas && this.animator) {
         const moving = !same(body, body.previous) && world.status === 'playing';
         const frame = this.animator.update(dt, FACINGS[body.direction], moving, false, paused);
@@ -551,14 +591,11 @@ export class CaveRenderer {
       }
       this.mapTick = world.tick;
     }
-    const width = Math.min(
-      this.width < 650 ? 96 : 156,
-      ((this.playHeight - 26) * world.width) / world.height,
-    );
+    const width = Math.min(this.touch ? 76 : 156, ((this.playHeight - 26) * world.width) / world.height);
     const scale = width / world.width,
       height = world.height * scale;
     const x = this.width - width - 14,
-      y = this.topInset + 8;
+      y = this.touch ? Math.max(this.topInset + 8, this.height - height - 64) : this.topInset + 8;
     ctx.fillStyle = '#0a111be8';
     ctx.fillRect(x - 5, y - 5, width + 10, height + 10);
     ctx.imageSmoothingEnabled = false;
@@ -620,8 +657,17 @@ export class CaveRenderer {
   }
 
   /** Distinguishes a dormant rooted sprout from the solid, impassable adult bush tile. */
-  private bush(buried: boolean): void {
+  private bush(buried: boolean, growth = 1): void {
     const ctx = this.context;
+    if (!buried && this.colonyFace) {
+      const scale = 0.72 + 0.28 * Math.max(0, growth);
+      ctx.save();
+      ctx.translate(32, 32);
+      ctx.scale(scale, scale);
+      ctx.drawImage(this.colonyFace, -31, -31, 62, 62);
+      ctx.restore();
+      return;
+    }
     ctx.strokeStyle = '#b9cb7e';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -814,7 +860,7 @@ export class CaveRenderer {
   }
 
   /** Draws original uniformed cartoon patrols; the finale character is clearly a fictional caricature. */
-  private patrol(enemy: Enemy, trapped: boolean, dt = 0, paused = true): void {
+  private patrol(enemy: Enemy, trapped: boolean, dt = 0, paused = true, visualMoving?: boolean): void {
     const ctx = this.context,
       boss = enemy.kind === 'boss';
     if (enemy.kind === 'sweeper') {
@@ -842,8 +888,16 @@ export class CaveRenderer {
         animator = new PatrolAnimator(metadata);
         this.enemyAnimators.set(enemy.id, animator);
       }
-      const moving = !same(enemy, enemy.previous);
-      const frame = animator.update(dt, FACINGS[enemy.direction], moving, enemy.chasing, paused, trapped);
+      const moving = visualMoving ?? !same(enemy, enemy.previous);
+      const frame = animator.update(
+        dt,
+        FACINGS[enemy.direction],
+        moving,
+        enemy.chasing,
+        paused,
+        trapped,
+        visualMoving !== undefined,
+      );
       const width = (58 * crop.width) / crop.height;
       ctx.drawImage(
         image,

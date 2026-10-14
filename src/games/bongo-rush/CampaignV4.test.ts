@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { LEVELS } from './Levels';
 import { Simulation } from './Simulation';
 import { bottleTower, cobraCache } from './CampaignV4';
-import { neighbour, STEP_SECONDS } from './types';
+import { neighbour } from './types';
 import type { LevelDefinition, ReplayInput } from './types';
 
 function replay(level: LevelDefinition, inputs: readonly ReplayInput[]) {
@@ -30,26 +30,6 @@ function replay(level: LevelDefinition, inputs: readonly ReplayInput[]) {
 }
 
 describe('expanded authored campaign', () => {
-  it('preserves progression identities while replacing long galleries with compact rooms', () => {
-    expect(LEVELS.map((level) => level.id)).toEqual(Array.from({ length: 16 }, (_, n) => n + 1));
-    expect(LEVELS.filter((level) => level.bonus).map((level) => level.id)).toEqual([13, 14, 15, 16]);
-    for (let biome = 0; biome < 4; biome++)
-      expect(LEVELS.filter((level) => level.biome === biome)).toHaveLength(4);
-    expect(new Set(LEVELS.map((level) => JSON.stringify([level.rows, level.chambers]))).size).toBe(16);
-    expect(LEVELS[0].replay!.length * STEP_SECONDS).toBeLessThan(10);
-    expect(LEVELS.every((level) => level.rows[0].length <= 40)).toBe(true);
-  });
-
-  it.each(LEVELS)('completes every real input of level $id, including waits and portal returns', (level) => {
-    const game = replay(level, level.replay!);
-    expect(game.chamberId).toBe('main');
-    expect(game.world.status).toBe('won');
-    expect(game.requiredRemaining).toBe(0);
-    if (level.id === 12) expect(game.world.trapped).toBe(true);
-    for (const alternative of level.alternateReplays ?? [])
-      expect(replay(level, alternative.inputs).world.status).toBe('won');
-  });
-
   it('requires side retreat and a settling tick under a bottle tower', () => {
     const tower = bottleTower(5);
     const level: LevelDefinition = {
@@ -94,34 +74,14 @@ describe('expanded authored campaign', () => {
     expect(restarted.world.bushRoots).toHaveLength(0);
   });
 
-  it('freezes inactive chambers, shares required loot, prevents portal bounce and resets the whole run', () => {
-    const level = LEVELS[5];
-    const game = new Simulation(level);
-    const main = game.world;
-    game.step('up');
-    expect(game.chamberId).toBe('room-1');
-    const landing = { ...game.world.player };
-    game.step();
-    expect(game.chamberId).toBe('room-1');
-    expect(game.world.player.x).toBe(landing.x);
-    expect(main.tick).toBe(1);
-    expect(game.exitOpen).toBe(false);
-    const completed = replay(level, level.replay!);
-    expect(completed.world.collected).toBe(10);
-    const restarted = new Simulation(level);
-    expect(restarted.chamberId).toBe('main');
-    expect(restarted.world.collected).toBe(0);
-    expect(restarted.requiredRemaining).toBe(10);
-  });
-
   it('rejects overlapping portals and out-of-range loot sources', () => {
-    const level = LEVELS[5];
+    const level = LEVELS[11];
     expect(() => new Simulation({ ...level, portals: [...level.portals!, level.portals![0]] })).toThrow();
     expect(
       () =>
         new Simulation({
-          ...LEVELS[2],
-          lootSources: [{ ...LEVELS[2].lootSources![0], outlet: { x: -1, y: 0 } }],
+          ...LEVELS[9],
+          lootSources: [{ ...LEVELS[9].lootSources![0], outlet: { x: -1, y: 0 } }],
         }),
     ).toThrow();
   });

@@ -1,0 +1,7 @@
+{
+  "tool": "built-in image_gen",
+  "reference": "reference-hq.jpg",
+  "output": "public/game-assets/2d/bongo-rush/kobra-face/face.png",
+  "transparent_background": true,
+  "prompt": "Extract only the man's head on the left, preserving exact recognizable eyes, smile, hairline and light stubble. Remove neck, clothing, other people, scribbles and background. Rotate the cutout to approximately horizontal eyes without inventing a different viewpoint. Crisp photographic likeness, dark purple outline, thin lime highlight, centered square composition, legible at 40px, transparent background."
+}

@@ -93,7 +93,7 @@ class BongoRush {
   private atlas(hero: string): Promise<HeroAtlas> {
     let pending = this.atlases.get(hero);
     if (!pending) {
-      const path = `${BASE}game-assets/2d/bongo-rush/characters/${hero}`;
+      const path = `${BASE}game-assets/2d/bongo-rush/characters-v5/${hero}`;
       pending = Promise.all([
         loadCachedImage(`${path}/spritesheet.png`),
         fetch(`${path}/meta.json`, { cache: 'no-cache' }).then(async (response) => {
@@ -163,7 +163,7 @@ class BongoRush {
       ] = await Promise.all([
         this.atlas(hero),
         loadCachedImage(`${BASE}game-assets/2d/bongo-rush/living/${SCENES[level.biome].file}`),
-        this.atlas('kobra'),
+        loadCachedImage(`${BASE}game-assets/2d/bongo-rush/kobra-face/face.png`),
         this.atlas('patrol-red-v3'),
         this.atlas('patrol-blue-v3'),
         this.atlas('undercover-v3'),
@@ -178,7 +178,7 @@ class BongoRush {
       if (this.disposed || token !== this.loadToken) return false;
       this.backgrounds.set(level.biome, background);
       this.renderer!.hero(atlas);
-      this.renderer!.bushHero(bushAtlas);
+      this.renderer!.bushFace(bushAtlas);
       this.renderer!.enemyHeroes(patrolAtlas, blueAtlas, undercoverAtlas, bossAtlas);
       this.renderer!.terrain(level.biome, terrain);
       this.renderer!.items(items);

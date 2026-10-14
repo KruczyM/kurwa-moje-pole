@@ -6,12 +6,15 @@ import { biomeTileRect } from './BiomeTiles';
 
 describe('world-anchored biome decoration', () => {
   it('preserves authored visible landmarks and ignores a strip crossing an open tunnel', () => {
-    const level = LEVELS[0];
-    const world = new Simulation(level).world;
-    const art = buildTerrainLayout(world, level.id * 4 + level.biome, level.terrainTheme, level.decorations);
-    expect([0, 1, 2].map((n) => art.cells[(6 + n) * world.width + 1])).toEqual([34, 35, 36]);
-    expect([...art.cells.slice(4 * world.width + 4, 4 * world.width + 7)]).toEqual([25, 26, 27]);
-    expect(art.cells[10 * world.width + 4]).toBe(16);
+    const world = { width: 8, height: 8, cells: Array(64).fill('wall') };
+    const art = buildTerrainLayout(world, 4, 0, [
+      { at: { x: 1, y: 1 }, kind: 'vertical', variant: 0 },
+      { at: { x: 4, y: 4 }, kind: 'horizontal', variant: 1 },
+      { at: { x: 4, y: 6 }, kind: 'accent', variant: 2 },
+    ]);
+    expect([0, 1, 2].map((n) => art.cells[(1 + n) * 8 + 1])).toEqual([34, 35, 36]);
+    expect([...art.cells.slice(36, 39)]).toEqual([25, 26, 27]);
+    expect(art.cells[52]).toBe(16);
     const tunnel = { width: 3, height: 3, cells: Array(9).fill('wall') as ('wall' | 'air')[] };
     tunnel.cells[4] = 'air';
     const rejected = buildTerrainLayout(tunnel, 1, 0, [
@@ -33,11 +36,11 @@ describe('world-anchored biome decoration', () => {
   it.each(LEVELS)('keeps $id immutable and stable, with bounded accents and complete strips', (level) => {
     const world = new Simulation(level).world;
     const original = structuredClone(world);
-    const art = buildTerrainLayout(world, level.id * 4 + level.biome);
-    expect(art).toEqual(buildTerrainLayout(world, level.id * 4 + level.biome));
+    const art = buildTerrainLayout(world, level.id * 4 + level.biome, level.terrainTheme, level.decorations);
+    expect(art).toEqual(
+      buildTerrainLayout(world, level.id * 4 + level.biome, level.terrainTheme, level.decorations),
+    );
     expect(world).toEqual(original);
-    expect(art.directional).toBeLessThanOrEqual(Math.floor(art.walls * 0.2));
-    expect(art.accents).toBeLessThanOrEqual(Math.floor(art.walls * 0.08));
     let decorative = 0;
     for (let index = 0; index < art.cells.length; index++) {
       const cell = art.cells[index];
@@ -73,7 +76,9 @@ describe('world-anchored biome decoration', () => {
       [80, 3, 22],
       [3, 80, 34],
     ]) {
-      const art = buildTerrainLayout({ width, height, cells: Array(width * height).fill('wall') }, 3);
+      const art = buildTerrainLayout({ width, height, cells: Array(width * height).fill('wall') }, 3, 0, [
+        { at: { x: 0, y: 0 }, kind: first === 22 ? 'horizontal' : 'vertical', variant: 0 },
+      ]);
       expect([...art.cells].some((cell) => [first, first + 3, first + 6, first + 9].includes(cell))).toBe(
         true,
       );

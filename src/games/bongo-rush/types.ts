@@ -22,6 +22,7 @@ export interface ChamberDefinition {
   requiredPickups?: readonly Point[];
   lootSources?: readonly LootSource[];
   decorations?: readonly TerrainMotif[];
+  colonies?: readonly Point[];
 }
 export interface PortalEndpoint extends Point {
   chamber: string;
@@ -85,6 +86,10 @@ export interface LevelDefinition {
   alternateReplays?: readonly { name: string; inputs: readonly ReplayInput[] }[];
   terrainTheme?: number;
   decorations?: readonly TerrainMotif[];
+  /** Visible, solid colonies, independent of collecting/digging their own tile. */
+  colonies?: readonly Point[];
+  bushGrowthSeconds?: number;
+  failureReplays?: readonly { name: string; inputs: readonly ReplayInput[] }[];
 }
 export interface World {
   width: number;

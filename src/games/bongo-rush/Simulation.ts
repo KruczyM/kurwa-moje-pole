@@ -31,18 +31,20 @@ export function createWorld(level: LevelDefinition, chamber = false): World {
   let exits = 0;
   level.rows.forEach((row, y) =>
     [...row].forEach((symbol, x) => {
-      if (!'#. PEORCBUJKSQ'.includes(symbol)) throw new Error(`Nieznany kafelek: ${symbol}`);
+      if (!'#. PEORCBUJKSQV'.includes(symbol)) throw new Error(`Nieznany kafelek: ${symbol}`);
       const point = { x, y };
       world.cells.push(
         symbol === '#'
           ? 'wall'
           : symbol === '.'
             ? 'soil'
-            : symbol === 'K'
-              ? 'buried-bush'
-              : symbol === 'E'
-                ? 'exit'
-                : 'air',
+            : symbol === 'V'
+              ? 'bush'
+              : symbol === 'K'
+                ? 'buried-bush'
+                : symbol === 'E'
+                  ? 'exit'
+                  : 'air',
       );
       if (symbol === 'P') {
         world.player = { id: 0, ...point, previous: { ...point }, direction: 'right' };
@@ -146,6 +148,23 @@ export function createWorld(level: LevelDefinition, chamber = false): World {
       throw new Error('Korzeń źródła musi być na wolnym polu');
     occupied.add(key);
   }
+  for (const point of level.colonies ?? []) {
+    const index = point.y * width + point.x;
+    if (
+      !Number.isInteger(point.x) ||
+      !Number.isInteger(point.y) ||
+      point.x <= 0 ||
+      point.y <= 0 ||
+      point.x >= width - 1 ||
+      point.y >= world.height - 1 ||
+      world.cells[index] !== 'air' ||
+      [world.player, ...world.objects, ...world.enemies].some((body) => same(body, point))
+    )
+      throw new Error('Kolonia musi wskazywać wolne pole');
+    world.cells[index] = 'bush';
+  }
+  if (world.cells.includes('bush'))
+    world.nextBushGrowth = Math.ceil((level.bushGrowthSeconds ?? 5) / STEP_SECONDS);
   return world;
 }
 
@@ -157,6 +176,7 @@ export class Simulation {
   private portalLatch = false;
   private elapsedTicks = 0;
   private nextObjectId = 1;
+  private background = false;
   get ticks(): number {
     return this.elapsedTicks;
   }
@@ -199,6 +219,11 @@ export class Simulation {
     )
       throw new Error('Nieprawidłowy limit czasu');
     this.activeWorld = createWorld(level);
+    if (
+      level.bushGrowthSeconds !== undefined &&
+      (!Number.isFinite(level.bushGrowthSeconds) || level.bushGrowthSeconds < STEP_SECONDS)
+    )
+      throw new Error('Nieprawidłowe tempo kolonii');
     this.rooms.set('main', this.activeWorld);
     for (const room of level.chambers ?? []) {
       if (room.id === 'main' || this.rooms.has(room.id)) throw new Error('Powtórzona komora');
@@ -212,6 +237,7 @@ export class Simulation {
             lootSources: room.lootSources,
             requiredPickups: room.requiredPickups,
             requiredKills: undefined,
+            colonies: room.colonies,
             chambers: undefined,
           },
           true,
@@ -281,13 +307,16 @@ export class Simulation {
     const w = this.world;
     if (w.status !== 'playing') return;
     for (const body of [w.player, ...w.objects, ...w.enemies]) body.previous = { x: body.x, y: body.y };
-    w.tick++;
     this.elapsedTicks++;
+    w.tick = this.elapsedTicks;
     this.opened = undefined;
     const wasOpen = this.exitOpen;
     const moved = new Set<number>();
     if (input) this.movePlayer(input, moved);
-    if (this.world !== w) return;
+    if (this.world !== w) {
+      this.advanceBackground();
+      return;
+    }
     if (w.status === 'playing') this.emitLoot();
     if (w.status !== 'playing') return;
     this.gravity(moved);
@@ -310,6 +339,36 @@ export class Simulation {
     if (w.status === 'playing' && this.remainingSeconds === 0)
       this.lose('Czas minął. Zaplanuj krótszą trasę i spróbuj ponownie.');
     if (w.status === 'playing') this.growBushes();
+    this.advanceBackground();
+  }
+
+  /** One shared clock advances every room; no phantom player protects an abandoned landing. */
+  private advanceBackground(): void {
+    const foreground = this.activeWorld;
+    const soundCount = this.sounds.length;
+    const opening = this.opened;
+    this.opened = undefined;
+    this.background = true;
+    for (const room of this.rooms.values()) {
+      if (room === foreground || room.tick === this.elapsedTicks) continue;
+      this.activeWorld = room;
+      room.tick = this.elapsedTicks;
+      room.collected = foreground.collected;
+      room.kills = foreground.kills;
+      const player = room.player;
+      room.player = { ...player, x: -1, y: -1, previous: { x: -1, y: -1 } };
+      for (const body of [...room.objects, ...room.enemies]) body.previous = { x: body.x, y: body.y };
+      this.emitLoot();
+      this.gravity(new Set());
+      this.moveEnemies();
+      this.growBushes();
+      foreground.kills = room.kills;
+      room.player = player;
+    }
+    this.activeWorld = foreground;
+    this.background = false;
+    this.opened = opening;
+    this.sounds.length = soundCount;
   }
 
   /** Active simulation ticks are the only clock; pausing cannot consume the level budget. */
@@ -431,6 +490,7 @@ export class Simulation {
     };
     this.chamber = destination.chamber;
     this.activeWorld = next;
+    next.tick = this.elapsedTicks;
     this.portalLatch = true;
     this.opened = undefined;
     this.sounds.push('exit');
@@ -472,7 +532,7 @@ export class Simulation {
       }
     }
     for (const index of additions) w.cells[index] = 'bush';
-    w.nextBushGrowth = w.tick + BUSH_GROWTH_TICKS;
+    w.nextBushGrowth = w.tick + Math.ceil((this.level.bushGrowthSeconds ?? 5) / STEP_SECONDS);
   }
 
   /** Bottom-up stable ordering prevents double falls and makes replays independent of array order. */
@@ -536,7 +596,7 @@ export class Simulation {
     for (const enemy of [...w.enemies].sort((a, b) => a.id - b.id)) {
       const period = enemy.kind === 'red' || enemy.kind === 'boss' ? 3 : 2;
       if (w.tick % period !== 0) continue;
-      const visible = this.visiblePlayer(enemy);
+      const visible = !this.background && this.visiblePlayer(enemy);
       enemy.chasing = enemy.kind === 'undercover' && visible;
       const forward = DIRECTIONS.indexOf(enemy.direction);
       const hand = enemy.kind === 'blue' ? -1 : 1;
