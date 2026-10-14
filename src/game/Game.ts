@@ -261,9 +261,16 @@ export class Game {
     },
   });
   campfireGuitarGame = new CampfireGuitarGame();
-  private readonly startGuitarSong = (songId: string) => this.campfireGuitarGame.startSong(songId);
+  private readonly startGuitarSong = (songId: string) => {
+    const ok = this.campfireGuitarGame.startSong(songId);
+    if (ok) this.speakerAudio.setTentMuffled(true);
+    return ok;
+  };
   private readonly hitGuitarLane = (lane: number) => this.campfireGuitarGame.hitLane(lane);
-  private readonly exitGuitar = () => this.campfireGuitarGame.stopSong();
+  private readonly exitGuitar = () => {
+    this.campfireGuitarGame.stopSong();
+    if (this.state.current === 'playing') this.speakerAudio.setTentMuffled(false);
+  };
   readonly concertState = new ConcertState();
   readonly concertLibrary = new ConcertLibrary();
   readonly stageAcoustics = new SpatialStageAcoustics();

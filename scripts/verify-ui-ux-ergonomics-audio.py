@@ -7,6 +7,11 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 from playwright.async_api import async_playwright
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
@@ -132,21 +137,39 @@ async def main():
             await page.screenshot(path=str(hud_shot))
             shutil.copy2(hud_shot, ARTIFACTS_DIR / 'ui_ux_02_gameplay_hud_hotbar_crosshair.png')
 
-            # 3. Test Flanki Modal Rules Cards
-            print("Checking Flanki Roster modal rules decluttering...")
+            # 3. Test Flanki Modal Rules Cards & Runner Selection
+            print("Checking Flanki Roster modal rules decluttering and runner selection...")
             await page.evaluate('''() => {
-                const modal = document.querySelector('#flanki-roster-modal');
-                if (modal) modal.hidden = false;
+                window.__camp_game.ui.showFlankiRoster({
+                    teamA: {
+                        name: 'Twoja Ekipa',
+                        throwers: [
+                            { id: 'p1', name: 'Siwy Dym', team: 'A', role: 'thrower' },
+                            { id: 'p2', name: 'Kobra', team: 'A', role: 'thrower' }
+                        ],
+                        runner: { id: 'p3', name: 'Dziąsło', team: 'A', role: 'runner' }
+                    },
+                    teamB: {
+                        name: 'Rywale z Sektora',
+                        throwers: [
+                            { id: 'b1', name: 'Hemoroid', team: 'B', role: 'thrower' },
+                            { id: 'b2', name: 'Szerszeń', team: 'B', role: 'thrower' }
+                        ],
+                        runner: { id: 'b3', name: 'Amper', team: 'B', role: 'runner' }
+                    }
+                }, () => {}, () => {}, { canStart: true, onRunnerChange: () => true });
             }''')
             flanki_cards = await page.locator('.flanki-rule-card').all()
             assert len(flanki_cards) == 3, f"Expected 3 visual rule cards, found {len(flanki_cards)}"
+            runner_select = page.locator('.flanki-runner-select[data-flanki-runner="A"]')
+            assert await runner_select.is_visible(), "Runner selection dropdown must be visible!"
             details_el = page.locator('.flanki-rules-details')
             assert await details_el.is_visible()
             flanki_shot = REPORTS_DIR / '03_flanki_rules_cards.png'
             await page.screenshot(path=str(flanki_shot))
             shutil.copy2(flanki_shot, ARTIFACTS_DIR / 'ui_ux_03_flanki_rules_cards.png')
-            await page.evaluate('() => document.querySelector("#flanki-roster-modal").hidden = true')
-            print("Flanki 3-card rules layout & expandable details verified.")
+            await page.evaluate('() => window.__camp_game.ui.hideFlankiRoster()')
+            print("Flanki 3-card rules layout & runner selection verified.")
 
             # 4. Test Eko-Zagroda Panel 180s & Icons
             print("Checking Eko-Zagroda 180s duration and icons...")
@@ -182,16 +205,23 @@ async def main():
             await page.evaluate('() => window.__camp_game.campfireGuitarGame.stopSong()')
             print("Guitar HUD flame meter & target lane badges verified.")
 
-            # 6. Test Mobile Controls & Look Hint Auto-dismiss
+            # 6. Test Mobile Controls & Clean Non-Overlapping Layout
             print("Checking Mobile Controls...")
             await page.set_viewport_size({'width': 390, 'height': 844})
-            await page.evaluate('() => document.querySelector("#mobile-controls").hidden = false')
+            await page.evaluate('''() => {
+                document.body.classList.add('mobile-input');
+                document.querySelector('#mobile-controls').hidden = false;
+            }''')
             fullscreen_btn = page.locator('#mobile-fullscreen')
             assert await fullscreen_btn.is_visible()
+            quick_bar = page.locator('#hud-quick-bar')
+            assert not await quick_bar.is_visible(), "Desktop #hud-quick-bar must be hidden on mobile!"
+            controls_hud = page.locator('#controls-hud')
+            assert not await controls_hud.is_visible(), "Desktop #controls-hud must be hidden on mobile!"
             mobile_shot = REPORTS_DIR / '06_mobile_controls_fullscreen.png'
             await page.screenshot(path=str(mobile_shot))
             shutil.copy2(mobile_shot, ARTIFACTS_DIR / 'ui_ux_06_mobile_controls_fullscreen.png')
-            print("Mobile controls fullscreen button verified.")
+            print("Mobile controls fullscreen and clean non-overlapping layout verified.")
 
             await browser.close()
 

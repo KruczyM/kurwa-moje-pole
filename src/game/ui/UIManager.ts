@@ -292,9 +292,11 @@ export class UIManager {
     ] as const) {
       if (!list || !options.onRunnerChange) continue;
       const row = document.createElement('li');
+      row.className = 'flanki-runner-select-row';
       const label = document.createElement('label');
-      label.textContent = 'Stały biegacz: ';
+      label.textContent = '🏃 Stały biegacz: ';
       const select = document.createElement('select');
+      select.className = 'flanki-runner-select';
       select.dataset.flankiRunner = teamId;
       select.setAttribute('aria-label', `Stały biegacz drużyny ${teamId}`);
       select.disabled = options.canStart === false;

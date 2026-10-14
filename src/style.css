@@ -69,6 +69,10 @@ button:hover {
     linear-gradient(90deg, #07120cdd, #07120c44),
     url('../public/game-assets/2d/fighter/art-v3/wristbands-wide.webp') center / cover;
 }
+#start > *:not(.character-preview-layer) {
+  position: relative;
+  z-index: 5;
+}
 @media (orientation: portrait) {
   #start {
     background-image:
