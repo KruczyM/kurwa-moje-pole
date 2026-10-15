@@ -1,6 +1,6 @@
 import './demo.css';
 import './cabinet.css';
-import { ROSTER, ROSTER_KEYS, CharacterRosterEntry } from '../data/fighters/roster';
+import { ROSTER, ROSTER_KEYS, CharacterRosterEntry, getFighterStats } from '../data/fighters/roster';
 import { STAGES, STAGE_KEYS } from '../data/stages';
 import { FighterSimulation, type SimulationEvent } from '../simulation/FighterSimulation';
 import { INPUT, type MatchState } from '../simulation/CombatTypes';
@@ -37,18 +37,22 @@ class FighterDemo {
 
   private portraitImages = new Map<string, HTMLImageElement>();
   private keyMask = 0;
+  private keyMaskP1 = 0;
+  private keyMaskP2 = 0;
   private touchMask = 0;
   private isBotEnabled = true;
   private botDifficulty: BotDifficulty = 'normal';
   private isPaused = false;
   private inSelectScreen = true;
+  private isVsSplashActive = false;
+  private creditCount = 99;
   private lastTime = performance.now();
   private accumulator = 0;
   private previousLocalState: MatchState | null = null;
   private heldKeys = new Set<string>();
   private pointerInputs = new Map<number, number>();
   private readonly step = 1 / 60;
-  private mode: 'bot' | 'training' | 'online' = 'bot';
+  private mode: 'bot' | 'training' | 'online' | 'hotseat' = 'bot';
   private online = new FighterOnline(
     (room) => this.receiveRoom(room),
     (frame) => this.receiveFrame(frame),
@@ -85,11 +89,13 @@ class FighterDemo {
     let music = 0.45,
       effects = 0.8;
     let reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    let crt = true;
     try {
       const saved = JSON.parse(localStorage.getItem('fighter-av-settings') ?? '{}');
       if (Number.isFinite(saved?.music)) music = Math.max(0, Math.min(1, saved.music));
       if (Number.isFinite(saved?.effects)) effects = Math.max(0, Math.min(1, saved.effects));
       if (typeof saved?.reduced === 'boolean') reduced = saved.reduced;
+      if (typeof saved?.crt === 'boolean') crt = saved.crt;
     } catch {
       /* Optional persistence. */
     }
@@ -97,22 +103,29 @@ class FighterDemo {
       this.audio.setVolumes(music, effects);
       this.camera.reducedEffects = reduced;
       this.view.superCinematic.reducedEffects = reduced;
+      document.getElementById('crt-overlay')?.classList.toggle('disabled', !crt);
       for (const suffix of ['', '-select']) {
-        (document.getElementById('music-volume' + suffix) as HTMLInputElement).value = String(music * 100);
-        (document.getElementById('sfx-volume' + suffix) as HTMLInputElement).value = String(effects * 100);
-        (document.getElementById('reduced-effects' + suffix) as HTMLInputElement).checked = reduced;
+        const musEl = document.getElementById('music-volume' + suffix) as HTMLInputElement | null;
+        const sfxEl = document.getElementById('sfx-volume' + suffix) as HTMLInputElement | null;
+        const redEl = document.getElementById('reduced-effects' + suffix) as HTMLInputElement | null;
+        const crtEl = document.getElementById('crt-toggle' + suffix) as HTMLInputElement | null;
+        if (musEl) musEl.value = String(music * 100);
+        if (sfxEl) sfxEl.value = String(effects * 100);
+        if (redEl) redEl.checked = reduced;
+        if (crtEl) crtEl.checked = crt;
       }
     };
     for (const suffix of ['', '-select']) {
-      for (const id of ['music-volume', 'sfx-volume', 'reduced-effects']) {
-        document.getElementById(id + suffix)!.addEventListener('input', (event) => {
+      for (const id of ['music-volume', 'sfx-volume', 'reduced-effects', 'crt-toggle']) {
+        document.getElementById(id + suffix)?.addEventListener('input', (event) => {
           const input = event.target as HTMLInputElement;
           if (id === 'music-volume') music = Number(input.value) / 100;
           else if (id === 'sfx-volume') effects = Number(input.value) / 100;
-          else reduced = input.checked;
+          else if (id === 'reduced-effects') reduced = input.checked;
+          else if (id === 'crt-toggle') crt = input.checked;
           apply();
           try {
-            localStorage.setItem('fighter-av-settings', JSON.stringify({ music, effects, reduced }));
+            localStorage.setItem('fighter-av-settings', JSON.stringify({ music, effects, reduced, crt }));
           } catch {
             /* Optional persistence. */
           }
@@ -184,8 +197,8 @@ class FighterDemo {
   }
 
   private setupKeyboard(): void {
-    const keyMap: Record<string, number> = {
-      // Movement (Lewa ręka: WASD lub Strzałki)
+    const keyMapSingle: Record<string, number> = {
+      // Movement (WASD lub Strzałki)
       KeyW: INPUT.UP,
       KeyS: INPUT.DOWN,
       KeyA: INPUT.LEFT,
@@ -195,22 +208,20 @@ class FighterDemo {
       ArrowLeft: INPUT.LEFT,
       ArrowRight: INPUT.RIGHT,
 
-      // --- UKŁAD GŁÓWNY (Prawa ręka - 2 rzędy klawiszy obok siebie 3x2) ---
-      // Górny rząd: U, I, O (Lekka Pięść, Mocna Pięść, SUPER MOVE)
-      KeyU: INPUT.LP, // Lekka Pięść (Góra - Wskazujący)
-      KeyI: INPUT.RP, // Mocna Pięść (Góra - Środkowy)
+      // Ciosy (Układ arcade 3x2)
+      KeyU: INPUT.LP,
+      KeyI: INPUT.RP,
       KeyH: INPUT.DOWN | INPUT.RP,
       KeyN: INPUT.DOWN | INPUT.RK,
       KeyP: INPUT.TECHNIQUE,
-      KeyO: INPUT.SPECIAL, // SUPER MOVE / ULTIMATE (Góra - Serdeczny)
+      KeyO: INPUT.SPECIAL,
 
-      // Dolny rząd: J, K, L (Lekkie Kopnięcie, Mocne Kopnięcie, Garda/Blok)
-      KeyJ: INPUT.LK, // Lekkie Kopnięcie (Dół - Wskazujący)
-      KeyK: INPUT.RK, // Mocne Kopnięcie (Dół - Środkowy)
-      KeyL: INPUT.BLOCK, // Blok / Garda (Dół - Serdeczny)
-      Space: INPUT.BLOCK, // Spacja: Wygodny blok kciukiem
+      KeyJ: INPUT.LK,
+      KeyK: INPUT.RK,
+      KeyL: INPUT.BLOCK,
+      Space: INPUT.BLOCK,
 
-      // --- UKŁAD NUMPAD (Pełna klawiatura) ---
+      // Numpad
       Numpad4: INPUT.LP,
       Numpad5: INPUT.RP,
       Numpad6: INPUT.SPECIAL,
@@ -218,6 +229,44 @@ class FighterDemo {
       Numpad2: INPUT.RK,
       Numpad3: INPUT.BLOCK,
       Numpad0: INPUT.BLOCK,
+    };
+
+    // Hotseat P1 (Lewa strona klawiatury)
+    const hotseatP1Map: Record<string, number> = {
+      KeyW: INPUT.UP,
+      KeyS: INPUT.DOWN,
+      KeyA: INPUT.LEFT,
+      KeyD: INPUT.RIGHT,
+      KeyF: INPUT.LP,
+      KeyG: INPUT.RP,
+      KeyV: INPUT.LK,
+      KeyB: INPUT.RK,
+      KeyR: INPUT.TECHNIQUE,
+      KeyT: INPUT.SPECIAL,
+      KeyC: INPUT.BLOCK,
+    };
+
+    // Hotseat P2 (Prawa strona klawiatury / Strzałki + Numpad)
+    const hotseatP2Map: Record<string, number> = {
+      ArrowUp: INPUT.UP,
+      ArrowDown: INPUT.DOWN,
+      ArrowLeft: INPUT.LEFT,
+      ArrowRight: INPUT.RIGHT,
+      KeyI: INPUT.LP,
+      Numpad4: INPUT.LP,
+      KeyO: INPUT.RP,
+      Numpad5: INPUT.RP,
+      KeyK: INPUT.LK,
+      Numpad1: INPUT.LK,
+      KeyL: INPUT.RK,
+      Numpad2: INPUT.RK,
+      KeyP: INPUT.TECHNIQUE,
+      Numpad6: INPUT.TECHNIQUE,
+      BracketLeft: INPUT.SPECIAL,
+      NumpadAdd: INPUT.SPECIAL,
+      Enter: INPUT.BLOCK,
+      Numpad0: INPUT.BLOCK,
+      Numpad3: INPUT.BLOCK,
     };
 
     window.addEventListener('keydown', (e) => {
@@ -241,23 +290,49 @@ class FighterDemo {
           (e.shiftKey ? last : first).focus();
         }
       }
-      if (keyMap[e.code] && !this.isPaused && !this.inSelectScreen) {
-        this.heldKeys.add(e.code);
-        this.keyMask = [...this.heldKeys].reduce((mask, code) => mask | (keyMap[code] ?? 0), 0);
-        if (this.mode === 'online') this.online.sendInput(this.keyMask | this.touchMask);
-        e.preventDefault();
+
+      if (!this.isPaused && !this.inSelectScreen && !this.isVsSplashActive) {
+        if (this.mode === 'hotseat') {
+          const isP1 = Boolean(hotseatP1Map[e.code]);
+          const isP2 = Boolean(hotseatP2Map[e.code]);
+          if (isP1 || isP2) {
+            this.heldKeys.add(e.code);
+            this.keyMaskP1 = [...this.heldKeys].reduce((mask, code) => mask | (hotseatP1Map[code] ?? 0), 0);
+            this.keyMaskP2 = [...this.heldKeys].reduce((mask, code) => mask | (hotseatP2Map[code] ?? 0), 0);
+            e.preventDefault();
+          }
+        } else {
+          if (keyMapSingle[e.code]) {
+            this.heldKeys.add(e.code);
+            this.keyMask = [...this.heldKeys].reduce((mask, code) => mask | (keyMapSingle[code] ?? 0), 0);
+            if (this.mode === 'online') this.online.sendInput(this.keyMask | this.touchMask);
+            e.preventDefault();
+          }
+        }
       }
+
       if (e.code === 'Escape' && !e.repeat) {
         this.togglePause();
       }
     });
 
     window.addEventListener('keyup', (e) => {
-      if (keyMap[e.code]) {
-        this.heldKeys.delete(e.code);
-        this.keyMask = [...this.heldKeys].reduce((mask, code) => mask | (keyMap[code] ?? 0), 0);
-        if (this.mode === 'online') this.online.sendInput(this.keyMask | this.touchMask);
-        e.preventDefault();
+      if (this.mode === 'hotseat') {
+        const isP1 = Boolean(hotseatP1Map[e.code]);
+        const isP2 = Boolean(hotseatP2Map[e.code]);
+        if (isP1 || isP2) {
+          this.heldKeys.delete(e.code);
+          this.keyMaskP1 = [...this.heldKeys].reduce((mask, code) => mask | (hotseatP1Map[code] ?? 0), 0);
+          this.keyMaskP2 = [...this.heldKeys].reduce((mask, code) => mask | (hotseatP2Map[code] ?? 0), 0);
+          e.preventDefault();
+        }
+      } else {
+        if (keyMapSingle[e.code]) {
+          this.heldKeys.delete(e.code);
+          this.keyMask = [...this.heldKeys].reduce((mask, code) => mask | (keyMapSingle[code] ?? 0), 0);
+          if (this.mode === 'online') this.online.sendInput(this.keyMask | this.touchMask);
+          e.preventDefault();
+        }
       }
     });
     window.addEventListener('blur', () => {
@@ -327,6 +402,21 @@ class FighterDemo {
       previewDesc.textContent = entry.description;
       previewSpecial.textContent = entry.definition.moves['special']?.name || 'Ruch specjalny';
       previewUltimate.textContent = entry.definition.moves['ultimate']?.name || 'Super cios';
+
+      // Update stat meters
+      const stats = getFighterStats(key);
+      const fillPower = document.getElementById('stat-fill-power');
+      const fillSpeed = document.getElementById('stat-fill-speed');
+      const fillHangover = document.getElementById('stat-fill-hangover');
+      const numPower = document.getElementById('stat-num-power');
+      const numSpeed = document.getElementById('stat-num-speed');
+      const numHangover = document.getElementById('stat-num-hangover');
+      if (fillPower) fillPower.style.width = `${stats.power * 10}%`;
+      if (fillSpeed) fillSpeed.style.width = `${stats.speed * 10}%`;
+      if (fillHangover) fillHangover.style.width = `${stats.hangoverRes * 10}%`;
+      if (numPower) numPower.textContent = `${stats.power}/10`;
+      if (numSpeed) numSpeed.textContent = `${stats.speed}/10`;
+      if (numHangover) numHangover.textContent = `${stats.hangoverRes}/10`;
     };
 
     const refreshGridCards = () => {
@@ -345,6 +435,19 @@ class FighterDemo {
         card.classList.toggle('selected-p2', key === this.p2Key);
       });
     };
+
+    // Arcade Coin Slot Button
+    const coinBtn = document.getElementById('arcade-coin-btn');
+    const creditCountEl = document.getElementById('arcade-credit-count');
+    coinBtn?.addEventListener('click', () => {
+      this.creditCount++;
+      if (creditCountEl) creditCountEl.textContent = String(this.creditCount);
+      this.audio.playCoinInsert();
+      setTimeout(() => this.audio.playAnnouncerChooseFighter(), 520);
+      const marquee = document.querySelector('.cabinet-marquee');
+      marquee?.classList.add('cabinet-shake');
+      setTimeout(() => marquee?.classList.remove('cabinet-shake'), 380);
+    });
 
     // Build 16 character cards
     grid.innerHTML = '';
@@ -442,11 +545,18 @@ class FighterDemo {
       this.isBotEnabled = this.mode === 'bot';
       const difficulty = (document.getElementById('bot-difficulty') as HTMLSelectElement).value;
       this.botDifficulty = difficulty === 'easy' || difficulty === 'hard' ? difficulty : 'normal';
-      this.startMatch();
+
       selectScreen.setAttribute('hidden', '');
       this.inSelectScreen = false;
       this.isPaused = false;
-      this.audio.playRoundBell();
+
+      this.showVsSplash(() => {
+        this.startMatch();
+        this.audio.playAnnouncerRound(1);
+        setTimeout(() => {
+          this.audio.playAnnouncerFight();
+        }, 1100);
+      });
     });
 
     const openSelectBtn = document.getElementById('char-select-btn');
@@ -467,7 +577,14 @@ class FighterDemo {
       this.online.close();
       this.onlineMatchId = -1;
       this.previousOnlineState = null;
-      this.mode = mode.value === 'online' ? 'online' : mode.value === 'training' ? 'training' : 'bot';
+      this.mode =
+        mode.value === 'online'
+          ? 'online'
+          : mode.value === 'training'
+            ? 'training'
+            : mode.value === 'hotseat'
+              ? 'hotseat'
+              : 'bot';
       this.isBotEnabled = this.mode === 'bot';
       document.querySelectorAll<HTMLButtonElement>('[data-fight-mode]').forEach((button) => {
         button.setAttribute('aria-pressed', String(button.dataset.fightMode === this.mode));
@@ -632,6 +749,47 @@ class FighterDemo {
     document.getElementById('online-match-status')!.hidden = true;
   }
 
+  private showVsSplash(onFinish: () => void): void {
+    const splash = document.getElementById('matchup-vs-splash');
+    if (!splash) {
+      onFinish();
+      return;
+    }
+    this.isVsSplashActive = true;
+    const rawBase = import.meta.env.BASE_URL || '/';
+    const base = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
+
+    const p1Img = document.getElementById('vs-splash-p1-img') as HTMLImageElement | null;
+    const p2Img = document.getElementById('vs-splash-p2-img') as HTMLImageElement | null;
+    const p1Name = document.getElementById('vs-splash-p1-name');
+    const p2Name = document.getElementById('vs-splash-p2-name');
+    const p1Title = document.getElementById('vs-splash-p1-title');
+    const p2Title = document.getElementById('vs-splash-p2-title');
+    const arenaName = document.getElementById('vs-splash-arena');
+
+    if (p1Img) p1Img.src = selectionArtUrl(base, this.p1Key, 'full');
+    if (p2Img) p2Img.src = selectionArtUrl(base, this.p2Key, 'full');
+    if (p1Name) p1Name.textContent = this.p1Entry.definition.name.toUpperCase();
+    if (p2Name) p2Name.textContent = this.p2Entry.definition.name.toUpperCase();
+    if (p1Title) p1Title.textContent = this.p1Entry.definition.title;
+    if (p2Title) p2Title.textContent = this.p2Entry.definition.title;
+    if (arenaName) arenaName.textContent = STAGES[this.selectedStageId]?.name ?? 'ARENA WALKI';
+
+    splash.removeAttribute('hidden');
+    this.audio.playVersusGong();
+    this.camera.shake(12, 0.4);
+
+    const app = document.getElementById('fighter-app');
+    app?.classList.add('cabinet-shake');
+    setTimeout(() => app?.classList.remove('cabinet-shake'), 450);
+
+    setTimeout(() => {
+      splash.setAttribute('hidden', '');
+      this.isVsSplashActive = false;
+      onFinish();
+    }, 1800);
+  }
+
   private setupModals(): void {
     const pauseBtn = document.getElementById('pause-btn');
     const resumeBtn = document.getElementById('resume-btn');
@@ -672,10 +830,15 @@ class FighterDemo {
       this.view.reset();
       this.accumulator = 0;
       this.previousLocalState = null;
-      this.sim.restartMatch();
       rematchModal?.setAttribute('hidden', '');
       this.isPaused = false;
-      this.audio.playRoundBell();
+      this.showVsSplash(() => {
+        this.sim.restartMatch();
+        this.audio.playAnnouncerRound(1);
+        setTimeout(() => {
+          this.audio.playAnnouncerFight();
+        }, 1100);
+      });
     });
   }
 
@@ -699,7 +862,7 @@ class FighterDemo {
   }
 
   private clearInput(): void {
-    this.keyMask = this.touchMask = 0;
+    this.keyMask = this.keyMaskP1 = this.keyMaskP2 = this.touchMask = 0;
     this.heldKeys.clear();
     this.pointerInputs.clear();
     document.querySelectorAll('[data-input].active').forEach((button) => button.classList.remove('active'));
@@ -744,8 +907,8 @@ class FighterDemo {
       p2: { ...state.p2 },
     };
 
-    const p1Input = this.keyMask | this.touchMask;
-    const p2Input = this.isBotEnabled ? this.bot.update(state.p2, state.p1) : 0;
+    const p1Input = this.mode === 'hotseat' ? (this.keyMaskP1 | this.touchMask) : (this.keyMask | this.touchMask);
+    const p2Input = this.mode === 'hotseat' ? this.keyMaskP2 : (this.isBotEnabled ? this.bot.update(state.p2, state.p1) : 0);
 
     this.sim.update(p1Input, p2Input);
     this.presentTick(this.sim.getEvents());
@@ -852,11 +1015,27 @@ class FighterDemo {
       } else if (ev.type === 'block') {
         this.audio.playBlock();
       } else if (ev.type === 'ko') {
-        this.audio.playFunnyKO();
+        if (state.p1.hp <= 0 && state.p2.hp <= 0) {
+          this.audio.playAnnouncerDraw(true);
+        } else {
+          this.audio.playAnnouncerKO();
+          const winnerHp = state.winner === 1 ? state.p1.hp : state.p2.hp;
+          if (winnerHp >= 1000) {
+            setTimeout(() => this.audio.playAnnouncerPerfect(), 1250);
+          }
+        }
         this.camera.shake(16, 0.4);
+      } else if (ev.type === 'round_end') {
+        if (ev.data?.timeout) {
+          this.audio.playAnnouncerTimeOver();
+        }
       } else if (ev.type === 'round_start') {
         this.view.reset();
-        this.audio.playRoundBell();
+        const isFinal = state.p1Wins === 1 && state.p2Wins === 1;
+        this.audio.playAnnouncerRound(state.roundNumber, isFinal);
+        setTimeout(() => {
+          this.audio.playAnnouncerFight();
+        }, 1100);
       } else if (ev.type === 'meter_empty') {
         this.audio.playEmptyMeterBuzz();
         const fId = ev.data?.fighterId;
@@ -870,8 +1049,17 @@ class FighterDemo {
       const rematchText = document.getElementById('rematch-text');
       if (rematchText) {
         const winnerName = state.winner === 1 ? this.p1Entry.definition.name : this.p2Entry.definition.name;
+        const isPlayerWinner = state.winner === (this.mode === 'online' ? this.online.seat + 1 : 1);
+        if (state.winner !== 'draw') {
+          this.audio.playAnnouncerWin(winnerName, isPlayerWinner);
+          if (!isPlayerWinner) {
+            setTimeout(() => this.audio.playAnnouncerGameOver(), 2100);
+          }
+        } else {
+          this.audio.playAnnouncerDraw(false);
+        }
         rematchText.textContent =
-          state.winner === (this.mode === 'online' ? this.online.seat + 1 : 1)
+          isPlayerWinner
             ? `Zwycięstwo! ${winnerName} wygrywa pojedynek!`
             : state.winner !== 'draw'
               ? `Porażka! ${winnerName} dominuje pole!`
