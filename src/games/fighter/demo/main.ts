@@ -907,8 +907,9 @@ class FighterDemo {
       p2: { ...state.p2 },
     };
 
-    const p1Input = this.mode === 'hotseat' ? (this.keyMaskP1 | this.touchMask) : (this.keyMask | this.touchMask);
-    const p2Input = this.mode === 'hotseat' ? this.keyMaskP2 : (this.isBotEnabled ? this.bot.update(state.p2, state.p1) : 0);
+    const p1Input = this.mode === 'hotseat' ? this.keyMaskP1 | this.touchMask : this.keyMask | this.touchMask;
+    const p2Input =
+      this.mode === 'hotseat' ? this.keyMaskP2 : this.isBotEnabled ? this.bot.update(state.p2, state.p1) : 0;
 
     this.sim.update(p1Input, p2Input);
     this.presentTick(this.sim.getEvents());
@@ -1058,12 +1059,11 @@ class FighterDemo {
         } else {
           this.audio.playAnnouncerDraw(false);
         }
-        rematchText.textContent =
-          isPlayerWinner
-            ? `Zwycięstwo! ${winnerName} wygrywa pojedynek!`
-            : state.winner !== 'draw'
-              ? `Porażka! ${winnerName} dominuje pole!`
-              : 'Remis!';
+        rematchText.textContent = isPlayerWinner
+          ? `Zwycięstwo! ${winnerName} wygrywa pojedynek!`
+          : state.winner !== 'draw'
+            ? `Porażka! ${winnerName} dominuje pole!`
+            : 'Remis!';
       }
       rematchModal?.removeAttribute('hidden');
     }

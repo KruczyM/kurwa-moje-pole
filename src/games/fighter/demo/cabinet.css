@@ -109,8 +109,12 @@
   padding: 6px 12px;
   color: #ffd05a;
   cursor: pointer;
-  box-shadow: 0 0 10px #ffd05a44, inset 0 0 6px #000;
-  transition: transform 0.08s, filter 0.1s;
+  box-shadow:
+    0 0 10px #ffd05a44,
+    inset 0 0 6px #000;
+  transition:
+    transform 0.08s,
+    filter 0.1s;
   animation: pulse-coin 2.4s infinite ease-in-out;
 }
 
@@ -125,7 +129,9 @@
 }
 
 .coin-insert-text {
-  font: 900 12px Impact, sans-serif;
+  font:
+    900 12px Impact,
+    sans-serif;
   letter-spacing: 0.12em;
   color: #ff4757;
   text-shadow: 0 0 8px #ff4757aa;
@@ -138,8 +144,17 @@
 }
 
 @keyframes pulse-coin {
-  0%, 100% { box-shadow: 0 0 8px #ffd05a33, inset 0 0 6px #000; }
-  50% { box-shadow: 0 0 16px #ffd05a88, inset 0 0 8px #ffd05a33; }
+  0%,
+  100% {
+    box-shadow:
+      0 0 8px #ffd05a33,
+      inset 0 0 6px #000;
+  }
+  50% {
+    box-shadow:
+      0 0 16px #ffd05a88,
+      inset 0 0 8px #ffd05a33;
+  }
 }
 
 .mode-buttons {
@@ -755,11 +770,16 @@
 }
 
 .vs-splash-side h2 {
-  font: 900 clamp(24px, 4.2vw, 46px) Impact, 'Arial Black', sans-serif;
+  font:
+    900 clamp(24px, 4.2vw, 46px) Impact,
+    'Arial Black',
+    sans-serif;
   color: #fff2d1;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  text-shadow: 3px 3px 0 #000, 0 0 20px rgba(255, 208, 90, 0.5);
+  text-shadow:
+    3px 3px 0 #000,
+    0 0 20px rgba(255, 208, 90, 0.5);
   margin: 0;
 }
 
@@ -777,7 +797,9 @@
 }
 
 .vs-splash-badge {
-  font: italic 900 clamp(48px, 8vw, 90px) Impact, sans-serif;
+  font:
+    italic 900 clamp(48px, 8vw, 90px) Impact,
+    sans-serif;
   color: #ffd05a;
   text-shadow:
     4px 4px 0 #000,
@@ -851,8 +873,21 @@
 }
 
 @keyframes cabinet-shake-anim {
-  10%, 90% { transform: translate3d(-3px, 2px, 0); }
-  20%, 80% { transform: translate3d(4px, -3px, 0); }
-  30%, 50%, 70% { transform: translate3d(-5px, 3px, 0); }
-  40%, 60% { transform: translate3d(5px, -2px, 0); }
+  10%,
+  90% {
+    transform: translate3d(-3px, 2px, 0);
+  }
+  20%,
+  80% {
+    transform: translate3d(4px, -3px, 0);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-5px, 3px, 0);
+  }
+  40%,
+  60% {
+    transform: translate3d(5px, -2px, 0);
+  }
 }

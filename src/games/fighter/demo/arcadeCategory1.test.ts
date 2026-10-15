@@ -33,16 +33,39 @@ describe('Arcade Category 1 — Character Stats & Matrix', () => {
 
 describe('Arcade Category 1 — Hotseat 2P Control Mapping', () => {
   it('guarantees complete isolation between P1 and P2 hotseat keys', () => {
-    const p1Keys = new Set(['KeyW', 'KeyS', 'KeyA', 'KeyD', 'KeyF', 'KeyG', 'KeyV', 'KeyB', 'KeyR', 'KeyT', 'KeyC']);
+    const p1Keys = new Set([
+      'KeyW',
+      'KeyS',
+      'KeyA',
+      'KeyD',
+      'KeyF',
+      'KeyG',
+      'KeyV',
+      'KeyB',
+      'KeyR',
+      'KeyT',
+      'KeyC',
+    ]);
     const p2Keys = new Set([
-      'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-      'KeyI', 'Numpad4',
-      'KeyO', 'Numpad5',
-      'KeyK', 'Numpad1',
-      'KeyL', 'Numpad2',
-      'KeyP', 'Numpad6',
-      'BracketLeft', 'NumpadAdd',
-      'Enter', 'Numpad0', 'Numpad3',
+      'ArrowUp',
+      'ArrowDown',
+      'ArrowLeft',
+      'ArrowRight',
+      'KeyI',
+      'Numpad4',
+      'KeyO',
+      'Numpad5',
+      'KeyK',
+      'Numpad1',
+      'KeyL',
+      'Numpad2',
+      'KeyP',
+      'Numpad6',
+      'BracketLeft',
+      'NumpadAdd',
+      'Enter',
+      'Numpad0',
+      'Numpad3',
     ]);
 
     for (const code of p1Keys) {
