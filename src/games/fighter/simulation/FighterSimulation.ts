@@ -557,6 +557,12 @@ export class FighterSimulation {
     if (this.state.p1Wins >= 2 || this.state.p2Wins >= 2) {
       this.state.roundState = 'matchOver';
     }
+
+    this.events.push({
+      type: 'round_end',
+      tick: this.state.tick,
+      data: { timeout: true, winner: this.state.winner },
+    });
   }
 
   private nextRound(): void {
