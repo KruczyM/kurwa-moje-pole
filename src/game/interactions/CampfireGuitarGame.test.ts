@@ -71,6 +71,7 @@ describe('CampfireGuitarGame', () => {
         playChord: () => {},
         playMissBuzz: () => {},
         playCrowdCheer: () => crowdCheers++,
+        getAudioCurrentTime: () => null,
         dispose: () => {},
       } as any,
     );
@@ -217,6 +218,7 @@ describe('CampfireGuitarGame', () => {
       playChord: () => {},
       playMissBuzz: () => {},
       playCrowdCheer: () => {},
+      getAudioCurrentTime: () => null,
       dispose: () => {},
     };
 
@@ -253,10 +255,37 @@ describe('CampfireGuitarGame', () => {
     const cegla = songs.find((s) => s.id === 'czerwony-cegla-midi')!;
     expect(cegla).toBeDefined();
     expect(cegla.audioBackingUrl).toContain('game-assets/audio/guitar/czerwony-jak-cegla.mp3');
+    expect(cegla.audioBackingOffset).toBeCloseTo(34.19, 1);
 
     const victoria = songs.find((s) => s.id === 'sen-victoria-midi')!;
     expect(victoria).toBeDefined();
     expect(victoria.audioBackingUrl).toContain('game-assets/audio/guitar/sen-o-victorii.mp3');
+    expect(victoria.audioBackingOffset).toBeCloseTo(2.17, 1);
+  });
+
+  it('synchronizuje currentTime gry ze sprzętowym zegarem audio backing tracka', () => {
+    let mockTime = 12.0;
+    const synthMock = {
+      init: () => {},
+      startBackingTrack: () => {},
+      stopBackingTrack: () => {},
+      updateBackingTrack: () => {},
+      playChord: () => {},
+      playMissBuzz: () => {},
+      playCrowdCheer: () => {},
+      getAudioCurrentTime: () => mockTime,
+      dispose: () => {},
+    };
+
+    const g = new CampfireGuitarGame({}, synthMock as any);
+    g.startSong('czerwony-cegla-midi');
+    const song = g.getHudState().currentSong!;
+    expect(song).toBeDefined();
+
+    mockTime = 38.0;
+    g.update(0.1);
+    const expected = 38.0 - ((g as any).currentSong.audioBackingOffset ?? 0);
+    expect(g.getHudState().currentTime).toBeCloseTo(expected, 1);
   });
 
   it('dispose() bezpiecznie zwalnia zasoby', () => {

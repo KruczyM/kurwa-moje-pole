@@ -20,6 +20,7 @@ export interface GuitarSong {
   license?: string;
   source?: string;
   audioBackingUrl?: string;
+  audioBackingOffset?: number;
   id: string;
   title: string;
   artist: string;
@@ -47,6 +48,8 @@ export interface GuitarHudState {
     title: string;
     artist: string;
     duration: number;
+    audioBackingUrl?: string;
+    audioBackingOffset?: number;
   };
   currentTime: number;
   score: number;
@@ -167,9 +170,10 @@ export class CampfireGuitarSynth {
   /**
    * Rozpoczyna ciągły akompaniament (podkład w stylu Guitar Hero).
    * Jeśli podano audioUrl (i plik istnieje), odtwarzany jest prawdziwy podkład audio bez gitary.
+   * startOffset określa punkt rozpoczęcia utworu w pliku audio (np. pomijając wielominutowe cisze lub dopasowując count-in).
    * W przeciwnym razie wykorzystywany jest syntetyczny podkład proceduralny.
    */
-  public startBackingTrack(audioUrl?: string): void {
+  public startBackingTrack(audioUrl?: string, startOffset = 0): void {
     if (!this.ctx || !this.masterGain) {
       this.init();
       if (!this.ctx || !this.masterGain) return;
@@ -195,7 +199,7 @@ export class CampfireGuitarSynth {
           }
         }
         this.backingAudio.src = audioUrl;
-        this.backingAudio.currentTime = 0;
+        this.backingAudio.currentTime = Math.max(0, startOffset);
         const playPromise = this.backingAudio.play();
         if (playPromise) {
           playPromise
@@ -211,6 +215,16 @@ export class CampfireGuitarSynth {
         this.hasActiveAudioTrack = false;
       }
     }
+  }
+
+  /**
+   * Zwraca aktualny czas odtwarzania pliku audio, jeśli jest aktywny i odtwarzany
+   */
+  public getAudioCurrentTime(): number | null {
+    if (this.hasActiveAudioTrack && this.backingAudio && !this.backingAudio.paused) {
+      return this.backingAudio.currentTime;
+    }
+    return null;
   }
 
   /**
@@ -702,6 +716,7 @@ export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = [
       ...song,
       duration: song.notes[song.notes.length - 1].time - offset + 3,
       notes: song.notes.map((note) => ({ ...note, time: note.time - offset })),
+      audioBackingOffset: offset,
     };
   }),
   {
@@ -752,6 +767,7 @@ export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = [
   return {
     ...song,
     audioBackingUrl,
+    audioBackingOffset: (song as { audioBackingOffset?: number }).audioBackingOffset ?? 0,
     difficulty: song.difficulty as GuitarSong['difficulty'],
     duration: Math.max(song.duration, song.notes.at(-1)!.time + 3),
   };
@@ -823,7 +839,7 @@ export class CampfireGuitarGame {
     this.callbacks?.onToast?.(
       `🎸 ZACZYNAMY: „${song.title}”! Uderzaj klawisze [A, S, D, F, G] na linii ognia!`,
     );
-    this.synth.startBackingTrack(this.currentSong.audioBackingUrl);
+    this.synth.startBackingTrack(this.currentSong.audioBackingUrl, this.currentSong.audioBackingOffset ?? 0);
     return true;
   }
 
@@ -944,7 +960,18 @@ export class CampfireGuitarGame {
   public update(dt: number): void {
     if (this.phase !== 'playing' || !this.currentSong) return;
 
-    this.currentTime += dt;
+    const audioPos = this.synth.getAudioCurrentTime?.() ?? null;
+    if (audioPos !== null && Number.isFinite(audioPos)) {
+      const targetTime = audioPos - (this.currentSong.audioBackingOffset ?? 0);
+      if (Math.abs(this.currentTime - targetTime) > 0.04) {
+        this.currentTime = targetTime;
+      } else {
+        this.currentTime += dt;
+      }
+    } else {
+      this.currentTime += dt;
+    }
+
     this.synth.updateBackingTrack(
       this.currentTime,
       this.currentSong.bpm,
@@ -1038,6 +1065,8 @@ export class CampfireGuitarGame {
             title: this.currentSong.title,
             artist: this.currentSong.artist,
             duration: this.currentSong.duration,
+            audioBackingUrl: this.currentSong.audioBackingUrl,
+            audioBackingOffset: this.currentSong.audioBackingOffset,
           }
         : undefined,
       currentTime: this.currentTime,

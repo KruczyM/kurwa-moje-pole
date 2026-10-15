@@ -205,6 +205,24 @@ async def main():
             await page.evaluate('() => window.__camp_game.campfireGuitarGame.stopSong()')
             print("Guitar HUD flame meter & target lane badges verified.")
 
+            # 5b. Verify Real MP3 Backing Track Integration
+            print("Verifying Guitar real MP3 backing track integration...")
+            song_data = await page.evaluate('''() => {
+                const game = window.__camp_game.campfireGuitarGame;
+                game.startSong('czerwony-cegla-midi');
+                const hud = game.getHudState();
+                return {
+                    id: hud.currentSong?.id,
+                    title: hud.currentSong?.title,
+                    url: hud.currentSong?.audioBackingUrl,
+                    offset: hud.currentSong?.audioBackingOffset,
+                };
+            }''')
+            assert 'czerwony-jak-cegla.mp3' in (song_data.get('url') or ''), f"Expected real MP3 URL, got {song_data}"
+            assert (song_data.get('offset') or 0) > 30, f"Expected offset > 30s, got {song_data['offset']}"
+            await page.evaluate('() => window.__camp_game.campfireGuitarGame.stopSong()')
+            print("Guitar real MP3 backing track verified:", song_data['title'], "->", song_data['url'])
+
             # 6. Test Mobile Controls & Clean Non-Overlapping Layout
             print("Checking Mobile Controls...")
             await page.set_viewport_size({'width': 390, 'height': 844})
