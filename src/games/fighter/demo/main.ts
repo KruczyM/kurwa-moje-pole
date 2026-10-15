@@ -546,7 +546,7 @@ class FighterDemo {
       ? room?.players[this.online.seat]?.ready
         ? 'COFNIJ GOTOWOŚĆ'
         : 'JESTEM GOTOWY'
-      : 'WRZUĆ COMBO / START';
+      : 'ROZPOCZNIJ WALKĘ';
     for (const id of ['online-copy', 'online-leave'])
       (document.getElementById(id) as HTMLButtonElement).disabled = !room;
     for (const id of ['online-create', 'online-join'])

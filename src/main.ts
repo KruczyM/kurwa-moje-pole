@@ -122,12 +122,12 @@ networkClient.onStatusChange((status) => {
   if (!networkBadge || !networkStatusText) return;
   networkBadge.className = `network-status-badge ${status}`;
   if (status === 'connected') {
-    networkStatusText.textContent = 'Online (Pokój: główny obóz)';
+    networkStatusText.textContent = 'Online · Sektor główny';
   } else if (status === 'connecting') {
-    networkStatusText.textContent = 'Łączenie z serwerem...';
+    networkStatusText.textContent = 'Łączenie z obozem...';
   } else {
     hasInitialReservation = false;
-    networkStatusText.textContent = 'Tryb lokalny (Offline)';
+    networkStatusText.textContent = 'Obóz festiwalowy';
   }
 });
 

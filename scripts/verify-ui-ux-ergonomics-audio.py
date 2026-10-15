@@ -189,7 +189,7 @@ async def main():
             # 5. Test Guitar HUD Flame Bar & Lane Badges
             print("Checking Guitar HUD flame bar and badges...")
             await page.evaluate('''() => {
-                window.__camp_game.campfireGuitarGame.startSong('zegarmistrz');
+                window.__camp_game.campfireGuitarGame.startSong('czerwony-cegla-midi');
                 window.__camp_game.campfireGuitarGame.cheerLevel = 0.85;
             }''')
             await page.wait_for_timeout(200)

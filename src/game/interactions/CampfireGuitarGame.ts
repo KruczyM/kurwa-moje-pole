@@ -643,57 +643,6 @@ export class CampfireGuitarSynth {
   }
 }
 
-/**
- * Generator nut dla utworów
- */
-function createSongNotes(
-  bpm: number,
-  chords: string[],
-  bars: number,
-  difficulty: 'Łatwy' | 'Średni' | 'Trudny' = 'Średni',
-): GuitarNote[] {
-  const notes: GuitarNote[] = [];
-  const beatDuration = 60 / bpm;
-  let noteIndex = 0;
-
-  for (let bar = 0; bar < bars; bar++) {
-    const chord = chords[bar % chords.length];
-    // Dynamiczny podział rytmiczny w zależności od poziomu trudności
-    let beatsInBar: number[];
-    if (difficulty === 'Łatwy') {
-      beatsInBar = [0, 1, 2, 3];
-    } else if (difficulty === 'Średni') {
-      beatsInBar = [0, 1, 1.5, 2, 2.5, 3, 3.5];
-    } else {
-      // Trudny: rockowy groove, synkopy i gęstsze przejścia
-      beatsInBar = [0, 0.5, 1, 1.5, 2, 2.25, 2.5, 3, 3.5];
-    }
-
-    for (let b = 0; b < beatsInBar.length; b++) {
-      const time = (bar * 4 + beatsInBar[b]) * beatDuration + 1.2;
-      // Rozprowadzenie po 5 torach (0..4: A, S, D, F, G)
-      let lane: 0 | 1 | 2 | 3 | 4;
-      if (difficulty === 'Łatwy') {
-        lane = ((bar + b) % 5) as 0 | 1 | 2 | 3 | 4;
-      } else if (difficulty === 'Średni') {
-        const pattern = [0, 1, 2, 3, 4, 3, 2, 1];
-        lane = pattern[(bar * 2 + b) % pattern.length] as 0 | 1 | 2 | 3 | 4;
-      } else {
-        const hardPattern = [0, 2, 4, 1, 3, 4, 2, 0, 3];
-        lane = hardPattern[(bar * 3 + b) % hardPattern.length] as 0 | 1 | 2 | 3 | 4;
-      }
-
-      notes.push({
-        id: `note_${bar}_${b}_${noteIndex++}`,
-        lane,
-        time,
-        chordName: chord,
-      });
-    }
-  }
-  return notes;
-}
-
 const baseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
 
 export const GUITAR_AUDIO_BACKING_MAP: Record<string, string> = {
@@ -701,77 +650,25 @@ export const GUITAR_AUDIO_BACKING_MAP: Record<string, string> = {
   'sen-victoria-midi': 'game-assets/audio/guitar/sen-o-victorii.mp3',
   'pila-tango-midi': 'game-assets/audio/guitar/pila-tango.mp3',
   'czarny-chleb-midi': 'game-assets/audio/guitar/czarny-chleb.mp3',
-  'zegarmistrz-midi': 'game-assets/audio/guitar/zegarmistrz.mp3',
-  wehikul: 'game-assets/audio/guitar/wehikul-czasu.mp3',
-  arahja: 'game-assets/audio/guitar/arahja.mp3',
-  jolka: 'game-assets/audio/guitar/jolka.mp3',
 };
 
-export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = [
-  ...(midiCharts as GuitarSong[]).map((song) => {
+export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = (midiCharts as GuitarSong[])
+  .filter((song) => Boolean(GUITAR_AUDIO_BACKING_MAP[song.id]))
+  .map((song) => {
     // MIDI vocal tracks can begin minutes into the source. Keep their relative
     // rhythm, but provide the same short, playable count-in for every chart.
     const offset = song.notes[0].time - 2.5;
+    const relPath = GUITAR_AUDIO_BACKING_MAP[song.id]!;
+    const audioBackingUrl = `${baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`}${relPath}`;
     return {
       ...song,
       duration: song.notes[song.notes.length - 1].time - offset + 3,
       notes: song.notes.map((note) => ({ ...note, time: note.time - offset })),
       audioBackingOffset: offset,
+      audioBackingUrl,
+      difficulty: song.difficulty as GuitarSong['difficulty'],
     };
-  }),
-  {
-    id: 'wehikul',
-    title: 'Ogniskowy rock — ćwiczenie akordów',
-    artist: 'Ćwiczenie autorskie, bez nagrania',
-    bpm: 100,
-    duration: 32,
-    difficulty: 'Średni',
-    chords: ['A', 'C#m', 'D', 'E'],
-    notes: createSongNotes(100, ['A', 'C#m', 'D', 'E'], 12, 'Średni'),
-  },
-  {
-    id: 'arahja',
-    title: 'Ogniskowy puls — riff rockowy',
-    artist: 'Ćwiczenie autorskie, bez nagrania',
-    bpm: 125,
-    duration: 30,
-    difficulty: 'Trudny',
-    chords: ['Em', 'C', 'G', 'D'],
-    notes: createSongNotes(125, ['Em', 'C', 'G', 'D'], 14, 'Trudny'),
-  },
-  {
-    id: 'jolka',
-    title: 'Ballada — ćwiczenie akordów',
-    artist: 'Ćwiczenie autorskie, bez nagrania',
-    bpm: 85,
-    duration: 34,
-    difficulty: 'Łatwy',
-    chords: ['C', 'G', 'Am', 'F'],
-    notes: createSongNotes(85, ['C', 'G', 'Am', 'F'], 11, 'Łatwy'),
-  },
-  {
-    id: 'zegarmistrz',
-    title: 'Wieczorny rytm — wirtuozerski sweep',
-    artist: 'Ćwiczenie autorskie, bez nagrania',
-    bpm: 110,
-    duration: 30,
-    difficulty: 'Trudny',
-    chords: ['Dm', 'G', 'C', 'Am'],
-    notes: createSongNotes(110, ['Dm', 'G', 'C', 'Am'], 13, 'Trudny'),
-  },
-].map((song) => {
-  const relPath = GUITAR_AUDIO_BACKING_MAP[song.id];
-  const audioBackingUrl = relPath
-    ? `${baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`}${relPath}`
-    : undefined;
-  return {
-    ...song,
-    audioBackingUrl,
-    audioBackingOffset: (song as { audioBackingOffset?: number }).audioBackingOffset ?? 0,
-    difficulty: song.difficulty as GuitarSong['difficulty'],
-    duration: Math.max(song.duration, song.notes.at(-1)!.time + 3),
-  };
-});
+  });
 
 export const NOTE_FALL_SPEED = 2.0; // Sekundy na przebycie od góry gryfu do linii uderzenia
 export const PERFECT_WINDOW = 0.09; // Sekundy dopuszczalnego błędu dla Perfect

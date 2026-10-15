@@ -8,20 +8,15 @@ describe('CampfireGuitarGame', () => {
     expect(guitarFrequencies('C#4')[0]).toBeCloseTo(277.1826);
     expect(guitarFrequencies('Dm')).toHaveLength(4);
   });
-  it('includes five supplied MIDI arrangements with sorted playable notes', () => {
+  it('includes four supplied MIDI arrangements with sorted playable notes and audio backing', () => {
     const songs = new CampfireGuitarGame().getAvailableSongs();
-    for (const id of [
-      'zegarmistrz-midi',
-      'czarny-chleb-midi',
-      'pila-tango-midi',
-      'sen-victoria-midi',
-      'czerwony-cegla-midi',
-    ]) {
+    for (const id of ['czarny-chleb-midi', 'pila-tango-midi', 'sen-victoria-midi', 'czerwony-cegla-midi']) {
       const song = songs.find((s) => s.id === id)!;
       expect(song).toBeDefined();
       expect(song.notes.length).toBeGreaterThan(50);
       expect(song.duration).toBeGreaterThan(60);
       expect(song.notes[0].time).toBeCloseTo(2.5);
+      expect(song.audioBackingUrl).toBeDefined();
       song.notes.forEach((note, i) => {
         expect(note.lane).toBeGreaterThanOrEqual(0);
         expect(note.lane).toBeLessThan(5);
@@ -33,7 +28,7 @@ describe('CampfireGuitarGame', () => {
   it('ships complete licensed MIDI charts with stable pitch lanes and no notes after song end', () => {
     const songs = new CampfireGuitarGame().getAvailableSongs();
     const midiSongs = songs.filter((s) => s.id.endsWith('-midi'));
-    expect(midiSongs.length).toBe(5);
+    expect(midiSongs.length).toBe(4);
     for (const song of midiSongs) {
       expect(song.notes.length).toBeGreaterThan(50);
       const lanes = new Map<string, number>();
@@ -77,28 +72,29 @@ describe('CampfireGuitarGame', () => {
     );
   });
 
-  it('inicjalizuje się w stanie idle z listą utworów festiwalowych', () => {
+  it('inicjalizuje się w stanie idle z listą utworów festiwalowych posiadających podkład', () => {
     expect(game.getPhase()).toBe('idle');
     const songs = game.getAvailableSongs();
-    expect(songs.length).toBeGreaterThanOrEqual(4);
-    expect(songs.some((s) => s.id === 'wehikul')).toBe(true);
-    expect(songs.some((s) => s.id === 'arahja')).toBe(true);
+    expect(songs.length).toBe(4);
+    expect(songs.some((s) => s.id === 'czerwony-cegla-midi')).toBe(true);
+    expect(songs.some((s) => s.id === 'pila-tango-midi')).toBe(true);
+    expect(songs.every((s) => Boolean(s.audioBackingUrl))).toBe(true);
   });
 
   it('startSong() rozpoczyna rozgrywkę i resetuje punkty oraz combo', () => {
-    const started = game.startSong('wehikul');
+    const started = game.startSong('czerwony-cegla-midi');
     expect(started).toBe(true);
     expect(game.getPhase()).toBe('playing');
     const hud = game.getHudState();
     expect(hud.score).toBe(0);
     expect(hud.combo).toBe(0);
     expect(hud.multiplier).toBe(1);
-    expect(hud.currentSong?.id).toBe('wehikul');
-    expect(toasts.some((t) => t.includes('Ogniskowy rock'))).toBe(true);
+    expect(hud.currentSong?.id).toBe('czerwony-cegla-midi');
+    expect(toasts.some((t) => t.includes('Czerwony jak cegła'))).toBe(true);
   });
 
   it('hitLane() ocenia perfekcyjne trafienie (PERFECT) w oknie czasowym', () => {
-    game.startSong('wehikul');
+    game.startSong('czerwony-cegla-midi');
     const song = (game as any).currentSong;
     const firstNote = song.notes[0];
 
@@ -112,7 +108,7 @@ describe('CampfireGuitarGame', () => {
   });
 
   it('hitLane() ocenia trafienie dobre (GOOD) w dopuszczalnym marginesie', () => {
-    game.startSong('wehikul');
+    game.startSong('czerwony-cegla-midi');
     const song = (game as any).currentSong;
     const firstNote = song.notes[0];
 
@@ -126,7 +122,7 @@ describe('CampfireGuitarGame', () => {
   });
 
   it('hitLane() w pustą ścieżkę powoduje pudło i zeruje combo', () => {
-    game.startSong('wehikul');
+    game.startSong('czerwony-cegla-midi');
     const song = (game as any).currentSong;
     const firstNote = song.notes[0];
 
@@ -143,7 +139,7 @@ describe('CampfireGuitarGame', () => {
   });
 
   it('akumuluje combo i podnosi mnożnik (x2 od 5 combo, x3 od 10 combo, x4 od 20 combo)', () => {
-    game.startSong('wehikul');
+    game.startSong('czerwony-cegla-midi');
 
     for (let i = 0; i < 5; i++) {
       (game as any).combo++;
@@ -173,7 +169,7 @@ describe('CampfireGuitarGame', () => {
       onToast: (m) => toasts.push(m),
     });
 
-    game.startSong('wehikul');
+    game.startSong('czerwony-cegla-midi');
     const duration = (game as any).currentSong.duration;
 
     // Przeskakujemy czas poza czas trwania utworu
@@ -186,7 +182,7 @@ describe('CampfireGuitarGame', () => {
   });
 
   it('zwraca aktywne nuty w getHudState() z poprawnym progresem 0..1', () => {
-    game.startSong('wehikul');
+    game.startSong('czerwony-cegla-midi');
     // Ustawiamy czas na 0.5s przed pierwszą nutą
     const firstNote = (game as any).currentSong.notes[0];
     (game as any).currentTime = firstNote.time - 1.0;
@@ -223,7 +219,7 @@ describe('CampfireGuitarGame', () => {
     };
 
     const g = new CampfireGuitarGame({}, synthMock as any);
-    g.startSong('arahja');
+    g.startSong('czerwony-cegla-midi');
     expect(backingStarted).toBe(true);
 
     g.update(0.1);
@@ -233,25 +229,30 @@ describe('CampfireGuitarGame', () => {
     expect(backingStopped).toBe(true);
   });
 
-  it('obsługuje 5 torów (0..4) i różnorodne poziomy trudności w utworach', () => {
+  it('obsługuje 5 torów (0..4) we wszystkich dostępnych utworach z podkładem', () => {
     const songs = game.getAvailableSongs();
-    const difficultSongs = songs.filter((s) => s.difficulty === 'Trudny');
-    expect(difficultSongs.length).toBeGreaterThanOrEqual(2);
+    expect(songs.length).toBe(4);
 
     // Sprawdzamy czy utwory korzystają ze wszystkich 5 torów 0, 1, 2, 3, 4
     for (const song of songs) {
       const lanes = new Set(song.notes.map((n) => n.lane));
       expect(lanes.has(0)).toBe(true);
       expect(lanes.has(4)).toBe(true);
+      expect(Boolean(song.audioBackingUrl)).toBe(true);
     }
   });
 
-  it('nie zawiera utworów klasycznych (ode, amazing) i przypisuje audioBackingUrl', () => {
+  it('nie zawiera utworów bez podkładu (ode, amazing, wehikul, arahja) i przypisuje audioBackingUrl', () => {
     const songs = game.getAvailableSongs();
     expect(songs.some((s) => s.id === 'ode')).toBe(false);
     expect(songs.some((s) => s.id === 'amazing')).toBe(false);
+    expect(songs.some((s) => s.id === 'wehikul')).toBe(false);
+    expect(songs.some((s) => s.id === 'arahja')).toBe(false);
+    expect(songs.some((s) => s.id === 'jolka')).toBe(false);
+    expect(songs.some((s) => s.id === 'zegarmistrz')).toBe(false);
+    expect(songs.some((s) => s.id === 'zegarmistrz-midi')).toBe(false);
 
-    // Sprawdzamy czy każdy kluczowy utwór ma skonfigurowany relatywny URL do pliku audio
+    // Sprawdzamy czy każdy utwór ma skonfigurowany URL do realnego pliku audio
     const cegla = songs.find((s) => s.id === 'czerwony-cegla-midi')!;
     expect(cegla).toBeDefined();
     expect(cegla.audioBackingUrl).toContain('game-assets/audio/guitar/czerwony-jak-cegla.mp3');
