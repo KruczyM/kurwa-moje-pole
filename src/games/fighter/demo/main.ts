@@ -195,13 +195,14 @@ class FighterDemo {
       ArrowLeft: INPUT.LEFT,
       ArrowRight: INPUT.RIGHT,
 
-      // --- UKŁAD GŁÓWNY (Prawa ręka - 2 rzędy klawiszy obok siebie 3x2) ---
-      // Górny rząd: U, I, O (Lekka Pięść, Mocna Pięść, SUPER MOVE)
+      // --- UKŁAD GŁÓWNY (Prawa ręka - 2 rzędy klawiszy obok siebie) ---
+      // Górny rząd: Y (Special), U (Lekka Pięść), I (Mocna Pięść), O (Ultimate)
+      KeyY: INPUT.TECHNIQUE, // Special move pod palcem wskazującym obok U
       KeyU: INPUT.LP, // Lekka Pięść (Góra - Wskazujący)
       KeyI: INPUT.RP, // Mocna Pięść (Góra - Środkowy)
-      KeyH: INPUT.DOWN | INPUT.RP,
-      KeyN: INPUT.DOWN | INPUT.RK,
-      KeyP: INPUT.TECHNIQUE,
+      KeyH: INPUT.DOWN | INPUT.RP, // Podbródkowy (skrót)
+      KeyN: INPUT.DOWN | INPUT.RK, // Podcięcie (skrót)
+      KeyP: INPUT.TECHNIQUE, // Special move (alternatywa)
       KeyO: INPUT.SPECIAL, // SUPER MOVE / ULTIMATE (Góra - Serdeczny)
 
       // Dolny rząd: J, K, L (Lekkie Kopnięcie, Mocne Kopnięcie, Garda/Blok)
@@ -210,10 +211,21 @@ class FighterDemo {
       KeyL: INPUT.BLOCK, // Blok / Garda (Dół - Serdeczny)
       Space: INPUT.BLOCK, // Spacja: Wygodny blok kciukiem
 
+      // --- UKŁAD RETRO / FLASH (Dla grających Strzałkami: lewa ręka na ZXCV) ---
+      KeyZ: INPUT.LP, // Lekka Pięść (Lewa ręka)
+      KeyX: INPUT.RP, // Mocna Pięść (Lewa ręka)
+      KeyC: INPUT.LK, // Lekkie Kopnięcie (Lewa ręka)
+      KeyV: INPUT.RK, // Mocne Kopnięcie (Lewa ręka)
+      KeyF: INPUT.TECHNIQUE, // Special Move (Lewa ręka)
+      KeyG: INPUT.SPECIAL, // Ultimate / Super (Lewa ręka)
+      ShiftLeft: INPUT.BLOCK, // Blok lewym shiftem
+      ShiftRight: INPUT.BLOCK, // Blok prawym shiftem
+
       // --- UKŁAD NUMPAD (Pełna klawiatura) ---
       Numpad4: INPUT.LP,
       Numpad5: INPUT.RP,
       Numpad6: INPUT.SPECIAL,
+      Numpad7: INPUT.TECHNIQUE,
       Numpad1: INPUT.LK,
       Numpad2: INPUT.RK,
       Numpad3: INPUT.BLOCK,

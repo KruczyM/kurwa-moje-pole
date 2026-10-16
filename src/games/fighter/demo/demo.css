@@ -902,18 +902,73 @@ kbd.kbd-super {
   height: 22px;
   accent-color: #fbbf24;
 }
-@media (max-width: 600px) {
+@media (max-width: 600px), (max-height: 500px) {
   #action-buttons {
     grid-template-columns: repeat(3, 44px);
-    grid-template-rows: repeat(3, 44px);
+    grid-template-rows: repeat(3, 42px);
     gap: 5px;
+  }
+  #dpad {
+    grid-template-columns: repeat(3, 44px);
+    grid-template-rows: repeat(3, 44px);
+    gap: 4px;
+  }
+  .dpad-btn {
+    font-size: 18px;
+    border-radius: 10px;
+  }
+  .btn-arcade {
+    min-width: 44px;
+    min-height: 42px;
+    font-size: 11px;
+    border-radius: 10px;
+  }
+  #hud-nav-buttons {
+    flex-direction: row;
+    gap: 6px;
+  }
+  .quick-btn {
+    min-height: 38px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}
+@media (max-width: 480px) {
+  #touch-controls {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+  }
+  #dpad {
+    grid-template-columns: repeat(3, 40px);
+    grid-template-rows: repeat(3, 40px);
+    gap: 3px;
+  }
+  #action-buttons {
+    grid-template-columns: repeat(3, 40px);
+    grid-template-rows: repeat(3, 38px);
+    gap: 4px;
+  }
+  .btn-arcade {
+    min-width: 40px;
+    min-height: 38px;
+    font-size: 10px;
+    border-radius: 8px;
+  }
+  .dpad-btn {
+    font-size: 16px;
+    border-radius: 8px;
   }
   #hud-nav-buttons {
     flex-direction: column;
     gap: 4px;
+    align-self: center;
+    margin: 0 4px;
   }
   .quick-btn {
-    min-height: 44px;
+    min-height: 30px;
+    padding: 3px 6px;
+    font-size: 10px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -145,4 +145,24 @@ describe('Arcade fighting camera and arena layout', () => {
     // Phase must have advanced rather than remaining frozen at 0
     expect(pose.phase).toBeGreaterThan(0);
   });
+
+  it('frames fighters with a close-up perspective on mobile viewports instead of shrinking to ant-size', () => {
+    const cam = new CameraRig2D();
+    const width = 390;
+    const height = 844;
+
+    // Simulate neutral combat distance (-90, 90) over several ticks
+    for (let i = 0; i < 20; i++) {
+      cam.update(-90, 90, 0.05, width, height);
+    }
+
+    // Zoom must be close-up (>= 0.95) rather than old collapsed 0.397
+    expect(cam.zoom).toBeGreaterThanOrEqual(0.95);
+
+    // Both fighters must comfortably fit within the visible viewport margins
+    const p1Screen = width / 2 + (-90 - cam.x) * cam.zoom;
+    const p2Screen = width / 2 + (90 - cam.x) * cam.zoom;
+    expect(p1Screen).toBeGreaterThan(30);
+    expect(p2Screen).toBeLessThan(width - 30);
+  });
 });

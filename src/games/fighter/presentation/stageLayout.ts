@@ -10,8 +10,37 @@ export const MAX_ARENA_ZOOM = 1.1;
 /** World units reserved beyond each fighter centre for the sprite and its attack reach. */
 export const FIGHTER_SCREEN_MARGIN = (CAMERA_VIEW_WIDTH - MAX_FIGHTER_SEPARATION) / 2;
 
-/** Constant zoom: depends only on the viewport, never on the distance between fighters. */
-export function arenaZoom(width: number, height: number): number {
+/**
+ * Dynamic arena zoom keeping a close-up fighting perspective:
+ * - In neutral / close range (dist <= 220): zooms in close (0.95 - 1.12) for maximum visual punch.
+ * - When fighters separate: smoothly pulls back just enough to keep both fighters and reach margins framed.
+ * - Respects viewport bounds and never shrinks fighters to ant-size on mobile.
+ */
+export function dynamicArenaZoom(width: number, height: number, p1x: number, p2x: number): number {
+  const isPortrait = height > width;
+  const availableW = Math.max(1, width - CAMERA_SHAKE_MARGIN * 2);
+  const availableH = Math.max(1, height * GROUND_SCREEN_RATIO);
+
+  const dist = Math.abs(p2x - p1x);
+  const marginX = isPortrait ? 70 : FIGHTER_SCREEN_MARGIN;
+  const span = dist + marginX * 2;
+
+  const fitByWidth = availableW / span;
+  const fitByHeight = availableH / (isPortrait ? 250 : 280);
+
+  const target = Math.min(MAX_ARENA_ZOOM, fitByWidth, fitByHeight);
+  const minFloor = isPortrait ? 0.6 : 0.82;
+  return Math.max(minFloor, Math.min(MAX_ARENA_ZOOM, target));
+}
+
+/**
+ * Constant or baseline arena zoom depending on the viewport.
+ * When fighter coordinates are passed, returns the close-up framing.
+ */
+export function arenaZoom(width: number, height: number, p1x?: number, p2x?: number): number {
+  if (p1x !== undefined && p2x !== undefined) {
+    return dynamicArenaZoom(width, height, p1x, p2x);
+  }
   const byWidth = Math.max(1, width - CAMERA_SHAKE_MARGIN * 2) / CAMERA_VIEW_WIDTH;
   const byHeight = Math.max(1, height * GROUND_SCREEN_RATIO) / FIGHT_WORLD_HEIGHT;
   return Math.min(MAX_ARENA_ZOOM, byWidth, byHeight);
