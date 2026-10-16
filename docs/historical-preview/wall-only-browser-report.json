@@ -1,9 +1,6 @@
 {
   "browser": "chromium",
-  "viewport": [
-    1280,
-    800
-  ],
+  "viewport": [1280, 800],
   "touch": false,
   "reducedMotion": false,
   "input": "real keyboard DOM events",
@@ -16,9 +13,7 @@
       "inputs": 92,
       "ticks": 92,
       "collected": 19,
-      "chambers": [
-        "main"
-      ],
+      "chambers": ["main"],
       "transitions": [],
       "rendering": {
         "cachedTiles": 95,
@@ -58,11 +53,7 @@
       "inputs": 154,
       "ticks": 154,
       "collected": 49,
-      "chambers": [
-        "main",
-        "vault-1",
-        "vault-2"
-      ],
+      "chambers": ["main", "vault-1", "vault-2"],
       "transitions": [
         {
           "tick": 12,
