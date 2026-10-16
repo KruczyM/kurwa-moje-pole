@@ -870,33 +870,6 @@
   transform: translateY(-1px);
 }
 
-/* Nickname form with random button */
-.nickname-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-}
-
-.btn-random-nick {
-  padding: 6px 12px;
-  background: rgba(255, 215, 0, 0.18);
-  border: 1px solid #ffd700;
-  color: #ffeb3b;
-  border-radius: 6px;
-  font-weight: 700;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.btn-random-nick:hover {
-  background: #ffd700;
-  color: #12101a;
-  transform: translateY(-1px);
-}
-
 /* 3D Tilt Character Cards */
 #character-select button.character-card {
   position: relative;

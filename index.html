@@ -24,13 +24,16 @@
               placeholder="Wpisz swój nick..."
               autocomplete="nickname"
             />
-            <button id="random-nickname-btn" type="button" class="btn-random-nick" title="Wylosuj festiwalową ksywkę">🎲 Losuj</button>
             <span id="nickname-count">0/18</span>
           </div>
           <span id="nickname-error" class="error-hint" hidden></span>
         </div>
         <div id="character-select"></div>
-        <div id="network-status-badge" class="network-status-badge" title="Obóz festiwalowy (Lokalnie lub Online)">
+        <div
+          id="network-status-badge"
+          class="network-status-badge"
+          title="Obóz festiwalowy (Lokalnie lub Online)"
+        >
           <span class="status-dot"></span>
           <span id="network-status-text">Obóz festiwalowy</span>
         </div>
@@ -45,10 +48,20 @@
           </div>
           <div class="start-arcade-bar" aria-label="Automaty 2D">
             <span class="arcade-label">🕹️ SALON GIER 2D:</span>
-            <a id="play-fighter" class="minigame-link" href="./fighter-demo.html" target="_blank" rel="noopener"
+            <a
+              id="play-fighter"
+              class="minigame-link"
+              href="./fighter-demo.html"
+              target="_blank"
+              rel="noopener"
               >KURWA, MOJE COMBO! · BIJATYKA 2D ↗</a
             >
-            <a id="play-bongo-rush" class="minigame-link" href="./bongo-rush.html" target="_blank" rel="noopener"
+            <a
+              id="play-bongo-rush"
+              class="minigame-link"
+              href="./bongo-rush.html"
+              target="_blank"
+              rel="noopener"
               >WALKA O TASIOROWE BONGO · MINIGRA 2D ↗</a
             >
           </div>
@@ -99,10 +112,18 @@
         </div>
         <div id="effect-hud" hidden></div>
         <div id="hud-hotbar" class="hud-hotbar" aria-label="Pasek szybkiego wyboru">
-          <button class="hotbar-slot" data-slot="0" type="button" title="Użyj: Piwo [1]"><kbd>1</kbd><span class="slot-icon">🍺</span><span class="slot-count">×0</span></button>
-          <button class="hotbar-slot" data-slot="1" type="button" title="Użyj: Papieros [2]"><kbd>2</kbd><span class="slot-icon">🚬</span><span class="slot-count">×0</span></button>
-          <button class="hotbar-slot" data-slot="2" type="button" title="Użyj: Joint [3]"><kbd>3</kbd><span class="slot-icon">🌿</span><span class="slot-count">×0</span></button>
-          <button class="hotbar-slot" data-slot="3" type="button" title="Użyj: Woda [4]"><kbd>4</kbd><span class="slot-icon">💧</span><span class="slot-count">×0</span></button>
+          <button class="hotbar-slot" data-slot="0" type="button" title="Użyj: Piwo [1]">
+            <kbd>1</kbd><span class="slot-icon">🍺</span><span class="slot-count">×0</span>
+          </button>
+          <button class="hotbar-slot" data-slot="1" type="button" title="Użyj: Papieros [2]">
+            <kbd>2</kbd><span class="slot-icon">🚬</span><span class="slot-count">×0</span>
+          </button>
+          <button class="hotbar-slot" data-slot="2" type="button" title="Użyj: Joint [3]">
+            <kbd>3</kbd><span class="slot-icon">🌿</span><span class="slot-count">×0</span>
+          </button>
+          <button class="hotbar-slot" data-slot="3" type="button" title="Użyj: Woda [4]">
+            <kbd>4</kbd><span class="slot-icon">💧</span><span class="slot-count">×0</span>
+          </button>
         </div>
         <div id="controls-hud"></div>
         <div id="flanki-hud" class="flanki-hud" hidden>
@@ -186,29 +207,47 @@
                 <span class="card-step">1</span>
                 <span class="card-icon">🎯</span>
                 <strong class="card-title">Rzucaj w puszkę</strong>
-                <p class="card-desc">Wyceluj i przytrzymaj [LPM] / [Spacja]. Puść w zielonym polu, by strącić puszkę.</p>
+                <p class="card-desc">
+                  Wyceluj i przytrzymaj [LPM] / [Spacja]. Puść w zielonym polu, by strącić puszkę.
+                </p>
               </div>
               <div class="flanki-rule-card">
                 <span class="card-step">2</span>
                 <span class="card-icon">🍺</span>
                 <strong class="card-title">Pij po trafieniu</strong>
-                <p class="card-desc">Przytrzymaj [E], aby pić piwo, dopóki biegacz rywali nie postawi puszki i nie krzyknie STOP!</p>
+                <p class="card-desc">
+                  Przytrzymaj [E], aby pić piwo, dopóki biegacz rywali nie postawi puszki i nie krzyknie STOP!
+                </p>
               </div>
               <div class="flanki-rule-card">
                 <span class="card-step">3</span>
                 <span class="card-icon">⚡</span>
                 <strong class="card-title">Biegaj i broń</strong>
-                <p class="card-desc">Gdy puszka spadnie: podbiegnij [WASD], postaw [E] i wracaj za linię drużyny!</p>
+                <p class="card-desc">
+                  Gdy puszka spadnie: podbiegnij [WASD], postaw [E] i wracaj za linię drużyny!
+                </p>
               </div>
             </div>
             <details class="flanki-rules-details">
               <summary>📖 Pełny regulamin Pol'and'Rock (6 zasad)</summary>
               <ol>
                 <li>Rzucający na przemian celują puszkę na środku boiska tenisówką.</li>
-                <li>Wyceluj łukiem w puszkę. Przytrzymaj LPM lub Spację: trajektoria się blokuje, a siła rośnie. Puść w zielonym zakresie zalecanej siły.</li>
-                <li>Trafienie przewraca puszkę: drużyna rzucająca pije piwo, a stały biegacz rywali pędzi ją postawić.</li>
-                <li>Picie wolno kontynuować tylko do momentu, gdy biegacz postawi puszkę i wróci za swoją linię krzycząc STOP!</li>
-                <li>Rzucający stoją na liniach i piją przez przytrzymanie [E]. Jako biegacz podbiegasz WASD, stawiasz puszkę [E] i wracasz za linię.</li>
+                <li>
+                  Wyceluj łukiem w puszkę. Przytrzymaj LPM lub Spację: trajektoria się blokuje, a siła rośnie.
+                  Puść w zielonym zakresie zalecanej siły.
+                </li>
+                <li>
+                  Trafienie przewraca puszkę: drużyna rzucająca pije piwo, a stały biegacz rywali pędzi ją
+                  postawić.
+                </li>
+                <li>
+                  Picie wolno kontynuować tylko do momentu, gdy biegacz postawi puszkę i wróci za swoją linię
+                  krzycząc STOP!
+                </li>
+                <li>
+                  Rzucający stoją na liniach i piją przez przytrzymanie [E]. Jako biegacz podbiegasz WASD,
+                  stawiasz puszkę [E] i wracasz za linię.
+                </li>
                 <li>Wygrywa drużyna, której wszyscy rzucający jako pierwsi wypiją piwo do dna.</li>
               </ol>
             </details>
@@ -256,7 +295,7 @@
             <div class="guitar-stat guitar-flame-stat">
               <span>🔥 Klimat ogniska:</span>
               <div class="guitar-flame-meter">
-                <div id="guitar-flame-bar" class="guitar-flame-bar" style="width: 50%;"></div>
+                <div id="guitar-flame-bar" class="guitar-flame-bar" style="width: 50%"></div>
               </div>
               <strong id="guitar-cheer-val">50%</strong>
             </div>

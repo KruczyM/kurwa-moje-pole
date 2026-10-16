@@ -78,43 +78,6 @@ if (nicknameInput) {
   };
 }
 
-const randomNickBtn = document.querySelector<HTMLButtonElement>('#random-nickname-btn');
-const FESTIVAL_NICKNAMES = [
-  'Tasior',
-  'Dziąsło',
-  'Szef Pola',
-  'Błotny Książę',
-  'Koneser Amareny',
-  'Król Flanków',
-  'Leśny Dzik',
-  'Mistrz Namiotu',
-  'Woodstockowicz',
-  'Złoty Bażant',
-  'Piwny Wojownik',
-  'Pogo Maniak',
-  'Słomiany Kapelusz',
-  'Siwy Dym',
-  'Glana Mistrz',
-  'Wędrowiec Zlotu',
-  'Nocny Marek',
-  'Festiwalowy Lis',
-  'Spokojny Gracz',
-  'Turbo Ślimak',
-  'Błotny Rycerz',
-  'Pankejk',
-  'Kombajnista',
-  'Poranny Ptak',
-  'Ogniskowy Bard',
-];
-
-if (randomNickBtn && nicknameInput) {
-  randomNickBtn.onclick = () => {
-    const randomNick = FESTIVAL_NICKNAMES[Math.floor(Math.random() * FESTIVAL_NICKNAMES.length)];
-    nicknameInput.value = randomNick;
-    nicknameInput.dispatchEvent(new Event('input', { bubbles: true }));
-  };
-}
-
 let hasInitialReservation = false;
 
 // UI Statusu sieci:

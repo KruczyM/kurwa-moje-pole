@@ -60,14 +60,38 @@ button:hover {
 }
 #start {
   height: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: flex-start;
-  padding: 8vw;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: clamp(32px, 5vh, 60px) clamp(32px, 6vw, 96px);
+  padding-bottom: clamp(48px, 8vh, 80px);
   background:
     linear-gradient(90deg, #07120cdd, #07120c44),
     url('../public/game-assets/2d/fighter/art-v3/wristbands-wide.webp') center / cover;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 215, 0, 0.4) rgba(10, 10, 16, 0.6);
+}
+#start::-webkit-scrollbar {
+  width: 8px;
+}
+#start::-webkit-scrollbar-track {
+  background: rgba(10, 10, 16, 0.6);
+}
+#start::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.35);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+#start::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.7);
+}
+#start > * {
+  flex-shrink: 0;
 }
 #start > *:not(.character-preview-layer) {
   position: relative;
