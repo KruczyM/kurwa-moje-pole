@@ -1,0 +1,2 @@
+# Preserve historical build hashes across checkouts, including Windows.
+kurwa-moje-pole/** -text
