@@ -40,6 +40,10 @@
 
 .cabinet-marquee {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding: 16px 24px;
   border: 2px solid #e8b54b;
   background:
@@ -57,12 +61,12 @@
 
 #char-select-screen .cabinet-marquee h2 {
   font:
-    900 clamp(30px, 4.8vw, 58px) / 0.95 Impact,
+    900 clamp(28px, 4.5vw, 56px) / 0.95 Impact,
     'Arial Black',
     sans-serif;
   letter-spacing: -0.02em;
   color: #f4e6bc;
-  margin: 12px 0;
+  margin: 6px 0;
   transform: rotate(-2deg);
   text-shadow:
     3px 3px #111b17,
@@ -100,15 +104,15 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  position: absolute;
-  top: 14px;
-  right: 170px;
+  position: relative;
+  flex-shrink: 0;
   background: #111e18;
   border: 2px solid #e8b54b;
   border-radius: 4px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   color: #ffd05a;
   cursor: pointer;
+  min-height: 44px;
   box-shadow:
     0 0 10px #ffd05a44,
     inset 0 0 6px #000;
@@ -619,7 +623,18 @@
   }
 
   .cabinet-marquee {
-    padding: 14px;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  #char-select-screen .cabinet-marquee h2 {
+    font-size: clamp(22px, 5.8vw, 32px);
+    margin: 0;
+  }
+
+  .arcade-coin-slot {
+    padding: 5px 10px;
+    min-height: 40px;
   }
 
   .cabinet-sticker {
