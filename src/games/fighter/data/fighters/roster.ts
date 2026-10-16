@@ -2,6 +2,12 @@ import { FighterDefinition } from '../../simulation/CombatTypes';
 import { amperDefinition } from './amper';
 import { korbaDefinition } from './korba';
 
+export interface FighterStats {
+  power: number; // 1 - 10 (Siła ciosu)
+  speed: number; // 1 - 10 (Szybkość i zwinność)
+  hangoverRes: number; // 1 - 10 (Odporność na kaca / HP i pancerz)
+}
+
 export interface CharacterRosterEntry {
   definition: FighterDefinition;
   portrait: string;
@@ -9,6 +15,7 @@ export interface CharacterRosterEntry {
   glowColor: string;
   description: string;
   fightingStyle: string;
+  stats: FighterStats;
 }
 
 function makeFighter(
@@ -57,7 +64,7 @@ function makeFighter(
       },
       heavy_punch: {
         id: 'heavy_punch',
-        name: 'Prawy sierpowy (RP)',
+        name: 'Prawy sierpowy (PS)',
         startup: 9,
         active: 4,
         recovery: 13,
@@ -90,7 +97,7 @@ function makeFighter(
       },
       heavy_kick: {
         id: 'heavy_kick',
-        name: 'Prawy zamach (RK)',
+        name: 'Prawy zamach (PZ)',
         startup: 10,
         active: 4,
         recovery: 15,
@@ -106,7 +113,7 @@ function makeFighter(
       },
       uppercut: {
         id: 'uppercut',
-        name: 'Podbródkowy (Launcher)',
+        name: 'Podbródkowy (PB)',
         startup: 9,
         active: 4,
         recovery: 16,
@@ -126,7 +133,7 @@ function makeFighter(
       },
       sweep: {
         id: 'sweep',
-        name: 'Niskie podcięcie (Sweep)',
+        name: 'Niskie podcięcie (PC)',
         startup: 10,
         active: 4,
         recovery: 18,
@@ -250,6 +257,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#38bdf8',
     fightingStyle: 'Wszechstronny / Elektryczny Brawler',
     description: 'Bojowy elektryk obozowy. Uderza przedłużaczem i generuje potężne impulsy zwarciowe.',
+    stats: { power: 7, speed: 6, hangoverRes: 7 },
   },
   korba: {
     definition: korbaDefinition,
@@ -258,6 +266,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#f43f5e',
     fightingStyle: 'Rushdown / Obrotowe Kombosy',
     description: 'Niezwykle szybka mistrzyni serii kopnięć i obrotowych cyklonów.',
+    stats: { power: 6, speed: 9, hangoverRes: 5 },
   },
   klatwa: {
     definition: makeFighter(
@@ -275,6 +284,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#c084fc',
     fightingStyle: 'Zmyłki / Ciemna Aura',
     description: 'Mistrzyni dezinformacji. Jej ciosy oszałamiają i wybijają z rytmu.',
+    stats: { power: 8, speed: 7, hangoverRes: 5 },
   },
   chlebak: {
     definition: makeFighter(
@@ -292,6 +302,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#fbbf24',
     fightingStyle: 'Twardy Brawler / DJ Beats',
     description: 'Stylowa i bezwzględna. Niezwykle odporna na ciosy rywali.',
+    stats: { power: 8, speed: 5, hangoverRes: 8 },
   },
   kobra: {
     definition: makeFighter(
@@ -309,6 +320,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#34d399',
     fightingStyle: 'Precyzja / Komiczny Sikacz',
     description: 'Najszybsze ciosy proste na festiwalu. Trafia w słabe punkty.',
+    stats: { power: 5, speed: 9, hangoverRes: 5 },
   },
   zawor: {
     definition: makeFighter(
@@ -326,6 +338,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#fb923c',
     fightingStyle: 'Szaman Grzybów / Ninja',
     description: 'Nie pozwala przeciwnikowi złapać oddechu przy barierach.',
+    stats: { power: 7, speed: 6, hangoverRes: 7 },
   },
   szerszen: {
     definition: makeFighter(
@@ -343,6 +356,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#facc15',
     fightingStyle: 'Mroczne Szepty / Monolit',
     description: 'Błyskawiczne ataki z powietrza i nieprzewidywalne kąty.',
+    stats: { power: 6, speed: 10, hangoverRes: 4 },
   },
   dziaslo: {
     definition: makeFighter(
@@ -360,6 +374,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#f87171',
     fightingStyle: 'Rakietowy Skoczek / Meteor',
     description: 'Bezkompromisowy ulicznik festiwalu. Znakomita walka w półdystansie.',
+    stats: { power: 7, speed: 7, hangoverRes: 6 },
   },
   hemoroid: {
     definition: makeFighter(
@@ -377,6 +392,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#60a5fa',
     fightingStyle: 'Rajd Terenówką / Taran',
     description: 'Maksymalna wytrzymałość i rozjeżdżanie rywali na scenie.',
+    stats: { power: 9, speed: 4, hangoverRes: 9 },
   },
   jeczmien: {
     definition: makeFighter(
@@ -394,6 +410,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#a3e635',
     fightingStyle: 'Piromania / Rzucane Zapalniczki',
     description: 'Niewygodny styl bazujący na niskich kopnięciach i miotaniu ogniem.',
+    stats: { power: 7, speed: 7, hangoverRes: 6 },
   },
   ambona: {
     definition: makeFighter(
@@ -411,6 +428,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#2dd4bf',
     fightingStyle: 'Arsenał Turystyczny / Deszcz Szyszek',
     description: 'Zasypuje przeciwnika dziesięcioma szyszkami w błyskawicznej serii rzutów.',
+    stats: { power: 6, speed: 6, hangoverRes: 6 },
   },
   antena: {
     definition: makeFighter(
@@ -428,6 +446,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#818cf8',
     fightingStyle: 'Cukierek Mocy / Potężny Uścisk',
     description: 'Podbiega do przeciwnika i przytula go z całej siły.',
+    stats: { power: 8, speed: 6, hangoverRes: 5 },
   },
   gruczol: {
     definition: makeFighter(
@@ -445,6 +464,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#94a3b8',
     fightingStyle: 'Tron Toi-Toi / Ostrzał Papierem',
     description: 'Ogromne zdrowie i niszczycielskie rzuty o glebę.',
+    stats: { power: 9, speed: 4, hangoverRes: 10 },
   },
   krwiak: {
     definition: makeFighter(
@@ -462,6 +482,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#ef4444',
     fightingStyle: 'Szyld SUMMER / Ciężki Młot',
     description: 'Najgroźniejszy przy kontratakach ze stabilnej gardy.',
+    stats: { power: 8, speed: 6, hangoverRes: 7 },
   },
   pien: {
     definition: makeFighter(
@@ -479,6 +500,7 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#d97706',
     fightingStyle: 'Megafon Histerii / Fala Soniczna',
     description: 'Ignoruje słabe ciosy i przełamuje obronę szarżą taranem.',
+    stats: { power: 10, speed: 3, hangoverRes: 10 },
   },
   pierscien: {
     definition: makeFighter(
@@ -496,7 +518,16 @@ export const ROSTER: Record<string, CharacterRosterEntry> = {
     glowColor: '#3b82f6',
     fightingStyle: 'Głośnik JBL / Bas Dobrze Dobrze',
     description: 'Zwinne uskoki, błyskawiczne zmiany stron i obrotowe serie.',
+    stats: { power: 5, speed: 10, hangoverRes: 4 },
   },
 };
 
 export const ROSTER_KEYS = Object.keys(ROSTER);
+
+export function getFighterStats(characterId: string): FighterStats {
+  const entry = ROSTER[characterId];
+  if (entry?.stats) {
+    return entry.stats;
+  }
+  return { power: 5, speed: 5, hangoverRes: 5 };
+}

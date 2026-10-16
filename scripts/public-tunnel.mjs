@@ -59,4 +59,12 @@ server.listen(PROXY_PORT, '127.0.0.1', () => {
 
   tunnel.stdout.on('data', parseUrl);
   tunnel.stderr.on('data', parseUrl);
+
+  const cleanup = () => {
+    vite.kill();
+    tunnel.kill();
+    process.exit(0);
+  };
+  process.on('SIGINT', cleanup);
+  process.on('SIGTERM', cleanup);
 });

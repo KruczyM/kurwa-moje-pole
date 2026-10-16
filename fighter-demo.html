@@ -8,6 +8,9 @@
   </head>
   <body>
     <main id="fighter-app">
+      <!-- Retro CRT Overlay with Scanlines & Vignette -->
+      <div id="crt-overlay" class="crt-overlay" aria-hidden="true"></div>
+
       <!-- 2D Canvas Arena -->
       <canvas id="fighter-canvas" aria-label="Arena walki Kurwa Moje Combo"></canvas>
 
@@ -15,10 +18,22 @@
       <nav id="touch-controls" aria-label="Sterowanie dotykowe">
         <!-- Virtual D-pad (Left thumb) -->
         <div id="dpad">
-          <button class="dpad-btn dpad-up" data-input="1" aria-label="Skok">↑</button>
-          <button class="dpad-btn dpad-left" data-input="4" aria-label="W lewo (Odwrót / Blok)">←</button>
-          <button class="dpad-btn dpad-down" data-input="2" aria-label="Kucanie">↓</button>
-          <button class="dpad-btn dpad-right" data-input="8" aria-label="W prawo (Podejście)">→</button>
+          <button class="dpad-btn dpad-up" data-input="1" aria-label="Skok (W)">
+            <span class="dpad-icon">↑</span>
+            <small class="dpad-key-hint">W</small>
+          </button>
+          <button class="dpad-btn dpad-left" data-input="4" aria-label="W lewo (Odwrót / Blok) (A)">
+            <span class="dpad-icon">←</span>
+            <small class="dpad-key-hint">A</small>
+          </button>
+          <button class="dpad-btn dpad-down" data-input="2" aria-label="Kucanie (S)">
+            <span class="dpad-icon">↓</span>
+            <small class="dpad-key-hint">S</small>
+          </button>
+          <button class="dpad-btn dpad-right" data-input="8" aria-label="W prawo (Podejście) (D)">
+            <span class="dpad-icon">→</span>
+            <small class="dpad-key-hint">D</small>
+          </button>
         </div>
 
         <!-- Bottom Center Match Menu Buttons -->
@@ -30,15 +45,42 @@
 
         <!-- Tekken Arcade Buttons (Right thumb) -->
         <div id="action-buttons">
-          <button class="btn-arcade btn-punch" data-input="16" aria-label="Lewa Pięść">LP</button>
-          <button class="btn-arcade btn-punch" data-input="32" aria-label="Prawa Pięść">RP</button>
-          <button class="btn-arcade btn-special" data-input="256" aria-label="Ultimate">ULT</button>
-          <button class="btn-arcade btn-kick" data-input="64" aria-label="Lewa Noga">LK</button>
-          <button class="btn-arcade btn-kick" data-input="128" aria-label="Prawa Noga">RK</button>
-          <button class="btn-arcade btn-punch" data-input="34" aria-label="Podbródkowy — wybicie">↑RP</button>
-          <button class="btn-arcade btn-kick" data-input="130" aria-label="Podcięcie">↓RK</button>
-          <button class="btn-arcade btn-special" data-input="1024" aria-label="Cios specjalny">SP</button>
-          <button class="btn-arcade btn-block" data-input="512" aria-label="Garda / Rzut">BLK</button>
+          <button class="btn-arcade btn-punch" data-input="16" aria-label="Lewy Prosty (U)">
+            <span class="btn-label">LP</span>
+            <small class="btn-key-hint">U</small>
+          </button>
+          <button class="btn-arcade btn-punch" data-input="32" aria-label="Prawy Sierpowy (I)">
+            <span class="btn-label">PS</span>
+            <small class="btn-key-hint">I</small>
+          </button>
+          <button class="btn-arcade btn-special" data-input="256" aria-label="Super / Ultimate (O)">
+            <span class="btn-label">ULT</span>
+            <small class="btn-key-hint">O</small>
+          </button>
+          <button class="btn-arcade btn-kick" data-input="64" aria-label="Lewy Kopniak (J)">
+            <span class="btn-label">LK</span>
+            <small class="btn-key-hint">J</small>
+          </button>
+          <button class="btn-arcade btn-kick" data-input="128" aria-label="Prawy Zamach (K)">
+            <span class="btn-label">PZ</span>
+            <small class="btn-key-hint">K</small>
+          </button>
+          <button class="btn-arcade btn-punch" data-input="34" aria-label="Podbródkowy — wybicie (H)">
+            <span class="btn-label">PB</span>
+            <small class="btn-key-hint">H</small>
+          </button>
+          <button class="btn-arcade btn-kick" data-input="130" aria-label="Podcięcie (N)">
+            <span class="btn-label">PC</span>
+            <small class="btn-key-hint">N</small>
+          </button>
+          <button class="btn-arcade btn-special" data-input="1024" aria-label="Cios Specjalny (P)">
+            <span class="btn-label">CS</span>
+            <small class="btn-key-hint">P</small>
+          </button>
+          <button class="btn-arcade btn-block" data-input="512" aria-label="Garda / Blok (L)">
+            <span class="btn-label">BLOK</span>
+            <small class="btn-key-hint">L</small>
+          </button>
         </div>
       </nav>
 
@@ -48,6 +90,15 @@
           <div class="select-header">
             <a class="festival-menu-link" href="./">← Menu główne festiwalu</a>
             <div class="cabinet-marquee">
+              <button
+                type="button"
+                id="arcade-coin-btn"
+                class="arcade-coin-slot"
+                title="Wrzuć monetę do automatu arcade"
+              >
+                <span class="coin-insert-text">INSERT COIN</span>
+                <span class="coin-credits">CREDITS: <strong id="arcade-credit-count">99</strong></span>
+              </button>
               <h2>KURWA,<br /><em>MOJE COMBO!</em></h2>
             </div>
             <div class="selection-slots">
@@ -63,8 +114,11 @@
             <button type="button" data-fight-mode="training" aria-pressed="false">
               <span>02</span> Trening
             </button>
+            <button type="button" data-fight-mode="hotseat" aria-pressed="false">
+              <span>03</span> Lokalny Versus <small>2P na 1 klawiaturze</small>
+            </button>
             <button type="button" data-fight-mode="online" aria-pressed="false">
-              <span>03</span> Pojedynek online
+              <span>04</span> Pojedynek online
             </button>
           </div>
           <div class="select-body">
@@ -95,6 +149,34 @@
                 <div class="preview-moves">
                   <div><span>Specjalny:</span> <strong id="preview-special">Impuls przedłużacza</strong></div>
                   <div><span>Ultimate:</span> <strong id="preview-ultimate">Zwarcie na polu</strong></div>
+                </div>
+                <!-- Stat Bars (Siła, Szybkość, Odporność na kaca) -->
+                <div class="preview-stats" id="preview-stats" aria-label="Statystyki zawodnika">
+                  <div class="stat-row">
+                    <span class="stat-label">SIŁA CIOSU</span>
+                    <div class="stat-bar">
+                      <div class="stat-fill stat-fill-power" id="stat-fill-power" style="width: 70%"></div>
+                    </div>
+                    <span class="stat-num" id="stat-num-power">7/10</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-label">SZYBKOŚĆ</span>
+                    <div class="stat-bar">
+                      <div class="stat-fill stat-fill-speed" id="stat-fill-speed" style="width: 60%"></div>
+                    </div>
+                    <span class="stat-num" id="stat-num-speed">6/10</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-label">ODPORNOŚĆ NA KACA</span>
+                    <div class="stat-bar">
+                      <div
+                        class="stat-fill stat-fill-hangover"
+                        id="stat-fill-hangover"
+                        style="width: 70%"
+                      ></div>
+                    </div>
+                    <span class="stat-num" id="stat-num-hangover">7/10</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -129,6 +211,7 @@
                 <select id="fight-mode">
                   <option value="bot">Z botem</option>
                   <option value="training">Trening</option>
+                  <option value="hotseat">Lokalny Versus (2P)</option>
                   <option value="online">Online ze znajomym</option>
                 </select>
               </label>
@@ -198,31 +281,35 @@
               <div class="helper-col">
                 <span class="helper-col-title">GÓRNY RZĄD</span>
                 <div class="helper-item">
-                  <kbd>Y</kbd> <span>Special</span> · <kbd>U</kbd> <span>LP</span>
+                  <kbd>Y</kbd> <span>Special</span> · <kbd>U</kbd> <span>LP (Lewy Prosty)</span>
                 </div>
-                <div class="helper-item"><kbd>I</kbd> <span>Mocna Pięść</span></div>
+                <div class="helper-item"><kbd>I</kbd> <span>PS (Prawy Sierpowy)</span></div>
                 <div class="helper-item">
-                  <kbd class="kbd-super">O</kbd> <span class="txt-super">Super Move (100%)</span>
+                  <kbd class="kbd-super">O</kbd> <span class="txt-super">ULT (Super / 100%)</span>
                 </div>
               </div>
               <div class="helper-col">
                 <span class="helper-col-title">DOLNY RZĄD</span>
-                <div class="helper-item"><kbd>J</kbd> <span>LK</span> · <kbd>K</kbd> <span>RK</span></div>
-                <div class="helper-item"><kbd>L / Spacja</kbd> <span>Blok</span></div>
                 <div class="helper-item">
-                  <kbd>H</kbd> <span>Wybicie</span> · <kbd>N</kbd> <span>Podcięcie</span>
+                  <kbd>J</kbd> <span>LK (Lewy Kopniak)</span> · <kbd>K</kbd> <span>PZ (Prawy Zamach)</span>
+                </div>
+                <div class="helper-item"><kbd>L / Spacja</kbd> <span>BLOK (Garda)</span></div>
+                <div class="helper-item">
+                  <kbd>H</kbd> <span>Wybicie (PB)</span> · <kbd>N</kbd> <span>Podcięcie (PC)</span>
                 </div>
               </div>
             </div>
             <p style="font-size: 11px; color: #facc15; margin-bottom: 12px">
               ⭐ <strong>Y lub P</strong> = Cios Special (30%) · <strong>O</strong> = Ultimate (100%) ·
-              <strong>L / Spacja / Shift</strong> = Blok · <em>Układ retro: Strzałki + Z / X / C / V</em>
+              <strong>H lub S + I</strong> = Podbródkowy (PB) · <strong>N lub S + K</strong> = Podcięcie (PC)
+              · <strong>L / Spacja / Shift</strong> = Blok · <em>Układ retro: Strzałki + Z / X / C / V</em>
             </p>
           </div>
           <div class="audio-settings">
             <label>Muzyka <input id="music-volume" type="range" min="0" max="100" value="45" /></label>
             <label>Efekty <input id="sfx-volume" type="range" min="0" max="100" value="80" /></label>
             <label><input id="reduced-effects" type="checkbox" /> Ogranicz błyski i drgania</label>
+            <label><input id="crt-toggle" type="checkbox" checked /> Efekt kineskopu CRT (scanlines)</label>
           </div>
           <button id="resume-btn" class="btn-primary">Wróć do walki</button>
           <button id="reselect-from-pause-btn" class="btn-primary" style="background: #0284c7; color: #fff">
@@ -230,6 +317,32 @@
           </button>
           <a href="./after-demo.html" class="btn-secondary">Zagraj w „After: ostatnia noc”</a><br />
           <a href="./" class="btn-secondary">Wróć do festiwalu 3D</a>
+        </div>
+      </div>
+
+      <!-- Dynamic VS Matchup Splash Screen (Arcade Slap Transition) -->
+      <div id="matchup-vs-splash" class="vs-splash-overlay" hidden aria-hidden="true">
+        <div class="vs-splash-container">
+          <div class="vs-splash-side vs-splash-left">
+            <img id="vs-splash-p1-img" src="" alt="Gracz 1" />
+            <div class="vs-splash-label-box">
+              <span class="vs-splash-badge-p">GRACZ 1</span>
+              <h2 id="vs-splash-p1-name">AMPER</h2>
+              <span id="vs-splash-p1-title" class="vs-splash-sub">Technik Obozowy</span>
+            </div>
+          </div>
+          <div class="vs-splash-center">
+            <div class="vs-splash-badge">VERSUS</div>
+            <div id="vs-splash-arena" class="vs-splash-stage">DUŻA SCENA</div>
+          </div>
+          <div class="vs-splash-side vs-splash-right">
+            <img id="vs-splash-p2-img" src="" alt="Gracz 2" />
+            <div class="vs-splash-label-box">
+              <span class="vs-splash-badge-p">GRACZ 2</span>
+              <h2 id="vs-splash-p2-name">KORBA</h2>
+              <span id="vs-splash-p2-title" class="vs-splash-sub">Mistrzyni Obrotów</span>
+            </div>
+          </div>
         </div>
       </div>
 
