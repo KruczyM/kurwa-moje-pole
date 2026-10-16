@@ -22,6 +22,12 @@ Na prośbę użytkownika domyślny podgląd zastępuje wszystkie dekoracyjne wn�
 
 Oryginalny wygląd pozostaje dostępny pod `http://127.0.0.1:5198/kurwa-moje-pole/bongo-original.html`. Oryginalny bundle nie został zmieniony. Wariant generuje `scripts/historical-preview/remove-decorative-chambers.py`, który sprawdza identyczność wszystkich danych rozgrywki. Raport zmiany jest w `docs/historical-preview/wall-only-change.json`.
 
+## Bezpośredni wybór poziomu
+
+Przycisk „Wybierz poziom” w menu głównym korzysta z zapisanej postaci. Powrót do poziomów z pauzy, wyniku lub zakończenia kampanii pomija ponowny wybór bohatera i zachowuje zaznaczenie bieżącego poziomu. Osobny przycisk „Zmień postać” nadal otwiera galerię. Odblokowania pozostają wymagane.
+
+Po wygenerowaniu wariantu bez komór uruchom `python scripts/historical-preview/add-level-selection.py`. Skrypt rozszerza istniejący kontroler menu i obsługę zdarzeń; nie dodaje pętli gry ani osobnego loadera. Oryginalny podgląd pozostaje dostępny bez tych zmian.
+
 ## Pochodzenie i ograniczenia
 
 Źródło to istniejący katalog `reports/bongo-campaign-v6/production-verification` w worktree `bongo-rush-v6`. Oryginalny snapshot zapisano bez zmian bajtów w commicie `b1c4fd3`. Manifest SHA-256 opisuje ten oryginał; bieżący `bongo-rush.html` wskazuje dodatkowy bundle wariantu bez komór. Wcześniejsze raporty są w `docs/historical-preview/`.

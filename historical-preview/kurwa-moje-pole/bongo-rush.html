@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#171b2b" />
     <title>After: Walka o tasiorowe bongo</title>
-    <script type="module" crossorigin src="/kurwa-moje-pole/assets/bongo-no-decorative-chambers.js"></script>
+    <script type="module" crossorigin src="/kurwa-moje-pole/assets/bongo-preview-quick-levels.js"></script>
     <link rel="modulepreload" crossorigin href="/kurwa-moje-pole/assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="/kurwa-moje-pole/assets/MobileControls-CAkBG4WB.js">
     <link rel="modulepreload" crossorigin href="/kurwa-moje-pole/assets/ImageCache-By4-CPcJ.js">
@@ -40,6 +40,7 @@
             Dwadzieścia wypraw i cztery wyzwania. Komory, szyby i lawiny.<br />Jedno legendarne Bongo Tasiora.
           </p>
           <button id="play" class="primary">Graj →</button>
+            <button id="choose-level">Wybierz poziom</button>
           <button id="title-help">Jak grać?</button>
           <p class="menu-note">Wybierz bohatera. Przygotuj drogę ucieczki.</p>
           <div class="links">
@@ -73,7 +74,7 @@
           <p id="selected-level"></p>
           <button id="begin" class="primary" disabled>Ładowanie…</button>
           <p id="load-status" role="status">Przygotowuję lekką wersję 2D…</p>
-          <button id="level-back">← Wybór postaci</button>
+          <button id="level-back">← Zmień postać</button>
           <details>
             <summary>Jak grać?</summary>
             <p>
@@ -142,7 +143,7 @@
           <p>Jaskinia poczeka. Wzrost Krzaka jest zatrzymany.</p>
           <button id="resume" class="primary">Wróć do gry</button
           ><button id="pause-restart">Restart poziomu</button
-          ><button id="to-menu">Wybór poziomu i postaci</button>
+          ><button id="to-menu">Wybór poziomu</button>
         </section>
         <section id="result" class="panel compact" hidden aria-label="Wynik poziomu">
           <span id="result-label" class="eyebrow"></span>
