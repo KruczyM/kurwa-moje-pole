@@ -69,13 +69,15 @@ async def main():
 
             # 1. Verify Lobby UI
             print("Verifying Lobby UI...")
-            # Random Nickname Button
-            random_btn = page.locator('#random-nickname-btn')
+            # Nickname Input and Counter
             nick_input = page.locator('#player-nickname')
-            await random_btn.click()
+            nick_count = page.locator('#nickname-count')
+            await nick_input.fill('Festiwalowicz')
             nick_value = await nick_input.input_value()
-            assert len(nick_value) > 0, f"Expected non-empty nickname, got '{nick_value}'"
-            print(f"Random nickname generated successfully: {nick_value}")
+            assert nick_value == 'Festiwalowicz', f"Expected 'Festiwalowicz', got '{nick_value}'"
+            count_text = await nick_count.text_content()
+            assert '13/18' in (count_text or ''), f"Expected '13/18' in counter, got '{count_text}'"
+            print(f"Nickname input and counter verified successfully: {nick_value} ({count_text})")
 
             # 3D Tilt on character card
             char_btn = page.locator('#character-select button.character-card').first

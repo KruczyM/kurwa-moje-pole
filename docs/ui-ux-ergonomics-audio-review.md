@@ -46,23 +46,23 @@
 
 ## 2. Wyniki testów automatycznych i audytu kodu
 
-* **Kodowanie tekstu UTF-8**: 846 plików tekstowych sprawdzonych — **PASS**.
-* **Prettier**: Wszystkie pliki sformatowane — **PASS**.
-* **ESLint**: 0 błędów, 0 ostrzeżeń (`--max-warnings 0`) — **PASS**.
-* **TypeScript Typecheck**: Kompilacja czysta, brak błędów typowania (`tsc --noEmit`) — **PASS**.
-* **Testy narzędziowe**: Wszystkie skrypty narzędziowe zakończone sukcesem — **PASS**.
-* **Testy jednostkowe (`vitest`)**:
+- **Kodowanie tekstu UTF-8**: 846 plików tekstowych sprawdzonych — **PASS**.
+- **Prettier**: Wszystkie pliki sformatowane — **PASS**.
+- **ESLint**: 0 błędów, 0 ostrzeżeń (`--max-warnings 0`) — **PASS**.
+- **TypeScript Typecheck**: Kompilacja czysta, brak błędów typowania (`tsc --noEmit`) — **PASS**.
+- **Testy narzędziowe**: Wszystkie skrypty narzędziowe zakończone sukcesem — **PASS**.
+- **Testy jednostkowe (`vitest`)**:
   - `Test Files`: 209 passed (209)
   - `Tests`: 1971 passed (1971)
   - Czas wykonania: ~28s — **PASS**.
-* **Git diff check**: `git diff --check` czysty, brak znaczników konfliktów — **PASS**.
-* **Produkcyjny build (`npm run build`)**: Zbudowano wszystkie pakiety dist bez błędów — **PASS**.
+- **Git diff check**: `git diff --check` czysty, brak znaczników konfliktów — **PASS**.
+- **Produkcyjny build (`npm run build`)**: Zbudowano wszystkie pakiety dist bez błędów — **PASS**.
 
 ---
 
 ## 3. Weryfikacja przeglądarkowa i status
 
-* Raporty wizualne wygenerowane w `reports/ui-ux-ergonomics-audio/`.
-* Zrzuty ekranu mobilnego i desktopowego zweryfikowane w katalogu artefaktów.
-* Zmiany w warstwie audio odsłuchane na podglądzie; subiektywny odbiór fizyczny: `VISUAL_GAMEPLAY_VERIFICATION_PENDING_HUMAN`.
-* Publikację przez Pull Request zatwierdził użytkownik.
+- Raporty wizualne wygenerowane w `reports/ui-ux-ergonomics-audio/`.
+- Zrzuty ekranu mobilnego i desktopowego zweryfikowane w katalogu artefaktów.
+- Zmiany w warstwie audio odsłuchane na podglądzie; subiektywny odbiór fizyczny: `VISUAL_GAMEPLAY_VERIFICATION_PENDING_HUMAN`.
+- Publikację przez Pull Request zatwierdził użytkownik.
