@@ -70,6 +70,8 @@ export class MobileControls {
   private lookPointerId?: number;
   private lookX = 0;
   private lookY = 0;
+  private lookDistance = 0;
+  private hintDismissed = false;
   private playing = false;
   private jumpContext?: string;
   private jumpContextInitialized = false;
@@ -100,6 +102,21 @@ export class MobileControls {
     else this.events.listen(this.interactButton, 'click', () => this.actions.interact());
     const jump = this.root.querySelector<HTMLButtonElement>('#mobile-jump');
     if (jump) this.bindHold(jump, ' ');
+    const fullscreen = this.root.querySelector<HTMLButtonElement>('#mobile-fullscreen');
+    if (fullscreen) {
+      this.events.listen(fullscreen, 'click', () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen?.().catch?.(() => {});
+        } else {
+          document.exitFullscreen?.().catch?.(() => {});
+        }
+      });
+      this.events.listen(document, 'fullscreenchange', () => {
+        const isFs = Boolean(document.fullscreenElement);
+        fullscreen.classList.toggle('active', isFs);
+        fullscreen.setAttribute('aria-label', isFs ? 'Opuść pełny ekran' : 'Pełny ekran');
+      });
+    }
     document.body.classList.add('mobile-input');
   }
 
@@ -219,6 +236,14 @@ export class MobileControls {
     this.lookX = event.clientX;
     this.lookY = event.clientY;
     this.actions.look(deltaX, deltaY);
+    if (!this.hintDismissed) {
+      this.lookDistance += Math.hypot(deltaX, deltaY);
+      if (this.lookDistance > 30) {
+        this.hintDismissed = true;
+        const hint = this.root.querySelector<HTMLElement>('.mobile-look-hint');
+        if (hint) hint.classList.add('dismissed');
+      }
+    }
   }
 
   /** Kończy gest kamery przypisany do danego palca. */

@@ -38,14 +38,14 @@ export function calculatePreviewLayout(
   const margin = clamp(Math.min(width, height) * 0.055, 16, 56);
   const wide = width > wideBreakpoint;
   const safeArea = {
-    left: wide ? Math.max(width * 0.56, width - height * 0.78) : margin,
+    left: wide ? Math.max(width * 0.62, width - height * 0.68) : margin,
     right: width - margin,
     top: margin,
     bottom: height - margin,
   };
   const availableWidth = Math.max(1, safeArea.right - safeArea.left);
   const availableHeight = Math.max(1, safeArea.bottom - safeArea.top);
-  const scale = Math.min(availableWidth / modelWidth, availableHeight / modelHeight) * 0.94;
+  const scale = Math.min(availableWidth / modelWidth, availableHeight / modelHeight) * (wide ? 0.82 : 0.94);
   const center = {
     x: (bounds.min.x + bounds.max.x) / 2,
     y: (bounds.min.y + bounds.max.y) / 2,

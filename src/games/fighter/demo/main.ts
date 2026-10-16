@@ -208,23 +208,36 @@ class FighterDemo {
       ArrowLeft: INPUT.LEFT,
       ArrowRight: INPUT.RIGHT,
 
-      // Ciosy (Układ arcade 3x2)
-      KeyU: INPUT.LP,
-      KeyI: INPUT.RP,
-      KeyH: INPUT.DOWN | INPUT.RP,
-      KeyN: INPUT.DOWN | INPUT.RK,
-      KeyP: INPUT.TECHNIQUE,
-      KeyO: INPUT.SPECIAL,
+      // --- UKŁAD GŁÓWNY (Prawa ręka - 2 rzędy klawiszy obok siebie) ---
+      // Górny rząd: Y (Special), U (Lekka Pięść), I (Mocna Pięść), O (Ultimate)
+      KeyY: INPUT.TECHNIQUE, // Special move pod palcem wskazującym obok U
+      KeyU: INPUT.LP, // Lekka Pięść (Góra - Wskazujący)
+      KeyI: INPUT.RP, // Mocna Pięść (Góra - Środkowy)
+      KeyH: INPUT.DOWN | INPUT.RP, // Podbródkowy (skrót)
+      KeyN: INPUT.DOWN | INPUT.RK, // Podcięcie (skrót)
+      KeyP: INPUT.TECHNIQUE, // Special move (alternatywa)
+      KeyO: INPUT.SPECIAL, // SUPER MOVE / ULTIMATE (Góra - Serdeczny)
 
-      KeyJ: INPUT.LK,
-      KeyK: INPUT.RK,
-      KeyL: INPUT.BLOCK,
-      Space: INPUT.BLOCK,
+      KeyJ: INPUT.LK, // Lekkie Kopnięcie
+      KeyK: INPUT.RK, // Mocne Kopnięcie
+      KeyL: INPUT.BLOCK, // Blok / Garda
+      Space: INPUT.BLOCK, // Spacja: Wygodny blok kciukiem
+
+      // --- UKŁAD RETRO / FLASH (Dla grających Strzałkami: lewa ręka na ZXCV) ---
+      KeyZ: INPUT.LP, // Lekka Pięść (Lewa ręka)
+      KeyX: INPUT.RP, // Mocna Pięść (Lewa ręka)
+      KeyC: INPUT.LK, // Lekkie Kopnięcie (Lewa ręka)
+      KeyV: INPUT.RK, // Mocne Kopnięcie (Lewa ręka)
+      KeyF: INPUT.TECHNIQUE, // Special Move (Lewa ręka)
+      KeyG: INPUT.SPECIAL, // Ultimate / Super (Lewa ręka)
+      ShiftLeft: INPUT.BLOCK, // Blok lewym shiftem
+      ShiftRight: INPUT.BLOCK, // Blok prawym shiftem
 
       // Numpad
       Numpad4: INPUT.LP,
       Numpad5: INPUT.RP,
       Numpad6: INPUT.SPECIAL,
+      Numpad7: INPUT.TECHNIQUE,
       Numpad1: INPUT.LK,
       Numpad2: INPUT.RK,
       Numpad3: INPUT.BLOCK,
@@ -424,10 +437,20 @@ class FighterDemo {
         [1, this.p1Key],
         [2, this.p2Key],
       ] as const) {
-        const image = document.getElementById(`matchup-p${seat}`) as HTMLImageElement;
-        image.src = selectionArtUrl(base, key, 'full');
-        image.alt = ROSTER[key]!.definition.name;
-        document.getElementById(`matchup-name-p${seat}`)!.textContent = ROSTER[key]!.definition.name;
+        const image = document.getElementById(`matchup-p${seat}`) as HTMLImageElement | null;
+        if (image) {
+          const prevKey = image.dataset.currentKey;
+          if (prevKey !== key) {
+            image.dataset.currentKey = key;
+            image.src = selectionArtUrl(base, key, 'full');
+            image.alt = ROSTER[key]!.definition.name;
+            const nameEl = document.getElementById(`matchup-name-p${seat}`);
+            if (nameEl) nameEl.textContent = ROSTER[key]!.definition.name;
+            image.classList.remove(`matchup-reveal-p${seat}`);
+            void image.offsetWidth; // trigger CSS animation reflow
+            image.classList.add(`matchup-reveal-p${seat}`);
+          }
+        }
       }
       document.querySelectorAll('.roster-card').forEach((card) => {
         const key = card.getAttribute('data-key');
@@ -458,6 +481,16 @@ class FighterDemo {
       card.className = 'roster-card';
       card.setAttribute('data-key', key);
 
+      const badgeP1 = document.createElement('span');
+      badgeP1.className = 'roster-badge roster-badge-p1';
+      badgeP1.textContent = '1P';
+      badgeP1.setAttribute('aria-hidden', 'true');
+
+      const badgeP2 = document.createElement('span');
+      badgeP2.className = 'roster-badge roster-badge-p2';
+      badgeP2.textContent = '2P';
+      badgeP2.setAttribute('aria-hidden', 'true');
+
       const img = document.createElement('img');
       img.src = selectionArtUrl(base, key, 'thumb');
       img.alt = entry.definition.name;
@@ -467,8 +500,11 @@ class FighterDemo {
       img.loading = 'lazy';
 
       const label = document.createElement('span');
+      label.className = 'roster-name';
       label.textContent = entry.definition.name;
 
+      card.appendChild(badgeP1);
+      card.appendChild(badgeP2);
       card.appendChild(img);
       card.appendChild(label);
 
@@ -663,7 +699,7 @@ class FighterDemo {
       ? room?.players[this.online.seat]?.ready
         ? 'COFNIJ GOTOWOŚĆ'
         : 'JESTEM GOTOWY'
-      : 'WRZUĆ COMBO / START';
+      : 'ROZPOCZNIJ WALKĘ';
     for (const id of ['online-copy', 'online-leave'])
       (document.getElementById(id) as HTMLButtonElement).disabled = !room;
     for (const id of ['online-create', 'online-join'])

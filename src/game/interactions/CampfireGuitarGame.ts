@@ -19,6 +19,8 @@ export interface GuitarNote {
 export interface GuitarSong {
   license?: string;
   source?: string;
+  audioBackingUrl?: string;
+  audioBackingOffset?: number;
   id: string;
   title: string;
   artist: string;
@@ -46,6 +48,8 @@ export interface GuitarHudState {
     title: string;
     artist: string;
     duration: number;
+    audioBackingUrl?: string;
+    audioBackingOffset?: number;
   };
   currentTime: number;
   score: number;
@@ -125,6 +129,9 @@ export class CampfireGuitarSynth {
   private lastBackingStep = -1;
   private readonly backingVoices = new Set<AudioScheduledSourceNode>();
   private shakerBuffer: AudioBuffer | null = null;
+  private backingAudio: HTMLAudioElement | null = null;
+  private backingAudioSource: MediaElementAudioSourceNode | null = null;
+  private hasActiveAudioTrack = false;
 
   constructor(audioContext?: AudioContext) {
     if (audioContext) {
@@ -161,9 +168,12 @@ export class CampfireGuitarSynth {
   }
 
   /**
-   * Rozpoczyna ciągły akompaniament (podkład w stylu Guitar Hero)
+   * Rozpoczyna ciągły akompaniament (podkład w stylu Guitar Hero).
+   * Jeśli podano audioUrl (i plik istnieje), odtwarzany jest prawdziwy podkład audio bez gitary.
+   * startOffset określa punkt rozpoczęcia utworu w pliku audio (np. pomijając wielominutowe cisze lub dopasowując count-in).
+   * W przeciwnym razie wykorzystywany jest syntetyczny podkład proceduralny.
    */
-  public startBackingTrack(): void {
+  public startBackingTrack(audioUrl?: string, startOffset = 0): void {
     if (!this.ctx || !this.masterGain) {
       this.init();
       if (!this.ctx || !this.masterGain) return;
@@ -173,6 +183,48 @@ export class CampfireGuitarSynth {
     }
     this.backingActive = true;
     this.lastBackingStep = -1;
+    this.hasActiveAudioTrack = false;
+
+    if (audioUrl && typeof window !== 'undefined' && typeof Audio !== 'undefined') {
+      try {
+        if (!this.backingAudio) {
+          this.backingAudio = new Audio();
+          if (this.ctx && this.backingGain) {
+            try {
+              this.backingAudioSource = this.ctx.createMediaElementSource(this.backingAudio);
+              this.backingAudioSource.connect(this.backingGain);
+            } catch {
+              this.backingAudio.volume = 0.45;
+            }
+          }
+        }
+        this.backingAudio.src = audioUrl;
+        this.backingAudio.currentTime = Math.max(0, startOffset);
+        const playPromise = this.backingAudio.play();
+        if (playPromise) {
+          playPromise
+            .then(() => {
+              this.hasActiveAudioTrack = true;
+            })
+            .catch(() => {
+              // Plik audio nie został jeszcze wgrany (np. 404) — płynny fallback na syntezę
+              this.hasActiveAudioTrack = false;
+            });
+        }
+      } catch {
+        this.hasActiveAudioTrack = false;
+      }
+    }
+  }
+
+  /**
+   * Zwraca aktualny czas odtwarzania pliku audio, jeśli jest aktywny i odtwarzany
+   */
+  public getAudioCurrentTime(): number | null {
+    if (this.hasActiveAudioTrack && this.backingAudio && !this.backingAudio.paused) {
+      return this.backingAudio.currentTime;
+    }
+    return null;
   }
 
   /**
@@ -181,6 +233,15 @@ export class CampfireGuitarSynth {
   public stopBackingTrack(): void {
     this.backingActive = false;
     this.lastBackingStep = -1;
+    this.hasActiveAudioTrack = false;
+    if (this.backingAudio) {
+      try {
+        this.backingAudio.pause();
+        this.backingAudio.currentTime = 0;
+      } catch {
+        // ignore
+      }
+    }
     for (const voice of this.backingVoices) {
       try {
         voice.stop();
@@ -212,6 +273,7 @@ export class CampfireGuitarSynth {
     melody?: readonly GuitarNote[],
   ): void {
     if (!this.backingActive || !this.ctx || !this.backingGain || chords.length === 0) return;
+    if (this.hasActiveAudioTrack) return;
     if (this.ctx.state === 'suspended') return;
     if (!Number.isFinite(currentTime) || currentTime < 0 || !Number.isFinite(bpm) || bpm <= 0) return;
 
@@ -254,89 +316,160 @@ export class CampfireGuitarSynth {
     if (!this.ctx || !this.backingGain) return;
 
     try {
-      // 1. Bas akustyczny na mocne części taktu (kroki 0 i 4 = bity 1 i 3)
+      const freqs = guitarFrequencies(chord);
+      const rootFreq = freqs[0] || 110;
+
+      // 1. Kick Drum (stopa perkusyjna) na kroki 0 i 4 (bity 1 i 3)
       if (stepInBar === 0 || stepInBar === 4) {
-        const freqs = guitarFrequencies(chord);
-        const bassFreq = Math.max(55, freqs[0] * 0.5);
+        const kickOsc = this.ctx.createOscillator();
+        kickOsc.type = 'sine';
+        kickOsc.frequency.setValueAtTime(130, time);
+        kickOsc.frequency.exponentialRampToValueAtTime(42, time + 0.12);
 
-        const osc = this.ctx.createOscillator();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(bassFreq, time);
+        const kickGain = this.ctx.createGain();
+        kickGain.gain.setValueAtTime(0.38, time);
+        kickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.22);
 
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(240, time);
+        kickOsc.connect(kickGain);
+        kickGain.connect(this.backingGain);
+        this.trackBackingVoice(kickOsc, kickGain);
 
-        const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(0.001, time);
-        gain.gain.linearRampToValueAtTime(0.22, time + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.38);
-
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(this.backingGain);
-        this.trackBackingVoice(osc, filter, gain);
-
-        osc.start(time);
-        osc.stop(time + 0.4);
+        kickOsc.start(time);
+        kickOsc.stop(time + 0.24);
       }
 
-      // 2. Ciepły akompaniament akordowy na bicie (kroki 2 i 6)
+      // 2. Snare / Handclap (werbel / klask) na kroki 2 i 6 (bity 2 i 4)
       if (stepInBar === 2 || stepInBar === 6) {
-        const freqs = guitarFrequencies(chord);
-        const strumFreqs = freqs.slice(0, 3);
+        // Ciało werbla (tonalne)
+        const snareOsc = this.ctx.createOscillator();
+        snareOsc.type = 'triangle';
+        snareOsc.frequency.setValueAtTime(185, time);
+        snareOsc.frequency.exponentialRampToValueAtTime(75, time + 0.06);
 
-        strumFreqs.forEach((freq, idx) => {
-          const strumTime = time + idx * 0.01;
-          const osc = this.ctx!.createOscillator();
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(freq, strumTime);
+        const snareToneGain = this.ctx.createGain();
+        snareToneGain.gain.setValueAtTime(0.18, time);
+        snareToneGain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
 
-          const filter = this.ctx!.createBiquadFilter();
-          filter.type = 'lowpass';
-          filter.frequency.setValueAtTime(1100, strumTime);
-          filter.frequency.exponentialRampToValueAtTime(350, strumTime + 0.22);
+        snareOsc.connect(snareToneGain);
+        snareToneGain.connect(this.backingGain);
+        this.trackBackingVoice(snareOsc, snareToneGain);
 
-          const gain = this.ctx!.createGain();
-          gain.gain.setValueAtTime(0.001, strumTime);
-          gain.gain.linearRampToValueAtTime(0.065, strumTime + 0.008);
-          gain.gain.exponentialRampToValueAtTime(0.001, strumTime + 0.24);
+        snareOsc.start(time);
+        snareOsc.stop(time + 0.09);
 
-          osc.connect(filter);
-          filter.connect(gain);
-          gain.connect(this.backingGain!);
-          this.trackBackingVoice(osc, filter, gain);
+        // Szum werbla / klask
+        const snareNoiseBufSize = Math.floor(this.ctx.sampleRate * 0.14);
+        const snareBuf = this.ctx.createBuffer(1, snareNoiseBufSize, this.ctx.sampleRate);
+        const snareData = snareBuf.getChannelData(0);
+        for (let j = 0; j < snareNoiseBufSize; j++) snareData[j] = Math.random() * 2 - 1;
 
-          osc.start(strumTime);
-          osc.stop(strumTime + 0.26);
-        });
+        const snareNoise = this.ctx.createBufferSource();
+        snareNoise.buffer = snareBuf;
+
+        const snareFilter = this.ctx.createBiquadFilter();
+        snareFilter.type = 'bandpass';
+        snareFilter.frequency.setValueAtTime(1250, time);
+        snareFilter.Q.setValueAtTime(1.2, time);
+
+        const snareNoiseGain = this.ctx.createGain();
+        snareNoiseGain.gain.setValueAtTime(0.24, time);
+        snareNoiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.14);
+
+        snareNoise.connect(snareFilter);
+        snareFilter.connect(snareNoiseGain);
+        snareNoiseGain.connect(this.backingGain);
+        this.trackBackingVoice(snareNoise, snareFilter, snareNoiseGain);
+
+        snareNoise.start(time);
+        snareNoise.stop(time + 0.15);
       }
 
-      // 3. Delikatny shaker/tupanie rytmiczne przy ognisku na każdej ósemce
+      // 3. Hi-hat / Shaker na każdej ósemce (kroki 0..7) z akcentem na off-beaty
       const bufSize = Math.floor(this.ctx.sampleRate * 0.035);
       if (!this.shakerBuffer) {
         this.shakerBuffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
         const data = this.shakerBuffer.getChannelData(0);
         for (let j = 0; j < bufSize; j++) data[j] = Math.random() * 2 - 1;
       }
-      const noise = this.ctx.createBufferSource();
-      noise.buffer = this.shakerBuffer;
+      const hatNoise = this.ctx.createBufferSource();
+      hatNoise.buffer = this.shakerBuffer;
 
-      const pFilter = this.ctx.createBiquadFilter();
-      pFilter.type = 'highpass';
-      pFilter.frequency.setValueAtTime(3200, time);
+      const hatFilter = this.ctx.createBiquadFilter();
+      hatFilter.type = 'highpass';
+      hatFilter.frequency.setValueAtTime(5500, time);
 
-      const pGain = this.ctx.createGain();
-      pGain.gain.setValueAtTime(0.025 * (stepInBar % 2 === 0 ? 0.25 : 0.14), time);
-      pGain.gain.exponentialRampToValueAtTime(0.001, time + 0.032);
+      const isOffBeat = stepInBar % 2 === 1;
+      const hatGain = this.ctx.createGain();
+      hatGain.gain.setValueAtTime(isOffBeat ? 0.055 : 0.025, time);
+      hatGain.gain.exponentialRampToValueAtTime(0.001, time + 0.032);
 
-      noise.connect(pFilter);
-      pFilter.connect(pGain);
-      pGain.connect(this.backingGain);
-      this.trackBackingVoice(noise, pFilter, pGain);
+      hatNoise.connect(hatFilter);
+      hatFilter.connect(hatGain);
+      hatGain.connect(this.backingGain);
+      this.trackBackingVoice(hatNoise, hatFilter, hatGain);
 
-      noise.start(time);
-      noise.stop(time + 0.035);
+      hatNoise.start(time);
+      hatNoise.stop(time + 0.035);
+
+      // 4. Linia basowa (ciepły bas elektryczny/akustyczny)
+      if (stepInBar === 0 || stepInBar === 3 || stepInBar === 4 || stepInBar === 6) {
+        let bassFreq = Math.max(45, rootFreq * 0.5);
+        if (stepInBar === 4) {
+          bassFreq = (freqs[1] || rootFreq * 1.5) * 0.5;
+        } else if (stepInBar === 3 || stepInBar === 6) {
+          bassFreq = Math.max(50, rootFreq * 0.5);
+        }
+
+        const bassOsc = this.ctx.createOscillator();
+        bassOsc.type = 'triangle';
+        bassOsc.frequency.setValueAtTime(bassFreq, time);
+
+        const bassFilter = this.ctx.createBiquadFilter();
+        bassFilter.type = 'lowpass';
+        bassFilter.frequency.setValueAtTime(220, time);
+
+        const bassDur = stepInBar === 0 || stepInBar === 4 ? 0.42 : 0.22;
+        const bassGain = this.ctx.createGain();
+        bassGain.gain.setValueAtTime(0.001, time);
+        bassGain.gain.linearRampToValueAtTime(0.25, time + 0.012);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, time + bassDur);
+
+        bassOsc.connect(bassFilter);
+        bassFilter.connect(bassGain);
+        bassGain.connect(this.backingGain);
+        this.trackBackingVoice(bassOsc, bassFilter, bassGain);
+
+        bassOsc.start(time);
+        bassOsc.stop(time + bassDur + 0.02);
+      }
+
+      // 5. Ciepłe tło harmoniczne (Hammond Organ / Rhodes Pad — BEZ GITARY)
+      // Daje pełne harmoniczne brzmienie utworu, pozostawiając całą partię gitary dla gracza
+      if (stepInBar === 0 || stepInBar === 4) {
+        const padChord = freqs.slice(0, 3);
+        padChord.forEach((f) => {
+          const padOsc = this.ctx!.createOscillator();
+          padOsc.type = 'sine';
+          padOsc.frequency.setValueAtTime(f, time);
+
+          const padFilter = this.ctx!.createBiquadFilter();
+          padFilter.type = 'lowpass';
+          padFilter.frequency.setValueAtTime(480, time);
+
+          const padGain = this.ctx!.createGain();
+          padGain.gain.setValueAtTime(0.001, time);
+          padGain.gain.linearRampToValueAtTime(0.042, time + 0.05);
+          padGain.gain.exponentialRampToValueAtTime(0.001, time + 0.52);
+
+          padOsc.connect(padFilter);
+          padFilter.connect(padGain);
+          padGain.connect(this.backingGain!);
+          this.trackBackingVoice(padOsc, padFilter, padGain);
+
+          padOsc.start(time);
+          padOsc.stop(time + 0.55);
+        });
+      }
     } catch {
       // AudioContext safety
     }
@@ -477,6 +610,23 @@ export class CampfireGuitarSynth {
 
   public dispose(): void {
     this.stopBackingTrack();
+    if (this.backingAudio) {
+      try {
+        this.backingAudio.pause();
+        this.backingAudio.src = '';
+      } catch {
+        // ignore
+      }
+      this.backingAudio = null;
+    }
+    if (this.backingAudioSource) {
+      try {
+        this.backingAudioSource.disconnect();
+      } catch {
+        // ignore
+      }
+      this.backingAudioSource = null;
+    }
     if (this.ctx) {
       try {
         if (this.backingGain) this.backingGain.disconnect();
@@ -493,113 +643,32 @@ export class CampfireGuitarSynth {
   }
 }
 
-/**
- * Generator nut dla utworów
- */
-function createSongNotes(
-  bpm: number,
-  chords: string[],
-  bars: number,
-  difficulty: 'Łatwy' | 'Średni' | 'Trudny' = 'Średni',
-): GuitarNote[] {
-  const notes: GuitarNote[] = [];
-  const beatDuration = 60 / bpm;
-  let noteIndex = 0;
+const baseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
 
-  for (let bar = 0; bar < bars; bar++) {
-    const chord = chords[bar % chords.length];
-    // Dynamiczny podział rytmiczny w zależności od poziomu trudności
-    let beatsInBar: number[];
-    if (difficulty === 'Łatwy') {
-      beatsInBar = [0, 1, 2, 3];
-    } else if (difficulty === 'Średni') {
-      beatsInBar = [0, 1, 1.5, 2, 2.5, 3, 3.5];
-    } else {
-      // Trudny: rockowy groove, synkopy i gęstsze przejścia
-      beatsInBar = [0, 0.5, 1, 1.5, 2, 2.25, 2.5, 3, 3.5];
-    }
+export const GUITAR_AUDIO_BACKING_MAP: Record<string, string> = {
+  'czerwony-cegla-midi': 'game-assets/audio/guitar/czerwony-jak-cegla.mp3',
+  'sen-victoria-midi': 'game-assets/audio/guitar/sen-o-victorii.mp3',
+  'pila-tango-midi': 'game-assets/audio/guitar/pila-tango.mp3',
+  'czarny-chleb-midi': 'game-assets/audio/guitar/czarny-chleb.mp3',
+};
 
-    for (let b = 0; b < beatsInBar.length; b++) {
-      const time = (bar * 4 + beatsInBar[b]) * beatDuration + 1.2;
-      // Rozprowadzenie po 5 torach (0..4: A, S, D, F, G)
-      let lane: 0 | 1 | 2 | 3 | 4;
-      if (difficulty === 'Łatwy') {
-        lane = ((bar + b) % 5) as 0 | 1 | 2 | 3 | 4;
-      } else if (difficulty === 'Średni') {
-        const pattern = [0, 1, 2, 3, 4, 3, 2, 1];
-        lane = pattern[(bar * 2 + b) % pattern.length] as 0 | 1 | 2 | 3 | 4;
-      } else {
-        const hardPattern = [0, 2, 4, 1, 3, 4, 2, 0, 3];
-        lane = hardPattern[(bar * 3 + b) % hardPattern.length] as 0 | 1 | 2 | 3 | 4;
-      }
-
-      notes.push({
-        id: `note_${bar}_${b}_${noteIndex++}`,
-        lane,
-        time,
-        chordName: chord,
-      });
-    }
-  }
-  return notes;
-}
-
-export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = [
-  ...(midiCharts as GuitarSong[]).map((song) => {
+export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = (midiCharts as GuitarSong[])
+  .filter((song) => Boolean(GUITAR_AUDIO_BACKING_MAP[song.id]))
+  .map((song) => {
     // MIDI vocal tracks can begin minutes into the source. Keep their relative
     // rhythm, but provide the same short, playable count-in for every chart.
     const offset = song.notes[0].time - 2.5;
+    const relPath = GUITAR_AUDIO_BACKING_MAP[song.id]!;
+    const audioBackingUrl = `${baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`}${relPath}`;
     return {
       ...song,
       duration: song.notes[song.notes.length - 1].time - offset + 3,
       notes: song.notes.map((note) => ({ ...note, time: note.time - offset })),
+      audioBackingOffset: offset,
+      audioBackingUrl,
+      difficulty: song.difficulty as GuitarSong['difficulty'],
     };
-  }),
-  {
-    id: 'wehikul',
-    title: 'Ogniskowy rock — ćwiczenie akordów',
-    artist: 'Ćwiczenie autorskie, bez nagrania',
-    bpm: 100,
-    duration: 32,
-    difficulty: 'Średni',
-    chords: ['A', 'C#m', 'D', 'E'],
-    notes: createSongNotes(100, ['A', 'C#m', 'D', 'E'], 12, 'Średni'),
-  },
-  {
-    id: 'arahja',
-    title: 'Ogniskowy puls — riff rockowy',
-    artist: 'Ćwiczenie autorskie, bez nagrania',
-    bpm: 125,
-    duration: 30,
-    difficulty: 'Trudny',
-    chords: ['Em', 'C', 'G', 'D'],
-    notes: createSongNotes(125, ['Em', 'C', 'G', 'D'], 14, 'Trudny'),
-  },
-  {
-    id: 'jolka',
-    title: 'Ballada — ćwiczenie akordów',
-    artist: 'Ćwiczenie autorskie, bez nagrania',
-    bpm: 85,
-    duration: 34,
-    difficulty: 'Łatwy',
-    chords: ['C', 'G', 'Am', 'F'],
-    notes: createSongNotes(85, ['C', 'G', 'Am', 'F'], 11, 'Łatwy'),
-  },
-  {
-    id: 'zegarmistrz',
-    title: 'Wieczorny rytm — wirtuozerski sweep',
-    artist: 'Ćwiczenie autorskie, bez nagrania',
-    bpm: 110,
-    duration: 30,
-    difficulty: 'Trudny',
-    chords: ['Dm', 'G', 'C', 'Am'],
-    notes: createSongNotes(110, ['Dm', 'G', 'C', 'Am'], 13, 'Trudny'),
-  },
-].map((song) => ({
-  ...song,
-  difficulty: song.difficulty as GuitarSong['difficulty'],
-  duration: Math.max(song.duration, song.notes.at(-1)!.time + 3),
-}));
+  });
 
 export const NOTE_FALL_SPEED = 2.0; // Sekundy na przebycie od góry gryfu do linii uderzenia
 export const PERFECT_WINDOW = 0.09; // Sekundy dopuszczalnego błędu dla Perfect
@@ -667,7 +736,7 @@ export class CampfireGuitarGame {
     this.callbacks?.onToast?.(
       `🎸 ZACZYNAMY: „${song.title}”! Uderzaj klawisze [A, S, D, F, G] na linii ognia!`,
     );
-    this.synth.startBackingTrack();
+    this.synth.startBackingTrack(this.currentSong.audioBackingUrl, this.currentSong.audioBackingOffset ?? 0);
     return true;
   }
 
@@ -788,7 +857,18 @@ export class CampfireGuitarGame {
   public update(dt: number): void {
     if (this.phase !== 'playing' || !this.currentSong) return;
 
-    this.currentTime += dt;
+    const audioPos = this.synth.getAudioCurrentTime?.() ?? null;
+    if (audioPos !== null && Number.isFinite(audioPos)) {
+      const targetTime = audioPos - (this.currentSong.audioBackingOffset ?? 0);
+      if (Math.abs(this.currentTime - targetTime) > 0.04) {
+        this.currentTime = targetTime;
+      } else {
+        this.currentTime += dt;
+      }
+    } else {
+      this.currentTime += dt;
+    }
+
     this.synth.updateBackingTrack(
       this.currentTime,
       this.currentSong.bpm,
@@ -882,6 +962,8 @@ export class CampfireGuitarGame {
             title: this.currentSong.title,
             artist: this.currentSong.artist,
             duration: this.currentSong.duration,
+            audioBackingUrl: this.currentSong.audioBackingUrl,
+            audioBackingOffset: this.currentSong.audioBackingOffset,
           }
         : undefined,
       currentTime: this.currentTime,

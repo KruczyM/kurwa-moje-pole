@@ -25,7 +25,13 @@ describe('InputBindings', () => {
     expect(resolveGameInput('playing', 'e')).toBe('primary-action');
     expect(resolveGameInput('inspecting', 'E')).toBe('primary-action');
     expect(resolveGameInput('seated', 'E')).toBe('primary-action');
+    expect(resolveGameInput('seated', ' ')).toBe('primary-action');
+    expect(resolveGameInput('seated', 'Space')).toBe('primary-action');
     expect(resolveGameInput('seated', 'Escape')).toBe('escape');
+    expect(resolveGameInput('playing', '1')).toBe('quick-slot-1');
+    expect(resolveGameInput('playing', '2')).toBe('quick-slot-2');
+    expect(resolveGameInput('playing', '3')).toBe('quick-slot-3');
+    expect(resolveGameInput('playing', '4')).toBe('quick-slot-4');
   });
 
   it('blocks repeated and contradictory modal actions', () => {

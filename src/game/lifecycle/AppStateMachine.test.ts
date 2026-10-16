@@ -37,13 +37,14 @@ describe('AppStateMachine', () => {
 
   it('uses one Escape priority for every state', () => {
     expect(escapeTarget('inspecting')).toBe('playing');
-    expect(escapeTarget('seated')).toBe('playing');
+    expect(escapeTarget('seated')).toBe('paused');
     expect(escapeTarget('using-item')).toBe('playing');
     expect(escapeTarget('dialog')).toBe('playing');
     expect(escapeTarget('inventory')).toBe('playing');
     expect(escapeTarget('effect-warning')).toBe('playing');
     expect(escapeTarget('playing')).toBe('paused');
     expect(escapeTarget('paused')).toBe('playing');
+    expect(escapeTarget('paused', 'seated')).toBe('seated');
     expect(escapeTarget('loading')).toBeNull();
   });
 
@@ -58,11 +59,15 @@ describe('AppStateMachine', () => {
     expect(machine.current).toBe('playing');
   });
 
-  it('enters and leaves an interactive seat without opening pause', () => {
+  it('opens pause from an interactive seat on Escape and allows unseating to playing', () => {
     const machine = new AppStateMachine('playing');
     machine.transition('seated');
     expect(machine.current).toBe('seated');
     machine.transition(escapeTarget(machine.current)!);
+    expect(machine.current).toBe('paused');
+    machine.transition('seated');
+    expect(machine.current).toBe('seated');
+    machine.transition('playing');
     expect(machine.current).toBe('playing');
   });
 

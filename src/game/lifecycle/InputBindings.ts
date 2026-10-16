@@ -9,7 +9,14 @@ export const inputBindings = {
   escape: 'Esc',
 } as const;
 
-export type GameInputAction = 'escape' | 'toggle-inventory' | 'primary-action';
+export type GameInputAction =
+  | 'escape'
+  | 'toggle-inventory'
+  | 'primary-action'
+  | 'quick-slot-1'
+  | 'quick-slot-2'
+  | 'quick-slot-3'
+  | 'quick-slot-4';
 export type InputMode = 'desktop' | 'mobile';
 
 /** Zamienia pojedynczy klawisz na akcję dozwoloną w aktualnym stanie aplikacji. */
@@ -36,8 +43,17 @@ export function resolveGameInput(state: AppState, key: string, repeat = false): 
   ) {
     return 'toggle-inventory';
   }
-  if (key.toLowerCase() === 'e' && (state === 'playing' || state === 'seated' || state === 'inspecting')) {
+  if (
+    (key.toLowerCase() === 'e' || (state === 'seated' && (key === ' ' || key === 'Space'))) &&
+    (state === 'playing' || state === 'seated' || state === 'inspecting')
+  ) {
     return 'primary-action';
+  }
+  if (state === 'playing') {
+    if (key === '1') return 'quick-slot-1';
+    if (key === '2') return 'quick-slot-2';
+    if (key === '3') return 'quick-slot-3';
+    if (key === '4') return 'quick-slot-4';
   }
   return null;
 }
@@ -68,9 +84,9 @@ export function controlHintForState(state: AppState, mode: InputMode = 'desktop'
   }
   switch (state) {
     case 'playing':
-      return `${inputBindings.escape} — pauza · ${inputBindings.interact} — interakcja · ${inputBindings.inventory} — ekwipunek`;
+      return `${inputBindings.escape} — pauza · ${inputBindings.interact} — interakcja · 1-4 — szybkie użycie · ${inputBindings.inventory} — ekwipunek`;
     case 'seated':
-      return `${inputBindings.interact} / ${inputBindings.escape} — wstań`;
+      return `${inputBindings.interact} / Spacja — wstań`;
     case 'inspecting':
       return `Przeciągnij — obróć · kółko — zbliż · ${inputBindings.interact} — uruchom efekt · ${inputBindings.escape} — wróć do obozu`;
     case 'using-item':

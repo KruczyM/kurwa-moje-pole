@@ -90,14 +90,16 @@
           <div class="select-header">
             <a class="festival-menu-link" href="./">← Menu główne festiwalu</a>
             <div class="cabinet-marquee">
-              <span class="cabinet-edition">FESTIWALOWY AUTOMAT / 16 ZAWODNIKÓW</span>
-              <button type="button" id="arcade-coin-btn" class="arcade-coin-slot" title="Wrzuć monetę do automatu arcade">
+              <h2>KURWA,<br /><em>MOJE COMBO!</em></h2>
+              <button
+                type="button"
+                id="arcade-coin-btn"
+                class="arcade-coin-slot"
+                title="Wrzuć monetę do automatu arcade"
+              >
                 <span class="coin-insert-text">INSERT COIN</span>
                 <span class="coin-credits">CREDITS: <strong id="arcade-credit-count">99</strong></span>
               </button>
-              <h2>KURWA,<br /><em>MOJE COMBO!</em></h2>
-              <span class="cabinet-sticker">BŁOTO.<br />POT. COMBO.</span>
-              <p>Wybierz ekipę. Zajmij arenę. Pokaż swoje combo.</p>
             </div>
             <div class="selection-slots">
               <button type="button" data-select-slot="1" aria-pressed="true">Wybierz gracza</button>
@@ -107,16 +109,16 @@
 
           <div class="mode-buttons" role="group" aria-label="Tryb gry">
             <button type="button" data-fight-mode="bot" aria-pressed="true">
-              <span>01</span> Z botem <small>Sprawdź swoje combo</small>
+              <span>01</span> Pojedynek z botem
             </button>
             <button type="button" data-fight-mode="training" aria-pressed="false">
-              <span>02</span> Trening <small>Ćwicz bez presji</small>
+              <span>02</span> Trening
             </button>
             <button type="button" data-fight-mode="hotseat" aria-pressed="false">
               <span>03</span> Lokalny Versus <small>2P na 1 klawiaturze</small>
             </button>
             <button type="button" data-fight-mode="online" aria-pressed="false">
-              <span>04</span> Online <small>Prywatny pojedynek</small>
+              <span>04</span> Pojedynek online
             </button>
           </div>
           <div class="select-body">
@@ -126,12 +128,16 @@
             <!-- Selected Fighter Details Pane -->
             <div class="matchup-art" aria-label="Wybrani zawodnicy">
               <figure class="matchup-player">
-                <span>GRACZ 1</span><img id="matchup-p1" alt="" width="240" height="320" />
+                <span>GRACZ 1</span>
+                <div class="matchup-pedestal p1" aria-hidden="true"></div>
+                <img id="matchup-p1" alt="" width="240" height="320" />
                 <figcaption id="matchup-name-p1"></figcaption>
               </figure>
               <b class="matchup-vs" aria-hidden="true">VS</b>
               <figure class="matchup-player">
-                <span>GRACZ 2</span><img id="matchup-p2" alt="" width="240" height="320" />
+                <span>GRACZ 2</span>
+                <div class="matchup-pedestal p2" aria-hidden="true"></div>
+                <img id="matchup-p2" alt="" width="240" height="320" />
                 <figcaption id="matchup-name-p2"></figcaption>
               </figure>
             </div>
@@ -152,17 +158,27 @@
                 <div class="preview-stats" id="preview-stats" aria-label="Statystyki zawodnika">
                   <div class="stat-row">
                     <span class="stat-label">SIŁA CIOSU</span>
-                    <div class="stat-bar"><div class="stat-fill stat-fill-power" id="stat-fill-power" style="width: 70%"></div></div>
+                    <div class="stat-bar">
+                      <div class="stat-fill stat-fill-power" id="stat-fill-power" style="width: 70%"></div>
+                    </div>
                     <span class="stat-num" id="stat-num-power">7/10</span>
                   </div>
                   <div class="stat-row">
                     <span class="stat-label">SZYBKOŚĆ</span>
-                    <div class="stat-bar"><div class="stat-fill stat-fill-speed" id="stat-fill-speed" style="width: 60%"></div></div>
+                    <div class="stat-bar">
+                      <div class="stat-fill stat-fill-speed" id="stat-fill-speed" style="width: 60%"></div>
+                    </div>
                     <span class="stat-num" id="stat-num-speed">6/10</span>
                   </div>
                   <div class="stat-row">
                     <span class="stat-label">ODPORNOŚĆ NA KACA</span>
-                    <div class="stat-bar"><div class="stat-fill stat-fill-hangover" id="stat-fill-hangover" style="width: 70%"></div></div>
+                    <div class="stat-bar">
+                      <div
+                        class="stat-fill stat-fill-hangover"
+                        id="stat-fill-hangover"
+                        style="width: 70%"
+                      ></div>
+                    </div>
                     <span class="stat-num" id="stat-num-hangover">7/10</span>
                   </div>
                 </div>
@@ -236,7 +252,7 @@
             </section>
             <div class="select-actions">
               <button id="random-btn" class="btn-alt">Losowa postać</button>
-              <button id="start-fight-btn" class="btn-start">WRZUĆ COMBO / START</button>
+              <button id="start-fight-btn" class="btn-start">ROZPOCZNIJ WALKĘ</button>
             </div>
           </div>
         </div>
@@ -268,7 +284,9 @@
               </div>
               <div class="helper-col">
                 <span class="helper-col-title">GÓRNY RZĄD</span>
-                <div class="helper-item"><kbd>U</kbd> <span>LP (Lewy Prosty)</span></div>
+                <div class="helper-item">
+                  <kbd>Y</kbd> <span>Special</span> · <kbd>U</kbd> <span>LP (Lewy Prosty)</span>
+                </div>
                 <div class="helper-item"><kbd>I</kbd> <span>PS (Prawy Sierpowy)</span></div>
                 <div class="helper-item">
                   <kbd class="kbd-super">O</kbd> <span class="txt-super">ULT (Super / 100%)</span>
@@ -276,15 +294,19 @@
               </div>
               <div class="helper-col">
                 <span class="helper-col-title">DOLNY RZĄD</span>
-                <div class="helper-item"><kbd>J</kbd> <span>LK (Lewy Kopniak)</span></div>
-                <div class="helper-item"><kbd>K</kbd> <span>PZ (Prawy Zamach)</span></div>
+                <div class="helper-item">
+                  <kbd>J</kbd> <span>LK (Lewy Kopniak)</span> · <kbd>K</kbd> <span>PZ (Prawy Zamach)</span>
+                </div>
                 <div class="helper-item"><kbd>L / Spacja</kbd> <span>BLOK (Garda)</span></div>
+                <div class="helper-item">
+                  <kbd>H</kbd> <span>Wybicie (PB)</span> · <kbd>N</kbd> <span>Podcięcie (PC)</span>
+                </div>
               </div>
             </div>
             <p style="font-size: 11px; color: #facc15; margin-bottom: 12px">
-              ⭐ <strong>H lub S + I</strong> = PB (Podbródkowy / Launcher) ·
-              <strong>N lub S + K</strong> = PC (Podcięcie / Sweep) · <strong>P</strong> = CS (Cios Specjalny) ·
-              <strong>O</strong> = ULT (Ultimate 100%)
+              ⭐ <strong>Y lub P</strong> = Cios Special (30%) · <strong>O</strong> = Ultimate (100%) ·
+              <strong>H lub S + I</strong> = Podbródkowy (PB) · <strong>N lub S + K</strong> = Podcięcie (PC)
+              · <strong>L / Spacja / Shift</strong> = Blok · <em>Układ retro: Strzałki + Z / X / C / V</em>
             </p>
           </div>
           <div class="audio-settings">

@@ -643,17 +643,67 @@ export class FighterView {
       ctx.fill();
       ctx.restore();
     }
+
+    // 3. Dynamic concert stage follow-spotlight under fighter
+    ctx.save();
+    ctx.scale(1, 0.28);
+    const spotAlpha = (0.24 + Math.sin(simulationTick * 0.08 + slot) * 0.05) * shadowAlpha;
+    const spotGrad = ctx.createRadialGradient(0, 0, 4, 0, 0, 68 * shadowScale);
+    spotGrad.addColorStop(
+      0,
+      slot === 1 ? `rgba(56, 189, 248, ${0.45 * spotAlpha})` : `rgba(244, 63, 94, ${0.45 * spotAlpha})`,
+    );
+    spotGrad.addColorStop(
+      0.55,
+      slot === 1 ? `rgba(56, 189, 248, ${0.18 * spotAlpha})` : `rgba(244, 63, 94, ${0.18 * spotAlpha})`,
+    );
+    spotGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = spotGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, 68 * shadowScale, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
+    ctx.restore();
+
+    // 4. Super Meter 100% (Ultimate Ready) electrical/flame aura behind fighter
+    if (fighter.meter >= 1000 && fighter.state !== 'knockdown' && fighter.state !== 'defeat') {
+      ctx.save();
+      const auraPulse = 0.35 + Math.sin(simulationTick * 0.15 + slot) * 0.15;
+      ctx.globalAlpha = auraPulse;
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#fbbf24';
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.ellipse(0, -fighter.y - 60, 36, 64, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Rising festival spark embers
+      for (let s = 0; s < 4; s++) {
+        const sSeed = (simulationTick * 3 + s * 45) % 110;
+        const sx = Math.sin(sSeed * 0.12 + s) * 26;
+        const sy = -fighter.y - 8 - sSeed * 1.05;
+        ctx.globalAlpha = (1 - sSeed / 110) * 0.75;
+        ctx.fillStyle = s % 2 === 0 ? '#fbbf24' : '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
 
     // Flip if facing left
     ctx.translate(0, -fighter.y);
     ctx.scale(fighter.facing, 1);
     if (squeezed) ctx.scale(0.9, 0.95);
 
-    // Genuine retargeted frames, fixed feet pivot; legacy poses only during loading.
+    // Genuine retargeted frames, fixed feet pivot; dynamic neon rim-light and impact flash
     ctx.save();
-    ctx.shadowColor = stage.ambientLight;
-    ctx.shadowBlur = 6;
+    const isAttacking = fighter.state === 'attack';
+    const isSuperReady = fighter.meter >= 1000;
+    const isHit = fighter.hitstop > 0 || fighter.state === 'hit_stun';
+    ctx.shadowColor = isHit ? '#ffffff' : isSuperReady ? '#fbbf24' : glowColor;
+    ctx.shadowBlur = isHit ? 18 : isAttacking ? 14 : isSuperReady ? 16 : 8;
     const hasCombatFrame = this.combatSprites.draw(
       ctx,
       fighter,

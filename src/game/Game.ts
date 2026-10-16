@@ -261,9 +261,16 @@ export class Game {
     },
   });
   campfireGuitarGame = new CampfireGuitarGame();
-  private readonly startGuitarSong = (songId: string) => this.campfireGuitarGame.startSong(songId);
+  private readonly startGuitarSong = (songId: string) => {
+    const ok = this.campfireGuitarGame.startSong(songId);
+    if (ok) this.speakerAudio.setTentMuffled(true);
+    return ok;
+  };
   private readonly hitGuitarLane = (lane: number) => this.campfireGuitarGame.hitLane(lane);
-  private readonly exitGuitar = () => this.campfireGuitarGame.stopSong();
+  private readonly exitGuitar = () => {
+    this.campfireGuitarGame.stopSong();
+    if (this.state.current === 'playing') this.speakerAudio.setTentMuffled(false);
+  };
   readonly concertState = new ConcertState();
   readonly concertLibrary = new ConcertLibrary();
   readonly stageAcoustics = new SpatialStageAcoustics();
@@ -359,6 +366,18 @@ export class Game {
     this.grzybekAudio.setVolume(this.audioSettings.ambientVolume);
     this.syncSettingsUi();
     this.syncInventoryUi();
+    const hotbar = typeof document !== 'undefined' ? document.querySelector('#hud-hotbar') : null;
+    if (hotbar) {
+      hotbar.querySelectorAll<HTMLButtonElement>('.hotbar-slot').forEach((btn) => {
+        this.events.listen(btn, 'click', (e) => {
+          e.preventDefault();
+          const slot = parseInt(btn.dataset.slot ?? '-1', 10);
+          if (slot >= 0 && slot < inventoryEffects.length) {
+            this.useInventoryEffect(inventoryEffects[slot]);
+          }
+        });
+      });
+    }
     this.ui.initLsdOverlays(effectAssets.lsdOverlays[0], effectAssets.lsdOverlays[1]);
     const mapCanvas =
       typeof document !== 'undefined'
@@ -1011,6 +1030,13 @@ export class Game {
         return;
       }
     }
+    if (action.startsWith('quick-slot-')) {
+      const slotIndex = parseInt(action.replace('quick-slot-', ''), 10) - 1;
+      if (slotIndex >= 0 && slotIndex < inventoryEffects.length) {
+        this.useInventoryEffect(inventoryEffects[slotIndex]);
+        return;
+      }
+    }
     if (this.state.current === 'seated') this.leaveSeat();
     else if (this.state.current === 'inspecting') this.acceptInspect();
     else if (this.state.current === 'playing') this.interact();
@@ -1458,7 +1484,7 @@ export class Game {
 
   /** Uruchamia efekt wyłącznie wtedy, gdy plecak zawiera jego egzemplarz. */
   useInventoryEffect(id: EffectId) {
-    if (this.state.current !== 'inventory') return false;
+    if (this.state.current !== 'inventory' && this.state.current !== 'playing') return false;
     if (this.inventory.quantity(id) < 1) {
       this.toast(`Brak w plecaku: ${id}`);
       return false;
@@ -1477,7 +1503,12 @@ export class Game {
   /** Rozpoczyna transakcyjne użycie przedmiotu bez usuwania go przed markerem animacji. */
   private beginItemUse(id: EffectId, source: PendingItemUse['source'], itemId?: InspectableItemId) {
     if (!this.effects || !this.player || !this.useSequence) return false;
-    if (this.state.current !== 'inspecting' && this.state.current !== 'inventory') return false;
+    if (
+      this.state.current !== 'inspecting' &&
+      this.state.current !== 'inventory' &&
+      this.state.current !== 'playing'
+    )
+      return false;
     if (isIntenseEffect(id) && !localStorage.getItem('camp-effect-warning')) {
       this.pendingWarningItem = { id, source, itemId };
       this.state.transition('effect-warning');
@@ -1587,6 +1618,7 @@ export class Game {
   /** Odświeża liczniki oraz dostępność przycisków całego ekwipunku. */
   private syncInventoryUi() {
     this.ui.syncInventory(this.inventory);
+    this.ui.updateHotbar(this.inventory);
   }
   /** Rozpoczyna kontrolowane wygaszanie aktywnego efektu. */
   cancelEffect() {
@@ -1656,9 +1688,13 @@ export class Game {
       if (!this.player.enabled) this.player.stop();
     }
     if (state === 'playing') {
+      this.speakerAudio.setTentMuffled(false);
       this.pointerLockPause.reset();
       this.player?.requestPointerLock();
-    } else if (document.pointerLockElement === this.canvas) document.exitPointerLock();
+    } else {
+      this.speakerAudio.setTentMuffled(true);
+      if (document.pointerLockElement === this.canvas) document.exitPointerLock();
+    }
     if (state === 'inspecting') {
       requestAnimationFrame(() => {
         if (!this.disposed && this.state.current === 'inspecting') this.inspectController.resize();
@@ -2175,6 +2211,10 @@ export class Game {
       this.ui.renderPassport(this.passport);
       if (document.pointerLockElement) {
         document.exitPointerLock?.();
+      }
+    } else {
+      if (this.state.current === 'playing' && !this.mobileInput) {
+        this.canvas.requestPointerLock?.().catch?.(() => undefined);
       }
     }
     return isOpen;

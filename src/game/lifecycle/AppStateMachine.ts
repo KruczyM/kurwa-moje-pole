@@ -32,8 +32,9 @@ const transitions: Record<AppState, readonly AppState[]> = {
     'start',
     'effect-warning',
     'riding',
+    'using-item',
   ],
-  seated: ['playing', 'error', 'start'],
+  seated: ['playing', 'paused', 'error', 'start'],
   inspecting: ['playing', 'using-item', 'effect-warning', 'error', 'start'],
   'using-item': ['playing', 'error', 'start'],
   'effect-warning': ['using-item', 'playing', 'inventory', 'inspecting', 'error', 'start'],
@@ -55,7 +56,6 @@ export const modalStates: readonly AppState[] = [
 /** Wyznacza pojedynczy, przewidywalny stan docelowy dla klawisza Escape. */
 export function escapeTarget(state: AppState, pauseSource?: AppState | null): AppState | null {
   if (
-    state === 'seated' ||
     state === 'inspecting' ||
     state === 'using-item' ||
     state === 'effect-warning' ||
@@ -63,9 +63,14 @@ export function escapeTarget(state: AppState, pauseSource?: AppState | null): Ap
     state === 'inventory'
   )
     return 'playing';
+  if (state === 'seated') return 'paused';
   if (state === 'riding') return 'paused';
   if (state === 'playing') return 'paused';
-  if (state === 'paused') return pauseSource === 'riding' ? 'riding' : 'playing';
+  if (state === 'paused') {
+    if (pauseSource === 'riding') return 'riding';
+    if (pauseSource === 'seated') return 'seated';
+    return 'playing';
+  }
   return null;
 }
 

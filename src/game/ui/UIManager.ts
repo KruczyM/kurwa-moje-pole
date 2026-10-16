@@ -73,12 +73,27 @@ export class UIManager {
 
   setInteractionPrompt(text: string | null): void {
     const prompt = this.qs<HTMLElement>('#prompt');
-    if (!prompt) return;
-    if (text) {
-      prompt.textContent = text;
-      prompt.hidden = false;
-    } else {
-      prompt.hidden = true;
+    if (prompt) {
+      if (text) {
+        prompt.textContent = text;
+        prompt.hidden = false;
+      } else {
+        prompt.hidden = true;
+      }
+    }
+    const crosshair = this.qs<HTMLElement>('#crosshair');
+    if (crosshair) {
+      crosshair.classList.toggle('interactive', Boolean(text));
+    }
+    const label = this.qs<HTMLElement>('#crosshair-label');
+    if (label) {
+      if (text) {
+        label.textContent = text;
+        label.hidden = false;
+      } else {
+        label.textContent = '';
+        label.hidden = true;
+      }
     }
   }
 
@@ -91,15 +106,19 @@ export class UIManager {
   ): void {
     const effectHud = this.qs<HTMLElement>('#effect-hud');
     if (effectHud) {
-      const phaseLabels = {
-        inactive: 'nieaktywny',
-        fadeIn: 'wchodzenie',
-        active: 'aktywny',
-        fadeOut: 'wygaszanie',
-      } as const;
-      effectHud.textContent = active
-        ? `${active} · ${phaseLabels[phase]} · ${Math.ceil(remaining)} s`
-        : 'Brak aktywnego efektu';
+      if (active) {
+        const phaseLabels = {
+          inactive: 'nieaktywny',
+          fadeIn: 'wchodzenie',
+          active: 'aktywny',
+          fadeOut: 'wygaszanie',
+        } as const;
+        effectHud.textContent = `${active} · ${phaseLabels[phase]} · ${Math.ceil(remaining)} s`;
+        effectHud.hidden = false;
+      } else {
+        effectHud.hidden = true;
+        effectHud.textContent = '';
+      }
     }
 
     const smoke = this.qs<HTMLElement>('#smoke');
@@ -113,6 +132,24 @@ export class UIManager {
       lsdOverlay.style.setProperty('--lsd-strength', String(active === 'LSD' ? visualIntensity : 0));
       lsdOverlay.classList.toggle('reduced-motion', reduceMotion);
     }
+  }
+
+  updateHotbar(inventory: ConsumableInventory): void {
+    const slots = [
+      { id: 'Piwo' as EffectId, icon: '🍺' },
+      { id: 'Papieros' as EffectId, icon: '🚬' },
+      { id: 'Joint' as EffectId, icon: '🌿' },
+      { id: 'Woda' as EffectId, icon: '💧' },
+    ];
+    slots.forEach((slot, index) => {
+      const btn = this.qs<HTMLButtonElement>(`#hud-hotbar .hotbar-slot[data-slot="${index}"]`);
+      if (!btn) return;
+      const count = inventory.quantity(slot.id);
+      const countEl = btn.querySelector('.slot-count');
+      if (countEl) countEl.textContent = `×${count}`;
+      btn.classList.toggle('has-items', count > 0);
+      btn.disabled = count <= 0;
+    });
   }
 
   updateFlankiHud(state: FlankiHudState | null): void {
@@ -255,9 +292,11 @@ export class UIManager {
     ] as const) {
       if (!list || !options.onRunnerChange) continue;
       const row = document.createElement('li');
+      row.className = 'flanki-runner-select-row';
       const label = document.createElement('label');
-      label.textContent = 'Stały biegacz: ';
+      label.textContent = '🏃 Stały biegacz: ';
       const select = document.createElement('select');
+      select.className = 'flanki-runner-select';
       select.dataset.flankiRunner = teamId;
       select.setAttribute('aria-label', `Stały biegacz drużyny ${teamId}`);
       select.disabled = options.canStart === false;
@@ -353,6 +392,10 @@ export class UIManager {
     const cheerVal = this.qs<HTMLElement>('#guitar-cheer-val');
     if (cheerVal && cheerVal.textContent !== cheerPercent) {
       cheerVal.textContent = cheerPercent;
+    }
+    const flameBar = this.qs<HTMLElement>('#guitar-flame-bar');
+    if (flameBar) {
+      flameBar.style.width = cheerPercent;
     }
 
     const multiplierBadge = this.qs<HTMLElement>('#guitar-multiplier-badge');

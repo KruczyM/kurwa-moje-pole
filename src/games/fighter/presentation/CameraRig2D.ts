@@ -1,4 +1,4 @@
-import { arenaCameraX, arenaZoom, CAMERA_SHAKE_MARGIN, cinematicZoom } from './stageLayout';
+import { arenaCameraX, arenaZoom, CAMERA_SHAKE_MARGIN, cinematicZoom, dynamicArenaZoom } from './stageLayout';
 
 export class CameraRig2D {
   public reducedEffects = false;
@@ -11,16 +11,24 @@ export class CameraRig2D {
   private shakeIntensity = 0;
 
   /**
-   * Arcade fighting camera: constant zoom for the viewport, follows the (interpolated)
-   * midpoint without lag and stops at the arena edges. Only the super-freeze punch-in eases.
+   * Arcade fighting camera:
+   * - Desktop landscape: constant zoom for rock-solid backdrop stability.
+   * - Mobile / Portrait: dynamic close-up framing keeping fighters visible and impactful.
+   * - Follows the (interpolated) midpoint without lag and stops at arena boundaries.
    */
   update(p1x: number, p2x: number, dt: number, width = 1280, height = 720): void {
-    const base = arenaZoom(width, height);
+    const isMobile = width < 800 || height > width;
+    const base = isMobile ? dynamicArenaZoom(width, height, p1x, p2x) : arenaZoom(width, height);
     const target = this.cinematic ? 1 : 0;
     this.cinematicBlend += (target - this.cinematicBlend) * Math.min(1.0, dt * 6.0);
     if (Math.abs(target - this.cinematicBlend) < 0.001) this.cinematicBlend = target;
     const punchIn = cinematicZoom(width, base, p1x, p2x);
-    this.zoom = base + (punchIn - base) * this.cinematicBlend;
+    const targetZoom = base + (punchIn - base) * this.cinematicBlend;
+    if (isMobile) {
+      this.zoom += (targetZoom - this.zoom) * Math.min(1.0, dt * 8.0);
+    } else {
+      this.zoom = targetZoom;
+    }
     this.x = arenaCameraX((p1x + p2x) / 2, width, this.zoom);
 
     if (this.shakeTime > 0) {

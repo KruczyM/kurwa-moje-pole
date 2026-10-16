@@ -50,4 +50,52 @@ describe('guitar backing lifecycle', () => {
     expect(filter.disconnect).toHaveBeenCalledTimes(1);
     expect(internals.backingVoices.size).toBe(0);
   });
+
+  it('backing track does not invoke guitar string plucking, leaving guitar exclusively for player hits', () => {
+    const synth = new CampfireGuitarSynth();
+    const internals = synth as any;
+    internals.ctx = {
+      state: 'running',
+      currentTime: 100,
+      sampleRate: 44100,
+      createOscillator: () => ({
+        type: 'sine',
+        frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+        connect: vi.fn(),
+        start: vi.fn(),
+        stop: vi.fn(),
+      }),
+      createGain: () => ({
+        gain: {
+          setValueAtTime: vi.fn(),
+          linearRampToValueAtTime: vi.fn(),
+          exponentialRampToValueAtTime: vi.fn(),
+        },
+        connect: vi.fn(),
+      }),
+      createBiquadFilter: () => ({
+        type: 'lowpass',
+        frequency: { setValueAtTime: vi.fn() },
+        Q: { setValueAtTime: vi.fn() },
+        connect: vi.fn(),
+      }),
+      createBuffer: () => ({ getChannelData: () => new Float32Array(100) }),
+      createBufferSource: () => ({
+        buffer: null,
+        connect: vi.fn(),
+        start: vi.fn(),
+        stop: vi.fn(),
+      }),
+    };
+    internals.masterGain = { connect: vi.fn() };
+    internals.backingGain = { connect: vi.fn() };
+    const playPlucked = vi.spyOn(internals, 'playPluckedString');
+
+    synth.startBackingTrack();
+    internals.playBackingStep('Am', 0, 100);
+    internals.playBackingStep('Am', 2, 100.5);
+
+    expect(playPlucked).not.toHaveBeenCalled();
+    expect(internals.backingVoices.size).toBeGreaterThan(0);
+  });
 });

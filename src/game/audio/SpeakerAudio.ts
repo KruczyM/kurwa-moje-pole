@@ -44,10 +44,38 @@ export class SpeakerAudio implements EffectAudioTarget {
   private source?: MediaElementAudioSourceNode;
   private perception?: AudioPerceptionGraph;
   private perceptionParameters?: PerceptionParameters;
+  private tentMuffled = true;
+  private tentUnmuffleProgress = 0;
+
+  setTentMuffled(muffled: boolean): void {
+    if (this.tentMuffled === muffled) return;
+    this.tentMuffled = muffled;
+    if (muffled) {
+      this.tentUnmuffleProgress = 0;
+    }
+    this.applyPerception();
+  }
+
+  isTentMuffled(): boolean {
+    return this.tentMuffled;
+  }
+
   setPerception(parameters: PerceptionParameters): void {
     this.perceptionParameters = parameters;
-    this.perception?.update(parameters);
+    this.applyPerception();
   }
+
+  private applyPerception(): void {
+    if (!this.perceptionParameters) return;
+    const baseCutoff = this.perceptionParameters.cutoff;
+    const targetCutoff = this.tentMuffled ? 380 : 380 + (baseCutoff - 380) * this.tentUnmuffleProgress;
+    const effectiveCutoff = Math.min(baseCutoff, targetCutoff);
+    this.perception?.update({
+      ...this.perceptionParameters,
+      cutoff: effectiveCutoff,
+    });
+  }
+
   private async ensurePerception(): Promise<void> {
     if (typeof HTMLMediaElement === 'undefined' || !(this.audio instanceof HTMLMediaElement)) return;
     if (!this.context && typeof AudioContext !== 'undefined') {
@@ -56,7 +84,7 @@ export class SpeakerAudio implements EffectAudioTarget {
       this.source = this.context.createMediaElementSource(this.audio);
       this.source.connect(this.perception.input);
       this.perception.output.connect(this.context.destination);
-      if (this.perceptionParameters) this.perception.update(this.perceptionParameters);
+      if (this.perceptionParameters) this.applyPerception();
     }
     if (this.context?.state === 'suspended') await this.context.resume();
   }
@@ -194,6 +222,11 @@ export class SpeakerAudio implements EffectAudioTarget {
         this.state = 'off';
         this.audio.pause();
       }
+    }
+
+    if (!this.tentMuffled && this.tentUnmuffleProgress < 1) {
+      this.tentUnmuffleProgress = Math.min(1, this.tentUnmuffleProgress + dt / 1.2);
+      this.applyPerception();
     }
 
     this.recalculateVolume();

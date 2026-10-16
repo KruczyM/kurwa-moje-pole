@@ -8,7 +8,7 @@ function createMockElement(id = '') {
   const classList = new Set<string>();
   const style = new Map<string, string>();
   const attributes = new Map<string, string>();
-  return {
+  const element = {
     id,
     dataset: {} as Record<string, string>,
     textContent: '',
@@ -34,12 +34,17 @@ function createMockElement(id = '') {
       setProperty: (k: string, v: string) => style.set(k, v),
       removeProperty: (k: string) => style.delete(k),
       getPropertyValue: (k: string) => style.get(k) || '',
+      width: '',
     },
     setAttribute: (k: string, v: string) => attributes.set(k, v),
     getAttribute: (k: string) => attributes.get(k) ?? null,
-    querySelector: () => null,
+    querySelector: (sel: string) => {
+      if (sel === '.slot-count') return createMockElement('.slot-count');
+      return null;
+    },
     focus: () => {},
   };
+  return element;
 }
 
 describe('UIManager', () => {
@@ -57,6 +62,7 @@ describe('UIManager', () => {
       '#smoke',
       '#lsd-overlay',
       '#crosshair',
+      '#crosshair-label',
       '#dialog',
       '#dialog-name',
       '#dialog-text',
@@ -107,6 +113,7 @@ describe('UIManager', () => {
       '#guitar-score-val',
       '#guitar-combo-val',
       '#guitar-cheer-val',
+      '#guitar-flame-bar',
       '#guitar-multiplier-badge',
       '#guitar-song-info',
       '#guitar-feedback',
@@ -117,6 +124,10 @@ describe('UIManager', () => {
       '#can-rush-hud',
       '#can-rush-time-val',
       '#can-rush-count-val',
+      '#hud-hotbar .hotbar-slot[data-slot="0"]',
+      '#hud-hotbar .hotbar-slot[data-slot="1"]',
+      '#hud-hotbar .hotbar-slot[data-slot="2"]',
+      '#hud-hotbar .hotbar-slot[data-slot="3"]',
     ];
 
     selectors.forEach((sel) => {
@@ -144,14 +155,21 @@ describe('UIManager', () => {
   it('shows and hides interaction prompt', () => {
     const ui = new UIManager();
     const prompt = elements.get('#prompt')!;
+    const crosshair = elements.get('#crosshair')!;
+    const label = elements.get('#crosshair-label')!;
     prompt.hidden = true;
 
     ui.setInteractionPrompt('E — Wejdź do toi-toia');
     expect(prompt.hidden).toBe(false);
     expect(prompt.textContent).toBe('E — Wejdź do toi-toia');
+    expect(crosshair.classList.contains('interactive')).toBe(true);
+    expect(label.hidden).toBe(false);
+    expect(label.textContent).toBe('E — Wejdź do toi-toia');
 
     ui.setInteractionPrompt(null);
     expect(prompt.hidden).toBe(true);
+    expect(crosshair.classList.contains('interactive')).toBe(false);
+    expect(label.hidden).toBe(true);
   });
 
   it('displays toast notifications', () => {
@@ -179,7 +197,11 @@ describe('UIManager', () => {
     const smoke = elements.get('#smoke')!;
     const lsd = elements.get('#lsd-overlay')!;
 
+    ui.updateEffectHud(null, 'inactive', 0);
+    expect(hud.hidden).toBe(true);
+
     ui.updateEffectHud('Papieros', 'active', 12, 1, false);
+    expect(hud.hidden).toBe(false);
     expect(hud.textContent).toContain('Papieros');
     expect(smoke.hidden).toBe(false);
     expect(lsd.hidden).toBe(true);
@@ -188,6 +210,44 @@ describe('UIManager', () => {
     expect(smoke.hidden).toBe(true);
     expect(lsd.hidden).toBe(false);
     expect(lsd.classList.contains('reduced-motion')).toBe(true);
+
+    ui.updateEffectHud(null, 'inactive', 0);
+    expect(hud.hidden).toBe(true);
+  });
+
+  it('updates hotbar slot counts and disabled state', () => {
+    const ui = new UIManager();
+    const inventory = new ConsumableInventory();
+    ui.updateHotbar(inventory);
+    const slot0 = elements.get('#hud-hotbar .hotbar-slot[data-slot="0"]')!;
+    expect(slot0.disabled).toBe(true);
+    expect(slot0.classList.contains('has-items')).toBe(false);
+
+    inventory.add('Piwo');
+    ui.updateHotbar(inventory);
+    expect(slot0.disabled).toBe(false);
+    expect(slot0.classList.contains('has-items')).toBe(true);
+  });
+
+  it('updates guitar flame meter with cheerLevel', () => {
+    const ui = new UIManager();
+    const flameBar = elements.get('#guitar-flame-bar')!;
+    const cheerVal = elements.get('#guitar-cheer-val')!;
+
+    ui.updateGuitarHud({
+      active: true,
+      phase: 'playing',
+      score: 100,
+      combo: 5,
+      maxCombo: 10,
+      multiplier: 2,
+      cheerLevel: 0.75,
+      currentTime: 10,
+      activeNotes: [],
+    });
+
+    expect(cheerVal.textContent).toBe('75%');
+    expect(flameBar.style.width).toBe('75%');
   });
 
   it('synchronizes modal states and visibility', () => {
