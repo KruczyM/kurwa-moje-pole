@@ -1,0 +1,77 @@
+{
+  "tileSize": 64,
+  "cols": 4,
+  "rows": 3,
+  "tiles": {
+    "grass": {
+      "index": 0,
+      "x": 0,
+      "y": 0,
+      "width": 64,
+      "height": 64
+    },
+    "grass_trampled": {
+      "index": 1,
+      "x": 64,
+      "y": 0,
+      "width": 64,
+      "height": 64
+    },
+    "mud": {
+      "index": 2,
+      "x": 128,
+      "y": 0,
+      "width": 64,
+      "height": 64
+    },
+    "dirt_path": {
+      "index": 3,
+      "x": 192,
+      "y": 0,
+      "width": 64,
+      "height": 64
+    },
+    "concrete_slab": {
+      "index": 4,
+      "x": 0,
+      "y": 64,
+      "width": 64,
+      "height": 64
+    },
+    "asphalt_road": {
+      "index": 5,
+      "x": 64,
+      "y": 64,
+      "width": 64,
+      "height": 64
+    },
+    "wood_planks": {
+      "index": 6,
+      "x": 128,
+      "y": 64,
+      "width": 64,
+      "height": 64
+    },
+    "fence_barrier": {
+      "index": 7,
+      "x": 192,
+      "y": 64,
+      "width": 64,
+      "height": 64
+    },
+    "tent_tarp": {
+      "index": 8,
+      "x": 0,
+      "y": 128,
+      "width": 64,
+      "height": 64
+    },
+    "hazard_strip": {
+      "index": 9,
+      "x": 64,
+      "y": 128,
+      "width": 64,
+      "height": 64
+    }
+  }
+}

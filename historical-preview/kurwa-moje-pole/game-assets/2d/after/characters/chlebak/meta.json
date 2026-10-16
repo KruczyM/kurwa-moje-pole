@@ -1,0 +1,29 @@
+{
+  "character": "chlebak",
+  "frameWidth": 64,
+  "frameHeight": 64,
+  "directions": [
+    "down",
+    "right",
+    "up",
+    "left"
+  ],
+  "framesPerDirection": 4,
+  "rows": {
+    "down": 0,
+    "right": 3,
+    "up": 2,
+    "left": 1
+  },
+  "animationColumns": {
+    "idle": [
+      0
+    ],
+    "walk": [
+      0,
+      1,
+      2,
+      3
+    ]
+  }
+}

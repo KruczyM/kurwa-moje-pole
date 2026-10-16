@@ -1,0 +1,13 @@
+{
+  "change": "Decorative chambers replaced by the existing solid wall material",
+  "removed": {
+    "views": 16,
+    "props": 95,
+    "rays": 20,
+    "floorDetails": 4
+  },
+  "gameplayUnchanged": true,
+  "playablePortalChambersPreserved": true,
+  "sourceSha256": "0ae11a0c7eaf75c4709f719fed4c3fa6b8ce46f4d2fedb8aa9edd9e930d2068b",
+  "outputSha256": "84de05b7ad8951f43d3db845ec2ed49448b10f3a2ce6f115f370a4f268c8bbe0"
+}

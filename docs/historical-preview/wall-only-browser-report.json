@@ -1,0 +1,108 @@
+{
+  "browser": "chromium",
+  "viewport": [1280, 800],
+  "touch": false,
+  "reducedMotion": false,
+  "input": "real keyboard DOM events",
+  "clock": "Playwright controlled clock; production host RAF and fixed-step accumulator",
+  "limitations": "Not a physical phone or a performance timing benchmark.",
+  "levels": [
+    {
+      "level": 2,
+      "status": "WON",
+      "inputs": 92,
+      "ticks": 92,
+      "collected": 19,
+      "chambers": ["main"],
+      "transitions": [],
+      "rendering": {
+        "cachedTiles": 95,
+        "cacheBytes": 1558580,
+        "enemyAnimators": 0,
+        "decorations": {
+          "walls": 401,
+          "directional": 0,
+          "accents": 0
+        }
+      },
+      "assets": {
+        "images": 6,
+        "decodedBytes": 15032320,
+        "urls": [
+          "/kurwa-moje-pole/game-assets/2d/bongo-rush/scenery-v6/amarena/terrain.png",
+          "/kurwa-moje-pole/game-assets/2d/bongo-rush/scenery-v6/amarena/props.png",
+          "/kurwa-moje-pole/game-assets/2d/bongo-rush/art-v2/items.png",
+          "/kurwa-moje-pole/game-assets/2d/bongo-rush/scenery-v6/amarena/mid.png",
+          "/kurwa-moje-pole/game-assets/2d/bongo-rush/scenery-v6/amarena/far.png",
+          "/kurwa-moje-pole/game-assets/2d/bongo-rush/characters-v6/amper/spritesheet.png"
+        ]
+      },
+      "gallery": {
+        "fullAtlases": 0,
+        "thumbnailBytes": 817152
+      },
+      "hero": "amper",
+      "controlsVerified": true,
+      "imageAndCacheBytes": 17408052,
+      "errors": [],
+      "failedResponses": []
+    },
+    {
+      "level": 18,
+      "status": "WON",
+      "inputs": 154,
+      "ticks": 154,
+      "collected": 49,
+      "chambers": ["main", "vault-1", "vault-2"],
+      "transitions": [
+        {
+          "tick": 12,
+          "from": "main",
+          "to": "vault-2"
+        },
+        {
+          "tick": 94,
+          "from": "vault-2",
+          "to": "vault-1"
+        },
+        {
+          "tick": 135,
+          "from": "vault-1",
+          "to": "main"
+        }
+      ],
+      "rendering": {
+        "cachedTiles": 95,
+        "cacheBytes": 1622432,
+        "enemyAnimators": 0,
+        "decorations": {
+          "walls": 72,
+          "directional": 0,
+          "accents": 0
+        }
+      },
+      "assets": {
+        "images": 7,
+        "decodedBytes": 21322384,
+        "urls": [
+          "/kurwa-moje-pole/game-assets/2d/bongo-rush/scenery-v6/smoke/far.png",
+          "/kurwa-moje-pole/game-assets/2d/bongo-rush/art-v2/items.png",
+          "/kurwa-moje-pole/game-assets/2d/bongo-rush/scenery-v6/smoke/terrain.png",
+          "/kurwa-moje-pole/game-assets/2d/bongo-rush/characters-v6/amper/spritesheet.png",
+          "/kurwa-moje-pole/game-assets/2d/bongo-rush/scenery-v6/smoke/mid.png",
+          "/kurwa-moje-pole/game-assets/2d/bongo-rush/scenery-v6/smoke/props.png",
+          "/kurwa-moje-pole/game-assets/2d/bongo-rush/kobra-face/face.png"
+        ]
+      },
+      "gallery": {
+        "fullAtlases": 0,
+        "thumbnailBytes": 817152
+      },
+      "hero": "amper",
+      "controlsVerified": true,
+      "imageAndCacheBytes": 23761968,
+      "errors": [],
+      "failedResponses": []
+    }
+  ]
+}

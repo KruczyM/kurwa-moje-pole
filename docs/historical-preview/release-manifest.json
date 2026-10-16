@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "sourceCommit": "428523d",
+  "entry": "bongo-rush.html",
+  "bundle": "assets/bongo-preview-quick-levels.js",
+  "files": [
+    {
+      "path": "bongo-rush.html",
+      "sha256": "2d2b2032aa886d347bd731bf5fd892139ad7451efe1f523332d141b789da7cff"
+    },
+    {
+      "path": "assets/bongo-no-decorative-chambers.js",
+      "sha256": "84de05b7ad8951f43d3db845ec2ed49448b10f3a2ce6f115f370a4f268c8bbe0"
+    },
+    {
+      "path": "assets/bongo-preview-quick-levels.js",
+      "sha256": "6be0387ef92bc590e6613ebc4c75d36bcb754dbeb8ecb70ec4be3df1470f9552"
+    }
+  ]
+}

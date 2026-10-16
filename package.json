@@ -10,7 +10,7 @@
     "dev": "concurrently -n \"server,client\" -c \"cyan,magenta\" \"npm:server\" \"npm:dev:client\"",
     "dev:client": "vite",
     "server": "tsx server/roomServer.ts",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && node scripts/package-bongo-snapshot.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src scripts vite.config.ts eslint.config.js --max-warnings 0",
     "format": "prettier --write src scripts vite.config.ts eslint.config.js package*.json .github .vscode README.md AGENTS.md docs",
