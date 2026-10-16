@@ -120,6 +120,10 @@ describe('Arcade Category 1 — HTML Elements & Cabinet Template', () => {
     // CRT Toggle in audio/accessibility settings
     expect(html).toContain('id="crt-toggle"');
 
+    // Matchup stage pedestals
+    expect(html).toContain('class="matchup-pedestal p1"');
+    expect(html).toContain('class="matchup-pedestal p2"');
+
     // Polish move abbreviations and PC key hint badges on arcade buttons
     expect(html).toContain('>LP</span>');
     expect(html).toContain('>PS</span>');

@@ -437,10 +437,20 @@ class FighterDemo {
         [1, this.p1Key],
         [2, this.p2Key],
       ] as const) {
-        const image = document.getElementById(`matchup-p${seat}`) as HTMLImageElement;
-        image.src = selectionArtUrl(base, key, 'full');
-        image.alt = ROSTER[key]!.definition.name;
-        document.getElementById(`matchup-name-p${seat}`)!.textContent = ROSTER[key]!.definition.name;
+        const image = document.getElementById(`matchup-p${seat}`) as HTMLImageElement | null;
+        if (image) {
+          const prevKey = image.dataset.currentKey;
+          if (prevKey !== key) {
+            image.dataset.currentKey = key;
+            image.src = selectionArtUrl(base, key, 'full');
+            image.alt = ROSTER[key]!.definition.name;
+            const nameEl = document.getElementById(`matchup-name-p${seat}`);
+            if (nameEl) nameEl.textContent = ROSTER[key]!.definition.name;
+            image.classList.remove(`matchup-reveal-p${seat}`);
+            void image.offsetWidth; // trigger CSS animation reflow
+            image.classList.add(`matchup-reveal-p${seat}`);
+          }
+        }
       }
       document.querySelectorAll('.roster-card').forEach((card) => {
         const key = card.getAttribute('data-key');
@@ -471,6 +481,16 @@ class FighterDemo {
       card.className = 'roster-card';
       card.setAttribute('data-key', key);
 
+      const badgeP1 = document.createElement('span');
+      badgeP1.className = 'roster-badge roster-badge-p1';
+      badgeP1.textContent = '1P';
+      badgeP1.setAttribute('aria-hidden', 'true');
+
+      const badgeP2 = document.createElement('span');
+      badgeP2.className = 'roster-badge roster-badge-p2';
+      badgeP2.textContent = '2P';
+      badgeP2.setAttribute('aria-hidden', 'true');
+
       const img = document.createElement('img');
       img.src = selectionArtUrl(base, key, 'thumb');
       img.alt = entry.definition.name;
@@ -480,8 +500,11 @@ class FighterDemo {
       img.loading = 'lazy';
 
       const label = document.createElement('span');
+      label.className = 'roster-name';
       label.textContent = entry.definition.name;
 
+      card.appendChild(badgeP1);
+      card.appendChild(badgeP2);
       card.appendChild(img);
       card.appendChild(label);
 
