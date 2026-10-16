@@ -1,0 +1,23 @@
+{
+  "character": "patrol",
+  "frameWidth": 96,
+  "frameHeight": 96,
+  "framesPerDirection": 1,
+  "rows": {
+    "down": 0,
+    "right": 1,
+    "up": 2,
+    "left": 3
+  },
+  "animationColumns": {
+    "idle": [
+      0
+    ],
+    "walk": [
+      0
+    ]
+  },
+  "source": "source-assets/bongo-rush/models/patrol-textured.glb",
+  "cameraFit": "all-evaluated-frames-sphere",
+  "rigStatus": "unrigged-generated-mesh"
+}

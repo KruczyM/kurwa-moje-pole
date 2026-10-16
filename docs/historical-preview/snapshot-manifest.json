@@ -1,0 +1,1319 @@
+{
+  "historicalBuild": "2026-10-15T17:57:12",
+  "baseCommit": "c6284e5",
+  "source": "E:\\kodowanie\\gra\\.ai\\worktrees\\bongo-rush-v6\\reports\\bongo-campaign-v6\\production-verification",
+  "kind": "preserved verification build; read-only diagnostics enabled with ?verify",
+  "laterThemesIncluded": false,
+  "files": [
+    {
+      "path": "bongo-rush.html",
+      "bytes": 9749,
+      "sha256": "37d2e336e9bd0fd68bb14ba792fccb265df2cdee057a49f3f875d2c25af74db9"
+    },
+    {
+      "path": "assets/bongo-B7Wb6hvb.js",
+      "bytes": 166186,
+      "sha256": "0ae11a0c7eaf75c4709f719fed4c3fa6b8ce46f4d2fedb8aa9edd9e930d2068b"
+    },
+    {
+      "path": "assets/bongo-CqiYysdy.css",
+      "bytes": 9651,
+      "sha256": "4a2aa42c0c11035d1c41344038dead2a5fa5e82110719c9d0db24d0d0aa536c3"
+    },
+    {
+      "path": "assets/ImageCache-By4-CPcJ.js",
+      "bytes": 4325,
+      "sha256": "0aafb1665cdb33515d842ab9ccb16421da7682ed54ff124ea028e516c1a2e858"
+    },
+    {
+      "path": "assets/MobileControls-CAkBG4WB.js",
+      "bytes": 5820,
+      "sha256": "7165bd71024ab3dfa5ef2751f15e494354a01f6c418b58b4e5479fb463b46656"
+    },
+    {
+      "path": "assets/modulepreload-polyfill-B5Qt9EMX.js",
+      "bytes": 711,
+      "sha256": "d2a32840421496e872ade591618d2fa5c33797605d1aec04301717e5a90757d0"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/amarena.svg",
+      "bytes": 1129,
+      "sha256": "e07d772d919caa14a52b0ea27564c01c84b578794f7bf8126d31ac120a55124c"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/glass.svg",
+      "bytes": 1026,
+      "sha256": "af5f3e82d671d60d695666dba4e9ed207a8c96efdc41b1696f2634d008b297a3"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/rave.svg",
+      "bytes": 1117,
+      "sha256": "1f85798a1b47f1cb99059aeed68b2e746581d4debec3ef994820b78acecd04a5"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/roots.svg",
+      "bytes": 1270,
+      "sha256": "d00a9bb08177561b1821640e7fda17077c86a428b9008eceac368b61e41245b9"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/art-v2/amarena-background.png",
+      "bytes": 680784,
+      "sha256": "1ead565dd54e67bf6238f56b68c1576d5dd8d6769bd281851d344863ad168aae"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/art-v2/amarena-terrain.png",
+      "bytes": 911304,
+      "sha256": "6ac87fe84cf7d1d593ee3f0e8b2c489d2c7debe0aaade0d1bdc4f1fa6ab3e457"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/art-v2/backgrounds-source.png",
+      "bytes": 2811104,
+      "sha256": "94ca0cfaf291bea5b2abb228cd37e7feabc6759409720f432e046248fb8220ec"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/art-v2/depth.png",
+      "bytes": 1445736,
+      "sha256": "358194670c801a1ec370e43bc0b4761126e6a77ea301d5c899e967199eab25e8"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/art-v2/glass-background.png",
+      "bytes": 733370,
+      "sha256": "9add2e0d06b8595545e99a846d23e7be8a5711959043b08fd5664558d55254a9"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/art-v2/glass-terrain.png",
+      "bytes": 988148,
+      "sha256": "6b238c4672e517790028623776a9660bc291a5d3d3d7b2af63b5ac722f89db07"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/art-v2/items.png",
+      "bytes": 1022052,
+      "sha256": "90f0943b1dac3f5a384bdaf2cc0f1d9ccd6295d306ebf455562244b90e8ab673"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/art-v2/rave-background.png",
+      "bytes": 650446,
+      "sha256": "a5651f2946addc83f200e24e750da922ec9f9465d20268c52ae4404daa974937"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/art-v2/rave-tablets.png",
+      "bytes": 1543101,
+      "sha256": "11094c83cbf76b4a29d429657c6ff49923d9e428a0bd26386035a39722510925"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/art-v2/rave-terrain.png",
+      "bytes": 887218,
+      "sha256": "1a1aa784b6f73f4c766901168e0e4cf69542b97e0458066037171ad98f85c59d"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/art-v2/roots-background.png",
+      "bytes": 731529,
+      "sha256": "f990797697ca60bc2667371bc1f67b748ee9f78fa54ec8dee8a8af5e0fb0973c"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/art-v2/roots-terrain.png",
+      "bytes": 1008897,
+      "sha256": "a7c94ed9569eb58db94c0a4428bbd0aa057740464596d150d505c45cf9a6ce61"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/art-v2/terrain-source.png",
+      "bytes": 3123851,
+      "sha256": "30c50102a717ab45deb5d8029db01f57080455fd59c539fede598cecbc2df6f8"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/ambona/meta.json",
+      "bytes": 381,
+      "sha256": "9a27a2406f5a8608b9ecfc538bb77c5dda0a8d45ff095a5a42a61192ad335e28"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/ambona/spritesheet.png",
+      "bytes": 117880,
+      "sha256": "399ca976e57f04caed0e3b26de094f06b540a7387f868c5a26d73f27066c1880"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/amper/meta.json",
+      "bytes": 379,
+      "sha256": "4a66925ed3c3698de67d88cfc3c4cc6f4d5e496dee3707e095c48266ff13423d"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/amper/spritesheet.png",
+      "bytes": 96725,
+      "sha256": "7e0aaf7973091a9a1b61de519cd04dd42ec984bf48cf2a821ec2d551dbee2dbe"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/antena/meta.json",
+      "bytes": 381,
+      "sha256": "56506b09f9313c755a07128ab981a69f2a42fd436fd8793280bbd5b341995343"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/antena/spritesheet.png",
+      "bytes": 86597,
+      "sha256": "8936e07290fdb89d4b08b09c332d3de6f4a34d8a97c6b3f41b44fb342dda28ff"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/chlebak/meta.json",
+      "bytes": 383,
+      "sha256": "26571531167874bccb956cb4e4caa102fe5f85b852a5bccf7ec762f833b5b9dc"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/chlebak/spritesheet.png",
+      "bytes": 110443,
+      "sha256": "24c541a865268558da9e3b8994d6c44ffebcff008c0f34a8c69c6b643f083536"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/dziaslo/meta.json",
+      "bytes": 383,
+      "sha256": "7990b2145d714efb9374192484eb62c00d92152e8d71a45c6d629516ebfbaf6f"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/dziaslo/spritesheet.png",
+      "bytes": 122579,
+      "sha256": "029e0bc67c59ccba833b544f638612438f36d046b4d0cac6a0c65dbd0264acf2"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/gruczol/meta.json",
+      "bytes": 383,
+      "sha256": "ef0926cee2258dca99789947113d73ab2a022aab4bd5b0e60c5d4189577613da"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/gruczol/spritesheet.png",
+      "bytes": 97556,
+      "sha256": "75d81fb2efce7a24184e41741f61c97f1535e216c447f7d32f831b716b258705"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/hemoroid/meta.json",
+      "bytes": 385,
+      "sha256": "f153e173d3412ca7739ef350933fdb99cb2da4d0785642b7772b65bbc71367c5"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/hemoroid/spritesheet.png",
+      "bytes": 113517,
+      "sha256": "326e0279a0e810499cf6280258cde3fb2e73df23f1a90aae369865bb2aa00149"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/jeczmien/meta.json",
+      "bytes": 385,
+      "sha256": "5b6da1c43396ac350fdfca6d0139f951ef356dfca18eca03313b83056c77e3f3"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/jeczmien/spritesheet.png",
+      "bytes": 124882,
+      "sha256": "a7082771a148e0fdbddaed8cddb686940fcd2d6bf9013887096ad41ede43063a"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/klatwa/meta.json",
+      "bytes": 381,
+      "sha256": "b4bad698661472f726f3309e33a88362b23080e507faaaf7d8263793b9fc916c"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/klatwa/spritesheet.png",
+      "bytes": 128785,
+      "sha256": "b5c19449d32841c4fa2f16d590b2ef221df78dee189a4e30a8bcf9ffaf770b39"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/kobra/meta.json",
+      "bytes": 379,
+      "sha256": "639ea5ee6b01f5835f0f35d1c269bcb7e4dd7f443e99581d1148b6897a02c06b"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/kobra/spritesheet.png",
+      "bytes": 115308,
+      "sha256": "7a835273b2d5dd7cdf7b2a4abc91b6f5df66fa0e3627fa8a30d93e32b2963ff7"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/korba/meta.json",
+      "bytes": 379,
+      "sha256": "5805b2afee3fa9d48726a65ccc265fa3e6fcb6c7cd971983d13ff2e2101b8a2e"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/korba/spritesheet.png",
+      "bytes": 115113,
+      "sha256": "32b1f5d4675bdcd151f6da2bc05514eb033da99ea3310ce7b3c14db4692c6f33"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/krwiak/meta.json",
+      "bytes": 381,
+      "sha256": "bdeb4890d858b2441d10dc4d58cd6bacbc4c430028a1ba5be2c45f87ef199bce"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/krwiak/spritesheet.png",
+      "bytes": 90428,
+      "sha256": "bb231a219686bb00447423ae697ddffb476e38f12ab6d044a29d47cceb425d47"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/owsiak/meta.json",
+      "bytes": 411,
+      "sha256": "d846d0151a37e21e3bb623fee82b3aa4b5346b29ae05b90be45c7e9155e43ce8"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/owsiak/spritesheet.png",
+      "bytes": 27921,
+      "sha256": "5d63e215566e7c1c0a0e1622769ac6a4f8a9062ac082ffb02eaa4a1b853737af"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/patrol/meta.json",
+      "bytes": 411,
+      "sha256": "6260aa7c3e9b2789b7259203290b406ad93592b0e3f824cded35a0e8977bdb3a"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/patrol/spritesheet.png",
+      "bytes": 26485,
+      "sha256": "e664bc3515cbe1ce619e6e7bb2403b769f17fea6e9a151062d50434794238ec8"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/patrol-blue-v3/meta.json",
+      "bytes": 496,
+      "sha256": "30364a1db752901e3e924f88fc5bf8e4aac254fc0700b943fa324969109383bd"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/patrol-blue-v3/spritesheet.png",
+      "bytes": 239743,
+      "sha256": "59fc3a6a41e7073e03e6db13eac07884e59aebc095e61cdeec43dac1b8df347d"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/patrol-red-v3/meta.json",
+      "bytes": 494,
+      "sha256": "7dd9db9d811c39d60fef10ea147d272929d05829064a2f604aaa87c7f9a8caff"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/patrol-red-v3/spritesheet.png",
+      "bytes": 313036,
+      "sha256": "442a9dfd6f9bb28235379aa6614212739af869c49a6ff7e29fe5fc73a8b5b03e"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/pien/meta.json",
+      "bytes": 377,
+      "sha256": "d7aa1d1fb054bf99ac5bd1153a07a2dc4d0dba030630e06b6484b23c2b5ead63"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/pien/spritesheet.png",
+      "bytes": 102964,
+      "sha256": "9f4237457d7d7f0943130e10c3ceb46702414bf1101788ae5afc0ad795782a3e"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/pierscien/meta.json",
+      "bytes": 387,
+      "sha256": "5c14351fbb7351dd46547a027ea99e705b1c625a0ee3380da6ad9405c596b3ca"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/pierscien/spritesheet.png",
+      "bytes": 101672,
+      "sha256": "4cabe9dbdd7083a892f580c2fe952c442da95d9e0e1d344b68a4cda1bea37fe2"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/szerszen/meta.json",
+      "bytes": 385,
+      "sha256": "ee3fa34ca38f77b7475b154998e6ce8c66ced6aae8325e8e44872be8d5f0f3b0"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/szerszen/spritesheet.png",
+      "bytes": 113090,
+      "sha256": "dd464d20536656eab41ac6f51f9f055997eb3cb4359dbcdee64a9845e5cbea14"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/undercover-v3/meta.json",
+      "bytes": 494,
+      "sha256": "2ba89d82bef11b196b3f01b748612adb6130f1714978a6fbc4c3a63776e24554"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/undercover-v3/spritesheet.png",
+      "bytes": 225649,
+      "sha256": "b09dab13f337ff3a99dab7bb4e1e5dc242ceffd6bcf9d739ddadabc1df924428"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/zawor/meta.json",
+      "bytes": 379,
+      "sha256": "6e732a2e291f418b9898bee97a4adb0100bc86d963b78d612db9a503622d9f09"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters/zawor/spritesheet.png",
+      "bytes": 123187,
+      "sha256": "131977a10525b3ceccc1ae8b11aeb33f8a5703601a1daebfc3a2d65f6e208b25"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/ambona/meta.json",
+      "bytes": 475,
+      "sha256": "31c666abd713a440babcb99e52009d5ffc3dfd1b9c9f33f2f0dae1d041472a2d"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/ambona/spritesheet.png",
+      "bytes": 298462,
+      "sha256": "c8f59b2c9ccffc828df8d5458517680405790c6573c71e43012d511960bd66ac"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/amper/meta.json",
+      "bytes": 473,
+      "sha256": "eac366b95d4294583c4a07f72bb164366019444a73a7f768f3e570f949bac1dd"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/amper/spritesheet.png",
+      "bytes": 244749,
+      "sha256": "2380ccc82ff5303078f29566cdbf1a610ff4f6358c05140de15c532298c52efc"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/antena/meta.json",
+      "bytes": 475,
+      "sha256": "0a188790c602f047cce37cf013cc88f4c1fe06d98c4a5f88f61992215c7da0ab"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/antena/spritesheet.png",
+      "bytes": 215147,
+      "sha256": "d7fffcb2f9d2ef9fa3ba30ad341ddb10e751e04a2c3161d5459abb4a6d041f36"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/chlebak/meta.json",
+      "bytes": 477,
+      "sha256": "87b1b264f5ecf866cfa03dfe4a0ede10ae56ef4d80d160377d087870677c7da7"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/chlebak/spritesheet.png",
+      "bytes": 288392,
+      "sha256": "3d7b0377dd17a29cb39e9282834c6ff7f6f0ba915961d5f30989a8b4a9fe8104"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/dziaslo/meta.json",
+      "bytes": 477,
+      "sha256": "70ff733ded5e69c0c77cd0e5d82aca2c8cf5953a97d80652772fd546a088c253"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/dziaslo/spritesheet.png",
+      "bytes": 300912,
+      "sha256": "62ce10e6aaec5cbabca5c4cec473520578bf79038ee14e40bd5b1f4f1ccf69c3"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/gruczol/meta.json",
+      "bytes": 477,
+      "sha256": "f51df2db70ba2251ada18869664983b993f94d9cc88a2e5331b8eee1c75cfe24"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/gruczol/spritesheet.png",
+      "bytes": 258210,
+      "sha256": "89f4c1017a2e4da9b776130bee821b1c7dae7f2e67c65435ffe46ae182dbbdb9"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/hemoroid/meta.json",
+      "bytes": 479,
+      "sha256": "d2ab4f8acb8f888d07a8b12d216dc9ccefd272b4cab3a7ea33fc5cd1407c6d40"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/hemoroid/spritesheet.png",
+      "bytes": 298839,
+      "sha256": "8b01e7f284b423f885386bd28aa5c50da54e17c44b574a8713222e8ac0403e44"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/jeczmien/meta.json",
+      "bytes": 479,
+      "sha256": "863f3cbcc4bacb08274755c33b9bc559e2855957118254aa35cc7473a682119f"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/jeczmien/spritesheet.png",
+      "bytes": 318004,
+      "sha256": "74051f0bb8c61e0fb77dd2e54ae8837a0ad79ed39d7c3c825acd1a4c401da604"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/klatwa/meta.json",
+      "bytes": 475,
+      "sha256": "de3b07650a645de835a497fa66dacc639bbfa0a08a9fba99b84849655a7d55d8"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/klatwa/spritesheet.png",
+      "bytes": 339428,
+      "sha256": "72567f5309e900d0377637cf2d808b8dd3e69d6fe78fdb1666885b856d630a76"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/korba/meta.json",
+      "bytes": 473,
+      "sha256": "afc21d24d2f2fed1d1bbfb022e52e9e435fcc61b79c8f5e0249ae810301bb687"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/korba/spritesheet.png",
+      "bytes": 288854,
+      "sha256": "3fa0d09347d77d46ff11a1d12ae78f91131fb6ba6130cb12cbe6d9df2e9f01dd"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/krwiak/meta.json",
+      "bytes": 475,
+      "sha256": "4d32d70f19bf578023758b93d0f3851c3c442854d6d63e84f75a93bed389d8e8"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/krwiak/spritesheet.png",
+      "bytes": 223792,
+      "sha256": "11675ce3ec0e89ab548aafb5b2126437539b2a6bdeec6664238fc93c8d953a86"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/owsiak/meta.json",
+      "bytes": 480,
+      "sha256": "850290c5407568154e273e016654ddfde94129cd2dd7e97c24a32fe69803d6b0"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/owsiak/spritesheet.png",
+      "bytes": 308113,
+      "sha256": "46e5dec5be6b308caaf087e4cd23e2e6215e340efcdfcd5c0976b28f8591441c"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/patrol-blue-v3/meta.json",
+      "bytes": 496,
+      "sha256": "30364a1db752901e3e924f88fc5bf8e4aac254fc0700b943fa324969109383bd"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/patrol-blue-v3/spritesheet.png",
+      "bytes": 227749,
+      "sha256": "4c56392db2543757b3e3cbf522e780733b0778d2286dd2bcd9b80614ba5c219f"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/patrol-red-v3/meta.json",
+      "bytes": 494,
+      "sha256": "7dd9db9d811c39d60fef10ea147d272929d05829064a2f604aaa87c7f9a8caff"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/patrol-red-v3/spritesheet.png",
+      "bytes": 213678,
+      "sha256": "2f1be9c063aad12012993659d2372c44bd17e4e3cb9c2c78a6254ad1d5de5d4d"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/pien/meta.json",
+      "bytes": 471,
+      "sha256": "c1b0092b372d513c19884d2394b427f22aaa1d3a6afa5ac9bb6ba8e019305150"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/pien/spritesheet.png",
+      "bytes": 249926,
+      "sha256": "598cc06d5b9945f6a5792da07b6c8787f17a610e29cb65c053ed2784cf1b3e40"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/pierscien/meta.json",
+      "bytes": 481,
+      "sha256": "255b086850326105033edf052e8cd55a9708115d866086087599a85145970606"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/pierscien/spritesheet.png",
+      "bytes": 273560,
+      "sha256": "9737c1276e8a85ca5bf5e1e85b5e03ef03754cc3a1ba9e03a2a93df50393078d"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/szerszen/meta.json",
+      "bytes": 479,
+      "sha256": "b7ff72d291781a341674ff836fe805c96dfb5ca6a383aef72e8dee73736fd390"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/szerszen/spritesheet.png",
+      "bytes": 285240,
+      "sha256": "e2b72a7f548dd2bddd593062a54a5cfb10ffb0cb69cd8d0aff502800569872df"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/undercover-v3/meta.json",
+      "bytes": 494,
+      "sha256": "2ba89d82bef11b196b3f01b748612adb6130f1714978a6fbc4c3a63776e24554"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/undercover-v3/spritesheet.png",
+      "bytes": 217309,
+      "sha256": "7d9e5b43ef4814cef307ed9d7d1a09dcbc571bda6311cf5a3a4b9105d96125fe"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/zawor/meta.json",
+      "bytes": 473,
+      "sha256": "147d16755fe87bdfbbd968d967d6de9948377e69fb337e1a70f8ae000f07f531"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v5/zawor/spritesheet.png",
+      "bytes": 302624,
+      "sha256": "c0a00c14fec9b4bc1d8578d634e28504f3d1c9eda648f10401129a44ebd86294"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/cart.png",
+      "bytes": 77598,
+      "sha256": "7e3980592ae3b9b65638ab965d0da6e0cda883fe38a44b7e5105a6db51c3fa29"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/ambona/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/ambona/spritesheet.png",
+      "bytes": 736431,
+      "sha256": "66ef6b5c4ab3c2214cf1064f67b35804f66642bcc8d9537d51b8a4020b269fbc"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/amper/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/amper/spritesheet.png",
+      "bytes": 652775,
+      "sha256": "01e58488260402f055478f91bfc037750c8ae6d491cb2ccb3da25c0f697ea09a"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/antena/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/antena/spritesheet.png",
+      "bytes": 744955,
+      "sha256": "96e2a471aef8797da8e1b0b038c6481cab0659639749a5c421c2d70c9e3226bc"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/chlebak/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/chlebak/spritesheet.png",
+      "bytes": 691745,
+      "sha256": "505381f58f60a852760e602e76b23e1a33ee49b9e6c2e686ffcbe8ef86113e87"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/dziaslo/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/dziaslo/spritesheet.png",
+      "bytes": 751110,
+      "sha256": "c67cd939e1b568829aab251f79c1043c506db1ad3d310c4485399100985f7c2d"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/gruczol/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/gruczol/spritesheet.png",
+      "bytes": 698336,
+      "sha256": "c7ffa15a7a7d85aa51b39c4e0d00ab3a768e67a664c39225260899fd1aaacb3f"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/hemoroid/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/hemoroid/spritesheet.png",
+      "bytes": 749581,
+      "sha256": "25c9e5f4928144efbf9c733fe9c2e7cfb6d314ddacecf176e76004cfa6d6d655"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/jeczmien/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/jeczmien/spritesheet.png",
+      "bytes": 736023,
+      "sha256": "47714bb59696b3f5f48c2d72d87032d9b58bbcfd9183356cf7d4e83096684732"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/klatwa/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/klatwa/spritesheet.png",
+      "bytes": 795139,
+      "sha256": "b9e55e7c3a10c7757072f9444f0f3712b5f380827fd48494563d837fdf076a15"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/korba/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/korba/spritesheet.png",
+      "bytes": 752691,
+      "sha256": "6d63c7c90e3a70a3a84940c79d8e1e2d8de749af49ee0d2fbd00ce85d18d9ec2"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/krwiak/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/krwiak/spritesheet.png",
+      "bytes": 703467,
+      "sha256": "50d5617d294eafda16890204a5470f02842ff4cd0b227280db9836bd1d6b0f63"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/owsiak/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/owsiak/spritesheet.png",
+      "bytes": 722663,
+      "sha256": "77d0a917e49560469e8568de36cec48e891c7d7cc98f14e40a018cf7a4504672"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/patrol-blue-v3/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/patrol-blue-v3/spritesheet.png",
+      "bytes": 670461,
+      "sha256": "a0c52173b49d54ac35b62dae455a821887b2e1ff4102de09258335ea40fc33b4"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/patrol-red-v3/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/patrol-red-v3/spritesheet.png",
+      "bytes": 655566,
+      "sha256": "1fe333abea742792a0362ef35b7357b93bdc967eb08f5bc6040a287f447eaf86"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/pien/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/pien/spritesheet.png",
+      "bytes": 918542,
+      "sha256": "6c94186d68b6032c7eb919a92f71212cf61bd768a08e6937e31afa36d71e88d5"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/pierscien/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/pierscien/spritesheet.png",
+      "bytes": 625329,
+      "sha256": "af9421a51b7cd4438d7f38ef3cde20dc9a852f46a8eeab322e27d7d3debbd255"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/szerszen/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/szerszen/spritesheet.png",
+      "bytes": 707168,
+      "sha256": "910b2d3a1f0c89c07946e6cbb4b8e5efc8aa23577c8c4e7790081a0142fed2ae"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/undercover-v3/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/undercover-v3/spritesheet.png",
+      "bytes": 635478,
+      "sha256": "ff1995560baf0beca743760bcedce832ae01a5e8668aec42b23425a2a77e0212"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/zawor/meta.json",
+      "bytes": 464,
+      "sha256": "c53f14802fbbcd122dae03610f099c205cbe8bcacfb04f619a9e2fe37cecdb23"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/characters-v6/zawor/spritesheet.png",
+      "bytes": 727709,
+      "sha256": "c5fca0e64d20454240e61401d6daafc13f5f13140aaa753ab5c2c71711ebd41b"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/kobra-face/face.png",
+      "bytes": 1794970,
+      "sha256": "265d4208d1c1c3487ae8a1eaa241995ebfd7af63ccfbdc03b9d511e82e40c233"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/living/amarena-v1.png",
+      "bytes": 2679648,
+      "sha256": "263bb1e665e5d2a53c043dc066abcea844d1b580a8397ce1636a8f688137cfc3"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/living/glass-v1.png",
+      "bytes": 2639779,
+      "sha256": "acce211e1c6ce71c8779391698faf6b515eef95f366c4420d8321709bf9e1468"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/living/rave-v1.png",
+      "bytes": 2494404,
+      "sha256": "489cb6d9bb4f808a84f136d6c40c4d79553b6a28135a09001d51984a2aba6b14"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/living/roots-v1.png",
+      "bytes": 2663076,
+      "sha256": "5165edc3bb54b5ca110af26342f01577cabf4e2804b1036c5f90dd51358bb3e9"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v3/amarena.json",
+      "bytes": 1267,
+      "sha256": "c7e213dcb86520166e39b1e2d1bc7310d32a7b0852b202d64dbd71d00a1c6485"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v3/amarena.png",
+      "bytes": 886678,
+      "sha256": "a7be133169c165e681261dd871afea4d6d29f798a83e65c6c5fa394ddfb3e358"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v3/glass.json",
+      "bytes": 1265,
+      "sha256": "6c89953b31fa413504ce2e8fd1a6439a6beecd62a4ef120e3e696d5867bd7bcc"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v3/glass.png",
+      "bytes": 914791,
+      "sha256": "37f513175e97169c7aa69d8050b16ec23938a07a9b5512fd1fa81a367aa3c9d2"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v3/rave.json",
+      "bytes": 1264,
+      "sha256": "396c2532329a8def80c9f6720804913d103e28cd4ef6c20e4328ae8c44a07576"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v3/rave.png",
+      "bytes": 778735,
+      "sha256": "7727a7ae117fa96c548afaee4bd04c726c7beb5ca7a8ff3dd704df0205fbfb93"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v3/roots.json",
+      "bytes": 1265,
+      "sha256": "1c19f980f272d33495abd651dd379a44aaa405ef0f1912d74f5ef827715c6569"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v3/roots.png",
+      "bytes": 978921,
+      "sha256": "08a43f40e33032b820633bb0667f383f87a8e2a6b4959f26622158d0f13a757a"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v4/amarena.json",
+      "bytes": 899,
+      "sha256": "9b41264950a6c1e306aba83ec0d1a53c02f8ff054507accd59e2656a579c2aec"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v4/amarena.png",
+      "bytes": 1523934,
+      "sha256": "0d41cc75fdc588ff1075c0fa00f3dcdd56be35f5e96ca8d5527e1c4f6f423b5c"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v4/glass.json",
+      "bytes": 897,
+      "sha256": "f45bbf173f2261a34ab1a17b2cb3ede6e68025907583bd274c9c18ba87d521f1"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v4/glass.png",
+      "bytes": 1920043,
+      "sha256": "c2aa4c04ec8a6fa6a6e43d579b9b40f1cda78214b45160203a0f3eb75ff1deb3"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v4/rave.json",
+      "bytes": 896,
+      "sha256": "088f18cc87d20d6030fa5a055ff4f11c0a73015fc0ef87ce5f91de8f4a6bacdd"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v4/rave.png",
+      "bytes": 1696012,
+      "sha256": "e34ceb4ab536bb4cbc834261d969849c30fe21d7abd72e56b32c9b617cbc9b33"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v4/roots.json",
+      "bytes": 897,
+      "sha256": "a5e082543a7c89cf5a3085b1a2d8d5aedeb9eda0f890bd5452ad9fc653f87180"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/materials-v4/roots.png",
+      "bytes": 1879923,
+      "sha256": "e0396c6b6488d533fa750d183a4142a6c76a96f116efd29e5d72f1598df8be0c"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/amarena/far.png",
+      "bytes": 953302,
+      "sha256": "f072c2691ce20490463f7d8f1bdc000362d3cfcf72c988b41259dcc7dbba6a57"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/amarena/mid.png",
+      "bytes": 404770,
+      "sha256": "54f06e77959eee5a6cebae46b8138aa64e3cc68941e271b27e435fe9797d1a27"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/amarena/props.png",
+      "bytes": 300372,
+      "sha256": "73b65f0265013406533afeefca1fcea64fdca02da0b52e4f51babed6065dfb11"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/amarena/terrain.png",
+      "bytes": 481514,
+      "sha256": "df17657fab923f134a792600a4a8e7abe54bf3945652d106744ae1a14a6e4087"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/rave/far.png",
+      "bytes": 1059640,
+      "sha256": "e90dc224aebb6bf6202f2a3175a7e207446998b72eb5770fb582bb75f2067b25"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/rave/mid.png",
+      "bytes": 452634,
+      "sha256": "df3a1f4e1fde38fe559ab952c0b5065f13b06a120a6f55dbc15a0870543b3b91"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/rave/props.png",
+      "bytes": 338709,
+      "sha256": "51ba4bdf9efc25dec5b373e796e3b9ce5bb467c128af9f3d4fdc71924f017a35"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/rave/terrain.png",
+      "bytes": 496227,
+      "sha256": "5a31ffd3afb385b17e4853bfc8f53fa74b813a528f361125da0ff9362939291c"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/roots/far.png",
+      "bytes": 1181192,
+      "sha256": "cbd9e513104d98f8342829ad813ed28af983d3a548db3ceb1ae0605bfbad710a"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/roots/mid.png",
+      "bytes": 629274,
+      "sha256": "a17b9091adae5096f165a80406b261671d4f59af3b3112f1ff70350e2b4eb59b"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/roots/props.png",
+      "bytes": 332533,
+      "sha256": "a3bbf84c79d908f9a4cf3a547f3af1100878d79e2d172da1d44840735ebfe781"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/roots/terrain.png",
+      "bytes": 487998,
+      "sha256": "514d49704cbc18eebf4d0e124176c9fffd74298e3863dd0aa8d1ba7013fd458f"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/smoke/far.png",
+      "bytes": 1068649,
+      "sha256": "847abd198507ecdb45ce5747440fba39a5ea736b450208325825440976ded455"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/smoke/mid.png",
+      "bytes": 453501,
+      "sha256": "ac416e07b5124b6d63542120a4b100594cd58cc00bf47fbf4ddbe418b1ea7df3"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/smoke/props.png",
+      "bytes": 350714,
+      "sha256": "32e73493231efe1bed869f399dce6fb7f89d04d92c37dbf38f9d6a7983f2e408"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/scenery-v6/smoke/terrain.png",
+      "bytes": 485716,
+      "sha256": "5ccd7fca744fbcad482abbdcfcdf4744cc79f9c57b811b8884471670c18c2a59"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/tiles-ai/amarena-v1.png",
+      "bytes": 3135058,
+      "sha256": "505df01e9c775b68334f6016b9c549efe13e247b7b5d670969cba7458bfc6d44"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/tiles-ai/glass-v1.png",
+      "bytes": 3644913,
+      "sha256": "17786cec4c0fbaba4f4a4ee04ee22779b2b0efe94530f6b7572b2d61d246eaa1"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/tiles-ai/rave-v1.png",
+      "bytes": 3095125,
+      "sha256": "b7ed4edb8c5b430438c98a2f61f9e0a3d7d1cf38909ff392c82a825022d6fa8c"
+    },
+    {
+      "path": "game-assets/2d/bongo-rush/tiles-ai/roots-v1.png",
+      "bytes": 3575748,
+      "sha256": "52baeb4ab856d8f75484a2d1304d522c1a34111c54678ce38ce3b4d669a3d395"
+    },
+    {
+      "path": "game-assets/2d/after/characters/ambona/meta.json",
+      "bytes": 352,
+      "sha256": "66668f95b1cbc6aa218084766edb2f1ee4e4805f40067f4682450f697c66e184"
+    },
+    {
+      "path": "game-assets/2d/after/characters/ambona/spritesheet.png",
+      "bytes": 24704,
+      "sha256": "87bb7c3bacee33078ad98d4c0eabe7664e835ed007f6882abb572edd3be163ab"
+    },
+    {
+      "path": "game-assets/2d/after/characters/amper/meta.json",
+      "bytes": 352,
+      "sha256": "5bcea62be9a98e1f5700f88c8ea4f8b3605004306b4f3061172bb557e56b0d67"
+    },
+    {
+      "path": "game-assets/2d/after/characters/amper/spritesheet.png",
+      "bytes": 18040,
+      "sha256": "b59cd94d0bd084c8803f470590ef78143375316f80ca43428b7516e9e4f81ea3"
+    },
+    {
+      "path": "game-assets/2d/after/characters/amper/test_full.png",
+      "bytes": 3524,
+      "sha256": "8bc88da26c2ef4b192e6e9bc0f51a2b95812fb1633460581e215f9d59b8094a1"
+    },
+    {
+      "path": "game-assets/2d/after/characters/antena/meta.json",
+      "bytes": 352,
+      "sha256": "df837c6b61c125091d74f418cd96b8e2e78c5065424bf7e1d539a2e2cadfcbd3"
+    },
+    {
+      "path": "game-assets/2d/after/characters/antena/spritesheet.png",
+      "bytes": 10853,
+      "sha256": "e99181b48680db9d28679311fbdb28a6b84657bc5341c6066bcd648deaab2fa6"
+    },
+    {
+      "path": "game-assets/2d/after/characters/chlebak/meta.json",
+      "bytes": 354,
+      "sha256": "be8e41710f80908ffa5e624f9bdc58a3e4ecb09084865d19bdb53464b6f3c208"
+    },
+    {
+      "path": "game-assets/2d/after/characters/chlebak/spritesheet.png",
+      "bytes": 10599,
+      "sha256": "291b50d83af467b16c3ebc818a7d6b6d37b23d165036278efd8eef24e3f1be11"
+    },
+    {
+      "path": "game-assets/2d/after/characters/dziaslo/meta.json",
+      "bytes": 353,
+      "sha256": "4527cf81430b6349a99e8e8acf19ac91183502cedbf144421e77e376685a6df3"
+    },
+    {
+      "path": "game-assets/2d/after/characters/dziaslo/spritesheet.png",
+      "bytes": 11840,
+      "sha256": "55446df9513d3eb655e5e6a04c041e7d20e0004dc26f76c1586c1200ca83c702"
+    },
+    {
+      "path": "game-assets/2d/after/characters/gruczol/meta.json",
+      "bytes": 353,
+      "sha256": "082948e8140915f461e9b35e40d478319d5a27237dc1c0a2beea88b42c68a1b3"
+    },
+    {
+      "path": "game-assets/2d/after/characters/gruczol/spritesheet.png",
+      "bytes": 20106,
+      "sha256": "8ddc395081371e2949006c66d2ebaa5331be0b552d98e1a107bec0700b4104c2"
+    },
+    {
+      "path": "game-assets/2d/after/characters/hemoroid/meta.json",
+      "bytes": 354,
+      "sha256": "4ad27faf8a9d13904ef8b3cd6966e62a67084c961ecde1ac01b184786d03fe28"
+    },
+    {
+      "path": "game-assets/2d/after/characters/hemoroid/spritesheet.png",
+      "bytes": 11276,
+      "sha256": "c83fb1b39482627a59526c88e2a40f95a38de724c6c59df20a49752fe730f9fe"
+    },
+    {
+      "path": "game-assets/2d/after/characters/jeczmien/meta.json",
+      "bytes": 354,
+      "sha256": "8c5610aff2cce2ca998869cf76e88bf55e5cbdbba690c111b9535e526c32b6f2"
+    },
+    {
+      "path": "game-assets/2d/after/characters/jeczmien/spritesheet.png",
+      "bytes": 11803,
+      "sha256": "d889c1b887fd57592be1e16b718f62cb13843fc1f07d0040c6e90c0109cf1f14"
+    },
+    {
+      "path": "game-assets/2d/after/characters/klatwa/meta.json",
+      "bytes": 352,
+      "sha256": "27bbcc92b24ceffff18d38779f9060ddf4fcba0ea42d46f30399aa3ca3bfa81c"
+    },
+    {
+      "path": "game-assets/2d/after/characters/klatwa/spritesheet.png",
+      "bytes": 24132,
+      "sha256": "e04d84900a0e18d7ab5178648fdaff2426efc930d540b4b78c6d5acc2d4a2789"
+    },
+    {
+      "path": "game-assets/2d/after/characters/kobra/meta.json",
+      "bytes": 351,
+      "sha256": "185608d6c5a51a3e12a6f5951c2505522a5573038e378dba26f9e05d699bed3d"
+    },
+    {
+      "path": "game-assets/2d/after/characters/kobra/spritesheet.png",
+      "bytes": 11586,
+      "sha256": "498ff0d0bb84585cf440338b15b75ee87b56fd77ae7365fb2087254c00357b21"
+    },
+    {
+      "path": "game-assets/2d/after/characters/korba/meta.json",
+      "bytes": 351,
+      "sha256": "a70b55cab719241a550cdc3ab83b3b222ba5637c4e0e77b147c9337f59081c2d"
+    },
+    {
+      "path": "game-assets/2d/after/characters/korba/spritesheet.png",
+      "bytes": 11480,
+      "sha256": "9c2973901471dad3a67c845abad806fb65e9d4f3b7c65d3f73ab4349070562e8"
+    },
+    {
+      "path": "game-assets/2d/after/characters/krwiak/meta.json",
+      "bytes": 352,
+      "sha256": "ef06cbc1cabcbce770141dbb06732403b361607f68f3818661e7285a737fc56f"
+    },
+    {
+      "path": "game-assets/2d/after/characters/krwiak/spritesheet.png",
+      "bytes": 18900,
+      "sha256": "1f0ea8d35e3be5d381ffab4a1bab2659d7cbca06cd4dd873b1d6577b81ce1753"
+    },
+    {
+      "path": "game-assets/2d/after/characters/pien/meta.json",
+      "bytes": 350,
+      "sha256": "da0584e590b05c797cc51503dec188c1442140bb749ca9065f6db231eb835781"
+    },
+    {
+      "path": "game-assets/2d/after/characters/pien/spritesheet.png",
+      "bytes": 18486,
+      "sha256": "7a6e21d61783c8b10317903edb71a959ea49da3ca6a1ba75ed55c36fccae75a6"
+    },
+    {
+      "path": "game-assets/2d/after/characters/pierscien/meta.json",
+      "bytes": 355,
+      "sha256": "49ffa544e7e0def90794195e8459a90bd23b40f54038ed8fb5ad8aa69739379e"
+    },
+    {
+      "path": "game-assets/2d/after/characters/pierscien/spritesheet.png",
+      "bytes": 10716,
+      "sha256": "fab4bd0300dc0317237d2ecd4d8a0a876554e91f1ea4ced60921f60bcc15bdb7"
+    },
+    {
+      "path": "game-assets/2d/after/characters/szerszen/meta.json",
+      "bytes": 354,
+      "sha256": "2d9e7cb65b5150e02220bcc01472abaffcf66bc718cf85b60b5069c5dd74b430"
+    },
+    {
+      "path": "game-assets/2d/after/characters/szerszen/spritesheet.png",
+      "bytes": 11737,
+      "sha256": "dd7c7dbaeefae747a3a6ba4cf26ccb630c280710cee65120844b9c95aef6cef2"
+    },
+    {
+      "path": "game-assets/2d/after/characters/zawor/meta.json",
+      "bytes": 351,
+      "sha256": "b859830cf6f7b3cc8e32c92153e4f28ef0663dcf689c01b27c30c72478c7f034"
+    },
+    {
+      "path": "game-assets/2d/after/characters/zawor/spritesheet.png",
+      "bytes": 11690,
+      "sha256": "b54a788d571e6f3a5af75e37569994f44cd11f90142598f555804775ac2ee712"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/ambona.png",
+      "bytes": 70912,
+      "sha256": "fbf30dab56388e158f5cc4eeb9a3b804f9ccbbc7927260640881d591cc658bef"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/amper.png",
+      "bytes": 107710,
+      "sha256": "8b10cf608bee1964fc22cdb444591b075aac5292ad36b554110cd24fe868c3fe"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/antena.png",
+      "bytes": 95799,
+      "sha256": "4ea296d2cab9e8a954051153bfb93d844fc7882f0e6b0db464f3216946fb5a6d"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/chlebak.png",
+      "bytes": 55847,
+      "sha256": "abccf70741c0d35c6341bab032b1fa0ea8617c80ab1fc8b488d2201693088db1"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/dziaslo.png",
+      "bytes": 57740,
+      "sha256": "d5320274724b1e0d669cdb8043e99f0df937363b6b3cbcee85b092ffcc18ebbb"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/gruczol.png",
+      "bytes": 93792,
+      "sha256": "a0ae393eb2673fb5ef656da3a80b8a779207924344003ea666323fa747b434e6"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/hemoroid.png",
+      "bytes": 56888,
+      "sha256": "19f238b168f9a0f0c6d6ed977e97a302373830a5d3b2db0a6eab1b61d3b6c219"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/jeczmien.png",
+      "bytes": 41075,
+      "sha256": "603c35ca8feea19ff98056bfa4fbd1f009b6d27d1bf4fb3974f534366be192e4"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/klatwa.png",
+      "bytes": 56440,
+      "sha256": "bfc0d5478a25bf9fcd45743c336f18b284be887f99aae6d372a3789a85a81681"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/kobra.png",
+      "bytes": 38677,
+      "sha256": "4053b2a547077c65402bf878010565f45bff707772b994475cb89bf80e9f2bdd"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/korba.png",
+      "bytes": 56639,
+      "sha256": "be38cb839e4fe368328bf9d2d8ae42631930b357f200a19b21be88d14321265e"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/krwiak.png",
+      "bytes": 100575,
+      "sha256": "e623c32f9c0676058580c4a0e9fc756e1c91907c199c3c8f5dff227ee5025aae"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/pien.png",
+      "bytes": 104227,
+      "sha256": "0501545935e89c2c6de9e1f28549ac4a2d09d70b7d78a8ca33a83f47434c3552"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/pierscien.png",
+      "bytes": 93719,
+      "sha256": "487a70b3f85bdb28efcb792812b03eeea83a389e7490f8f52d28f909d5cbb20b"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/szerszen.png",
+      "bytes": 69666,
+      "sha256": "50f87a1a0bc6cbfab1d69fbc2964c08180d416a1a381b73085a3235d2b71d04f"
+    },
+    {
+      "path": "game-assets/2d/after/portraits/zawor.png",
+      "bytes": 46531,
+      "sha256": "2d20d7a998fdb8ddcd3d31b35805639b4090834e953aebb7f0f5736deb0a5bdf"
+    },
+    {
+      "path": "game-assets/2d/after/props/beer_crate.png",
+      "bytes": 460,
+      "sha256": "ea3b3639e75d7b32aa1d7807c0806432080f5c3aeda48e3bd2875c7d07e29f0a"
+    },
+    {
+      "path": "game-assets/2d/after/props/cable_reel.png",
+      "bytes": 871,
+      "sha256": "e0d8a3c5ad8630d2fcb58f37cbf19956a51f3b31a72b6423ff4e19af51700245"
+    },
+    {
+      "path": "game-assets/2d/after/props/camping_chair.png",
+      "bytes": 5047,
+      "sha256": "447af484483364f6a07ef62680c73a778f790ab26fc55a2d53292bb11369b6fe"
+    },
+    {
+      "path": "game-assets/2d/after/props/camp_flag.png",
+      "bytes": 16477,
+      "sha256": "1f8b18c38e1fc62b42a9c8dd66f7c99da2257498dc9b4a122c403a9020c69ee2"
+    },
+    {
+      "path": "game-assets/2d/after/props/gastro_stall.png",
+      "bytes": 1892,
+      "sha256": "93cbff74746e0f5eea794b861f479ae73a70246c8a14b3f5e92d146e5dec6a30"
+    },
+    {
+      "path": "game-assets/2d/after/props/pavilion.png",
+      "bytes": 1789,
+      "sha256": "9af8693eb9dabd14cbc9c9d5cdd047bf9c4f21cd2d4f4facea66d2ce280a96c2"
+    },
+    {
+      "path": "game-assets/2d/after/props/picnic_table.png",
+      "bytes": 22810,
+      "sha256": "f3ac6199688464d943d25c9bec9914b2676d40e36130c3f16c57a8d0533cd20b"
+    },
+    {
+      "path": "game-assets/2d/after/props/power_generator.png",
+      "bytes": 992,
+      "sha256": "1141cca4da393a58396cee1ed125723a0e090106925535f1519478f2384ec579"
+    },
+    {
+      "path": "game-assets/2d/after/props/tent_large.png",
+      "bytes": 29443,
+      "sha256": "6cc9422ca441211b0e6559f7716903a78247375be6bc8d5021e77fa04ec1e4eb"
+    },
+    {
+      "path": "game-assets/2d/after/props/tent_small.png",
+      "bytes": 25937,
+      "sha256": "17706e31251baa113a8e5ff78e48e460f7092d40df034677621b1bde9b9894e9"
+    },
+    {
+      "path": "game-assets/2d/after/props/toitoi.png",
+      "bytes": 12775,
+      "sha256": "cbffdd0422c52180ffe128bb405947f8b6bf8c9900b39e256318f9c086e19b31"
+    },
+    {
+      "path": "game-assets/2d/after/props/items/acoustic_guitar.png",
+      "bytes": 643,
+      "sha256": "28923c92f20e9927efbd99e773ae79f62e9308bd2d2ab27fd6bf428f46565028"
+    },
+    {
+      "path": "game-assets/2d/after/props/items/cracked_phone.png",
+      "bytes": 452,
+      "sha256": "bc2bb4eb3346a35e838929c4cb185fab5ae9db207941bb72b2b3b0538f5a4bae"
+    },
+    {
+      "path": "game-assets/2d/after/props/items/golden_can.png",
+      "bytes": 462,
+      "sha256": "ea7bc4532182061d933d0482c810264f06d2f5eb0eaeb8bcc41131337927dfd9"
+    },
+    {
+      "path": "game-assets/2d/after/props/items/missing_shoe.png",
+      "bytes": 454,
+      "sha256": "4732fb260d1231758f933d27c1480d19ff05dbdd0673f1ce7b30eef9873976f5"
+    },
+    {
+      "path": "game-assets/2d/after/props/items/powerbank.png",
+      "bytes": 368,
+      "sha256": "e4007e9eb56b2943ac431d021de822aaea2e771f6c782f845451436928d31b8e"
+    },
+    {
+      "path": "game-assets/2d/after/props/items/sunglasses.png",
+      "bytes": 2532,
+      "sha256": "6f564e8e21dbeff4e18dd992b50e75e11faa0117c740b107d2c1e66444ae769d"
+    },
+    {
+      "path": "game-assets/2d/after/props/items/water_bottle.png",
+      "bytes": 7915,
+      "sha256": "e8c81dd56935be0f81ff8017ba2a42415e2cd1ecbc38bc2e1ae5a5947345065a"
+    },
+    {
+      "path": "game-assets/2d/after/tiles/asphalt_road.png",
+      "bytes": 4430,
+      "sha256": "222fd4631d17459cf9d23e92fb664310fe259301f43a1800c7a382ed3b57e4e5"
+    },
+    {
+      "path": "game-assets/2d/after/tiles/concrete_slab.png",
+      "bytes": 3933,
+      "sha256": "deed76ec241e477853887a82c35136d6fb8f82f8354a77f8d2d5fecfb8a50ea0"
+    },
+    {
+      "path": "game-assets/2d/after/tiles/dirt_path.png",
+      "bytes": 5179,
+      "sha256": "570c55bb0baedb8497d511c602ab9b693d74c27c987cf5f86e650dd4600b295a"
+    },
+    {
+      "path": "game-assets/2d/after/tiles/fence_barrier.png",
+      "bytes": 267,
+      "sha256": "d6e951811f971df685baffe13706e2fe9c796dbde6f78c77cd502f27c144a67a"
+    },
+    {
+      "path": "game-assets/2d/after/tiles/grass.png",
+      "bytes": 5312,
+      "sha256": "c1a766de666974b3312845959eead2b04e01a0c0e72be17a37c6f2a7e3ded7ac"
+    },
+    {
+      "path": "game-assets/2d/after/tiles/grass_trampled.png",
+      "bytes": 5285,
+      "sha256": "a7ade51771d799584058af57475e644c25df832d6f809535a0fe1a5f9f3f01bb"
+    },
+    {
+      "path": "game-assets/2d/after/tiles/hazard_strip.png",
+      "bytes": 202,
+      "sha256": "c5c4fe76617421e380d215ecc3cf8d8887473d4b6f0d84e3ea3511f0d83ae302"
+    },
+    {
+      "path": "game-assets/2d/after/tiles/mud.png",
+      "bytes": 5524,
+      "sha256": "bccbd6b7a10c892d2382498c3acb2d2c3a727d842a19579a7670f22d5b8846fb"
+    },
+    {
+      "path": "game-assets/2d/after/tiles/tent_tarp.png",
+      "bytes": 302,
+      "sha256": "5222684563320ffe3f7489ad1eef87cdb16a774aa441c08480a05f801764bc8d"
+    },
+    {
+      "path": "game-assets/2d/after/tiles/tileset.json",
+      "bytes": 1193,
+      "sha256": "235ff9ddc59138f4d23c1b74f8ec5a45f895026eca6739b2a805c5e65caf1416"
+    },
+    {
+      "path": "game-assets/2d/after/tiles/tileset.png",
+      "bytes": 33081,
+      "sha256": "132da03fdd6a34e9063cb3924b6a5e45c4a07cb6f1236ecf9e4adfe78dfee66e"
+    },
+    {
+      "path": "game-assets/2d/after/tiles/wood_planks.png",
+      "bytes": 328,
+      "sha256": "f42bdc70a9af4c1e7e1e35c23301eb7ea7f88599fd12e70b56a8ff779adca321"
+    }
+  ]
+}
