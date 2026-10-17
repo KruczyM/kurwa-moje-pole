@@ -130,6 +130,7 @@ export class CampfireGuitarSynth {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private backingGain: GainNode | null = null;
+  private guitarGain: GainNode | null = null;
   private backingActive = false;
   private lastBackingStep = -1;
   private readonly backingVoices = new Set<AudioScheduledSourceNode>();
@@ -163,14 +164,18 @@ export class CampfireGuitarSynth {
     this.ctx = context;
     try {
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.value = 0.55;
+      this.masterGain.gain.value = 0.72;
       this.masterGain.connect(this.ctx.destination);
 
       this.backingGain = this.ctx.createGain();
-      this.backingGain.gain.value = 0.22;
+      this.backingGain.gain.value = 0.70;
       this.backingGain.connect(this.masterGain);
 
-      this.sampler.init(this.ctx, this.masterGain);
+      this.guitarGain = this.ctx.createGain();
+      this.guitarGain.gain.value = 0.38;
+      this.guitarGain.connect(this.masterGain);
+
+      this.sampler.init(this.ctx, this.guitarGain);
     } catch {
       // AudioContext może być wyciszony lub zawieszony
     }
@@ -525,7 +530,7 @@ export class CampfireGuitarSynth {
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
 
       osc.connect(gain);
-      gain.connect(this.masterGain);
+       gain.connect(this.guitarGain ?? this.masterGain);
       osc.start(now);
       osc.stop(now + 0.2);
     } catch {
@@ -596,6 +601,7 @@ export class CampfireGuitarSynth {
     if (this.ctx) {
       try {
         if (this.backingGain) this.backingGain.disconnect();
+        if (this.guitarGain) this.guitarGain.disconnect();
         if (this.masterGain) this.masterGain.disconnect();
         if (this.ctx.state !== 'closed') void this.ctx.close();
       } catch {
@@ -604,6 +610,7 @@ export class CampfireGuitarSynth {
       this.ctx = null;
       this.masterGain = null;
       this.backingGain = null;
+      this.guitarGain = null;
       this.shakerBuffer = null;
     }
   }
@@ -625,12 +632,14 @@ export const GUITAR_AUDIO_BACKING_MAP: Record<string, string> = {
  * - Piła tango (Strachy na Lachy, A-moll): Am, Dm, E, C, G
  * - Sen o Victorii (Dżem, C-dur): C, F, Dm, G, Am
  * - Czerwony jak cegła (Dżem, E-dur blues): E, A, H7, D, C#m
+ * - Zegarmistrz światła (Tadeusz Woźniak, A-moll): Am, G, D, C, Em
  */
 export const SONG_LANE_CHORDS: Record<string, [string, string, string, string, string]> = {
   'czarny-chleb-midi': ['Am', 'C', 'G', 'Dm', 'E'],
   'pila-tango-midi': ['Am', 'Dm', 'E', 'C', 'G'],
   'sen-victoria-midi': ['C', 'F', 'Dm', 'G', 'Am'],
   'czerwony-cegla-midi': ['E', 'A', 'H7', 'D', 'C#m'],
+  'zegarmistrz-midi': ['Am', 'G', 'D', 'C', 'Em'],
 };
 
 export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = (midiCharts as GuitarSong[])

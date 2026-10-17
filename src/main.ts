@@ -15,6 +15,8 @@ import { isGrassQualityPreset } from './game/world/grassQuality';
 import { isAspectRatioPreset } from './game/rendering/viewportAspect';
 import { NetworkClient } from './game/network/NetworkClient';
 import { VoiceReactionManager } from './game/audio/VoiceReactionManager';
+import { TentMenuAudio } from './game/audio/TentMenuAudio';
+import { musicAsset } from './game/assets/assetManifest';
 import {
   CANONICAL_CHARACTERS,
   type CharacterName,
@@ -37,6 +39,8 @@ let game: Game | undefined;
 // The farewell belongs to the shell: disposing the world must not cut it off.
 let mainMenuVoice: VoiceReactionManager | undefined;
 let preview: CharacterPreview | undefined;
+const tentMenuAudio = new TentMenuAudio({ audioUrl: musicAsset });
+tentMenuAudio.startTentAudio();
 const savedSessionChar =
   typeof sessionStorage !== 'undefined'
     ? (sessionStorage.getItem('camp-player-character') as CharacterName | null)
@@ -286,6 +290,13 @@ async function startGame(freeCamera = false) {
   preview = undefined;
   sessionStorage.setItem('camp-player-character', selected);
   localStorage.setItem('camp-player-character', selected);
+  // Płynne otwarcie filtra dźwięku z namiotu (od 350 Hz do 20 000 Hz w 1.2s):
+  tentMenuAudio.unmuffleAndOpen(1.2);
+  setTimeout(() => {
+    if (state.current !== 'start') {
+      tentMenuAudio.stop(0.6);
+    }
+  }, 1300);
   state.transition('loading');
   try {
     const nextGame = new Game(state, networkClient);
@@ -314,6 +325,8 @@ function backToStart() {
   game = undefined;
   if (state.current !== 'start') state.transition('start');
   createPreview();
+  tentMenuAudio.muffleToTent(0.8);
+  tentMenuAudio.startTentAudio();
   if (hadGame) {
     mainMenuVoice?.dispose();
     mainMenuVoice = new VoiceReactionManager();
@@ -390,7 +403,9 @@ qs<HTMLInputElement>('#setting-intensity').oninput = (event) => {
 };
 
 qs<HTMLInputElement>('#setting-speaker-volume').oninput = (event) => {
-  game?.updateAudioSettings({ speakerVolume: Number((event.target as HTMLInputElement).value) / 100 });
+  const vol = Number((event.target as HTMLInputElement).value) / 100;
+  game?.updateAudioSettings({ speakerVolume: vol });
+  tentMenuAudio.setVolume(vol * 0.6);
 };
 
 qs<HTMLInputElement>('#setting-ambient-volume').oninput = (event) => {

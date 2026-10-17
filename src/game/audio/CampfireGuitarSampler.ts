@@ -44,6 +44,10 @@ export const CHORD_NOTE_MAP: Record<string, readonly string[]> = {
   fis: ['Gb2', 'Db3', 'Gb3', 'A3', 'Db4', 'Gb4'],
   // E-dur: E2, B2, E3, Ab3, B3, E4
   E: ['E2', 'B2', 'E3', 'Ab3', 'B3', 'E4'],
+  // E7 (Dżem blues shuffle): E2, B2, D3, Ab3, B3, E4
+  E7: ['E2', 'B2', 'D3', 'Ab3', 'B3', 'E4'],
+  // A7: A2, E3, G3, Db4, E4
+  A7: ['A2', 'E3', 'G3', 'Db4', 'E4'],
   // H7 / B7: B2, Eb3, A3, B3, Gb4
   H7: ['B2', 'Eb3', 'A3', 'B3', 'Gb4'],
   B7: ['B2', 'Eb3', 'A3', 'B3', 'Gb4'],
@@ -115,6 +119,7 @@ export class CampfireGuitarSampler {
   private bodyLowFilter: BiquadFilterNode | null = null;
   private bodyMidFilter: BiquadFilterNode | null = null;
   private stringPresenceFilter: BiquadFilterNode | null = null;
+  private outputGain: GainNode | null = null;
   private buffers = new Map<string, AudioBuffer>();
   private loadPromises = new Map<string, Promise<AudioBuffer | null>>();
   private baseUrl: string;
@@ -141,20 +146,20 @@ export class CampfireGuitarSampler {
 
     try {
       // Trzypasmowy model rezonansu pudła gitary akustycznej (Dreadnought acoustic body):
-      // 1. Rezonans komory powietrznej Helmholtz (115 Hz) — ciepłe, głębokie oparcie basu
+      // 1. Rezonans komory powietrznej Helmholtz (115 Hz) — ciepłe oparcie basu bez dudnienia
       const lowFilter = context.createBiquadFilter();
       lowFilter.type = 'peaking';
       lowFilter.frequency.value = 115;
-      lowFilter.Q.value = 1.1;
-      lowFilter.gain.value = 2.2;
+      lowFilter.Q.value = 1.0;
+      lowFilter.gain.value = 0.8;
       this.bodyLowFilter = lowFilter;
 
       // 2. Rezonans płyty ze świerku/cedru (480 Hz) — drewniane ciało akordu
       const midFilter = context.createBiquadFilter();
       midFilter.type = 'peaking';
       midFilter.frequency.value = 480;
-      midFilter.Q.value = 1.2;
-      midFilter.gain.value = 3.0;
+      midFilter.Q.value = 1.0;
+      midFilter.gain.value = 0.9;
       this.bodyMidFilter = midFilter;
 
       // 3. Blask i atak kostki na strunach stalowo-brązowych (3400 Hz) — czysty, autentyczny dźwięk
@@ -162,13 +167,18 @@ export class CampfireGuitarSampler {
       highFilter.type = 'peaking';
       highFilter.frequency.value = 3400;
       highFilter.Q.value = 1.0;
-      highFilter.gain.value = 1.8;
+      highFilter.gain.value = 1.1;
       this.stringPresenceFilter = highFilter;
+
+      const outGain = context.createGain();
+      outGain.gain.value = 0.65;
+      this.outputGain = outGain;
 
       const targetDest = destination ?? context.destination;
       highFilter.connect(midFilter);
       midFilter.connect(lowFilter);
-      lowFilter.connect(targetDest);
+      lowFilter.connect(outGain);
+      outGain.connect(targetDest);
 
       this.outputNode = highFilter;
 
@@ -328,16 +338,19 @@ export class CampfireGuitarSampler {
       const noteName = chordNotes[stringIdx];
       const noteTime = baseTime + idx * strumDelay;
 
-      // Naturalna dynamika strun
-      let volume = 0.76;
+      // Naturalna dynamika strun w akordzie akustycznym: energia uderzenia rozkłada się proporcjonalnie
+      const chordEnergyFactor = 0.65 / Math.sqrt(len);
+      let volume = chordEnergyFactor;
       if (lane === 0 && stringIdx === 0) {
         // Mocny akcent basowy na strunie prymy (root note)
-        volume = 0.96;
+        volume = chordEnergyFactor * 1.22;
       } else if (lane === 4 && stringIdx === len - 1) {
         // Jasny akcent wiolinowy
-        volume = 0.92;
+        volume = chordEnergyFactor * 1.18;
       } else if (stringIdx === 0) {
-        volume = 0.86;
+        volume = chordEnergyFactor * 1.10;
+      } else {
+        volume = chordEnergyFactor * 0.94;
       }
 
       // Struny basowe mają większą masę i wybrzmiewają dłużej niż wioliny
@@ -367,7 +380,7 @@ export class CampfireGuitarSampler {
     this.playKsPluck(targetFreq, now);
   }
 
-  private playSingleNote(pitch: string, time: number, volume = 0.85, duration = 2.2): void {
+  private playSingleNote(pitch: string, time: number, volume = 0.50, duration = 2.2): void {
     if (!this.ctx || !this.outputNode || this.disposed) return;
 
     const { sampleName, pitchRatio, targetMidi } = normalizePitchToSample(pitch);
@@ -415,7 +428,7 @@ export class CampfireGuitarSampler {
     buffer: AudioBuffer,
     pitchRatio: number,
     time: number,
-    volume = 0.85,
+    volume = 0.50,
     duration = 2.2,
   ): void {
     if (!this.ctx || !this.outputNode || this.disposed) return;
@@ -461,7 +474,7 @@ export class CampfireGuitarSampler {
     }
   }
 
-  private playKsPluck(freq: number, time: number, volume = 0.7, duration = 1.8): void {
+  private playKsPluck(freq: number, time: number, volume = 0.48, duration = 1.8): void {
     if (!this.ctx || !this.outputNode || this.disposed) return;
 
     try {
@@ -519,6 +532,15 @@ export class CampfireGuitarSampler {
       }
     }
     this.activeVoices.clear();
+
+    if (this.outputGain) {
+      try {
+        this.outputGain.disconnect();
+      } catch {
+        // ignore
+      }
+      this.outputGain = null;
+    }
 
     if (this.stringPresenceFilter) {
       try {
