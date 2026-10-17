@@ -131,6 +131,8 @@ export class CampfireGuitarSynth {
   private masterGain: GainNode | null = null;
   private backingGain: GainNode | null = null;
   private guitarGain: GainNode | null = null;
+  private guitarHpf: BiquadFilterNode | null = null;
+  private guitarComp: DynamicsCompressorNode | null = null;
   private backingActive = false;
   private lastBackingStep = -1;
   private readonly backingVoices = new Set<AudioScheduledSourceNode>();
@@ -172,8 +174,39 @@ export class CampfireGuitarSynth {
       this.backingGain.connect(this.masterGain);
 
       this.guitarGain = this.ctx.createGain();
-      this.guitarGain.gain.value = 0.38;
-      this.guitarGain.connect(this.masterGain);
+      this.guitarGain.gain.value = 0.32; // Zrównoważony poziom gitary w miksie z podkładem
+
+      // Filtr górnoprzepustowy (High-Pass 95 Hz) - odcina sub-dudnienie pudła,
+      // dzięki czemu struny nie kolidują z basem i stopą w podkładzie
+      if (typeof this.ctx.createBiquadFilter === 'function') {
+        this.guitarHpf = this.ctx.createBiquadFilter();
+        this.guitarHpf.type = 'highpass';
+        this.guitarHpf.frequency.value = 95;
+        this.guitarHpf.Q.value = 0.707;
+      }
+
+      // Kompresor dynamiki gitary akustycznej (mix glue) -
+      // wkleja gitarę w podkład, stabilizuje energię bicia i eliminuje nieprzyjemne skoki głośności
+      if (typeof this.ctx.createDynamicsCompressor === 'function') {
+        this.guitarComp = this.ctx.createDynamicsCompressor();
+        this.guitarComp.threshold.value = -16;
+        this.guitarComp.knee.value = 8;
+        this.guitarComp.ratio.value = 3.2;
+        this.guitarComp.attack.value = 0.005;
+        this.guitarComp.release.value = 0.12;
+      }
+
+      // Ścieżka sygnału: sampler -> guitarGain -> [guitarHpf -> guitarComp] -> masterGain
+      let currentGuitarOut: AudioNode = this.guitarGain;
+      if (this.guitarHpf) {
+        currentGuitarOut.connect(this.guitarHpf);
+        currentGuitarOut = this.guitarHpf;
+      }
+      if (this.guitarComp) {
+        currentGuitarOut.connect(this.guitarComp);
+        currentGuitarOut = this.guitarComp;
+      }
+      currentGuitarOut.connect(this.masterGain);
 
       this.sampler.init(this.ctx, this.guitarGain);
     } catch {
@@ -602,6 +635,8 @@ export class CampfireGuitarSynth {
       try {
         if (this.backingGain) this.backingGain.disconnect();
         if (this.guitarGain) this.guitarGain.disconnect();
+        if (this.guitarHpf) this.guitarHpf.disconnect();
+        if (this.guitarComp) this.guitarComp.disconnect();
         if (this.masterGain) this.masterGain.disconnect();
         if (this.ctx.state !== 'closed') void this.ctx.close();
       } catch {
@@ -611,6 +646,8 @@ export class CampfireGuitarSynth {
       this.masterGain = null;
       this.backingGain = null;
       this.guitarGain = null;
+      this.guitarHpf = null;
+      this.guitarComp = null;
       this.shakerBuffer = null;
     }
   }

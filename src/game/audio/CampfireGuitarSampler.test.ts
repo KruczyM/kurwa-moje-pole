@@ -141,6 +141,40 @@ describe('CampfireGuitarSampler', () => {
     expect(ctx.createBufferSource).toHaveBeenCalledTimes(1);
   });
 
+  it('finds nearest loaded buffer and pitch shifts it rather than falling back to Karplus-Strong', () => {
+    const { ctx } = createMockAudioContext();
+    const sampler = new CampfireGuitarSampler({ context: ctx });
+
+    // Manually inject a loaded buffer for A4 (MIDI 69)
+    const mockA4 = { duration: 2.0 } as AudioBuffer;
+    (sampler as any).buffers.set('A4', mockA4);
+
+    const nearest = sampler.findNearestLoadedBuffer(71); // B4 (MIDI 71, +2 semitones)
+    expect(nearest).not.toBeNull();
+    expect(nearest!.buffer).toBe(mockA4);
+    expect(nearest!.pitchRatio).toBeCloseTo(Math.pow(2, 2 / 12));
+
+    // When playing B4, it should use the pitch-shifted loaded buffer instead of createBuffer for KS
+    vi.mocked(ctx.createBuffer).mockClear();
+    sampler.playPlucked('B4', 10);
+    expect(ctx.createBuffer).not.toHaveBeenCalled();
+    expect(ctx.createBufferSource).toHaveBeenCalled();
+  });
+
+  it('dampPreviousVoices chokes previous sounding strings when switching chords', () => {
+    const { ctx } = createMockAudioContext();
+    const sampler = new CampfireGuitarSampler({ context: ctx });
+
+    sampler.playPlucked('Am', 10);
+    expect((sampler as any).activeVoices.size).toBe(5);
+
+    sampler.dampPreviousVoices(0.045);
+    // dampPreviousVoices schedules stop on all previous voices
+    for (const v of (sampler as any).activeVoices) {
+      expect(v.source.stop).toHaveBeenCalled();
+    }
+  });
+
   it('disposes resources and disconnects nodes cleanly', () => {
     const { ctx, biquadFilter } = createMockAudioContext();
     const sampler = new CampfireGuitarSampler({ context: ctx });

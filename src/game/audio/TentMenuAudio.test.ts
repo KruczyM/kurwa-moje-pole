@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { TentMenuAudio, DEFAULT_TENT_CUTOFF, DEFAULT_OPEN_CUTOFF } from './TentMenuAudio';
+import { TentMenuAudio, DEFAULT_TENT_CUTOFF, DEFAULT_OPEN_CUTOFF, DEFAULT_TENT_VOLUME } from './TentMenuAudio';
 
 function createMockAudioContext() {
   const gainNode = {
     gain: {
-      value: 0.42,
+      value: DEFAULT_TENT_VOLUME,
       setValueAtTime: vi.fn((v: number) => {
         gainNode.gain.value = v;
       }),
@@ -20,22 +20,18 @@ function createMockAudioContext() {
     disconnect: vi.fn(),
   };
 
-  const biquadFilter = {
-    type: 'lowpass',
+  const biquadFilters: Array<{
+    type: string;
     frequency: {
-      value: DEFAULT_TENT_CUTOFF,
-      setValueAtTime: vi.fn((v: number) => {
-        biquadFilter.frequency.value = v;
-      }),
-      exponentialRampToValueAtTime: vi.fn((v: number) => {
-        biquadFilter.frequency.value = v;
-      }),
-      cancelScheduledValues: vi.fn(),
-    },
-    Q: { value: 1.15 },
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-  };
+      value: number;
+      setValueAtTime: ReturnType<typeof vi.fn>;
+      exponentialRampToValueAtTime: ReturnType<typeof vi.fn>;
+      cancelScheduledValues: ReturnType<typeof vi.fn>;
+    };
+    Q: { value: number };
+    connect: ReturnType<typeof vi.fn>;
+    disconnect: ReturnType<typeof vi.fn>;
+  }> = [];
 
   const mediaSource = {
     connect: vi.fn(),
@@ -46,14 +42,33 @@ function createMockAudioContext() {
     currentTime: 10,
     state: 'running',
     destination: {},
-    createBiquadFilter: vi.fn(() => biquadFilter),
+    createBiquadFilter: vi.fn(() => {
+      const f = {
+        type: 'lowpass',
+        frequency: {
+          value: DEFAULT_TENT_CUTOFF,
+          setValueAtTime: vi.fn((v: number) => {
+            f.frequency.value = v;
+          }),
+          exponentialRampToValueAtTime: vi.fn((v: number) => {
+            f.frequency.value = v;
+          }),
+          cancelScheduledValues: vi.fn(),
+        },
+        Q: { value: 1.15 },
+        connect: vi.fn(),
+        disconnect: vi.fn(),
+      };
+      biquadFilters.push(f);
+      return f;
+    }),
     createGain: vi.fn(() => gainNode),
     createMediaElementSource: vi.fn(() => mediaSource),
     resume: vi.fn(() => Promise.resolve()),
     close: vi.fn(() => Promise.resolve()),
   };
 
-  return { ctx: ctx as unknown as AudioContext, biquadFilter, gainNode, mediaSource };
+  return { ctx: ctx as unknown as AudioContext, biquadFilters, gainNode, mediaSource };
 }
 
 function createMockAudioElement() {
@@ -69,8 +84,8 @@ function createMockAudioElement() {
 }
 
 describe('TentMenuAudio', () => {
-  it('initializes with tent muffled cutoff (350 Hz) and volume', () => {
-    const { ctx, biquadFilter } = createMockAudioContext();
+  it('initializes with tent muffled cutoff (185 Hz) and volume', () => {
+    const { ctx, biquadFilters } = createMockAudioContext();
     const mockAudio = createMockAudioElement();
 
     const tentAudio = new TentMenuAudio({
@@ -84,13 +99,16 @@ describe('TentMenuAudio', () => {
     tentAudio.startTentAudio();
 
     expect(tentAudio.active).toBe(true);
-    expect(biquadFilter.type).toBe('lowpass');
-    expect(biquadFilter.frequency.value).toBe(DEFAULT_TENT_CUTOFF);
+    expect(biquadFilters.length).toBe(2);
+    expect(biquadFilters[0].type).toBe('lowpass');
+    expect(biquadFilters[0].frequency.value).toBe(DEFAULT_TENT_CUTOFF);
+    expect(biquadFilters[1].type).toBe('lowpass');
+    expect(biquadFilters[1].frequency.value).toBe(DEFAULT_TENT_CUTOFF);
     expect(mockAudio.play).toHaveBeenCalled();
   });
 
-  it('unmuffleAndOpen smoothly opens filter from 350 Hz to 20000 Hz', () => {
-    const { ctx, biquadFilter } = createMockAudioContext();
+  it('unmuffleAndOpen smoothly opens cascaded filters from 185 Hz to 20000 Hz', () => {
+    const { ctx, biquadFilters } = createMockAudioContext();
     const mockAudio = createMockAudioElement();
 
     const tentAudio = new TentMenuAudio({
@@ -102,14 +120,19 @@ describe('TentMenuAudio', () => {
     tentAudio.unmuffleAndOpen(1.0);
 
     expect(tentAudio.muffled).toBe(false);
-    expect(biquadFilter.frequency.exponentialRampToValueAtTime).toHaveBeenCalledWith(
+    expect(biquadFilters.length).toBe(2);
+    expect(biquadFilters[0].frequency.exponentialRampToValueAtTime).toHaveBeenCalledWith(
+      DEFAULT_OPEN_CUTOFF,
+      expect.any(Number),
+    );
+    expect(biquadFilters[1].frequency.exponentialRampToValueAtTime).toHaveBeenCalledWith(
       DEFAULT_OPEN_CUTOFF,
       expect.any(Number),
     );
   });
 
-  it('muffleToTent smoothly ramps filter back to 350 Hz on return', () => {
-    const { ctx, biquadFilter } = createMockAudioContext();
+  it('muffleToTent smoothly ramps cascaded filters back to 185 Hz on return', () => {
+    const { ctx, biquadFilters } = createMockAudioContext();
     const mockAudio = createMockAudioElement();
 
     const tentAudio = new TentMenuAudio({
@@ -122,14 +145,18 @@ describe('TentMenuAudio', () => {
     tentAudio.muffleToTent(0.8);
 
     expect(tentAudio.muffled).toBe(true);
-    expect(biquadFilter.frequency.exponentialRampToValueAtTime).toHaveBeenCalledWith(
+    expect(biquadFilters[0].frequency.exponentialRampToValueAtTime).toHaveBeenCalledWith(
+      DEFAULT_TENT_CUTOFF,
+      expect.any(Number),
+    );
+    expect(biquadFilters[1].frequency.exponentialRampToValueAtTime).toHaveBeenCalledWith(
       DEFAULT_TENT_CUTOFF,
       expect.any(Number),
     );
   });
 
   it('disposes cleanly without throwing', () => {
-    const { ctx, biquadFilter, gainNode } = createMockAudioContext();
+    const { ctx, biquadFilters, gainNode } = createMockAudioContext();
     const mockAudio = createMockAudioElement();
 
     const tentAudio = new TentMenuAudio({
@@ -141,7 +168,8 @@ describe('TentMenuAudio', () => {
     tentAudio.dispose();
 
     expect(mockAudio.pause).toHaveBeenCalled();
-    expect(biquadFilter.disconnect).toHaveBeenCalled();
+    expect(biquadFilters[0].disconnect).toHaveBeenCalled();
+    expect(biquadFilters[1].disconnect).toHaveBeenCalled();
     expect(gainNode.disconnect).toHaveBeenCalled();
   });
 });

@@ -19,15 +19,16 @@ export interface TentMenuAudioOptions {
   audioFactory?: (url: string) => HTMLAudioElement;
 }
 
-export const DEFAULT_TENT_CUTOFF = 350;
+export const DEFAULT_TENT_CUTOFF = 185;
 export const DEFAULT_OPEN_CUTOFF = 20000;
-export const DEFAULT_TENT_VOLUME = 0.42;
+export const DEFAULT_TENT_VOLUME = 0.28;
 
 export class TentMenuAudio {
   private ctx: AudioContext | null = null;
   private audio: HTMLAudioElement | null = null;
   private sourceNode: MediaElementAudioSourceNode | null = null;
-  private filterNode: BiquadFilterNode | null = null;
+  private filterNode1: BiquadFilterNode | null = null;
+  private filterNode2: BiquadFilterNode | null = null;
   private gainNode: GainNode | null = null;
   private audioUrl: string;
   private userVolume: number;
@@ -63,8 +64,12 @@ export class TentMenuAudio {
     return this.userVolume;
   }
 
+  public get filterNode(): BiquadFilterNode | null {
+    return this.filterNode1;
+  }
+
   public get currentCutoff(): number {
-    return this.filterNode ? this.filterNode.frequency.value : (this.isMuffled ? this.tentCutoff : this.openCutoff);
+    return this.filterNode1 ? this.filterNode1.frequency.value : (this.isMuffled ? this.tentCutoff : this.openCutoff);
   }
 
   public setVolume(vol: number): void {
@@ -75,7 +80,7 @@ export class TentMenuAudio {
   }
 
   /**
-   * Uruchamia muzykę z namiotu w menu głównym (filtr 350 Hz).
+   * Uruchamia muzykę z namiotu w menu głównym (podwójny kaskadowy filtr 185 Hz).
    * Jeśli przeglądarka blokuje autoplay, rejestruje jednorazowy nasłuch gestu (klik/klawisz).
    */
   public startTentAudio(): void {
@@ -88,8 +93,11 @@ export class TentMenuAudio {
     this.isMuffled = true;
     this.isPlaying = true;
 
-    if (this.filterNode && this.ctx) {
-      this.filterNode.frequency.setValueAtTime(this.tentCutoff, this.ctx.currentTime);
+    if (this.filterNode1 && this.ctx) {
+      this.filterNode1.frequency.setValueAtTime(this.tentCutoff, this.ctx.currentTime);
+    }
+    if (this.filterNode2 && this.ctx) {
+      this.filterNode2.frequency.setValueAtTime(this.tentCutoff, this.ctx.currentTime);
     }
 
     if (this.gainNode && this.ctx) {
@@ -112,7 +120,7 @@ export class TentMenuAudio {
   }
 
   /**
-   * Płynnie otwiera filtr od 350 Hz do 20 000 Hz w ciągu duration sekund (np. 1.0 s)
+   * Płynnie otwiera kaskadę filtrów od 185 Hz do 20 000 Hz w ciągu duration sekund (np. 1.0 s)
    * w momencie naciśnięcia przycisku „Graj” / Start.
    */
   public unmuffleAndOpen(duration = 1.0): void {
@@ -123,51 +131,73 @@ export class TentMenuAudio {
       this.startTentAudio();
     }
 
-    if (!this.ctx || !this.filterNode) return;
+    if (!this.ctx || !this.filterNode1) return;
 
     try {
       const now = this.ctx.currentTime;
-      this.filterNode.frequency.cancelScheduledValues(now);
-      this.filterNode.frequency.setValueAtTime(Math.max(20, this.filterNode.frequency.value), now);
-      this.filterNode.frequency.exponentialRampToValueAtTime(this.openCutoff, now + Math.max(0.1, duration));
+      const rampDuration = Math.max(0.1, duration);
+      const targetCutoff = this.openCutoff;
+
+      const ramp = (filter: BiquadFilterNode) => {
+        filter.frequency.cancelScheduledValues(now);
+        filter.frequency.setValueAtTime(Math.max(20, filter.frequency.value), now);
+        filter.frequency.exponentialRampToValueAtTime(targetCutoff, now + rampDuration);
+      };
+
+      ramp(this.filterNode1);
+      if (this.filterNode2) ramp(this.filterNode2);
 
       if (this.gainNode) {
         // Nieznaczne podbicie głośności przy pełnym otwarciu namiotu
-        const fullVolume = Math.min(1.0, this.userVolume * 1.25);
+        const fullVolume = Math.min(1.0, this.userVolume * 1.35);
         this.gainNode.gain.cancelScheduledValues(now);
         this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
-        this.gainNode.gain.linearRampToValueAtTime(fullVolume, now + Math.max(0.1, duration));
+        this.gainNode.gain.linearRampToValueAtTime(fullVolume, now + rampDuration);
       }
     } catch {
-      if (this.filterNode) {
-        this.filterNode.frequency.value = this.openCutoff;
+      if (this.filterNode1) {
+        this.filterNode1.frequency.value = this.openCutoff;
+      }
+      if (this.filterNode2) {
+        this.filterNode2.frequency.value = this.openCutoff;
       }
     }
   }
 
   /**
-   * Płynnie przywraca filtr namiotu (zjazd do 350 Hz) w przypadku powrotu do menu głównego.
+   * Płynnie przywraca filtr namiotu (zjazd do 185 Hz) w przypadku powrotu do menu głównego.
    */
   public muffleToTent(duration = 0.8): void {
     if (this.disposed) return;
     this.isMuffled = true;
 
-    if (!this.ctx || !this.filterNode) return;
+    if (!this.ctx || !this.filterNode1) return;
 
     try {
       const now = this.ctx.currentTime;
-      this.filterNode.frequency.cancelScheduledValues(now);
-      this.filterNode.frequency.setValueAtTime(Math.max(20, this.filterNode.frequency.value), now);
-      this.filterNode.frequency.exponentialRampToValueAtTime(this.tentCutoff, now + Math.max(0.1, duration));
+      const rampDuration = Math.max(0.1, duration);
+      const targetCutoff = this.tentCutoff;
+
+      const ramp = (filter: BiquadFilterNode) => {
+        filter.frequency.cancelScheduledValues(now);
+        filter.frequency.setValueAtTime(Math.max(20, filter.frequency.value), now);
+        filter.frequency.exponentialRampToValueAtTime(targetCutoff, now + rampDuration);
+      };
+
+      ramp(this.filterNode1);
+      if (this.filterNode2) ramp(this.filterNode2);
 
       if (this.gainNode) {
         this.gainNode.gain.cancelScheduledValues(now);
         this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
-        this.gainNode.gain.linearRampToValueAtTime(this.userVolume, now + Math.max(0.1, duration));
+        this.gainNode.gain.linearRampToValueAtTime(this.userVolume, now + rampDuration);
       }
     } catch {
-      if (this.filterNode) {
-        this.filterNode.frequency.value = this.tentCutoff;
+      if (this.filterNode1) {
+        this.filterNode1.frequency.value = this.tentCutoff;
+      }
+      if (this.filterNode2) {
+        this.filterNode2.frequency.value = this.tentCutoff;
       }
     }
   }
@@ -205,7 +235,7 @@ export class TentMenuAudio {
   }
 
   private initAudioNodes(): boolean {
-    if (this.sourceNode && this.filterNode && this.gainNode) return true;
+    if (this.sourceNode && this.filterNode1 && this.gainNode) return true;
 
     try {
       if (!this.ctx) {
@@ -229,21 +259,30 @@ export class TentMenuAudio {
         this.audio.preload = 'auto';
       }
 
-      // Filtr dolnoprzepustowy (Lowpass 350 Hz) imitujący płótno namiotu
-      const filter = this.ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = this.tentCutoff;
-      filter.Q.value = 1.15;
-      this.filterNode = filter;
+      // Kaskadowy podwójny filtr dolnoprzepustowy (4-pole -24 dB/oct),
+      // dający głębokie, autentyczne wrażenie muzyki dobiegającej z bardzo daleka
+      const filter1 = this.ctx.createBiquadFilter();
+      filter1.type = 'lowpass';
+      filter1.frequency.value = this.tentCutoff;
+      filter1.Q.value = 1.30;
+      this.filterNode1 = filter1;
+
+      const filter2 = this.ctx.createBiquadFilter();
+      filter2.type = 'lowpass';
+      filter2.frequency.value = this.tentCutoff;
+      filter2.Q.value = 0.707;
+      this.filterNode2 = filter2;
 
       const gain = this.ctx.createGain();
       gain.gain.value = this.userVolume;
       this.gainNode = gain;
 
       // Połączenie z mediami HTML:
+      // source -> filter1 -> filter2 -> gain -> destination
       this.sourceNode = this.ctx.createMediaElementSource(this.audio);
-      this.sourceNode.connect(filter);
-      filter.connect(gain);
+      this.sourceNode.connect(filter1);
+      filter1.connect(filter2);
+      filter2.connect(gain);
       gain.connect(this.ctx.destination);
 
       return true;
@@ -305,13 +344,22 @@ export class TentMenuAudio {
       this.sourceNode = null;
     }
 
-    if (this.filterNode) {
+    if (this.filterNode1) {
       try {
-        this.filterNode.disconnect();
+        this.filterNode1.disconnect();
       } catch {
         // ignore
       }
-      this.filterNode = null;
+      this.filterNode1 = null;
+    }
+
+    if (this.filterNode2) {
+      try {
+        this.filterNode2.disconnect();
+      } catch {
+        // ignore
+      }
+      this.filterNode2 = null;
     }
 
     if (this.gainNode) {

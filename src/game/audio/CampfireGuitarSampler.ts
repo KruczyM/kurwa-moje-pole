@@ -171,7 +171,7 @@ export class CampfireGuitarSampler {
       this.stringPresenceFilter = highFilter;
 
       const outGain = context.createGain();
-      outGain.gain.value = 0.65;
+      outGain.gain.value = 0.48; // Zbalansowane wyjście dla wielogłosu i miksu z podkładem
       this.outputGain = outGain;
 
       const targetDest = destination ?? context.destination;
@@ -309,6 +309,9 @@ export class CampfireGuitarSampler {
     const baseTime = Math.max(this.ctx.currentTime, startTime);
     const len = chordNotes.length;
 
+    // Wytłum poprzednio wybrzmiewające struny, imitując zmianę układu dłoni na gryfie (fret muting)
+    this.dampPreviousVoices(0.045);
+
     // Styl bicia i wybrzmienia pudła dopasowany do charakteru oryginalnego utworu:
     let baseDelay = 0.014;
     let baseDuration = 2.3;
@@ -368,11 +371,17 @@ export class CampfireGuitarSampler {
     const targetFreq = midiToFrequency(midi);
     const now = Math.max(this.ctx.currentTime, startTime ?? this.ctx.currentTime);
 
-    const { sampleName, pitchRatio } = normalizePitchToSample(sampleNameFromMidi(midi));
+    const { sampleName, pitchRatio, targetMidi } = normalizePitchToSample(sampleNameFromMidi(midi));
     const sampleBuffer = this.buffers.get(sampleName);
 
     if (sampleBuffer) {
       this.playBufferSource(sampleBuffer, pitchRatio, now);
+      return;
+    }
+
+    const nearest = this.findNearestLoadedBuffer(targetMidi);
+    if (nearest) {
+      this.playBufferSource(nearest.buffer, nearest.pitchRatio, now);
       return;
     }
 
@@ -395,9 +404,67 @@ export class CampfireGuitarSampler {
     // Jeśli próbka nie jest jeszcze w pamięci, zaplanuj jej załadowanie
     void this.loadSample(sampleName);
 
-    // 2. Realistyczny fizyczny model struny Karplus-Strong
+    // 2. Jeśli mamy jakąkolwiek załadowaną próbkę gitary akustycznej, użyj najbliższej wysokością
+    // i przestrój ją (pitch-shift) - dzięki temu ZAWSZE brzmi prawdziwa gitara akustyczna!
+    const nearest = this.findNearestLoadedBuffer(targetMidi);
+    if (nearest) {
+      this.playBufferSource(nearest.buffer, nearest.pitchRatio, time, volume, duration);
+      return;
+    }
+
+    // 3. Realistyczny fizyczny model struny Karplus-Strong
     const freq = midiToFrequency(targetMidi);
     this.playKsPluck(freq, time, volume, duration);
+  }
+
+  /**
+   * Płynnie wygasza wcześniej wybrzmiewające struny przy zmianie chwytu (fret-hand muting),
+   * zapobiegając nakładaniu się dysonansowych tonów z poprzednich akordów.
+   */
+  public dampPreviousVoices(dampingTime = 0.045): void {
+    if (!this.ctx || this.activeVoices.size === 0) return;
+    const now = this.ctx.currentTime;
+    for (const voice of this.activeVoices) {
+      try {
+        voice.gain.gain.cancelScheduledValues(now);
+        voice.gain.gain.setValueAtTime(voice.gain.gain.value, now);
+        if (typeof voice.gain.gain.setTargetAtTime === 'function') {
+          voice.gain.gain.setTargetAtTime(0.0001, now, dampingTime * 0.45);
+        } else {
+          voice.gain.gain.linearRampToValueAtTime(0.0001, now + dampingTime);
+        }
+        voice.source.stop(now + dampingTime + 0.02);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  /**
+   * Znajduje najbliższą wysokością załadowaną w pamięci próbkę gitary akustycznej
+   * i oblicza współczynnik przestrajania pitchRatio.
+   */
+  public findNearestLoadedBuffer(targetMidi: number): { buffer: AudioBuffer; pitchRatio: number } | null {
+    if (this.buffers.size === 0) return null;
+
+    let bestDiff = Infinity;
+    let bestBuffer: AudioBuffer | null = null;
+    let bestMidi = 69;
+
+    for (const [name, buf] of this.buffers.entries()) {
+      const sMidi = pitchNameToMidi(name);
+      const diff = Math.abs(targetMidi - sMidi);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestBuffer = buf;
+        bestMidi = sMidi;
+        if (diff === 0) break;
+      }
+    }
+
+    if (!bestBuffer) return null;
+    const pitchRatio = Math.pow(2, (targetMidi - bestMidi) / 12);
+    return { buffer: bestBuffer, pitchRatio };
   }
 
   private enforcePolyphonyLimit(): void {
@@ -446,11 +513,19 @@ export class CampfireGuitarSampler {
       const startTime = Math.max(this.ctx.currentTime, time);
       const gain = this.ctx.createGain();
       const safeVol = Math.max(0.01, volume);
-      const releaseStart = Math.max(startTime + 0.05, startTime + duration - 0.15);
 
-      gain.gain.setValueAtTime(safeVol, startTime);
-      gain.gain.setValueAtTime(safeVol, releaseStart);
-      gain.gain.linearRampToValueAtTime(0.0001, startTime + duration);
+      // Naturalny, sprężysty profil wybrzmiewania stalowej struny akustycznej:
+      // 1. Transient ataku kostki (0 .. 4ms)
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.linearRampToValueAtTime(safeVol, startTime + 0.004);
+      // 2. Szybki spadek początkowy (tłumienie początkowego uderzenia kostki, przejście w drganie swobodne)
+      if (typeof gain.gain.setTargetAtTime === 'function') {
+        gain.gain.setTargetAtTime(safeVol * 0.45, startTime + 0.015, 0.14);
+        gain.gain.setTargetAtTime(0.0001, startTime + 0.35, Math.max(0.35, duration * 0.40));
+      } else {
+        gain.gain.linearRampToValueAtTime(safeVol * 0.45, startTime + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+      }
 
       source.connect(gain);
       gain.connect(this.outputNode);
