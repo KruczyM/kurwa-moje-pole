@@ -217,7 +217,9 @@ function syncShell(next: AppState) {
   if (next === 'loading') {
     qs('#load-error').hidden = true;
     qs('#load-error').textContent = '';
-    qs('#load-text').textContent = 'Przygotowywanie sceny…';
+    qs('#load-text').textContent = '0%';
+    const percentEl = document.querySelector<HTMLElement>('#load-percent');
+    if (percentEl) percentEl.textContent = '0%';
     const progressBar = document.querySelector<HTMLDivElement>('#load-progress-bar');
     if (progressBar) progressBar.style.width = '0%';
     const skipBtn = document.querySelector<HTMLButtonElement>('#skip-crowd-btn');

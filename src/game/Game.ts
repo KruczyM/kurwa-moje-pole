@@ -73,6 +73,7 @@ import { WheelRideController } from './world/WheelRideController';
 import { SpatialStageAcoustics } from './audio/SpatialStageAcoustics';
 import { ConcertLibrary } from './audio/ConcertLibrary';
 import { ConcertState } from './npc/ConcertState';
+import { LoadingTipsController } from './ui/LoadingTipsController';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -147,6 +148,7 @@ export class Game {
     getPropModel: (id) => this.propModels.get(id),
   });
   readonly ui = new UIManager();
+  readonly loadingTipsController = new LoadingTipsController();
   festivalMap: FestivalMap | null = null;
   private stageLiveScreens?: StageLiveScreens;
   private events = new EventScope();
@@ -413,9 +415,40 @@ export class Game {
       error = qs('#load-error');
     error.hidden = true;
     error.textContent = '';
+
+    const progressBar =
+      typeof document !== 'undefined' ? document.querySelector<HTMLDivElement>('#load-progress-bar') : null;
+    const percentText =
+      typeof document !== 'undefined' ? document.querySelector<HTMLElement>('#load-percent') : null;
+
+    const setLoadingProgress = (percent: number) => {
+      const clamped = Math.max(0, Math.min(100, Math.round(percent)));
+      if (progressBar) progressBar.style.width = `${clamped}%`;
+      if (percentText) percentText.textContent = `${clamped}%`;
+      if (text) text.textContent = `${clamped}%`;
+    };
+
+    setLoadingProgress(0);
+
+    this.loadingTipsController.bindElements({
+      titleElement: typeof document !== 'undefined' ? document.querySelector('#loading-tip-title') : null,
+      textElement: typeof document !== 'undefined' ? document.querySelector('#loading-tip-text') : null,
+      counterElement: typeof document !== 'undefined' ? document.querySelector('#loading-tip-counter') : null,
+      cardElement: typeof document !== 'undefined' ? document.querySelector('#loading-tips-card') : null,
+      prevButton: typeof document !== 'undefined' ? document.querySelector('#loading-tip-prev') : null,
+      nextButton: typeof document !== 'undefined' ? document.querySelector('#loading-tip-next') : null,
+    });
+    this.loadingTipsController.start(3800);
+
     try {
+      let baseLoadedCount = 0;
+      const expectedBaseCount = 20;
       const loader = new AssetLoader(
-        (message) => (text.textContent = message),
+        () => {
+          baseLoadedCount++;
+          const percent = Math.min(35, Math.round((baseLoadedCount / expectedBaseCount) * 35));
+          setLoadingProgress(percent);
+        },
         (message) => {
           error.textContent = message;
           error.hidden = false;
@@ -426,6 +459,7 @@ export class Game {
       );
       if (this.fogTrial) this.sectorLoader = loader;
       const assets = await loader.loadAll();
+      setLoadingProgress(35);
       if (this.disposed) return;
       if (this.contextLost) throw new Error('WebGL utracony podczas ładowania modeli.');
       if (assets.characters.size === 0)
@@ -737,8 +771,6 @@ export class Game {
         });
       }
 
-      const progressBar =
-        typeof document !== 'undefined' ? document.querySelector<HTMLDivElement>('#load-progress-bar') : null;
       const skipCrowdBtn =
         typeof document !== 'undefined' ? document.querySelector<HTMLButtonElement>('#skip-crowd-btn') : null;
 
@@ -753,26 +785,22 @@ export class Game {
       }
 
       if (this.settings.preloadCrowd !== false && !this.graphics.mobile) {
-        text.textContent = `Wczytywanie postaci festiwalowiczów (0/${festivalNpcAssets.length})…`;
-        if (progressBar) progressBar.style.width = '20%';
+        setLoadingProgress(38);
         await loader.loadFestivalNpcs(
           (asset, model) => this.npcs?.addFestivalNpc(asset, model) ?? false,
           () => this.disposed || skippedCrowd,
-          (loaded, total, name) => {
+          (loaded, total) => {
             if (this.disposed || skippedCrowd) return;
-            const percent = 20 + Math.round((loaded / total) * 60);
-            if (progressBar) progressBar.style.width = `${percent}%`;
-            text.textContent = `Wczytywanie festiwalowiczów (${loaded}/${total}): ${name}`;
+            const percent = 38 + Math.round((loaded / total) * 44);
+            setLoadingProgress(percent);
           },
           4,
         );
       }
 
       if (skipCrowdBtn) skipCrowdBtn.hidden = true;
-      if (progressBar) progressBar.style.width = '85%';
-      text.textContent = 'Rozgrzewka grafiki i shaderów…';
+      setLoadingProgress(84);
       if (this.sectorStreamer) {
-        text.textContent = 'Wczytywanie najbliższych sektorów festiwalu…';
         await this.sectorStreamer.prime(this.camera.position);
         if (this.disposed) return;
         this.sectorSafePosition.copy(this.camera.position);
@@ -783,10 +811,12 @@ export class Game {
         }
         this.distanceVisibility?.update(1, this.camera.position);
       }
+      setLoadingProgress(92);
       await this.warmUpGpu();
       if (this.contextLost) throw new Error('WebGL utracony podczas przygotowania grafiki.');
-      if (progressBar) progressBar.style.width = '100%';
+      setLoadingProgress(100);
 
+      this.loadingTipsController.stop();
       this.startLoop();
       this.state.transition('playing');
       if (this.fogTrial) this.stageLiveScreens?.setVideoPlaylist(this.stageAcoustics);
@@ -829,6 +859,7 @@ export class Game {
         this.toast(`Obóz i festiwalowicze gotowi (${loadedCount} postaci). Miłej zabawy!`);
       }
     } catch (cause) {
+      this.loadingTipsController.stop();
       if (this.disposed) return;
       error.textContent = `Nie udało się uruchomić gry: ${cause instanceof Error ? cause.message : String(cause)}`;
       error.hidden = false;
@@ -2508,6 +2539,7 @@ export class Game {
     this.grzybekAudio.dispose();
     this.voiceReactions.dispose();
     this.campfireGuitarGame.dispose();
+    this.loadingTipsController.dispose();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
     // Include detached mobile pool entries in the one shared-resource disposal pass.
     for (const npc of this.npcs?.npcs ?? []) if (!npc.root.parent) this.scene.add(npc.root);
