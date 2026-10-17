@@ -357,9 +357,14 @@ qs<HTMLButtonElement>('#inspect-use').onclick = () => game?.acceptInspect();
 qs<HTMLButtonElement>('#inspect-take').onclick = () => game?.takeInspectedItem();
 qs<HTMLButtonElement>('#cancel-effect').onclick = () => game?.cancelEffect();
 qs<HTMLButtonElement>('#cancel-use-sequence').onclick = () => game?.cancelUseSequence();
-qs<HTMLButtonElement>('#warning-proceed').onclick = () => game?.confirmWarning(false);
-qs<HTMLButtonElement>('#warning-safe-mode').onclick = () => game?.confirmWarning(true);
-qs<HTMLButtonElement>('#warning-cancel').onclick = () => game?.cancelWarning();
+const warningProceedBtn = document.querySelector<HTMLButtonElement>('#warning-proceed');
+if (warningProceedBtn) warningProceedBtn.onclick = () => game?.confirmWarning(false);
+const warningSafeBtn = document.querySelector<HTMLButtonElement>('#warning-safe-mode');
+if (warningSafeBtn) warningSafeBtn.onclick = () => game?.confirmWarning(true);
+const warningCancelBtn = document.querySelector<HTMLButtonElement>('#warning-cancel');
+if (warningCancelBtn) warningCancelBtn.onclick = () => game?.cancelWarning();
+const warningCloseBtn = document.querySelector<HTMLButtonElement>('#warning-close-btn');
+if (warningCloseBtn) warningCloseBtn.onclick = () => game?.cancelWarning();
 document.querySelectorAll<HTMLButtonElement>('[data-effect]').forEach((button) => {
   button.onclick = () => game?.useInventoryEffect(button.dataset.effect as EffectId);
 });

@@ -2,7 +2,7 @@ import { type EffectId, type EffectPhase, type VisualSettings } from '../effects
 import { type AudioSettings } from '../services/SettingsService';
 import { type AppState } from '../lifecycle/AppStateMachine';
 import { controlHintForState } from '../lifecycle/InputBindings';
-import { type ConsumableInventory } from '../inventory/ConsumableInventory';
+import { type ConsumableInventory, HOTBAR_EFFECTS } from '../inventory/ConsumableInventory';
 import { type FlankiHudState } from '../interactions/FlankiGame';
 import { type FlankiRoster } from '../interactions/FlankiRoster';
 import { type GuitarHudState, FESTIVAL_GUITAR_SONGS } from '../interactions/CampfireGuitarGame';
@@ -135,16 +135,10 @@ export class UIManager {
   }
 
   updateHotbar(inventory: ConsumableInventory): void {
-    const slots = [
-      { id: 'Piwo' as EffectId, icon: '🍺' },
-      { id: 'Papieros' as EffectId, icon: '🚬' },
-      { id: 'Joint' as EffectId, icon: '🌿' },
-      { id: 'Woda' as EffectId, icon: '💧' },
-    ];
-    slots.forEach((slot, index) => {
+    HOTBAR_EFFECTS.forEach((id, index) => {
       const btn = this.qs<HTMLButtonElement>(`#hud-hotbar .hotbar-slot[data-slot="${index}"]`);
       if (!btn) return;
-      const count = inventory.quantity(slot.id);
+      const count = inventory.quantity(id);
       const countEl = btn.querySelector('.slot-count');
       if (countEl) countEl.textContent = `×${count}`;
       btn.classList.toggle('has-items', count > 0);

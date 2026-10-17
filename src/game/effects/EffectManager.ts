@@ -4,11 +4,36 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { EffectTimeline } from './EffectTimeline';
 import { DEFAULT_GRASS_PRESET, type GrassQualityPreset } from '../world/grassQuality';
 import type { MatrixPhaseMode } from './MatrixPhaseController';
 import type { MatrixQualityPreset } from './MatrixRainOverlay';
 import type { AspectRatioPreset } from '../rendering/viewportAspect';
+
+/**
+ * Sprawdza, czy urządzenie obsługuje blendowanie buforów zmiennoprzecinkowych.
+ * Na urządzeniach iOS WebKit brak EXT_float_blend powoduje błąd INVALID_OPERATION i biały ekran.
+ */
+export function isFloatBlendSupported(renderer: THREE.WebGLRenderer): boolean {
+  try {
+    const gl = renderer.getContext?.();
+    if (!gl) return true;
+    gl.getExtension?.('EXT_color_buffer_float');
+    gl.getExtension?.('EXT_color_buffer_half_float');
+    const floatBlend = gl.getExtension?.('EXT_float_blend');
+    const isIOS =
+      typeof navigator !== 'undefined' &&
+      (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints ?? 0) > 1));
+    if (isIOS && !floatBlend) {
+      return false;
+    }
+    return true;
+  } catch {
+    return true;
+  }
+}
 export type EffectId =
   'Piwo' | 'Papieros' | 'Joint' | 'Kreska' | 'Grzyb' | 'MDMA' | 'LSD' | 'Woda' | 'Okulary';
 export type EffectPhase = 'inactive' | 'fadeIn' | 'active' | 'fadeOut';
@@ -363,29 +388,34 @@ void main(){
  float wave=sin(centered.y*14.+time*.75)+cos(centered.x*12.-time*.53);
  centered*=1.+distortion*(.015+.022*sin(time*pulse))*r*r;
  centered+=normalize(centered+vec2(.0001))*wave*distortion*.004;
- vec2 uv=centered+.5;
+ vec2 uv=clamp(centered+.5,vec2(0.001),vec2(0.999));
  float alternate=.5+.5*sin(time*.62);
  float drip=sin(uv.x*9.+time*1.3)*.012+sin(uv.x*23.-time*.7)*.006;
  uv.y+=melt*alternate*drip*(.35+uv.y);
+ uv=clamp(uv,vec2(0.001),vec2(0.999));
  vec2 mixOffset=vec2(sin(time*.9+uv.y*17.),cos(time*.72+uv.x*15.))*.009*mixing*(1.-alternate);
  float ca=chroma*(.25+r*.9);
  vec2 d=normalize(uv-.5+vec2(.0001))*ca;
  vec3 col;
- col.r=texture2D(tDiffuse,uv+d).r;
+ col.r=texture2D(tDiffuse,clamp(uv+d,0.0,1.0)).r;
  col.g=texture2D(tDiffuse,uv).g;
- col.b=texture2D(tDiffuse,uv-d).b;
+ col.b=texture2D(tDiffuse,clamp(uv-d,0.0,1.0)).b;
  if(mixing>0.){
-  vec3 mixed=(col+texture2D(tDiffuse,uv+mixOffset).rgb+texture2D(tDiffuse,uv-mixOffset*1.35).rgb)/3.;
+  vec3 mixed=(col+texture2D(tDiffuse,clamp(uv+mixOffset,0.0,1.0)).rgb+texture2D(tDiffuse,clamp(uv-mixOffset*1.35,0.0,1.0)).rgb)/3.;
   col=mix(col,mixed,mixing*(1.-alternate)*.88);
  }
  if(sharpen>0.){
-  vec2 texelSize=vec2(1.0)/max(resolution,vec2(800.0,600.0));
-  vec3 n=(texture2D(tDiffuse,uv+vec2(texelSize.x,0.0)).rgb+texture2D(tDiffuse,uv-vec2(texelSize.x,0.0)).rgb+texture2D(tDiffuse,uv+vec2(0.0,texelSize.y)).rgb+texture2D(tDiffuse,uv-vec2(0.0,texelSize.y)).rgb)*0.25;
+  vec2 texelSize=vec2(1.0)/max(resolution,vec2(1.0));
+  vec3 n=(texture2D(tDiffuse,clamp(uv+vec2(texelSize.x,0.0),0.0,1.0)).rgb+texture2D(tDiffuse,clamp(uv-vec2(texelSize.x,0.0),0.0,1.0)).rgb+texture2D(tDiffuse,clamp(uv+vec2(0.0,texelSize.y),0.0,1.0)).rgb+texture2D(tDiffuse,clamp(uv-vec2(0.0,texelSize.y),0.0,1.0)).rgb)*0.25;
   vec3 edge=col-n;
   float centerMult=focus>0.?mix(1.4,0.45,smoothstep(0.0,0.55,r)):1.0;
   col=clamp(col+edge*(sharpen*centerMult),0.0,1.0);
  }
- if(blur>0.){col+=texture2D(tDiffuse,uv+vec2(blur*.003,0.)).rgb;col+=texture2D(tDiffuse,uv-vec2(blur*.003,0.)).rgb;col/=3.;}
+ if(blur>0.){
+  col+=texture2D(tDiffuse,clamp(uv+vec2(blur*.003,0.),0.0,1.0)).rgb;
+  col+=texture2D(tDiffuse,clamp(uv-vec2(blur*.003,0.),0.0,1.0)).rgb;
+  col/=3.;
+ }
  col=mix(col,sqrt(max(col,vec3(0.))),lift);
  float l=dot(col,vec3(.299,.587,.114));
  col=mix(vec3(l),col,saturation);
@@ -396,7 +426,7 @@ void main(){
   col=mix(col,milky,pastel);
  }
  col=hueShift(col,hue*sin(time*.22+wave*.12));
- col=(col-.5)*contrast+.5+brightness;
+ col=clamp((col-.5)*contrast+.5+brightness,0.0,1.0);
  col*=1.-smoothstep(.15,.72,r)*vignette;
  if(focus>0.){
   float edgeDist=smoothstep(.16,.62,r);
@@ -413,6 +443,7 @@ export class EffectManager {
   bloomResolutionScale = 1;
   afterimage: AfterimagePass;
   shader: ShaderPass;
+  outputPass: OutputPass;
   private timeline = new EffectTimeline();
   private snapshot?: EffectSnapshot;
   private disposed = false;
@@ -424,11 +455,23 @@ export class EffectManager {
     private readonly camera: THREE.PerspectiveCamera,
     private readonly audio?: EffectAudioTarget,
   ) {
-    this.composer = new EffectComposer(renderer);
-    this.composer.addPass(new RenderPass(scene, camera));
     const width = typeof innerWidth !== 'undefined' ? innerWidth : 800;
     const height = typeof innerHeight !== 'undefined' ? innerHeight : 600;
+    const floatBlendSafe = isFloatBlendSupported(renderer);
+    const rtType = floatBlendSafe ? THREE.HalfFloatType : THREE.UnsignedByteType;
+    const customTarget = new THREE.WebGLRenderTarget(width, height, {
+      type: rtType,
+      format: THREE.RGBAFormat,
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+      generateMipmaps: false,
+    });
+    this.composer = new EffectComposer(renderer, customTarget);
+    this.composer.addPass(new RenderPass(scene, camera));
     this.bloom = new UnrealBloomPass(new THREE.Vector2(width, height), 0, 0.3, 0.8);
+    if (!floatBlendSafe) {
+      this.bloom.enabled = false;
+    }
     this.composer.addPass(this.bloom);
     this.afterimage = new AfterimagePass(0.88);
     this.afterimage.enabled = false;
@@ -436,6 +479,8 @@ export class EffectManager {
     this.shader = new ShaderPass(shader);
     this.shader.uniforms.resolution.value.set(width, height);
     this.composer.addPass(this.shader);
+    this.outputPass = new OutputPass();
+    this.composer.addPass(this.outputPass);
   }
 
   /** Wykonuje próbny przebieg kompozytora efektów, aby skompilować shadery post-processingu przed startem gry. */
@@ -526,7 +571,9 @@ export class EffectManager {
       return;
     }
     const bloomScale = this.sunglassesActive ? 0.5 : 1.0;
-    this.bloom.enabled = !this.settings.disableBloom && (this.snapshot.bloom.enabled || c.bloom > 0);
+    const floatBlendSafe = isFloatBlendSupported(this.renderer);
+    this.bloom.enabled =
+      floatBlendSafe && !this.settings.disableBloom && (this.snapshot.bloom.enabled || c.bloom > 0);
     this.bloom.strength =
       THREE.MathUtils.lerp(this.snapshot.bloom.strength, c.bloom, level) * pulse * bloomScale;
     this.afterimage.enabled =
@@ -671,10 +718,13 @@ export class EffectManager {
 
   /** Dopasowuje bufory post-processingu do nowego rozmiaru widoku. */
   resize(w: number, h: number) {
-    this.composer.setPixelRatio(this.renderer.getPixelRatio());
+    const maxComposerDpr = 1.5;
+    const effectiveDpr = Math.min(this.renderer.getPixelRatio(), maxComposerDpr);
+    this.composer.setPixelRatio(effectiveDpr);
     this.composer.setSize(w, h);
-    const bloomDpr = this.renderer.getPixelRatio() * this.bloomResolutionScale;
+    const bloomDpr = effectiveDpr * this.bloomResolutionScale;
     this.bloom.setSize(Math.round(w * bloomDpr), Math.round(h * bloomDpr));
+    this.afterimage.setSize(Math.round(w * effectiveDpr), Math.round(h * effectiveDpr));
     this.shader.uniforms.resolution.value.set(w, h);
   }
 
@@ -684,6 +734,7 @@ export class EffectManager {
     this.restoreSnapshot();
     this.timeline.reset();
     this.disposed = true;
+    this.outputPass.dispose();
     this.composer.dispose();
   }
 }

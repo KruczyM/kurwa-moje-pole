@@ -55,6 +55,15 @@ describe('Game Accessibility & Settings', () => {
     expect(isIntenseEffect('Piwo')).toBe(false);
     expect(isIntenseEffect('Papieros')).toBe(false);
     expect(isIntenseEffect('Joint')).toBe(false);
+    expect(isIntenseEffect('Woda')).toBe(false);
+    expect(isIntenseEffect('Okulary')).toBe(false);
+  });
+
+  it('guarantees HUD hotbar essentials do not trigger intense effect warnings', () => {
+    const hotbarEffects = ['Piwo', 'Papieros', 'Joint', 'Woda'] as const;
+    hotbarEffects.forEach((id) => {
+      expect(isIntenseEffect(id)).toBe(false);
+    });
   });
 
   it('loads default settings when localStorage is empty and system motion preference is normal', () => {

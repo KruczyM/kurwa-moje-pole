@@ -47,6 +47,7 @@ import {
   ConsumableInventory,
   DEFAULT_STARTER_INVENTORY,
   inventoryEffects,
+  HOTBAR_EFFECTS,
 } from './inventory/ConsumableInventory';
 import { ItemUseSequence } from './interactions/ItemUseSequence';
 import { itemUseSequenceConfig } from './interactions/itemUseSequenceConfig';
@@ -372,8 +373,8 @@ export class Game {
         this.events.listen(btn, 'click', (e) => {
           e.preventDefault();
           const slot = parseInt(btn.dataset.slot ?? '-1', 10);
-          if (slot >= 0 && slot < inventoryEffects.length) {
-            this.useInventoryEffect(inventoryEffects[slot]);
+          if (slot >= 0 && slot < HOTBAR_EFFECTS.length) {
+            this.useInventoryEffect(HOTBAR_EFFECTS[slot]);
           }
         });
       });
@@ -1032,8 +1033,8 @@ export class Game {
     }
     if (action.startsWith('quick-slot-')) {
       const slotIndex = parseInt(action.replace('quick-slot-', ''), 10) - 1;
-      if (slotIndex >= 0 && slotIndex < inventoryEffects.length) {
-        this.useInventoryEffect(inventoryEffects[slotIndex]);
+      if (slotIndex >= 0 && slotIndex < HOTBAR_EFFECTS.length) {
+        this.useInventoryEffect(HOTBAR_EFFECTS[slotIndex]);
         return;
       }
     }
