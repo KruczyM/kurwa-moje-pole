@@ -49,6 +49,7 @@ export class UIManager {
   private guitarButtonsBound = false;
   private lastGuitarOnHitLane?: (lane: number) => void;
   private lastGuitarOnExit?: () => void;
+  private lastGuitarSongId?: string;
 
   constructor() {
     this.initGuideTabs();
@@ -519,6 +520,27 @@ export class UIManager {
           if (onExit) onExit();
         };
       }
+    }
+
+    const currentSongId = state.currentSong?.id;
+    if (this.lastGuitarSongId !== currentSongId) {
+      this.lastGuitarSongId = currentSongId;
+      const hitButtons =
+        typeof hud.querySelectorAll === 'function'
+          ? hud.querySelectorAll<HTMLButtonElement>('.guitar-hit-btn')
+          : [];
+      const keys = ['A', 'S', 'D', 'F', 'G'];
+      const chords = state.currentSong?.chords ?? [];
+      hitButtons.forEach((btn) => {
+        const lane = Number(btn.getAttribute('data-lane'));
+        if (!isNaN(lane) && lane >= 0 && lane < 5) {
+          const keyChar = keys[lane];
+          const chord = chords[lane];
+          btn.innerHTML = chord
+            ? `${keyChar}<span class="guitar-btn-chord">${chord}</span>`
+            : keyChar;
+        }
+      });
     }
   }
 

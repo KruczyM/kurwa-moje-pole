@@ -40,6 +40,9 @@ export const CHORD_NOTE_MAP: Record<string, readonly string[]> = {
   'C#m': ['Db3', 'Ab3', 'Db4', 'E4', 'Ab4'],
   // E-dur: E2, B2, E3, Ab3, B3, E4
   E: ['E2', 'B2', 'E3', 'Ab3', 'B3', 'E4'],
+  // H7 / B7: B2, Eb3, A3, B3, Gb4
+  H7: ['B2', 'Eb3', 'A3', 'B3', 'Gb4'],
+  B7: ['B2', 'Eb3', 'A3', 'B3', 'Gb4'],
 };
 
 const SEMITONE_MAP: Record<string, number> = {
@@ -110,7 +113,8 @@ export class CampfireGuitarSampler {
   private loadPromises = new Map<string, Promise<AudioBuffer | null>>();
   private baseUrl: string;
   private ksBuffers = new Map<number, AudioBuffer>();
-  private activeVoices = new Set<AudioScheduledSourceNode>();
+  private activeVoices = new Set<{ source: AudioScheduledSourceNode; gain: GainNode }>();
+  private readonly maxPolyphony = 24;
   private disposed = false;
 
   constructor(options: GuitarSamplerOptions = {}) {
@@ -138,8 +142,8 @@ export class CampfireGuitarSampler {
       filter.connect(targetDest);
       this.outputNode = filter;
 
-      // Rozpocznij wstępne ładowanie najczęstszych próbek
-      void this.preloadCommonSamples();
+      // Rozpocznij wstępne ładowanie pełnego zestawu próbek studyjnych
+      void this.preloadAllSamples();
     } catch {
       // Bezpieczeństwo AudioContext w środowiskach bez audio
     }
@@ -161,7 +165,8 @@ export class CampfireGuitarSampler {
         if (!resp.ok) return null;
         const arrayBuf = await resp.arrayBuffer();
         if (!this.ctx || this.disposed) return null;
-        const audioBuf = await this.ctx.decodeAudioData(arrayBuf);
+        // Bezpieczne dekodowanie niezależną kopią bufora (zabezpieczenie starszych silników WebKit/Safari)
+        const audioBuf = await this.ctx.decodeAudioData(arrayBuf.slice(0));
         this.buffers.set(name, audioBuf);
         return audioBuf;
       } catch {
@@ -176,16 +181,23 @@ export class CampfireGuitarSampler {
   }
 
   /**
+   * Preloaduje pełny zestaw próbek dźwiękowych gitary (wszystkie 42 nuty E2-A5, łącznie ~750KB).
+   */
+  public async preloadAllSamples(): Promise<void> {
+    await Promise.all(SAMPLE_NOTE_NAMES.map((name) => this.loadSample(name)));
+  }
+
+  /**
    * Preloaduje podstawowy zestaw nut najczęściej używanych w piosenkach.
    */
   public async preloadCommonSamples(): Promise<void> {
-    const common = ['A2', 'E3', 'A3', 'C4', 'D4', 'E4', 'G4', 'A4', 'C5', 'D5'];
-    await Promise.all(common.map((name) => this.loadSample(name)));
+    await this.preloadAllSamples();
   }
 
   /**
    * Realistyczny algorytm Karplus-Strong jako natychmiastowy fallback,
    * gdy próbka audio nie została jeszcze pobrana (np. testy jednostkowe lub offline).
+   * Zabezpieczony przed indeksem -1 (brak wartości NaN).
    */
   private getOrCreateKsBuffer(freq: number): AudioBuffer | null {
     if (!this.ctx) return null;
@@ -207,7 +219,9 @@ export class CampfireGuitarSampler {
 
     const damping = 0.992;
     for (let i = period; i < totalSamples; i++) {
-      channel[i] = (channel[i - period] + channel[i - period - 1]) * 0.5 * damping;
+      const prev1 = channel[i - period];
+      const prev2 = i - period === 0 ? channel[period - 1] : channel[i - period - 1];
+      channel[i] = (prev1 + prev2) * 0.5 * damping;
     }
 
     this.ksBuffers.set(roundedFreq, buffer);
@@ -215,33 +229,62 @@ export class CampfireGuitarSampler {
   }
 
   /**
-   * Gra partię solową / akord przy naciśnięciu struny.
+   * Gra partię solową lub pełny chwyt gitarowy (strum) przy naciśnięciu struny.
+   * Gdy podano akord (np. Am, C, G, Dm, E, H7), wykonuje naturalne bicie chwytu
+   * wszystkimi strunami z mikro-opóźnieniem w tonacji i dynamice danego toru.
    */
   public playPlucked(noteOrChord: string, startTime?: number, lane?: number): void {
     if (!this.ctx || !this.outputNode || this.disposed) return;
     if (this.ctx.state === 'suspended') {
       void this.ctx.resume();
     }
-    const now = startTime ?? this.ctx.currentTime;
+    const now = Math.max(this.ctx.currentTime, startTime ?? this.ctx.currentTime);
 
-    // 1. Sprawdź czy to akord (np. C, G, Am)
+    // 1. Sprawdź czy to akord (np. C, G, Am, Dm, E, H7)
     const chordNotes = CHORD_NOTE_MAP[noteOrChord];
     if (chordNotes && chordNotes.length > 0) {
-      if (lane !== undefined) {
-        // Pojedyncza struna akordu przypisana do tego toru
-        const note = chordNotes[lane % chordNotes.length];
-        this.playSingleNote(note, now);
-      } else {
-        // Pełne bicie akordu (strum) z naturalnym mikro-opóźnieniem strun (14ms)
-        chordNotes.forEach((note, idx) => {
-          this.playSingleNote(note, now + idx * 0.014);
-        });
-      }
+      this.playChordStrum(chordNotes, now, lane);
       return;
     }
 
     // 2. Pojedyncza nuta melodyczna (np. A4, B4, C5, F#4)
     this.playSingleNote(noteOrChord, now);
+  }
+
+  /**
+   * Odtwarza autentyczne bicie chwytu gitarowego (chord strum).
+   * Wszystkie struny akordu brzmią harmonijnie z mikro-opóźnieniem (11-14ms)
+   * oraz dynamiką dobraną do toru (downstroke z akcentem na bas, środek lub jasny upstroke).
+   */
+  public playChordStrum(chordNotes: readonly string[], startTime: number, lane?: number): void {
+    if (!this.ctx || !this.outputNode || this.disposed || chordNotes.length === 0) return;
+    if (this.ctx.state === 'suspended') {
+      void this.ctx.resume();
+    }
+    const baseTime = Math.max(this.ctx.currentTime, startTime);
+    const len = chordNotes.length;
+    const isUpstroke = lane === 4;
+    const strumDelay = isUpstroke ? 0.011 : 0.014;
+
+    chordNotes.forEach((note, idx) => {
+      const stringIdx = isUpstroke ? len - 1 - idx : idx;
+      const noteName = chordNotes[stringIdx];
+      const noteTime = baseTime + idx * strumDelay;
+
+      // Naturalna dynamika strun
+      let volume = 0.75;
+      if (lane === 0 && stringIdx === 0) {
+        // Mocny akcent basowy dla toru 0
+        volume = 0.95;
+      } else if (lane === 4 && stringIdx === len - 1) {
+        // Jasny akcent wiolinowy dla toru 4
+        volume = 0.90;
+      } else if (stringIdx === 0) {
+        volume = 0.85;
+      }
+
+      this.playSingleNote(noteName, noteTime, volume);
+    });
   }
 
   /**
@@ -251,9 +294,8 @@ export class CampfireGuitarSampler {
     if (!this.ctx || !this.outputNode || this.disposed) return;
     const midi = frequencyToMidi(freq);
     const targetFreq = midiToFrequency(midi);
-    const now = startTime ?? this.ctx.currentTime;
+    const now = Math.max(this.ctx.currentTime, startTime ?? this.ctx.currentTime);
 
-    // Sprawdź czy mamy próbkę
     const { sampleName, pitchRatio } = normalizePitchToSample(sampleNameFromMidi(midi));
     const sampleBuffer = this.buffers.get(sampleName);
 
@@ -266,7 +308,7 @@ export class CampfireGuitarSampler {
     this.playKsPluck(targetFreq, now);
   }
 
-  private playSingleNote(pitch: string, time: number): void {
+  private playSingleNote(pitch: string, time: number, volume = 0.85): void {
     if (!this.ctx || !this.outputNode || this.disposed) return;
 
     const { sampleName, pitchRatio, targetMidi } = normalizePitchToSample(pitch);
@@ -274,7 +316,7 @@ export class CampfireGuitarSampler {
 
     if (sampleBuffer) {
       // 1. Prawdziwa studyjna próbka gitary akustycznej
-      this.playBufferSource(sampleBuffer, pitchRatio, time);
+      this.playBufferSource(sampleBuffer, pitchRatio, time, volume);
       return;
     }
 
@@ -283,30 +325,65 @@ export class CampfireGuitarSampler {
 
     // 2. Realistyczny fizyczny model struny Karplus-Strong
     const freq = midiToFrequency(targetMidi);
-    this.playKsPluck(freq, time);
+    this.playKsPluck(freq, time, volume);
   }
 
-  private playBufferSource(buffer: AudioBuffer, pitchRatio: number, time: number): void {
+  private enforcePolyphonyLimit(): void {
+    while (this.activeVoices.size >= this.maxPolyphony && this.ctx) {
+      const oldest = this.activeVoices.values().next().value;
+      if (!oldest) break;
+      this.activeVoices.delete(oldest);
+      try {
+        const now = this.ctx.currentTime;
+        oldest.gain.gain.cancelScheduledValues(now);
+        oldest.gain.gain.linearRampToValueAtTime(0.0001, now + 0.01);
+        oldest.source.stop(now + 0.015);
+        setTimeout(() => {
+          try {
+            oldest.source.disconnect();
+            oldest.gain.disconnect();
+          } catch {
+            // ignore
+          }
+        }, 20);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  private playBufferSource(
+    buffer: AudioBuffer,
+    pitchRatio: number,
+    time: number,
+    volume = 0.85,
+    duration = 2.2,
+  ): void {
     if (!this.ctx || !this.outputNode || this.disposed) return;
 
     try {
+      this.enforcePolyphonyLimit();
+
       const source = this.ctx.createBufferSource();
       source.buffer = buffer;
+      const safePitch = Math.max(0.35, Math.min(3.0, pitchRatio));
       if (source.playbackRate) {
-        source.playbackRate.setValueAtTime(pitchRatio, time);
+        source.playbackRate.setValueAtTime(safePitch, time);
       }
 
+      const startTime = Math.max(this.ctx.currentTime, time);
       const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0.001, time);
-      gain.gain.linearRampToValueAtTime(0.85, time + 0.004);
-      gain.gain.exponentialRampToValueAtTime(0.0001, time + 2.2);
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.linearRampToValueAtTime(Math.max(0.01, volume), startTime + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
       source.connect(gain);
       gain.connect(this.outputNode);
 
-      this.activeVoices.add(source);
-      source.start(time);
-      source.stop(time + 2.3);
+      const voice = { source, gain };
+      this.activeVoices.add(voice);
+      source.start(startTime);
+      source.stop(startTime + duration + 0.05);
 
       source.onended = () => {
         try {
@@ -315,34 +392,38 @@ export class CampfireGuitarSampler {
         } catch {
           // ignore
         }
-        this.activeVoices.delete(source);
+        this.activeVoices.delete(voice);
       };
     } catch {
       // ignore
     }
   }
 
-  private playKsPluck(freq: number, time: number): void {
+  private playKsPluck(freq: number, time: number, volume = 0.7, duration = 1.8): void {
     if (!this.ctx || !this.outputNode || this.disposed) return;
 
     try {
+      this.enforcePolyphonyLimit();
+
       const ksBuffer = this.getOrCreateKsBuffer(freq);
       if (!ksBuffer) return;
 
       const source = this.ctx.createBufferSource();
       source.buffer = ksBuffer;
 
+      const startTime = Math.max(this.ctx.currentTime, time);
       const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0.001, time);
-      gain.gain.linearRampToValueAtTime(0.7, time + 0.004);
-      gain.gain.exponentialRampToValueAtTime(0.0001, time + 1.8);
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.linearRampToValueAtTime(Math.max(0.01, volume), startTime + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
       source.connect(gain);
       gain.connect(this.outputNode);
 
-      this.activeVoices.add(source);
-      source.start(time);
-      source.stop(time + 1.85);
+      const voice = { source, gain };
+      this.activeVoices.add(voice);
+      source.start(startTime);
+      source.stop(startTime + duration + 0.05);
 
       source.onended = () => {
         try {
@@ -351,7 +432,7 @@ export class CampfireGuitarSampler {
         } catch {
           // ignore
         }
-        this.activeVoices.delete(source);
+        this.activeVoices.delete(voice);
       };
     } catch {
       // ignore
@@ -368,8 +449,9 @@ export class CampfireGuitarSampler {
 
     for (const voice of this.activeVoices) {
       try {
-        voice.stop();
-        voice.disconnect();
+        voice.source.stop();
+        voice.source.disconnect();
+        voice.gain.disconnect();
       } catch {
         // ignore
       }

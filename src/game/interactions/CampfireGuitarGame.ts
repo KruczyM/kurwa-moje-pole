@@ -51,6 +51,7 @@ export interface GuitarHudState {
     duration: number;
     audioBackingUrl?: string;
     audioBackingOffset?: number;
+    chords?: string[];
   };
   currentTime: number;
   score: number;
@@ -109,6 +110,9 @@ export const GUITAR_CHORD_FREQUENCIES: Record<string, number[]> = {
   F: [87.31, 130.81, 174.61, 220.0, 261.63],
   // D-moll: D3, A3, D4, F4
   Dm: [146.83, 220.0, 293.66, 349.23],
+  // H7 / B7: B2, D#3, A3, B3, F#4
+  H7: [123.47, 155.56, 220.0, 246.94, 369.99],
+  B7: [123.47, 155.56, 220.0, 246.94, 369.99],
 };
 
 export function guitarFrequencies(name: string): number[] {
@@ -614,6 +618,21 @@ export const GUITAR_AUDIO_BACKING_MAP: Record<string, string> = {
   'czarny-chleb-midi': 'game-assets/audio/guitar/czarny-chleb.mp3',
 };
 
+/**
+ * Autentyczne chwyty gitarowe przypisane do 5 torów gryfu dla każdego utworu,
+ * w 100% tożsame z tonacją i harmonicznym przebiegiem akordów piosenki:
+ * - Czarny chleb i czarna kawa (A-moll): Am, Dm, G, C, E
+ * - Piła tango (A-moll): Am, F, C, G, Em
+ * - Sen o Victorii (C-dur): C, G, Am, F, Em
+ * - Czerwony jak cegła (E-dur blues): E, A, D, H7, Em
+ */
+export const SONG_LANE_CHORDS: Record<string, [string, string, string, string, string]> = {
+  'czarny-chleb-midi': ['Am', 'Dm', 'G', 'C', 'E'],
+  'pila-tango-midi': ['Am', 'F', 'C', 'G', 'Em'],
+  'sen-victoria-midi': ['C', 'G', 'Am', 'F', 'Em'],
+  'czerwony-cegla-midi': ['E', 'A', 'D', 'H7', 'Em'],
+};
+
 export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = (midiCharts as GuitarSong[])
   .filter((song) => Boolean(GUITAR_AUDIO_BACKING_MAP[song.id]))
   .map((song) => {
@@ -622,10 +641,17 @@ export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = (midiCharts as GuitarSong[])
     const offset = song.notes[0].time - 2.5;
     const relPath = GUITAR_AUDIO_BACKING_MAP[song.id]!;
     const audioBackingUrl = `${baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`}${relPath}`;
+    const laneChords = SONG_LANE_CHORDS[song.id] ?? ['Am', 'Dm', 'G', 'C', 'E'];
+
     return {
       ...song,
       duration: song.notes[song.notes.length - 1].time - offset + 3,
-      notes: song.notes.map((note) => ({ ...note, time: note.time - offset })),
+      chords: laneChords,
+      notes: song.notes.map((note) => ({
+        ...note,
+        time: note.time - offset,
+        chordName: laneChords[note.lane] ?? 'Am',
+      })),
       audioBackingOffset: offset,
       audioBackingUrl,
       difficulty: song.difficulty as GuitarSong['difficulty'],
@@ -926,6 +952,7 @@ export class CampfireGuitarGame {
             duration: this.currentSong.duration,
             audioBackingUrl: this.currentSong.audioBackingUrl,
             audioBackingOffset: this.currentSong.audioBackingOffset,
+            chords: this.currentSong.chords,
           }
         : undefined,
       currentTime: this.currentTime,

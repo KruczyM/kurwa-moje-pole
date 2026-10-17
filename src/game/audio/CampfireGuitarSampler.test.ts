@@ -116,12 +116,20 @@ describe('CampfireGuitarSampler', () => {
     expect(ctx.createBufferSource).toHaveBeenCalledTimes(5);
   });
 
-  it('plays single string of chord when lane is provided', () => {
+  it('strums all strings of a chord when lane is provided with lane dynamics', () => {
     const { ctx } = createMockAudioContext();
     const sampler = new CampfireGuitarSampler({ context: ctx });
 
     sampler.playPlucked('Am', 10, 2);
-    // Tylko 1 struna
+    // Am ma 5 strun — autentyczne bicie chwytu gitarowego w tonacji
+    expect(ctx.createBufferSource).toHaveBeenCalledTimes(5);
+  });
+
+  it('plays single string when a melodic pitch name is provided', () => {
+    const { ctx } = createMockAudioContext();
+    const sampler = new CampfireGuitarSampler({ context: ctx });
+
+    sampler.playPlucked('E4', 10);
     expect(ctx.createBufferSource).toHaveBeenCalledTimes(1);
   });
 
