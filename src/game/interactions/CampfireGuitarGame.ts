@@ -1,4 +1,5 @@
 import midiCharts from './guitarMidiCharts.json';
+import { CampfireGuitarSampler } from '../audio/CampfireGuitarSampler';
 
 /**
  * CampfireGuitarGame — Rytmiczna mini-gra na gitarze akustycznej przy ognisku
@@ -132,8 +133,10 @@ export class CampfireGuitarSynth {
   private backingAudio: HTMLAudioElement | null = null;
   private backingAudioSource: MediaElementAudioSourceNode | null = null;
   private hasActiveAudioTrack = false;
+  private readonly sampler: CampfireGuitarSampler;
 
-  constructor(audioContext?: AudioContext) {
+  constructor(audioContext?: AudioContext, sampler?: CampfireGuitarSampler) {
+    this.sampler = sampler ?? new CampfireGuitarSampler();
     if (audioContext) {
       this.init(audioContext);
     }
@@ -162,6 +165,8 @@ export class CampfireGuitarSynth {
       this.backingGain = this.ctx.createGain();
       this.backingGain.gain.value = 0.22;
       this.backingGain.connect(this.masterGain);
+
+      this.sampler.init(this.ctx, this.masterGain);
     } catch {
       // AudioContext może być wyciszony lub zawieszony
     }
@@ -477,6 +482,7 @@ export class CampfireGuitarSynth {
 
   /**
    * Gra partię solową / akord przy celnym uderzeniu nuty na danym torze
+   * z użyciem autentycznych próbek dźwiękowych gitary akustycznej.
    */
   public playChord(chordName: string, lane?: number): void {
     if (!this.ctx || !this.masterGain) {
@@ -487,58 +493,13 @@ export class CampfireGuitarSynth {
       void this.ctx.resume();
     }
 
-    const chordFreqs = guitarFrequencies(chordName);
-    const freqs = lane === undefined ? chordFreqs : [chordFreqs[lane % chordFreqs.length]];
     const now = this.ctx.currentTime;
-
-    freqs.forEach((freq, idx) => {
-      // Symulacja szarpnięcia struny: lekki offset w czasie (ok. 12ms per struna)
-      const strumTime = now + idx * 0.012;
-      this.playPluckedString(freq, strumTime);
-    });
+    this.sampler.playPlucked(chordName, now, lane);
   }
 
   private playPluckedString(freq: number, startTime: number): void {
     if (!this.ctx || !this.masterGain) return;
-
-    try {
-      // Oscylator podstawowy (triangle + lekki sawtooth dla bogatych tonów pudła)
-      const osc = this.ctx.createOscillator();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, startTime);
-
-      // Filtr dolnoprzepustowy symulujący tłumienie drewna i strun
-      const filter = this.ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(freq * 5.0, startTime);
-      filter.frequency.exponentialRampToValueAtTime(Math.max(90, freq * 1.3), startTime + 1.2);
-
-      // Obwiednia głośności (szybki atak, naturalne wybrzmienie)
-      const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0.001, startTime);
-      gain.gain.linearRampToValueAtTime(0.24, startTime + 0.006);
-      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.8);
-
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(this.masterGain);
-
-      osc.start(startTime);
-      osc.stop(startTime + 1.85);
-
-      // Sprzątanie węzłów
-      setTimeout(() => {
-        try {
-          osc.disconnect();
-          filter.disconnect();
-          gain.disconnect();
-        } catch {
-          // ignore
-        }
-      }, 2000);
-    } catch {
-      // ignore
-    }
+    this.sampler.playPluckedFrequency(freq, startTime);
   }
 
   /**
@@ -610,6 +571,7 @@ export class CampfireGuitarSynth {
 
   public dispose(): void {
     this.stopBackingTrack();
+    this.sampler.dispose();
     if (this.backingAudio) {
       try {
         this.backingAudio.pause();

@@ -132,6 +132,9 @@ export class Game {
   interactions?: InteractionManager;
   toiletTimer = 0;
   private networkSyncTimer = 0;
+  private guitarNpcThrottleTimer = 0;
+  private wasGuitarAudioMuted = false;
+  private wasSpeakerPlayingBeforeGuitar = false;
   readonly settingsService = new SettingsService();
   get settings(): VisualSettings {
     return this.settingsService.visual;
@@ -1665,11 +1668,39 @@ export class Game {
     this.ui.syncSettings(this.settings, this.audioSettings);
   }
 
+  /** Wycisza wszystkie inne dźwięki w grze, gdy gracz gra na gitarze przy ognisku, i przywraca je po zakończeniu. */
+  private muteWorldAudioForGuitar(mute: boolean): void {
+    if (mute) {
+      if (!this.wasGuitarAudioMuted) {
+        this.wasGuitarAudioMuted = true;
+        this.wasSpeakerPlayingBeforeGuitar = this.speakerAudio.isPlaying;
+        if (this.speakerAudio.isPlaying) {
+          this.speakerAudio.stopImmediate();
+        }
+        this.campAmbient.pause();
+        this.grzybekAudio.pause();
+        this.stageAcoustics.setUserVolume(0);
+      }
+    } else {
+      if (this.wasGuitarAudioMuted) {
+        this.wasGuitarAudioMuted = false;
+        this.campAmbient.resume();
+        this.grzybekAudio.resume();
+        if (this.wasSpeakerPlayingBeforeGuitar) {
+          void this.speakerAudio.play();
+          this.wasSpeakerPlayingBeforeGuitar = false;
+        }
+        this.syncStageAudio();
+      }
+    }
+  }
+
   /** Synchronizuje HUD, modale, sterowanie graczem i pointer lock ze stanem aplikacji. */
   private syncStageAudio() {
+    const isGuitarActive = this.campfireGuitarGame.getPhase() !== 'idle';
     this.stageAcoustics.update(this.camera.position, this.player?.yaw ?? 0);
     this.stageAcoustics.setUserVolume(
-      isStageAudioEnabled(this.state.current) ? this.audioSettings.ambientVolume : 0,
+      isStageAudioEnabled(this.state.current) && !isGuitarActive ? this.audioSettings.ambientVolume : 0,
     );
   }
 
@@ -1807,6 +1838,8 @@ export class Game {
     }
     const dt = Math.min(frameElapsed, 0.05),
       state = this.state.current;
+    const isGuitarActive = this.campfireGuitarGame.getPhase() !== 'idle';
+    this.muteWorldAudioForGuitar(isGuitarActive);
     if (this.checkMobileSector()) {
       this.updateSharedSectorTransition(dt);
       return;
@@ -1836,7 +1869,21 @@ export class Game {
         this.updateInteractionPrompt();
       }
       if (state === 'playing' || state === 'seated') {
-        this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position, this.speakerAudio.isPlaying);
+        if (isGuitarActive) {
+          this.guitarNpcThrottleTimer += dt;
+          if (this.guitarNpcThrottleTimer >= 0.15) {
+            this.npcs?.update(
+              this.guitarNpcThrottleTimer,
+              this.clock.elapsedTime,
+              this.camera.position,
+              false,
+            );
+            this.guitarNpcThrottleTimer = 0;
+          }
+        } else {
+          this.guitarNpcThrottleTimer = 0;
+          this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position, this.speakerAudio.isPlaying);
+        }
       }
       if ((state === 'playing' || state === 'seated') && this.networkClient?.isOnline()) {
         this.networkSyncTimer += dt;
@@ -1894,7 +1941,9 @@ export class Game {
           if (this.state.current === 'using-item') this.state.transition('playing');
         }
       }
-      this.voiceReactions.update(dt, this.effects?.active || null, this.effects?.phase || 'inactive');
+      if (!isGuitarActive) {
+        this.voiceReactions.update(dt, this.effects?.active || null, this.effects?.phase || 'inactive');
+      }
       // Material-swapping effects must never own the same meshes simultaneously.
       if (this.effects?.active === 'Grzyb') this.matrixWireframe.update(false, 0, false);
       this.mushroomWireframe.update(
@@ -1936,25 +1985,27 @@ export class Game {
       this.mushroomWireframe.update(false, 0, 0, false);
       this.matrixWireframe.update(false, 0, false);
     }
-    this.npcDebugOverlay?.update(this.camera);
-    this.distanceVisibility?.update(dt, this.camera.position);
-    this.sectorStreamer?.update(dt, this.camera.position);
-    this.stageLiveScreens?.update(
-      dt,
-      this.renderer,
-      this.camera,
-      this.remotePlayersManager?.getPlayerMarkers() ?? [],
-      this.networkClient?.isOnline() && this.player
-        ? {
-            id: this.networkClient?.getMyPlayerId() ?? 'local',
-            name: 'Ty',
-            x: this.camera.position.x,
-            z: this.camera.position.z,
-            yaw: this.player.yaw,
-            y: this.player.isAirborne() ? this.camera.position.y - 1.9 : 0,
-          }
-        : undefined,
-    );
+    if (!isGuitarActive) {
+      this.npcDebugOverlay?.update(this.camera);
+      this.distanceVisibility?.update(dt, this.camera.position);
+      this.sectorStreamer?.update(dt, this.camera.position);
+      this.stageLiveScreens?.update(
+        dt,
+        this.renderer,
+        this.camera,
+        this.remotePlayersManager?.getPlayerMarkers() ?? [],
+        this.networkClient?.isOnline() && this.player
+          ? {
+              id: this.networkClient?.getMyPlayerId() ?? 'local',
+              name: 'Ty',
+              x: this.camera.position.x,
+              z: this.camera.position.z,
+              yaw: this.player.yaw,
+              y: this.player.isAirborne() ? this.camera.position.y - 1.9 : 0,
+            }
+          : undefined,
+      );
+    }
     this.effects?.render();
     this.updateEffectHud();
     this.ui.updateFlankiHud(this.world?.flankiGame?.getHudState() ?? null);
@@ -2415,6 +2466,7 @@ export class Game {
     this.flankiNetworkCleanup.forEach((cleanup) => cleanup());
     if (this.disposed) return;
     this.disposed = true;
+    this.muteWorldAudioForGuitar(false);
     this.animationLoop.stop();
     this.ui.dispose();
     this.events.dispose();

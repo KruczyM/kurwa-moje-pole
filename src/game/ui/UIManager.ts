@@ -454,17 +454,41 @@ export class UIManager {
     }
 
     // Spadające nuty na gryfie (5 torów: 0..4 -> (lane + 0.5) * 20%)
+    // Optymalizacja dla urządzeń mobilnych: recykling węzłów DOM zamiast niszczenia innerHTML co klatkę.
     const container = this.qs<HTMLElement>('#guitar-notes-container');
     if (container) {
-      const notesHtml = state.activeNotes
-        .map((note) => {
-          const leftPercent = (note.lane + 0.5) * 20;
-          const topPercent = Math.min(95, note.progress * 86);
-          return `<div class="guitar-note-gem lane-${note.lane}" style="left: ${leftPercent}%; top: ${topPercent}%;">${note.chordName}</div>`;
-        })
-        .join('');
-      if (container.innerHTML !== notesHtml) {
-        container.innerHTML = notesHtml;
+      if (container.children && typeof container.removeChild === 'function' && typeof document !== 'undefined') {
+        const activeNotes = state.activeNotes;
+        const children = container.children;
+        while (children.length > activeNotes.length && container.lastChild) {
+          container.removeChild(container.lastChild);
+        }
+        for (let i = 0; i < activeNotes.length; i++) {
+          const note = activeNotes[i];
+          let el = children[i] as HTMLElement;
+          if (!el) {
+            el = document.createElement('div');
+            container.appendChild(el);
+          }
+          const expectedClass = `guitar-note-gem lane-${note.lane}`;
+          if (el.className !== expectedClass) el.className = expectedClass;
+          const left = `${(note.lane + 0.5) * 20}%`;
+          const top = `${Math.min(95, note.progress * 86)}%`;
+          if (el.style.left !== left) el.style.left = left;
+          if (el.style.top !== top) el.style.top = top;
+          if (el.textContent !== note.chordName) el.textContent = note.chordName;
+        }
+      } else {
+        const notesHtml = state.activeNotes
+          .map((note) => {
+            const leftPercent = (note.lane + 0.5) * 20;
+            const topPercent = Math.min(95, note.progress * 86);
+            return `<div class="guitar-note-gem lane-${note.lane}" style="left: ${leftPercent}%; top: ${topPercent}%;">${note.chordName}</div>`;
+          })
+          .join('');
+        if (container.innerHTML !== notesHtml) {
+          container.innerHTML = notesHtml;
+        }
       }
     }
 
