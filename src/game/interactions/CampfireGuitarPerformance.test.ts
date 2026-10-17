@@ -85,6 +85,6 @@ describe('Campfire Guitar Audio Muting and Performance', () => {
     const firstNote = song.notes[0];
 
     game.hitLane(firstNote.lane, firstNote.time);
-    expect(playChordSpy).toHaveBeenCalledWith(firstNote.chordName, firstNote.lane);
+    expect(playChordSpy).toHaveBeenCalledWith(firstNote.chordName, firstNote.lane, 'czerwony-cegla-midi');
   });
 });

@@ -440,7 +440,7 @@ export class UIManager {
             (s) =>
               `<button type="button" class="guitar-song-option" data-song-id="${s.id}">
                 <strong>${s.title}</strong>
-                <span>${s.artist} · ${s.difficulty}${s.license ? ` · ${s.license}` : ''}</span>
+                <span>${s.artist}</span>
               </button>`,
           ).join('');
 

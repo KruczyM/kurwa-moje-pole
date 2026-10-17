@@ -32,12 +32,16 @@ export const CHORD_NOTE_MAP: Record<string, readonly string[]> = {
   D: ['D3', 'A3', 'D4', 'Gb4'],
   // D-moll: D3, A3, D4, F4
   Dm: ['D3', 'A3', 'D4', 'F4'],
-  // F-dur: F2, C3, F3, A3, C4
-  F: ['F2', 'C3', 'F3', 'A3', 'C4'],
+  // F-dur: F2, C3, F3, A3, C4, F4
+  F: ['F2', 'C3', 'F3', 'A3', 'C4', 'F4'],
   // A-dur: A2, E3, A3, Db4, E4
   A: ['A2', 'E3', 'A3', 'Db4', 'E4'],
-  // C#m: Db3, Ab3, Db4, E4, Ab4
+  // C#m / cis: Db3, Ab3, Db4, E4, Ab4
   'C#m': ['Db3', 'Ab3', 'Db4', 'E4', 'Ab4'],
+  cis: ['Db3', 'Ab3', 'Db4', 'E4', 'Ab4'],
+  // F#m / fis: Gb2, Db3, Gb3, A3, Db4, Gb4
+  'F#m': ['Gb2', 'Db3', 'Gb3', 'A3', 'Db4', 'Gb4'],
+  fis: ['Gb2', 'Db3', 'Gb3', 'A3', 'Db4', 'Gb4'],
   // E-dur: E2, B2, E3, Ab3, B3, E4
   E: ['E2', 'B2', 'E3', 'Ab3', 'B3', 'E4'],
   // H7 / B7: B2, Eb3, A3, B3, Gb4
@@ -108,7 +112,9 @@ export function normalizePitchToSample(pitch: string): { sampleName: string; pit
 export class CampfireGuitarSampler {
   private ctx: AudioContext | null = null;
   private outputNode: AudioNode | null = null;
-  private bodyFilter: BiquadFilterNode | null = null;
+  private bodyLowFilter: BiquadFilterNode | null = null;
+  private bodyMidFilter: BiquadFilterNode | null = null;
+  private stringPresenceFilter: BiquadFilterNode | null = null;
   private buffers = new Map<string, AudioBuffer>();
   private loadPromises = new Map<string, Promise<AudioBuffer | null>>();
   private baseUrl: string;
@@ -116,6 +122,10 @@ export class CampfireGuitarSampler {
   private activeVoices = new Set<{ source: AudioScheduledSourceNode; gain: GainNode }>();
   private readonly maxPolyphony = 24;
   private disposed = false;
+
+  public get bodyFilter(): BiquadFilterNode | null {
+    return this.bodyMidFilter;
+  }
 
   constructor(options: GuitarSamplerOptions = {}) {
     const rawBase = options.baseUrl ?? ((typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/');
@@ -130,17 +140,37 @@ export class CampfireGuitarSampler {
     this.ctx = context;
 
     try {
-      // Filtr rezonansu pudła akustycznego gitary (drewniana komora rezonansowa)
-      const filter = context.createBiquadFilter();
-      filter.type = 'peaking';
-      filter.frequency.value = 520;
-      filter.Q.value = 1.2;
-      filter.gain.value = 3.0;
-      this.bodyFilter = filter;
+      // Trzypasmowy model rezonansu pudła gitary akustycznej (Dreadnought acoustic body):
+      // 1. Rezonans komory powietrznej Helmholtz (115 Hz) — ciepłe, głębokie oparcie basu
+      const lowFilter = context.createBiquadFilter();
+      lowFilter.type = 'peaking';
+      lowFilter.frequency.value = 115;
+      lowFilter.Q.value = 1.1;
+      lowFilter.gain.value = 2.2;
+      this.bodyLowFilter = lowFilter;
+
+      // 2. Rezonans płyty ze świerku/cedru (480 Hz) — drewniane ciało akordu
+      const midFilter = context.createBiquadFilter();
+      midFilter.type = 'peaking';
+      midFilter.frequency.value = 480;
+      midFilter.Q.value = 1.2;
+      midFilter.gain.value = 3.0;
+      this.bodyMidFilter = midFilter;
+
+      // 3. Blask i atak kostki na strunach stalowo-brązowych (3400 Hz) — czysty, autentyczny dźwięk
+      const highFilter = context.createBiquadFilter();
+      highFilter.type = 'peaking';
+      highFilter.frequency.value = 3400;
+      highFilter.Q.value = 1.0;
+      highFilter.gain.value = 1.8;
+      this.stringPresenceFilter = highFilter;
 
       const targetDest = destination ?? context.destination;
-      filter.connect(targetDest);
-      this.outputNode = filter;
+      highFilter.connect(midFilter);
+      midFilter.connect(lowFilter);
+      lowFilter.connect(targetDest);
+
+      this.outputNode = highFilter;
 
       // Rozpocznij wstępne ładowanie pełnego zestawu próbek studyjnych
       void this.preloadAllSamples();
@@ -230,20 +260,20 @@ export class CampfireGuitarSampler {
 
   /**
    * Gra partię solową lub pełny chwyt gitarowy (strum) przy naciśnięciu struny.
-   * Gdy podano akord (np. Am, C, G, Dm, E, H7), wykonuje naturalne bicie chwytu
-   * wszystkimi strunami z mikro-opóźnieniem w tonacji i dynamice danego toru.
+   * Gdy podano akord (np. Am, C, G, Dm, E, H7, F), wykonuje naturalne bicie chwytu
+   * wszystkimi strunami z mikro-opóźnieniem w tonacji i dynamice danego toru i utworu.
    */
-  public playPlucked(noteOrChord: string, startTime?: number, lane?: number): void {
+  public playPlucked(noteOrChord: string, startTime?: number, lane?: number, songId?: string): void {
     if (!this.ctx || !this.outputNode || this.disposed) return;
     if (this.ctx.state === 'suspended') {
       void this.ctx.resume();
     }
     const now = Math.max(this.ctx.currentTime, startTime ?? this.ctx.currentTime);
 
-    // 1. Sprawdź czy to akord (np. C, G, Am, Dm, E, H7)
+    // 1. Sprawdź czy to akord (np. C, G, Am, Dm, E, H7, F, F#m...)
     const chordNotes = CHORD_NOTE_MAP[noteOrChord];
     if (chordNotes && chordNotes.length > 0) {
-      this.playChordStrum(chordNotes, now, lane);
+      this.playChordStrum(chordNotes, now, lane, songId);
       return;
     }
 
@@ -252,19 +282,46 @@ export class CampfireGuitarSampler {
   }
 
   /**
-   * Odtwarza autentyczne bicie chwytu gitarowego (chord strum).
-   * Wszystkie struny akordu brzmią harmonijnie z mikro-opóźnieniem (11-14ms)
-   * oraz dynamiką dobraną do toru (downstroke z akcentem na bas, środek lub jasny upstroke).
+   * Odtwarza autentyczne bicie chwytu gitarowego (chord strum) dopasowane do brzmienia oryginału.
+   * Wszystkie struny akordu brzmią harmonijnie z mikro-opóźnieniem i dynamiką
+   * odpowiednią dla danego utworu (blues shuffle dla Cegły, ballada dla Victorii, folk-punk dla Piły).
    */
-  public playChordStrum(chordNotes: readonly string[], startTime: number, lane?: number): void {
+  public playChordStrum(
+    chordNotes: readonly string[],
+    startTime: number,
+    lane?: number,
+    songId?: string,
+  ): void {
     if (!this.ctx || !this.outputNode || this.disposed || chordNotes.length === 0) return;
     if (this.ctx.state === 'suspended') {
       void this.ctx.resume();
     }
     const baseTime = Math.max(this.ctx.currentTime, startTime);
     const len = chordNotes.length;
+
+    // Styl bicia i wybrzmienia pudła dopasowany do charakteru oryginalnego utworu:
+    let baseDelay = 0.014;
+    let baseDuration = 2.3;
+    if (songId === 'czerwony-cegla-midi') {
+      // Dżem — Czerwony jak cegła: blues shuffle, sprężysty perkusyjny atak kostki, mocny bas
+      baseDelay = 0.011;
+      baseDuration = 2.1;
+    } else if (songId === 'sen-victoria-midi') {
+      // Dżem — Sen o Victorii: miękka, balladowa głębia akustyczna, dłuższe bicie i wybrzmienie
+      baseDelay = 0.018;
+      baseDuration = 2.8;
+    } else if (songId === 'pila-tango-midi') {
+      // Strachy na Lachy — Piła tango: szybkie, cięte, dynamiczne bicie folk-punkowe
+      baseDelay = 0.010;
+      baseDuration = 1.9;
+    } else if (songId === 'czarny-chleb-midi') {
+      // Strachy na Lachy — Czarny chleb i czarna kawa: klasyczny akustyczny rytm ogniskowy
+      baseDelay = 0.014;
+      baseDuration = 2.4;
+    }
+
     const isUpstroke = lane === 4;
-    const strumDelay = isUpstroke ? 0.011 : 0.014;
+    const strumDelay = isUpstroke ? baseDelay * 0.85 : baseDelay;
 
     chordNotes.forEach((note, idx) => {
       const stringIdx = isUpstroke ? len - 1 - idx : idx;
@@ -272,18 +329,20 @@ export class CampfireGuitarSampler {
       const noteTime = baseTime + idx * strumDelay;
 
       // Naturalna dynamika strun
-      let volume = 0.75;
+      let volume = 0.76;
       if (lane === 0 && stringIdx === 0) {
-        // Mocny akcent basowy dla toru 0
-        volume = 0.95;
+        // Mocny akcent basowy na strunie prymy (root note)
+        volume = 0.96;
       } else if (lane === 4 && stringIdx === len - 1) {
-        // Jasny akcent wiolinowy dla toru 4
-        volume = 0.90;
+        // Jasny akcent wiolinowy
+        volume = 0.92;
       } else if (stringIdx === 0) {
-        volume = 0.85;
+        volume = 0.86;
       }
 
-      this.playSingleNote(noteName, noteTime, volume);
+      // Struny basowe mają większą masę i wybrzmiewają dłużej niż wioliny
+      const stringDuration = baseDuration + (len - 1 - stringIdx) * 0.16;
+      this.playSingleNote(noteName, noteTime, volume, stringDuration);
     });
   }
 
@@ -308,7 +367,7 @@ export class CampfireGuitarSampler {
     this.playKsPluck(targetFreq, now);
   }
 
-  private playSingleNote(pitch: string, time: number, volume = 0.85): void {
+  private playSingleNote(pitch: string, time: number, volume = 0.85, duration = 2.2): void {
     if (!this.ctx || !this.outputNode || this.disposed) return;
 
     const { sampleName, pitchRatio, targetMidi } = normalizePitchToSample(pitch);
@@ -316,7 +375,7 @@ export class CampfireGuitarSampler {
 
     if (sampleBuffer) {
       // 1. Prawdziwa studyjna próbka gitary akustycznej
-      this.playBufferSource(sampleBuffer, pitchRatio, time, volume);
+      this.playBufferSource(sampleBuffer, pitchRatio, time, volume, duration);
       return;
     }
 
@@ -325,7 +384,7 @@ export class CampfireGuitarSampler {
 
     // 2. Realistyczny fizyczny model struny Karplus-Strong
     const freq = midiToFrequency(targetMidi);
-    this.playKsPluck(freq, time, volume);
+    this.playKsPluck(freq, time, volume, duration);
   }
 
   private enforcePolyphonyLimit(): void {
@@ -458,13 +517,29 @@ export class CampfireGuitarSampler {
     }
     this.activeVoices.clear();
 
-    if (this.bodyFilter) {
+    if (this.stringPresenceFilter) {
       try {
-        this.bodyFilter.disconnect();
+        this.stringPresenceFilter.disconnect();
       } catch {
         // ignore
       }
-      this.bodyFilter = null;
+      this.stringPresenceFilter = null;
+    }
+    if (this.bodyMidFilter) {
+      try {
+        this.bodyMidFilter.disconnect();
+      } catch {
+        // ignore
+      }
+      this.bodyMidFilter = null;
+    }
+    if (this.bodyLowFilter) {
+      try {
+        this.bodyLowFilter.disconnect();
+      } catch {
+        // ignore
+      }
+      this.bodyLowFilter = null;
     }
     this.outputNode = null;
     this.buffers.clear();

@@ -488,7 +488,7 @@ export class CampfireGuitarSynth {
    * Gra partię solową / akord przy celnym uderzeniu nuty na danym torze
    * z użyciem autentycznych próbek dźwiękowych gitary akustycznej.
    */
-  public playChord(chordName: string, lane?: number): void {
+  public playChord(chordName: string, lane?: number, songId?: string): void {
     if (!this.ctx || !this.masterGain) {
       this.init();
       if (!this.ctx || !this.masterGain) return;
@@ -498,7 +498,7 @@ export class CampfireGuitarSynth {
     }
 
     const now = this.ctx.currentTime;
-    this.sampler.playPlucked(chordName, now, lane);
+    this.sampler.playPlucked(chordName, now, lane, songId);
   }
 
   private playPluckedString(freq: number, startTime: number): void {
@@ -620,17 +620,17 @@ export const GUITAR_AUDIO_BACKING_MAP: Record<string, string> = {
 
 /**
  * Autentyczne chwyty gitarowe przypisane do 5 torów gryfu dla każdego utworu,
- * w 100% tożsame z tonacją i harmonicznym przebiegiem akordów piosenki:
- * - Czarny chleb i czarna kawa (A-moll): Am, Dm, G, C, E
- * - Piła tango (A-moll): Am, F, C, G, Em
- * - Sen o Victorii (C-dur): C, G, Am, F, Em
- * - Czerwony jak cegła (E-dur blues): E, A, D, H7, Em
+ * w 100% tożsame z tonacją i harmonicznym przebiegiem akordów oryginalnych utworów:
+ * - Czarny chleb i czarna kawa (Strachy na Lachy, A-moll): Am, C, G, Dm, E
+ * - Piła tango (Strachy na Lachy, A-moll): Am, Dm, E, C, G
+ * - Sen o Victorii (Dżem, C-dur): C, F, Dm, G, Am
+ * - Czerwony jak cegła (Dżem, E-dur blues): E, A, H7, D, C#m
  */
 export const SONG_LANE_CHORDS: Record<string, [string, string, string, string, string]> = {
-  'czarny-chleb-midi': ['Am', 'Dm', 'G', 'C', 'E'],
-  'pila-tango-midi': ['Am', 'F', 'C', 'G', 'Em'],
-  'sen-victoria-midi': ['C', 'G', 'Am', 'F', 'Em'],
-  'czerwony-cegla-midi': ['E', 'A', 'D', 'H7', 'Em'],
+  'czarny-chleb-midi': ['Am', 'C', 'G', 'Dm', 'E'],
+  'pila-tango-midi': ['Am', 'Dm', 'E', 'C', 'G'],
+  'sen-victoria-midi': ['C', 'F', 'Dm', 'G', 'Am'],
+  'czerwony-cegla-midi': ['E', 'A', 'H7', 'D', 'C#m'],
 };
 
 export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = (midiCharts as GuitarSong[])
@@ -642,10 +642,15 @@ export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = (midiCharts as GuitarSong[])
     const relPath = GUITAR_AUDIO_BACKING_MAP[song.id]!;
     const audioBackingUrl = `${baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`}${relPath}`;
     const laneChords = SONG_LANE_CHORDS[song.id] ?? ['Am', 'Dm', 'G', 'C', 'E'];
+    const artist = song.id === 'pila-tango-midi' ? 'Strachy na Lachy' : song.artist;
 
     return {
-      ...song,
+      id: song.id,
+      title: song.title,
+      artist,
+      bpm: song.bpm,
       duration: song.notes[song.notes.length - 1].time - offset + 3,
+      difficulty: song.difficulty as GuitarSong['difficulty'],
       chords: laneChords,
       notes: song.notes.map((note) => ({
         ...note,
@@ -654,7 +659,6 @@ export const FESTIVAL_GUITAR_SONGS: GuitarSong[] = (midiCharts as GuitarSong[])
       })),
       audioBackingOffset: offset,
       audioBackingUrl,
-      difficulty: song.difficulty as GuitarSong['difficulty'],
     };
   });
 
@@ -777,7 +781,7 @@ export class CampfireGuitarGame {
       this.cheerLevel = Math.min(1.0, this.cheerLevel + 0.06);
       this.lastFeedback = { text: 'IDEALNIE! ✨', color: '#22c55e', timestamp: performance.now() };
 
-      this.synth.playChord(candidate.chordName, candidate.lane);
+      this.synth.playChord(candidate.chordName, candidate.lane, this.currentSong?.id);
       this.callbacks?.onPlayChord?.(candidate.chordName);
 
       if (this.combo === 10 || this.combo === 20) {
@@ -805,7 +809,7 @@ export class CampfireGuitarGame {
       this.cheerLevel = Math.min(1.0, this.cheerLevel + 0.03);
       this.lastFeedback = { text: 'DOBRZE! 🎵', color: '#eab308', timestamp: performance.now() };
 
-      this.synth.playChord(candidate.chordName, candidate.lane);
+      this.synth.playChord(candidate.chordName, candidate.lane, this.currentSong?.id);
       this.callbacks?.onPlayChord?.(candidate.chordName);
 
       return {
