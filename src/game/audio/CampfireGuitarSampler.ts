@@ -432,9 +432,12 @@ export class CampfireGuitarSampler {
 
       const startTime = Math.max(this.ctx.currentTime, time);
       const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0.0001, startTime);
-      gain.gain.linearRampToValueAtTime(Math.max(0.01, volume), startTime + 0.005);
-      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+      const safeVol = Math.max(0.01, volume);
+      const releaseStart = Math.max(startTime + 0.05, startTime + duration - 0.15);
+
+      gain.gain.setValueAtTime(safeVol, startTime);
+      gain.gain.setValueAtTime(safeVol, releaseStart);
+      gain.gain.linearRampToValueAtTime(0.0001, startTime + duration);
 
       source.connect(gain);
       gain.connect(this.outputNode);
