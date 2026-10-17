@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ConsumableInventory, inventoryEffects } from './ConsumableInventory';
+import { ConsumableInventory, inventoryEffects, HOTBAR_EFFECTS } from './ConsumableInventory';
 
 describe('ConsumableInventory', () => {
+  it('defines the 4 HUD hotbar slots as Piwo, Papieros, Joint, and Woda', () => {
+    expect(HOTBAR_EFFECTS).toEqual(['Piwo', 'Papieros', 'Joint', 'Woda']);
+  });
+
   it('starts empty for every supported effect', () => {
     const inventory = new ConsumableInventory();
 

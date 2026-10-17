@@ -9,6 +9,7 @@
   #dialog,
   #effect-warning {
     z-index: 1500;
+    pointer-events: auto;
   }
   #inspect {
     z-index: 1500;

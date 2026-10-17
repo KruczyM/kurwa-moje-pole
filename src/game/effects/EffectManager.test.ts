@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { EffectManager, defaultVisualSettings, effectConfigs } from './EffectManager';
+import { EffectManager, defaultVisualSettings, effectConfigs, isFloatBlendSupported } from './EffectManager';
 
 beforeAll(() => {
   (globalThis as unknown as { window: unknown }).window = {
@@ -267,6 +267,39 @@ describe('accessibility settings & reduced motion', () => {
 
       expect(manager.bloom.strength).toBeCloseTo(standardBloom * 0.5, 1);
       expect(manager.shader.uniforms.brightness.value).toBeLessThan(0);
+
+      manager.dispose();
+    });
+  });
+
+  describe('mobile & iOS WebGL safety', () => {
+    it('isFloatBlendSupported handles mock renderer safely without throwing', () => {
+      const dummyRenderer = createMockRenderer();
+      expect(typeof isFloatBlendSupported(dummyRenderer)).toBe('boolean');
+    });
+
+    it('attaches OutputPass to composer for color space & tone mapping integrity', () => {
+      const dummyRenderer = createMockRenderer();
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera();
+
+      const manager = new EffectManager(dummyRenderer, scene, camera);
+      expect(manager.outputPass).toBeDefined();
+      expect(manager.composer.passes.includes(manager.outputPass)).toBe(true);
+
+      manager.dispose();
+    });
+
+    it('clamps composer DPR to 1.5 during resize to prevent VRAM overflow', () => {
+      const dummyRenderer = createMockRenderer();
+      dummyRenderer.getPixelRatio = () => 3.0; // Simulated Retina iPhone
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera();
+
+      const manager = new EffectManager(dummyRenderer, scene, camera);
+      manager.resize(400, 800);
+      // Composer pixel ratio should be capped at 1.5
+      expect((manager.composer as unknown as { _pixelRatio: number })._pixelRatio).toBeLessThanOrEqual(1.5);
 
       manager.dispose();
     });

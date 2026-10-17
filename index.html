@@ -41,47 +41,119 @@
         <div id="character-preview-layer" class="character-preview-layer"></div>
         <div class="start-actions">
           <button id="play" class="btn-primary-play">WEJDŹ NA POLE</button>
+
+          <div class="start-arcade-showcase start-arcade-bar" aria-label="Salon automatów retro 2D">
+            <div class="arcade-showcase-header">
+              <span class="arcade-badge">🕹️ SALON AUTOMATÓW 2D</span>
+              <span class="arcade-subtitle">Gry zręcznościowe na festiwalu</span>
+            </div>
+            <div class="arcade-cards-grid">
+              <a
+                id="play-fighter"
+                class="arcade-card arcade-card-fighter minigame-link"
+                href="./fighter-demo.html"
+                target="_blank"
+                rel="noopener"
+              >
+                <div class="arcade-card-top">
+                  <span class="arcade-chip chip-fighter">🥊 BIJATYKA 2D</span>
+                  <span class="arcade-arrow">↗</span>
+                </div>
+                <div class="arcade-card-content">
+                  <strong class="arcade-title">Kurwa, Moje Combo!</strong>
+                  <p class="arcade-desc">
+                    Retro bijatyka arcade: kombosy, superataki i walki festiwalowiczów pod sceną!
+                  </p>
+                </div>
+                <div class="arcade-play-btn">ZAGRAJ W BIJATYKĘ 🕹️</div>
+              </a>
+
+              <a
+                id="play-bongo-rush"
+                class="arcade-card arcade-card-bongo minigame-link"
+                href="./bongo-rush.html"
+                target="_blank"
+                rel="noopener"
+              >
+                <div class="arcade-card-top">
+                  <span class="arcade-chip chip-bongo">🪘 ZRĘCZNOŚCIÓWKA 2D</span>
+                  <span class="arcade-arrow">↗</span>
+                </div>
+                <div class="arcade-card-content">
+                  <strong class="arcade-title">Walka o Tasiorowe Bongo</strong>
+                  <p class="arcade-desc">
+                    Podziemny rajd po bongo, skoki po kładkach i ucieczka przed patrolem!
+                  </p>
+                </div>
+                <div class="arcade-play-btn">ZAGRAJ W BONGO RUSH 🕹️</div>
+              </a>
+            </div>
+          </div>
+
           <div class="start-secondary-actions">
             <button id="play-freecam" type="button" class="freecam-btn">SWOBODNA KAMERA (Ctrl+K)</button>
             <button id="start-guide-btn" type="button" class="guide-btn">📖 PRZEWODNIK I SKRÓTY (H)</button>
             <button id="start-map-btn" type="button" class="map-btn">🗺️ MAPA FESTIWALU (M)</button>
           </div>
-          <div class="start-arcade-bar" aria-label="Automaty 2D">
-            <span class="arcade-label">🕹️ SALON GIER 2D:</span>
-            <a
-              id="play-fighter"
-              class="minigame-link"
-              href="./fighter-demo.html"
-              target="_blank"
-              rel="noopener"
-              >KURWA, MOJE COMBO! · BIJATYKA 2D ↗</a
-            >
-            <a
-              id="play-bongo-rush"
-              class="minigame-link"
-              href="./bongo-rush.html"
-              target="_blank"
-              rel="noopener"
-              >WALKA O TASIOROWE BONGO · MINIGRA 2D ↗</a
-            >
-          </div>
         </div>
         <small id="start-controls"></small>
       </section>
       <section id="loading" hidden>
-        <strong>ŁADOWANIE OBOZU</strong>
-        <span id="load-text">Przygotowywanie sceny…</span>
-        <small id="asset-cache-status" role="status">Sprawdzanie lokalnego cache assetów…</small>
-        <div id="load-progress-bar-container" class="load-progress-bar-container">
-          <div id="load-progress-bar" class="load-progress-bar" style="width: 0%"></div>
-        </div>
-        <button id="skip-crowd-btn" type="button" class="skip-crowd-btn" hidden>
-          WEJDŹ OD RAZU (DOCZYTAJ W TLE)
-        </button>
-        <span id="load-error" hidden></span>
-        <div id="load-actions" hidden>
-          <button id="retry-load">SPRÓBUJ PONOWNIE</button
-          ><button id="back-to-start">WRÓĆ DO WYBORU POSTACI</button>
+        <div class="loading-shell">
+          <header class="loading-header">
+            <strong>KURWA MOJE POLE</strong>
+            <span class="loading-subtitle">Trwa wczytywanie festiwalu…</span>
+          </header>
+
+          <div class="loading-tips-card" id="loading-tips-card">
+            <div class="loading-tips-top">
+              <span class="tips-tag">💡 CO MOŻNA ROBIĆ NA FESTIWALU?</span>
+              <span id="loading-tip-counter" class="tips-counter">1/9</span>
+            </div>
+            <div class="loading-tip-content">
+              <h4 id="loading-tip-title" class="loading-tip-title">🎸 Ogniskowe granie na gitarze</h4>
+              <p id="loading-tip-text" class="loading-tip-text">
+                Odwiedź ognisko obok obozu i chwyć za gitarę! Zagraj legendarne rockowe utwory w minigrze
+                rytmicznej z autentycznym brzmieniem stalowych strun.
+              </p>
+            </div>
+            <div class="loading-tips-nav">
+              <button
+                type="button"
+                id="loading-tip-prev"
+                class="tip-nav-btn"
+                aria-label="Poprzednia wskazówka"
+              >
+                ‹
+              </button>
+              <span class="tip-nav-label">Wskazówki festiwalowe</span>
+              <button type="button" id="loading-tip-next" class="tip-nav-btn" aria-label="Następna wskazówka">
+                ›
+              </button>
+            </div>
+          </div>
+
+          <div class="loading-progress-block">
+            <div class="loading-progress-meta">
+              <span>Postęp</span>
+              <strong id="load-percent" class="load-percent">0%</strong>
+            </div>
+            <div id="load-progress-bar-container" class="load-progress-bar-container">
+              <div id="load-progress-bar" class="load-progress-bar" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <span id="load-text" style="display: none">0%</span>
+          <small id="asset-cache-status" role="status" style="display: none"></small>
+
+          <button id="skip-crowd-btn" type="button" class="skip-crowd-btn" hidden>
+            WEJDŹ OD RAZU (DOCZYTAJ W TLE)
+          </button>
+          <span id="load-error" hidden></span>
+          <div id="load-actions" hidden>
+            <button id="retry-load">SPRÓBUJ PONOWNIE</button
+            ><button id="back-to-start">WRÓĆ DO WYBORU POSTACI</button>
+          </div>
         </div>
       </section>
       <section id="hud" hidden>
@@ -121,7 +193,7 @@
           <button class="hotbar-slot" data-slot="2" type="button" title="Użyj: Joint [3]">
             <kbd>3</kbd><span class="slot-icon">🌿</span><span class="slot-count">×0</span>
           </button>
-          <button class="hotbar-slot" data-slot="3" type="button" title="Użyj: Woda [4]">
+          <button class="hotbar-slot" data-slot="3" type="button" title="Użyj: Woda (antidotum) [4]">
             <kbd>4</kbd><span class="slot-icon">💧</span><span class="slot-count">×0</span>
           </button>
         </div>
@@ -1043,6 +1115,14 @@
         aria-describedby="effect-warning-desc"
         hidden
       >
+        <button
+          id="warning-close-btn"
+          class="dialog-close-btn"
+          type="button"
+          aria-label="Zamknij ostrzeżenie"
+        >
+          ×
+        </button>
         <h2 id="effect-warning-title">Ostrzeżenie o intensywnych efektach</h2>
         <p id="effect-warning-desc">
           Ten fikcyjny efekt zawiera intensywne bodźce wizualne: zniekształcenia obrazu, światło i ruch

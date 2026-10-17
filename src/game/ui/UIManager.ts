@@ -2,7 +2,7 @@ import { type EffectId, type EffectPhase, type VisualSettings } from '../effects
 import { type AudioSettings } from '../services/SettingsService';
 import { type AppState } from '../lifecycle/AppStateMachine';
 import { controlHintForState } from '../lifecycle/InputBindings';
-import { type ConsumableInventory } from '../inventory/ConsumableInventory';
+import { type ConsumableInventory, HOTBAR_EFFECTS } from '../inventory/ConsumableInventory';
 import { type FlankiHudState } from '../interactions/FlankiGame';
 import { type FlankiRoster } from '../interactions/FlankiRoster';
 import { type GuitarHudState, FESTIVAL_GUITAR_SONGS } from '../interactions/CampfireGuitarGame';
@@ -49,6 +49,7 @@ export class UIManager {
   private guitarButtonsBound = false;
   private lastGuitarOnHitLane?: (lane: number) => void;
   private lastGuitarOnExit?: () => void;
+  private lastGuitarSongId?: string;
 
   constructor() {
     this.initGuideTabs();
@@ -135,16 +136,10 @@ export class UIManager {
   }
 
   updateHotbar(inventory: ConsumableInventory): void {
-    const slots = [
-      { id: 'Piwo' as EffectId, icon: '🍺' },
-      { id: 'Papieros' as EffectId, icon: '🚬' },
-      { id: 'Joint' as EffectId, icon: '🌿' },
-      { id: 'Woda' as EffectId, icon: '💧' },
-    ];
-    slots.forEach((slot, index) => {
+    HOTBAR_EFFECTS.forEach((id, index) => {
       const btn = this.qs<HTMLButtonElement>(`#hud-hotbar .hotbar-slot[data-slot="${index}"]`);
       if (!btn) return;
-      const count = inventory.quantity(slot.id);
+      const count = inventory.quantity(id);
       const countEl = btn.querySelector('.slot-count');
       if (countEl) countEl.textContent = `×${count}`;
       btn.classList.toggle('has-items', count > 0);
@@ -445,7 +440,7 @@ export class UIManager {
             (s) =>
               `<button type="button" class="guitar-song-option" data-song-id="${s.id}">
                 <strong>${s.title}</strong>
-                <span>${s.artist} · ${s.difficulty}${s.license ? ` · ${s.license}` : ''}</span>
+                <span>${s.artist}</span>
               </button>`,
           ).join('');
 
@@ -460,17 +455,41 @@ export class UIManager {
     }
 
     // Spadające nuty na gryfie (5 torów: 0..4 -> (lane + 0.5) * 20%)
+    // Optymalizacja dla urządzeń mobilnych: recykling węzłów DOM zamiast niszczenia innerHTML co klatkę.
     const container = this.qs<HTMLElement>('#guitar-notes-container');
     if (container) {
-      const notesHtml = state.activeNotes
-        .map((note) => {
-          const leftPercent = (note.lane + 0.5) * 20;
-          const topPercent = Math.min(95, note.progress * 86);
-          return `<div class="guitar-note-gem lane-${note.lane}" style="left: ${leftPercent}%; top: ${topPercent}%;">${note.chordName}</div>`;
-        })
-        .join('');
-      if (container.innerHTML !== notesHtml) {
-        container.innerHTML = notesHtml;
+      if (container.children && typeof container.removeChild === 'function' && typeof document !== 'undefined') {
+        const activeNotes = state.activeNotes;
+        const children = container.children;
+        while (children.length > activeNotes.length && container.lastChild) {
+          container.removeChild(container.lastChild);
+        }
+        for (let i = 0; i < activeNotes.length; i++) {
+          const note = activeNotes[i];
+          let el = children[i] as HTMLElement;
+          if (!el) {
+            el = document.createElement('div');
+            container.appendChild(el);
+          }
+          const expectedClass = `guitar-note-gem lane-${note.lane}`;
+          if (el.className !== expectedClass) el.className = expectedClass;
+          const left = `${(note.lane + 0.5) * 20}%`;
+          const top = `${Math.min(95, note.progress * 86)}%`;
+          if (el.style.left !== left) el.style.left = left;
+          if (el.style.top !== top) el.style.top = top;
+          if (el.textContent !== note.chordName) el.textContent = note.chordName;
+        }
+      } else {
+        const notesHtml = state.activeNotes
+          .map((note) => {
+            const leftPercent = (note.lane + 0.5) * 20;
+            const topPercent = Math.min(95, note.progress * 86);
+            return `<div class="guitar-note-gem lane-${note.lane}" style="left: ${leftPercent}%; top: ${topPercent}%;">${note.chordName}</div>`;
+          })
+          .join('');
+        if (container.innerHTML !== notesHtml) {
+          container.innerHTML = notesHtml;
+        }
       }
     }
 
@@ -501,6 +520,27 @@ export class UIManager {
           if (onExit) onExit();
         };
       }
+    }
+
+    const currentSongId = state.currentSong?.id;
+    if (this.lastGuitarSongId !== currentSongId) {
+      this.lastGuitarSongId = currentSongId;
+      const hitButtons =
+        typeof hud.querySelectorAll === 'function'
+          ? hud.querySelectorAll<HTMLButtonElement>('.guitar-hit-btn')
+          : [];
+      const keys = ['A', 'S', 'D', 'F', 'G'];
+      const chords = state.currentSong?.chords ?? [];
+      hitButtons.forEach((btn) => {
+        const lane = Number(btn.getAttribute('data-lane'));
+        if (!isNaN(lane) && lane >= 0 && lane < 5) {
+          const keyChar = keys[lane];
+          const chord = chords[lane];
+          btn.innerHTML = chord
+            ? `${keyChar}<span class="guitar-btn-chord">${chord}</span>`
+            : keyChar;
+        }
+      });
     }
   }
 

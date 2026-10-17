@@ -47,6 +47,7 @@ import {
   ConsumableInventory,
   DEFAULT_STARTER_INVENTORY,
   inventoryEffects,
+  HOTBAR_EFFECTS,
 } from './inventory/ConsumableInventory';
 import { ItemUseSequence } from './interactions/ItemUseSequence';
 import { itemUseSequenceConfig } from './interactions/itemUseSequenceConfig';
@@ -72,6 +73,7 @@ import { WheelRideController } from './world/WheelRideController';
 import { SpatialStageAcoustics } from './audio/SpatialStageAcoustics';
 import { ConcertLibrary } from './audio/ConcertLibrary';
 import { ConcertState } from './npc/ConcertState';
+import { LoadingTipsController } from './ui/LoadingTipsController';
 
 /** Zwraca wymagany element interfejsu i zachowuje jego typ TypeScript. */
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -131,6 +133,9 @@ export class Game {
   interactions?: InteractionManager;
   toiletTimer = 0;
   private networkSyncTimer = 0;
+  private guitarNpcThrottleTimer = 0;
+  private wasGuitarAudioMuted = false;
+  private wasSpeakerPlayingBeforeGuitar = false;
   readonly settingsService = new SettingsService();
   get settings(): VisualSettings {
     return this.settingsService.visual;
@@ -143,6 +148,7 @@ export class Game {
     getPropModel: (id) => this.propModels.get(id),
   });
   readonly ui = new UIManager();
+  readonly loadingTipsController = new LoadingTipsController();
   festivalMap: FestivalMap | null = null;
   private stageLiveScreens?: StageLiveScreens;
   private events = new EventScope();
@@ -372,8 +378,8 @@ export class Game {
         this.events.listen(btn, 'click', (e) => {
           e.preventDefault();
           const slot = parseInt(btn.dataset.slot ?? '-1', 10);
-          if (slot >= 0 && slot < inventoryEffects.length) {
-            this.useInventoryEffect(inventoryEffects[slot]);
+          if (slot >= 0 && slot < HOTBAR_EFFECTS.length) {
+            this.useInventoryEffect(HOTBAR_EFFECTS[slot]);
           }
         });
       });
@@ -409,9 +415,40 @@ export class Game {
       error = qs('#load-error');
     error.hidden = true;
     error.textContent = '';
+
+    const progressBar =
+      typeof document !== 'undefined' ? document.querySelector<HTMLDivElement>('#load-progress-bar') : null;
+    const percentText =
+      typeof document !== 'undefined' ? document.querySelector<HTMLElement>('#load-percent') : null;
+
+    const setLoadingProgress = (percent: number) => {
+      const clamped = Math.max(0, Math.min(100, Math.round(percent)));
+      if (progressBar) progressBar.style.width = `${clamped}%`;
+      if (percentText) percentText.textContent = `${clamped}%`;
+      if (text) text.textContent = `${clamped}%`;
+    };
+
+    setLoadingProgress(0);
+
+    this.loadingTipsController.bindElements({
+      titleElement: typeof document !== 'undefined' ? document.querySelector('#loading-tip-title') : null,
+      textElement: typeof document !== 'undefined' ? document.querySelector('#loading-tip-text') : null,
+      counterElement: typeof document !== 'undefined' ? document.querySelector('#loading-tip-counter') : null,
+      cardElement: typeof document !== 'undefined' ? document.querySelector('#loading-tips-card') : null,
+      prevButton: typeof document !== 'undefined' ? document.querySelector('#loading-tip-prev') : null,
+      nextButton: typeof document !== 'undefined' ? document.querySelector('#loading-tip-next') : null,
+    });
+    this.loadingTipsController.start();
+
     try {
+      let baseLoadedCount = 0;
+      const expectedBaseCount = 20;
       const loader = new AssetLoader(
-        (message) => (text.textContent = message),
+        () => {
+          baseLoadedCount++;
+          const percent = Math.min(35, Math.round((baseLoadedCount / expectedBaseCount) * 35));
+          setLoadingProgress(percent);
+        },
         (message) => {
           error.textContent = message;
           error.hidden = false;
@@ -422,6 +459,7 @@ export class Game {
       );
       if (this.fogTrial) this.sectorLoader = loader;
       const assets = await loader.loadAll();
+      setLoadingProgress(35);
       if (this.disposed) return;
       if (this.contextLost) throw new Error('WebGL utracony podczas ładowania modeli.');
       if (assets.characters.size === 0)
@@ -733,8 +771,6 @@ export class Game {
         });
       }
 
-      const progressBar =
-        typeof document !== 'undefined' ? document.querySelector<HTMLDivElement>('#load-progress-bar') : null;
       const skipCrowdBtn =
         typeof document !== 'undefined' ? document.querySelector<HTMLButtonElement>('#skip-crowd-btn') : null;
 
@@ -749,26 +785,22 @@ export class Game {
       }
 
       if (this.settings.preloadCrowd !== false && !this.graphics.mobile) {
-        text.textContent = `Wczytywanie postaci festiwalowiczów (0/${festivalNpcAssets.length})…`;
-        if (progressBar) progressBar.style.width = '20%';
+        setLoadingProgress(38);
         await loader.loadFestivalNpcs(
           (asset, model) => this.npcs?.addFestivalNpc(asset, model) ?? false,
           () => this.disposed || skippedCrowd,
-          (loaded, total, name) => {
+          (loaded, total) => {
             if (this.disposed || skippedCrowd) return;
-            const percent = 20 + Math.round((loaded / total) * 60);
-            if (progressBar) progressBar.style.width = `${percent}%`;
-            text.textContent = `Wczytywanie festiwalowiczów (${loaded}/${total}): ${name}`;
+            const percent = 38 + Math.round((loaded / total) * 44);
+            setLoadingProgress(percent);
           },
           4,
         );
       }
 
       if (skipCrowdBtn) skipCrowdBtn.hidden = true;
-      if (progressBar) progressBar.style.width = '85%';
-      text.textContent = 'Rozgrzewka grafiki i shaderów…';
+      setLoadingProgress(84);
       if (this.sectorStreamer) {
-        text.textContent = 'Wczytywanie najbliższych sektorów festiwalu…';
         await this.sectorStreamer.prime(this.camera.position);
         if (this.disposed) return;
         this.sectorSafePosition.copy(this.camera.position);
@@ -779,10 +811,12 @@ export class Game {
         }
         this.distanceVisibility?.update(1, this.camera.position);
       }
+      setLoadingProgress(92);
       await this.warmUpGpu();
       if (this.contextLost) throw new Error('WebGL utracony podczas przygotowania grafiki.');
-      if (progressBar) progressBar.style.width = '100%';
+      setLoadingProgress(100);
 
+      this.loadingTipsController.stop();
       this.startLoop();
       this.state.transition('playing');
       if (this.fogTrial) this.stageLiveScreens?.setVideoPlaylist(this.stageAcoustics);
@@ -825,6 +859,7 @@ export class Game {
         this.toast(`Obóz i festiwalowicze gotowi (${loadedCount} postaci). Miłej zabawy!`);
       }
     } catch (cause) {
+      this.loadingTipsController.stop();
       if (this.disposed) return;
       error.textContent = `Nie udało się uruchomić gry: ${cause instanceof Error ? cause.message : String(cause)}`;
       error.hidden = false;
@@ -1032,8 +1067,8 @@ export class Game {
     }
     if (action.startsWith('quick-slot-')) {
       const slotIndex = parseInt(action.replace('quick-slot-', ''), 10) - 1;
-      if (slotIndex >= 0 && slotIndex < inventoryEffects.length) {
-        this.useInventoryEffect(inventoryEffects[slotIndex]);
+      if (slotIndex >= 0 && slotIndex < HOTBAR_EFFECTS.length) {
+        this.useInventoryEffect(HOTBAR_EFFECTS[slotIndex]);
         return;
       }
     }
@@ -1664,11 +1699,39 @@ export class Game {
     this.ui.syncSettings(this.settings, this.audioSettings);
   }
 
+  /** Wycisza wszystkie inne dźwięki w grze, gdy gracz gra na gitarze przy ognisku, i przywraca je po zakończeniu. */
+  private muteWorldAudioForGuitar(mute: boolean): void {
+    if (mute) {
+      if (!this.wasGuitarAudioMuted) {
+        this.wasGuitarAudioMuted = true;
+        this.wasSpeakerPlayingBeforeGuitar = this.speakerAudio.isPlaying;
+        if (this.speakerAudio.isPlaying) {
+          this.speakerAudio.stopImmediate();
+        }
+        this.campAmbient.pause();
+        this.grzybekAudio.pause();
+        this.stageAcoustics.setUserVolume(0);
+      }
+    } else {
+      if (this.wasGuitarAudioMuted) {
+        this.wasGuitarAudioMuted = false;
+        this.campAmbient.resume();
+        this.grzybekAudio.resume();
+        if (this.wasSpeakerPlayingBeforeGuitar) {
+          void this.speakerAudio.play();
+          this.wasSpeakerPlayingBeforeGuitar = false;
+        }
+        this.syncStageAudio();
+      }
+    }
+  }
+
   /** Synchronizuje HUD, modale, sterowanie graczem i pointer lock ze stanem aplikacji. */
   private syncStageAudio() {
+    const isGuitarActive = this.campfireGuitarGame.getPhase() !== 'idle';
     this.stageAcoustics.update(this.camera.position, this.player?.yaw ?? 0);
     this.stageAcoustics.setUserVolume(
-      isStageAudioEnabled(this.state.current) ? this.audioSettings.ambientVolume : 0,
+      isStageAudioEnabled(this.state.current) && !isGuitarActive ? this.audioSettings.ambientVolume : 0,
     );
   }
 
@@ -1806,6 +1869,8 @@ export class Game {
     }
     const dt = Math.min(frameElapsed, 0.05),
       state = this.state.current;
+    const isGuitarActive = this.campfireGuitarGame.getPhase() !== 'idle';
+    this.muteWorldAudioForGuitar(isGuitarActive);
     if (this.checkMobileSector()) {
       this.updateSharedSectorTransition(dt);
       return;
@@ -1835,7 +1900,21 @@ export class Game {
         this.updateInteractionPrompt();
       }
       if (state === 'playing' || state === 'seated') {
-        this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position, this.speakerAudio.isPlaying);
+        if (isGuitarActive) {
+          this.guitarNpcThrottleTimer += dt;
+          if (this.guitarNpcThrottleTimer >= 0.15) {
+            this.npcs?.update(
+              this.guitarNpcThrottleTimer,
+              this.clock.elapsedTime,
+              this.camera.position,
+              false,
+            );
+            this.guitarNpcThrottleTimer = 0;
+          }
+        } else {
+          this.guitarNpcThrottleTimer = 0;
+          this.npcs?.update(dt, this.clock.elapsedTime, this.camera.position, this.speakerAudio.isPlaying);
+        }
       }
       if ((state === 'playing' || state === 'seated') && this.networkClient?.isOnline()) {
         this.networkSyncTimer += dt;
@@ -1893,7 +1972,9 @@ export class Game {
           if (this.state.current === 'using-item') this.state.transition('playing');
         }
       }
-      this.voiceReactions.update(dt, this.effects?.active || null, this.effects?.phase || 'inactive');
+      if (!isGuitarActive) {
+        this.voiceReactions.update(dt, this.effects?.active || null, this.effects?.phase || 'inactive');
+      }
       // Material-swapping effects must never own the same meshes simultaneously.
       if (this.effects?.active === 'Grzyb') this.matrixWireframe.update(false, 0, false);
       this.mushroomWireframe.update(
@@ -1935,25 +2016,27 @@ export class Game {
       this.mushroomWireframe.update(false, 0, 0, false);
       this.matrixWireframe.update(false, 0, false);
     }
-    this.npcDebugOverlay?.update(this.camera);
-    this.distanceVisibility?.update(dt, this.camera.position);
-    this.sectorStreamer?.update(dt, this.camera.position);
-    this.stageLiveScreens?.update(
-      dt,
-      this.renderer,
-      this.camera,
-      this.remotePlayersManager?.getPlayerMarkers() ?? [],
-      this.networkClient?.isOnline() && this.player
-        ? {
-            id: this.networkClient?.getMyPlayerId() ?? 'local',
-            name: 'Ty',
-            x: this.camera.position.x,
-            z: this.camera.position.z,
-            yaw: this.player.yaw,
-            y: this.player.isAirborne() ? this.camera.position.y - 1.9 : 0,
-          }
-        : undefined,
-    );
+    if (!isGuitarActive) {
+      this.npcDebugOverlay?.update(this.camera);
+      this.distanceVisibility?.update(dt, this.camera.position);
+      this.sectorStreamer?.update(dt, this.camera.position);
+      this.stageLiveScreens?.update(
+        dt,
+        this.renderer,
+        this.camera,
+        this.remotePlayersManager?.getPlayerMarkers() ?? [],
+        this.networkClient?.isOnline() && this.player
+          ? {
+              id: this.networkClient?.getMyPlayerId() ?? 'local',
+              name: 'Ty',
+              x: this.camera.position.x,
+              z: this.camera.position.z,
+              yaw: this.player.yaw,
+              y: this.player.isAirborne() ? this.camera.position.y - 1.9 : 0,
+            }
+          : undefined,
+      );
+    }
     this.effects?.render();
     this.updateEffectHud();
     this.ui.updateFlankiHud(this.world?.flankiGame?.getHudState() ?? null);
@@ -2414,6 +2497,7 @@ export class Game {
     this.flankiNetworkCleanup.forEach((cleanup) => cleanup());
     if (this.disposed) return;
     this.disposed = true;
+    this.muteWorldAudioForGuitar(false);
     this.animationLoop.stop();
     this.ui.dispose();
     this.events.dispose();
@@ -2455,6 +2539,7 @@ export class Game {
     this.grzybekAudio.dispose();
     this.voiceReactions.dispose();
     this.campfireGuitarGame.dispose();
+    this.loadingTipsController.dispose();
     if (document.pointerLockElement === this.canvas) document.exitPointerLock();
     // Include detached mobile pool entries in the one shared-resource disposal pass.
     for (const npc of this.npcs?.npcs ?? []) if (!npc.root.parent) this.scene.add(npc.root);
