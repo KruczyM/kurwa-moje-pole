@@ -50,7 +50,6 @@ button:hover {
   color: #142010;
 }
 #start,
-#loading,
 #pause,
 #dialog,
 #inventory,
@@ -140,6 +139,9 @@ h1 i {
   line-height: 1.8;
 }
 #loading {
+  position: relative;
+  z-index: 10;
+  pointer-events: none;
   height: 100%;
   display: flex;
   align-items: center;
@@ -151,6 +153,9 @@ h1 i {
   overflow: auto;
 }
 .loading-shell {
+  position: relative;
+  z-index: 12;
+  pointer-events: auto;
   width: 100%;
   max-width: 480px;
   display: flex;
@@ -181,7 +186,7 @@ h1 i {
   padding: 16px 18px;
   box-sizing: border-box;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition: opacity 0.18s ease;
   min-height: 140px;
   display: flex;
   flex-direction: column;
@@ -189,7 +194,6 @@ h1 i {
 }
 .loading-tips-card.tip-fading {
   opacity: 0.15;
-  transform: translateY(3px);
 }
 .loading-tips-top {
   display: flex;
@@ -240,6 +244,9 @@ h1 i {
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 .tip-nav-btn {
+  position: relative;
+  z-index: 20;
+  pointer-events: auto;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #ffe34d;
@@ -253,11 +260,11 @@ h1 i {
   justify-content: center;
   padding: 0;
   line-height: 1;
-  transition: background 0.15s, transform 0.15s;
+  transition: background 0.15s, border-color 0.15s;
 }
 .tip-nav-btn:hover {
-  background: rgba(250, 204, 21, 0.3);
-  transform: scale(1.1);
+  background: rgba(250, 204, 21, 0.35);
+  border-color: #facc15;
 }
 .tip-nav-label {
   font-size: 0.7rem;
