@@ -438,7 +438,7 @@ export class Game {
       prevButton: typeof document !== 'undefined' ? document.querySelector('#loading-tip-prev') : null,
       nextButton: typeof document !== 'undefined' ? document.querySelector('#loading-tip-next') : null,
     });
-    this.loadingTipsController.start(3800);
+    this.loadingTipsController.start();
 
     try {
       let baseLoadedCount = 0;

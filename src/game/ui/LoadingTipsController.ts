@@ -67,9 +67,12 @@ export const FESTIVAL_LOADING_TIPS: readonly FestivalLoadingTip[] = [
   },
 ];
 
+export const DEFAULT_TIP_INTERVAL_MS = 8000;
+
 export class LoadingTipsController {
   private currentIndex = 0;
   private intervalTimer: ReturnType<typeof setInterval> | null = null;
+  private currentIntervalMs = DEFAULT_TIP_INTERVAL_MS;
   private readonly tips: readonly FestivalLoadingTip[];
   private titleElement: Element | null = null;
   private textElement: Element | null = null;
@@ -117,11 +120,21 @@ export class LoadingTipsController {
     this.nextButton = options.nextButton ?? null;
 
     if (this.prevButton) {
-      this.prevHandler = () => this.prev();
+      this.prevHandler = () => {
+        this.prev();
+        if (this.intervalTimer !== null) {
+          this.restartIntervalTimer();
+        }
+      };
       this.prevButton.addEventListener?.('click', this.prevHandler);
     }
     if (this.nextButton) {
-      this.nextHandler = () => this.next();
+      this.nextHandler = () => {
+        this.next();
+        if (this.intervalTimer !== null) {
+          this.restartIntervalTimer();
+        }
+      };
       this.nextButton.addEventListener?.('click', this.nextHandler);
     }
 
@@ -141,12 +154,21 @@ export class LoadingTipsController {
     }
   }
 
-  public start(intervalMs = 3800): void {
+  public start(intervalMs = DEFAULT_TIP_INTERVAL_MS): void {
+    this.currentIntervalMs = intervalMs;
     this.stop();
     this.renderCurrentTip();
+    this.restartIntervalTimer();
+  }
+
+  private restartIntervalTimer(): void {
+    if (this.intervalTimer !== null) {
+      clearInterval(this.intervalTimer);
+      this.intervalTimer = null;
+    }
     this.intervalTimer = setInterval(() => {
       this.next();
-    }, intervalMs);
+    }, this.currentIntervalMs);
   }
 
   public stop(): void {
