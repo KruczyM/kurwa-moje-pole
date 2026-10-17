@@ -41,29 +41,55 @@
         <div id="character-preview-layer" class="character-preview-layer"></div>
         <div class="start-actions">
           <button id="play" class="btn-primary-play">WEJDŹ NA POLE</button>
+
+          <div class="start-arcade-showcase start-arcade-bar" aria-label="Salon automatów retro 2D">
+            <div class="arcade-showcase-header">
+              <span class="arcade-badge">🕹️ SALON AUTOMATÓW 2D</span>
+              <span class="arcade-subtitle">Gry zręcznościowe na festiwalu</span>
+            </div>
+            <div class="arcade-cards-grid">
+              <a
+                id="play-fighter"
+                class="arcade-card arcade-card-fighter minigame-link"
+                href="./fighter-demo.html"
+                target="_blank"
+                rel="noopener"
+              >
+                <div class="arcade-card-top">
+                  <span class="arcade-chip chip-fighter">🥊 BIJATYKA 2D</span>
+                  <span class="arcade-arrow">↗</span>
+                </div>
+                <div class="arcade-card-content">
+                  <strong class="arcade-title">Kurwa, Moje Combo!</strong>
+                  <p class="arcade-desc">Retro bijatyka arcade: kombosy, superataki i walki festiwalowiczów pod sceną!</p>
+                </div>
+                <div class="arcade-play-btn">ZAGRAJ W BIJATYKĘ 🕹️</div>
+              </a>
+
+              <a
+                id="play-bongo-rush"
+                class="arcade-card arcade-card-bongo minigame-link"
+                href="./bongo-rush.html"
+                target="_blank"
+                rel="noopener"
+              >
+                <div class="arcade-card-top">
+                  <span class="arcade-chip chip-bongo">🪘 ZRĘCZNOŚCIÓWKA 2D</span>
+                  <span class="arcade-arrow">↗</span>
+                </div>
+                <div class="arcade-card-content">
+                  <strong class="arcade-title">Walka o Tasiorowe Bongo</strong>
+                  <p class="arcade-desc">Podziemny rajd po bongo, skoki po kładkach i ucieczka przed patrolem!</p>
+                </div>
+                <div class="arcade-play-btn">ZAGRAJ W BONGO RUSH 🕹️</div>
+              </a>
+            </div>
+          </div>
+
           <div class="start-secondary-actions">
             <button id="play-freecam" type="button" class="freecam-btn">SWOBODNA KAMERA (Ctrl+K)</button>
             <button id="start-guide-btn" type="button" class="guide-btn">📖 PRZEWODNIK I SKRÓTY (H)</button>
             <button id="start-map-btn" type="button" class="map-btn">🗺️ MAPA FESTIWALU (M)</button>
-          </div>
-          <div class="start-arcade-bar" aria-label="Automaty 2D">
-            <span class="arcade-label">🕹️ SALON GIER 2D:</span>
-            <a
-              id="play-fighter"
-              class="minigame-link"
-              href="./fighter-demo.html"
-              target="_blank"
-              rel="noopener"
-              >KURWA, MOJE COMBO! · BIJATYKA 2D ↗</a
-            >
-            <a
-              id="play-bongo-rush"
-              class="minigame-link"
-              href="./bongo-rush.html"
-              target="_blank"
-              rel="noopener"
-              >WALKA O TASIOROWE BONGO · MINIGRA 2D ↗</a
-            >
           </div>
         </div>
         <small id="start-controls"></small>
