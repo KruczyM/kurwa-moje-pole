@@ -109,6 +109,11 @@
     flex-wrap: wrap;
     margin-left: 0;
   }
+  .festival-map-header,
+  .festival-map-canvas-wrapper,
+  .festival-map-legend {
+    flex-shrink: 0;
+  }
   #festival-map-canvas {
     max-width: 100%;
     height: auto;
@@ -324,5 +329,27 @@
   }
   #effect-hud {
     font-size: 10px;
+  }
+}
+
+@media (max-height: 500px) and (pointer: coarse) {
+  .festival-map-header h2 {
+    flex: 1 0 100%;
+    font-size: 15px;
+  }
+  .festival-map-header {
+    padding: 6px 10px;
+    gap: 4px 8px;
+  }
+  .festival-map-canvas-wrapper {
+    padding: 6px;
+  }
+  #festival-map-canvas {
+    max-height: 48dvh;
+  }
+  .festival-map-legend {
+    padding: 6px 10px;
+    font-size: 10px;
+    gap: 4px 8px;
   }
 }

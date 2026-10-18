@@ -54,10 +54,10 @@ describe('reopening the same cave on a phone', () => {
     renderer.resize(1912, 760, false);
     renderer.draw(game, undefined, 0, 0, true);
     const before = renderer.diagnostics();
-    expect(before.mapBounds!.x).toBeLessThanOrEqual(0.001);
-    expect(before.mapBounds!.x + before.mapBounds!.width).toBeGreaterThanOrEqual(1912 - 0.001);
-    expect(before.mapBounds!.y).toBeLessThanOrEqual(0.001);
-    expect(before.mapBounds!.y + before.mapBounds!.height).toBeGreaterThanOrEqual(760 - 0.001);
+    // Small maps retain readable scale and leave decorative surroundings instead of magnifying tiles.
+    expect(before.tileSize).toBeLessThanOrEqual(80);
+    expect(before.mapBounds!.width).toBeLessThan(1912);
+    expect(before.mapBounds!.x).toBeGreaterThan(0);
     renderer.showMap = true;
     renderer.draw(game, undefined, 0, 0, true);
     expect(renderer.diagnostics().minimap).toBeDefined();

@@ -1,0 +1,443 @@
+{
+  "adventure-boy": {
+    "title": "Adventure Boy",
+    "artist": "Armotonic",
+    "file": "adventure-boy.mp3",
+    "seconds": 21.368163,
+    "source": "armotonic-adventure-boy-loop-559127.mp3",
+    "sourceSha256": "f4a367b1b723e3e2a84668110bcb971cf8975b9abbb64243855a21172774494a",
+    "sha256": "da287651c51e164897bc401ab6f1bda791f0095738cbe48033ac191df8ca3a51",
+    "analysis": {
+      "input_i": "-11.30",
+      "input_tp": "-0.88",
+      "input_lra": "1.70",
+      "input_thresh": "-21.30",
+      "output_i": "-18.07",
+      "output_tp": "-7.65",
+      "output_lra": "1.80",
+      "output_thresh": "-28.07",
+      "normalization_type": "linear",
+      "target_offset": "0.07"
+    }
+  },
+  "space-ambient": {
+    "title": "Space Ambient",
+    "artist": "zec53",
+    "file": "space-ambient.mp3",
+    "seconds": 16.039184,
+    "source": "zec53-space-ambient-background-synth-and-drum-machine-loop-371303.mp3",
+    "sourceSha256": "0b52397c8168a52bf4808b45d48dd666db4fb3800e3ce3d592ad00a48f94f779",
+    "sha256": "21e4516e813ea2e808589fc3948e950f489ccf26bc7bae028c72cfa5a9b45954",
+    "analysis": {
+      "input_i": "-16.14",
+      "input_tp": "-3.42",
+      "input_lra": "1.00",
+      "input_thresh": "-26.14",
+      "output_i": "-18.00",
+      "output_tp": "-5.28",
+      "output_lra": "1.10",
+      "output_thresh": "-28.00",
+      "normalization_type": "linear",
+      "target_offset": "-0.00"
+    }
+  },
+  "kitchen-swing": {
+    "title": "Kitchen Fun",
+    "artist": "zec53",
+    "file": "kitchen-swing.mp3",
+    "seconds": 21.86449,
+    "source": "zec53-kitchen-fun-pizz-comical-swing-retro-loop-1-20-sec-400977.mp3",
+    "sourceSha256": "10840eb38a6a51e14836d1928ee1be33ada831568cb330712a9efd14ff22c049",
+    "sha256": "39dae9ae01319a0fbcfbaed8578a5036d443a2630f67fd5d70cbf00fb0dfa42c",
+    "analysis": {
+      "input_i": "-18.84",
+      "input_tp": "-0.44",
+      "input_lra": "3.20",
+      "input_thresh": "-28.84",
+      "output_i": "-17.96",
+      "output_tp": "-2.00",
+      "output_lra": "1.80",
+      "output_thresh": "-27.96",
+      "normalization_type": "dynamic",
+      "target_offset": "-0.04"
+    }
+  },
+  "relaxing-guitar": {
+    "title": "Relaxing Guitar Melody",
+    "artist": "idoberg",
+    "file": "relaxing-guitar.mp3",
+    "seconds": 20.453878,
+    "source": "idoberg-relaxing-guitar-melody-loop-am-94bpm-607337.mp3",
+    "sourceSha256": "cc831b2a6a94502a9f736879c4a5b1adaf4cfd9bb0e0c3197b607dbb60c45b7f",
+    "sha256": "8434019ad8c8c6fde1d639c0cfdeeeb693c852c090f04317b632bd295183119f",
+    "analysis": {
+      "input_i": "-15.00",
+      "input_tp": "-3.63",
+      "input_lra": "1.10",
+      "input_thresh": "-25.00",
+      "output_i": "-18.00",
+      "output_tp": "-6.63",
+      "output_lra": "1.10",
+      "output_thresh": "-28.00",
+      "normalization_type": "linear",
+      "target_offset": "0.00"
+    }
+  },
+  "ambient-space": {
+    "title": "Ambient Space",
+    "artist": "Universfield",
+    "file": "ambient-space.mp3",
+    "seconds": 30.072018,
+    "source": "universfield-ambient-space-background-30s-342767.mp3",
+    "sourceSha256": "64235cfb4099858d6fc6f1ca8c2df1a1cebb5da913184cfedd60b583414f1e59",
+    "sha256": "6388e2e217c06d9cfd0d04b43fe9f39f2ded4f992d03217f524fb5ba0965cd40",
+    "analysis": {
+      "input_i": "-24.07",
+      "input_tp": "-11.53",
+      "input_lra": "12.60",
+      "input_thresh": "-34.78",
+      "output_i": "-17.81",
+      "output_tp": "-5.27",
+      "output_lra": "12.60",
+      "output_thresh": "-28.52",
+      "normalization_type": "linear",
+      "target_offset": "-0.19"
+    }
+  },
+  "loop-three": {
+    "title": "Loop Three",
+    "artist": "Marc Vittorini",
+    "file": "loop-three.mp3",
+    "seconds": 30.746122,
+    "source": "marcvittorini-loop-three-295277.mp3",
+    "sourceSha256": "23b1237549e55b6bacb34de63d564f7d366d37ec7d5e71dffdcc989fe748b094",
+    "sha256": "3e56044ff78b77b711244955b78962e51384173e3ba5e7bf97207cc0df76ba1d",
+    "analysis": {
+      "input_i": "-14.43",
+      "input_tp": "0.07",
+      "input_lra": "0.80",
+      "input_thresh": "-24.43",
+      "output_i": "-17.91",
+      "output_tp": "-3.41",
+      "output_lra": "0.90",
+      "output_thresh": "-27.91",
+      "normalization_type": "linear",
+      "target_offset": "-0.09"
+    }
+  },
+  "sneaky-mallet": {
+    "title": "Sneaky Mallet",
+    "artist": "zec53",
+    "file": "sneaky-mallet.mp3",
+    "seconds": 13.740408,
+    "source": "zec53-sneaky-mallet-presentation-positive-upbeat-loop-2-15-sec-401014.mp3",
+    "sourceSha256": "81ec35344ba4201dac085f541b7025ac11cd24d80baf5ca13870c59567393675",
+    "sha256": "9a039baec356f7a0cbdee456ae0853d53a398a4a10d6180e3e9382367fcf316a",
+    "analysis": {
+      "input_i": "-16.47",
+      "input_tp": "-4.73",
+      "input_lra": "0.40",
+      "input_thresh": "-26.47",
+      "output_i": "-17.95",
+      "output_tp": "-6.21",
+      "output_lra": "0.50",
+      "output_thresh": "-27.95",
+      "normalization_type": "linear",
+      "target_offset": "-0.05"
+    }
+  },
+  "landscape-piano": {
+    "title": "Cinematic Landscape Piano",
+    "artist": "zec53",
+    "file": "landscape-piano.mp3",
+    "seconds": 28.604082,
+    "source": "zec53-cinematic-landscape-piano-romance-loop-1-30-sec-505419.mp3",
+    "sourceSha256": "5ab5c047ef69074c6b748bfd800094b58ca9830b79ecc8e7d76a31bd95f98965",
+    "sha256": "e66694357b14e69b4a07f964c495a4182134c87768aeb3eb3a981e9a91f13e8f",
+    "analysis": {
+      "input_i": "-19.90",
+      "input_tp": "-5.91",
+      "input_lra": "2.90",
+      "input_thresh": "-29.94",
+      "output_i": "-17.95",
+      "output_tp": "-3.96",
+      "output_lra": "3.00",
+      "output_thresh": "-28.00",
+      "normalization_type": "linear",
+      "target_offset": "-0.05"
+    }
+  },
+  "interstellar": {
+    "title": "Interstellar Electro Hip Hop",
+    "artist": "zec53",
+    "file": "interstellar.mp3",
+    "seconds": 19.226122,
+    "source": "zec53-interstellar-electro-hip-hop-background-loop-2-380672.mp3",
+    "sourceSha256": "bf7ce9b33d7fdadf1d7ec16cbf2b724a69c65523fd0eaa076ed0ac214c360f26",
+    "sha256": "6bdc27546a934ab01a1438ed77d4ac10c6f953941ed053eebc6fee4536826e5b",
+    "analysis": {
+      "input_i": "-16.16",
+      "input_tp": "0.19",
+      "input_lra": "1.90",
+      "input_thresh": "-26.16",
+      "output_i": "-18.00",
+      "output_tp": "-2.00",
+      "output_lra": "1.50",
+      "output_thresh": "-28.00",
+      "normalization_type": "dynamic",
+      "target_offset": "-0.00"
+    }
+  },
+  "whimsical-intrigue": {
+    "title": "Whimsical Dramedy",
+    "artist": "zec53",
+    "file": "whimsical-intrigue.mp3",
+    "seconds": 16.300408,
+    "source": "zec53-whimsical-dramedy-comedy-funny-cartoon-intrigue-loop-1-15-sec-396868.mp3",
+    "sourceSha256": "d74fcffca7b5a163c7c9d6637a0079cadfba02949b039ae5192f7a5de3f8a68f",
+    "sha256": "78e7b9067cdda68f5009929a8f2b468faae92216d86f063fe87a9dda4bd3efbc",
+    "analysis": {
+      "input_i": "-22.24",
+      "input_tp": "-2.31",
+      "input_lra": "2.10",
+      "input_thresh": "-32.59",
+      "output_i": "-17.99",
+      "output_tp": "-2.00",
+      "output_lra": "1.90",
+      "output_thresh": "-28.32",
+      "normalization_type": "dynamic",
+      "target_offset": "-0.01"
+    }
+  },
+  "ghost-zoo": {
+    "title": "Ghost Zoo",
+    "artist": "deejaycoxknot",
+    "file": "ghost-zoo.mp3",
+    "seconds": 29.570612,
+    "source": "deejaycoxknot-ghost-zoo-loop-130-558172.mp3",
+    "sourceSha256": "e418de384c5e72d53489765d2c083abe43928dbd8a49009ff83813f6c7bca636",
+    "sha256": "d079c655c2237928a8cf61be48dbb5911848f2f404fdda5c3c23aba84dd545cf",
+    "analysis": {
+      "input_i": "-19.58",
+      "input_tp": "-5.02",
+      "input_lra": "3.30",
+      "input_thresh": "-29.58",
+      "output_i": "-18.00",
+      "output_tp": "-3.44",
+      "output_lra": "3.20",
+      "output_thresh": "-28.00",
+      "normalization_type": "linear",
+      "target_offset": "0.00"
+    }
+  },
+  "mischievous-piano": {
+    "title": "Quirky Mischievous Piano and Mallet",
+    "artist": "zec53",
+    "file": "mischievous-piano.mp3",
+    "seconds": 24.032653,
+    "source": "zec53-quirky-mischievous-piano-and-mallet-loop-1-20-sec-396874.mp3",
+    "sourceSha256": "9689e9f795f7fa07c411c13921fed9609bdcd91fdf401d9313524f9773fc637d",
+    "sha256": "cf853a2fa8ae89e35371b6db02b207a084061c58bfc21c35c85432e51d4b207f",
+    "analysis": {
+      "input_i": "-16.23",
+      "input_tp": "-1.20",
+      "input_lra": "1.80",
+      "input_thresh": "-26.35",
+      "output_i": "-17.97",
+      "output_tp": "-2.95",
+      "output_lra": "1.90",
+      "output_thresh": "-28.09",
+      "normalization_type": "linear",
+      "target_offset": "-0.03"
+    }
+  },
+  "orion-nebula": {
+    "title": "Orion Nebula",
+    "artist": "Universfield",
+    "file": "orion-nebula.mp3",
+    "seconds": 29.152653,
+    "source": "universfield-orion-nebula-200658.mp3",
+    "sourceSha256": "b3264a5b449028ebb147c934a723ef374732dea036407af14c19f25e3e261220",
+    "sha256": "9bcad9cb4918604360736ab0cc86a0a30ce988b0c78c1aeff73a258bad85ff7c",
+    "analysis": {
+      "input_i": "-18.27",
+      "input_tp": "-8.96",
+      "input_lra": "0.30",
+      "input_thresh": "-28.27",
+      "output_i": "-17.94",
+      "output_tp": "-8.63",
+      "output_lra": "0.30",
+      "output_thresh": "-27.94",
+      "normalization_type": "linear",
+      "target_offset": "-0.06"
+    }
+  },
+  "game-18": {
+    "title": "Game Music Loop 18",
+    "artist": "XtremeFreddy",
+    "file": "game-18.mp3",
+    "seconds": 30.264014,
+    "source": "xtremefreddy-game-music-loop-18-153392.mp3",
+    "sourceSha256": "c741c1ecb68f1a3091280a232458e60225d647984678861ebae632d5d3cd360f",
+    "sha256": "578dfc78f45621653cb0298652db2a5994a20e19fe7e01c5b4654d85492ca4d3",
+    "analysis": {
+      "input_i": "-14.60",
+      "input_tp": "0.39",
+      "input_lra": "0.90",
+      "input_thresh": "-24.86",
+      "output_i": "-17.94",
+      "output_tp": "-2.94",
+      "output_lra": "0.90",
+      "output_thresh": "-28.17",
+      "normalization_type": "linear",
+      "target_offset": "-0.06"
+    }
+  },
+  "soft-background": {
+    "title": "Soft Background",
+    "artist": "SergeQuadrado",
+    "file": "soft-background.mp3",
+    "seconds": 20.244898,
+    "source": "sergequadrado-soft-background-loop-14329.mp3",
+    "sourceSha256": "da594f0f93480f3f4763052a67b42efc108d75a8d3dd4112445e5093e58bbc93",
+    "sha256": "9e2807c420d9dadb902c24ca0f2b395e062f584e3c1b296c367452f90f105efa",
+    "analysis": {
+      "input_i": "-10.39",
+      "input_tp": "0.61",
+      "input_lra": "3.90",
+      "input_thresh": "-20.39",
+      "output_i": "-17.62",
+      "output_tp": "-6.62",
+      "output_lra": "3.90",
+      "output_thresh": "-27.62",
+      "normalization_type": "linear",
+      "target_offset": "-0.38"
+    }
+  },
+  "amber": {
+    "title": "Amber",
+    "artist": "GrumpyNora",
+    "file": "amber.mp3",
+    "seconds": 29.570612,
+    "source": "grumpynora-amber-loop-2-416805.mp3",
+    "sourceSha256": "d90c3016b1c4872c5cd932822d3da88bd01a26a8b9244dc3d3af23e0278333df",
+    "sha256": "0037f2b2dd7a7ae2d7a4013a4fd59da8d6ef4e734da535c61e481bb56ea02959",
+    "analysis": {
+      "input_i": "-14.00",
+      "input_tp": "-1.49",
+      "input_lra": "4.30",
+      "input_thresh": "-24.00",
+      "output_i": "-18.02",
+      "output_tp": "-5.51",
+      "output_lra": "4.30",
+      "output_thresh": "-28.02",
+      "normalization_type": "linear",
+      "target_offset": "0.02"
+    }
+  },
+  "cinematic-trailer": {
+    "title": "Cinematic Trailer",
+    "artist": "DAUB Audio",
+    "file": "cinematic-trailer.mp3",
+    "seconds": 16.065306,
+    "source": "daub_audio-cinematic-trailer-daub-loop-526515.mp3",
+    "sourceSha256": "0b7f2c27384039072e68ae92cb716b2dc06f14be9eef84a8d3f9b874d0560331",
+    "sha256": "38758be6b3593ad89ff786b0f31b5b00401c3b796a31db9ed3a8c456f2752b4a",
+    "analysis": {
+      "input_i": "-14.76",
+      "input_tp": "-0.28",
+      "input_lra": "4.40",
+      "input_thresh": "-24.89",
+      "output_i": "-17.55",
+      "output_tp": "-3.07",
+      "output_lra": "4.40",
+      "output_thresh": "-27.68",
+      "normalization_type": "linear",
+      "target_offset": "-0.45"
+    }
+  },
+  "galactic-journey": {
+    "title": "Galactic Space Journey",
+    "artist": "ViraMiller",
+    "file": "galactic-journey.mp3",
+    "seconds": 16.272018,
+    "source": "viramiller-galactic-space-journey-279437.mp3",
+    "sourceSha256": "0d73d4253253fd6674048a366789efa6b1ef4e16d7d5cbe08a36aac205a5a49b",
+    "sha256": "fe432368ffa2c429283898dca7fbe71f8d0e22b22dc3b058043611bd33221d10",
+    "analysis": {
+      "input_i": "-17.60",
+      "input_tp": "-4.42",
+      "input_lra": "5.10",
+      "input_thresh": "-28.06",
+      "output_i": "-17.58",
+      "output_tp": "-4.40",
+      "output_lra": "5.20",
+      "output_thresh": "-28.03",
+      "normalization_type": "linear",
+      "target_offset": "-0.42"
+    }
+  },
+  "cartoon-suspense": {
+    "title": "Cartoon Pizz and Sneaky Suspense",
+    "artist": "zec53",
+    "file": "cartoon-suspense.mp3",
+    "seconds": 13.740408,
+    "source": "zec53-cartoon-pizz-and-sneaky-suspense-kids-games-loop-1-15-sec-396877.mp3",
+    "sourceSha256": "8cc8a8059f34b59fd48fe10292baed8d3ee20ea131d971098781aa9b7588ef5f",
+    "sha256": "87e9af538203023618c4637969344599a8685e2a99a1e2fd2d3eca84aca4b4cb",
+    "analysis": {
+      "input_i": "-23.08",
+      "input_tp": "-6.05",
+      "input_lra": "4.40",
+      "input_thresh": "-33.37",
+      "output_i": "-17.90",
+      "output_tp": "-2.00",
+      "output_lra": "3.60",
+      "output_thresh": "-28.16",
+      "normalization_type": "dynamic",
+      "target_offset": "-0.10"
+    }
+  },
+  "cabin": {
+    "title": "Cabin — Video Game Theme",
+    "artist": "giri_is",
+    "file": "cabin.mp3",
+    "seconds": 24.137143,
+    "source": "giri_is-cabin-video-game-theme-350164.mp3",
+    "sourceSha256": "41705332a7cbfcf7bc8ff40f3089b836cdd854f331b82837fede66c10ab6d1a8",
+    "sha256": "bf5943818a10119402fd8f6986a48435bd97dffc84eed97ea051ae92e587bc15",
+    "analysis": {
+      "input_i": "-14.92",
+      "input_tp": "-0.30",
+      "input_lra": "1.90",
+      "input_thresh": "-24.92",
+      "output_i": "-17.87",
+      "output_tp": "-3.25",
+      "output_lra": "1.80",
+      "output_thresh": "-27.87",
+      "normalization_type": "linear",
+      "target_offset": "-0.13"
+    }
+  },
+  "game-14": {
+    "title": "Game Music Loop 14",
+    "artist": "XtremeFreddy",
+    "file": "game-14.mp3",
+    "seconds": 29.448005,
+    "source": "xtremefreddy-game-music-loop-14-153385.mp3",
+    "sourceSha256": "c2f10d47585abb4ca02b17b7d93ed9e1211259fa81d05cbb40b3e1eac686dc4e",
+    "sha256": "68a0d357c2c15ce5137392963134aabd4ec132840d3cd5f826a27577b408f885",
+    "analysis": {
+      "input_i": "-13.66",
+      "input_tp": "-1.28",
+      "input_lra": "1.90",
+      "input_thresh": "-23.97",
+      "output_i": "-17.92",
+      "output_tp": "-5.54",
+      "output_lra": "2.00",
+      "output_thresh": "-28.19",
+      "normalization_type": "linear",
+      "target_offset": "-0.08"
+    }
+  }
+}

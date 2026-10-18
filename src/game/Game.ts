@@ -1,3 +1,4 @@
+import { MobileSectorGuide } from './world/MobileSectorGuide';
 import { FestivalMap } from './ui/FestivalMap';
 import { browserGraphicsProfile, savedMobileQuality, isMobileQuality } from './rendering/graphicsProfile';
 import { DistanceVisibility } from './rendering/DistanceVisibility';
@@ -12,7 +13,12 @@ import {
 } from './rendering/fogTrial';
 import { FogSectorStreamer, type FogSectorManifest } from './world/FogSectorStreamer';
 import { mobileOpenWorldEnabled, mobileWorldRanges } from './world/mobileWorldStreaming';
-import { festivalAreaAt, festivalAreaLabel, MobileBotAllowance } from './world/mobileFestivalAreas';
+import {
+  festivalAreaAt,
+  festivalAreaLabel,
+  nearestFestivalBoundary,
+  MobileBotAllowance,
+} from './world/mobileFestivalAreas';
 import { SectorTransitionDialog } from './ui/SectorTransitionDialog';
 import { fogWorldManifestUrl, mobileWorldManifestUrl, fogWorldSectorUrl } from './assets/assetManifest';
 import { AssetLoader } from './assets/AssetLoader';
@@ -173,6 +179,8 @@ export class Game {
   private readonly mobileInput = isMobileInputDevice();
   private readonly openMobileWorld = mobileOpenWorldEnabled(this.mobileInput);
   private readonly fogTrial = this.openMobileWorld || fogTrialEnabled(false);
+  private mobileSectorGuide?: MobileSectorGuide;
+  private sectorRejectedArea?: string;
   private sectorTransitionDialog?: SectorTransitionDialog;
   private sectorTransitioning = false;
   private sectorSafePosition = new THREE.Vector3();
@@ -556,6 +564,7 @@ export class Game {
       this.syncStageAudio();
       if (!this.fogTrial) this.stageLiveScreens.setVideoPlaylist(this.stageAcoustics);
       this.festivalMap?.setAuthoredLayout(this.world.mapScenery);
+      if (this.mobileInput) this.mobileSectorGuide = new MobileSectorGuide(this.scene);
       this.world.setGrassQuality(this.settings.grassQuality);
       const npcNavigation = new NpcNavigationGrid(
         {
@@ -2016,6 +2025,13 @@ export class Game {
       this.mushroomWireframe.update(false, 0, 0, false);
       this.matrixWireframe.update(false, 0, false);
     }
+    this.mobileSectorGuide?.update(
+      this.camera.position.x,
+      this.camera.position.z,
+      this.sectorStreamer?.activeArea,
+      state === 'playing' && !isGuitarActive && !this.isMapOpen() && !this.sectorTransitioning,
+    );
+    if (this.mobileInput) this.festivalMap?.setMobileArea(this.sectorStreamer?.activeArea);
     if (!isGuitarActive) {
       this.npcDebugOverlay?.update(this.camera);
       this.distanceVisibility?.update(dt, this.camera.position);
@@ -2435,12 +2451,27 @@ export class Game {
     if (!this.mobileInput || !stream?.activeArea) return false;
     const area = stream.areaAt(this.camera.position);
     if (area === stream.activeArea) {
+      if (
+        this.sectorRejectedArea &&
+        (nearestFestivalBoundary(
+          this.camera.position.x,
+          this.camera.position.z,
+          stream.activeArea,
+          this.sectorRejectedArea,
+        )?.distance ?? Infinity) > 2
+      )
+        this.sectorRejectedArea = undefined;
       this.sectorSafePosition.copy(this.camera.position);
       return false;
     }
     const destination = this.camera.position.clone();
     this.camera.position.copy(this.sectorSafePosition);
+    if (this.sectorRejectedArea === area) {
+      this.player?.stop();
+      return false;
+    }
     this.sectorTransitioning = true;
+    this.mobileSectorGuide?.update(0, 0, undefined, false);
     this.player?.stop();
     if (this.player) this.player.enabled = false;
     this.mobileControls?.setState('paused');
@@ -2453,7 +2484,10 @@ export class Game {
     const stream = this.sectorStreamer!;
     let target = area;
     try {
-      if (!(await dialog.ask(false, festivalAreaLabel(area))) || this.disposed) return;
+      if (!(await dialog.ask(false, festivalAreaLabel(area))) || this.disposed) {
+        this.sectorRejectedArea = area;
+        return;
+      }
       while (!this.disposed) {
         dialog.loading(0, 0, festivalAreaLabel(target));
         this.npcs?.setMobileArea();
@@ -2488,6 +2522,7 @@ export class Game {
   }
 
   dispose() {
+    this.mobileSectorGuide?.dispose();
     this.sectorTransitionDialog?.dispose();
     this.sectorStreamer?.dispose();
     // In-flight sector results still return to the streamer, which evicts them after disposal.

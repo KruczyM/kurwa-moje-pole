@@ -7,6 +7,8 @@ from mathutils import Vector, Matrix
 
 ROOT=Path(__file__).resolve().parents[2]
 bpy.ops.wm.open_mainfile(filepath=str(ROOT/'blender/festival-layout.blend'))
+import runpy
+runpy.run_path(str(ROOT / 'scripts/blender/ensure-asp-placement.py'))['ensure_asp'](ROOT)
 scene=bpy.context.scene
 camera=bpy.data.objects.new('QA_TopView',bpy.data.cameras.new('QA_TopView'))
 scene.collection.objects.link(camera)

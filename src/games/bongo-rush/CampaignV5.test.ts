@@ -38,11 +38,16 @@ describe('authored twenty-four cave campaign', () => {
   });
 
   it('makes early reversal under a released layer fatal, instead of rewarding a blind sweep', () => {
-    for (const id of [1, 2, 5, 6]) {
+    for (const id of [1, 2, 6]) {
       const level = LEVELS[id - 1];
       const game = play(level, ['right', 'right', 'right', 'right', 'left', 'right']);
       expect(game.world.status, `${id}`).toBe('lost');
     }
+  });
+  it('allows the formerly fatal sideways catch on the legacy funnel', () => {
+    const game = play(LEVELS[4], ['right', 'right', 'right', 'right', 'left', 'right']);
+    expect(game.world.status).toBe('playing');
+    expect(game.world.collected).toBeGreaterThan(0);
   });
 
   it('requires the deep prize and a descending escape from its collapsing return', () => {

@@ -36,10 +36,7 @@ async def main(url):
                 page.on('pageerror', lambda error: errors.append(str(error)))
                 page.on('request', lambda request: requests.append(request.url))
                 await page.goto(url,wait_until='networkidle'); await ready(page)
-                if style=='storybook':
-                    await page.wait_for_selector('#menu[data-artistic="true"]')
-                else:
-                    assert not any('/menu-v1/' in item for item in requests), requests
+                await page.wait_for_selector('#menu[data-artistic="true"]')
                 assert 'Poziom 6' in await page.locator('#continue-level').inner_text()
                 assert await page.locator('.biome-card small').all_text_contents()==['Dostępne 5/6','Dostępne 5/6','Dostępne 0/6','Dostępne 0/6']
                 assert await page.locator('.biome-card[data-biome="2"]').is_disabled()
@@ -96,7 +93,7 @@ async def main(url):
             assert not await page.locator('#menu-art-retry').is_visible()
             report.append({'engine':engine,'rasterFailureFallback':'PASS','explicitRetry':'PASS'})
             await context.close()
-            # Late artwork must respect a newer Standard selection and host disposal.
+            # The same title art must survive a change to the Standard gameplay theme.
             context=await context_for(browser,viewport={'width':390,'height':844})
             page=await context.new_page(); release=asyncio.Event(); delayed=[]
             async def delay(route):
@@ -112,7 +109,7 @@ async def main(url):
             await page.locator('#appearance-close').click()
             release.set();await page.wait_for_load_state('networkidle')
             assert len(delayed)==3,delayed
-            assert await page.locator('#menu').get_attribute('data-artistic')=='false'
+            assert await page.locator('#menu').get_attribute('data-artistic')=='true'
             assert await page.evaluate("JSON.parse(localStorage.getItem('after-bongo-rush:v1')).visualTheme")=='standard'
             await page.locator('#appearance-open').click()
             await page.locator('input[name="visual-theme"][value="storybook"]').check()

@@ -98,7 +98,7 @@ describe('approved per-map raster geometry', () => {
 
 describe('standard/artistic appearance preference', () => {
   it('offers exactly two clearly named choices and persists both without changing campaign progress', () => {
-    expect(MENU_VISUAL_THEMES.map((theme) => THEME_LABELS[theme])).toEqual(['Standardowy', 'Artystyczny']);
+    expect(MENU_VISUAL_THEMES.map((theme) => THEME_LABELS[theme])).toEqual(['Standardowa', 'Artystyczna']);
     let value = '';
     const storage = {
       getItem: () => value,

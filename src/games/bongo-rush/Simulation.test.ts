@@ -42,6 +42,41 @@ describe('Bongo Rush original campaign', () => {
 });
 
 describe('deterministic grid physics', () => {
+  it.each(['left', 'right'] as const)(
+    'collects a falling required pickup from the %s at player height',
+    (direction) => {
+      const game = new Simulation(fixture(['########', '#      #', '# P O E#', '#      #', '########']));
+      const pickup = game.world.objects.find((body) => body.kind === 'pickup')!;
+      const id = pickup.id;
+      pickup.falling = true;
+      pickup.required = true;
+      game.world.player.x = direction === 'right' ? pickup.x - 1 : pickup.x + 1;
+      game.step(direction);
+      expect(game.world.status).toBe('playing');
+      expect(game.world.collected).toBe(1);
+      expect(game.world.objects.some((body) => body.id === id)).toBe(false);
+      expect(game.world.player.x).toBe(pickup.x);
+      expect(game.drainSounds().filter((sound) => sound === 'pickup')).toHaveLength(1);
+      game.step();
+      expect(game.world.collected).toBe(1);
+    },
+  );
+  it('still loses when a pickup falls onto the head or is entered vertically', () => {
+    const head = new Simulation(fixture(['########', '# O    #', '#      #', '# P  E #', '########']));
+    head.step();
+    head.step();
+    expect(head.world.status).toBe('lost');
+    for (const direction of ['up', 'down'] as const) {
+      const game = new Simulation(fixture(['########', '#      #', '# P O E#', '#      #', '########']));
+      const pickup = game.world.objects[0];
+      pickup.falling = true;
+      game.world.player.x = pickup.x;
+      game.world.player.y = direction === 'up' ? pickup.y + 1 : pickup.y - 1;
+      game.step(direction);
+      expect(game.world.status).toBe('lost');
+      expect(game.world.collected).toBe(0);
+    }
+  });
   it('gives newly opened passages one reaction tick before a patrol can enter', () => {
     const game = new Simulation(fixture(['########', '#  C   #', '#P.O E #', '########']));
     game.step('right');

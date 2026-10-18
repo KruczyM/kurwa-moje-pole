@@ -6,6 +6,7 @@ import {
   macroVariant,
   presentationPreferences,
   collectibleName,
+  collectibleChoices,
   VISUAL_THEMES,
 } from './Presentation';
 import { loadProgress } from './Progress';
@@ -15,6 +16,20 @@ import { sceneryEdges } from './SceneryArt';
 import type { Cell } from './types';
 
 describe('presentation preferences and continuous materials', () => {
+  it('offers only standard items in the standard theme and two saved-compatible artistic sets', () => {
+    expect(collectibleChoices('standard')).toEqual([{ value: 'festival', label: 'Standardowe' }]);
+    expect(collectibleChoices('storybook')).toEqual([
+      { value: 'festival', label: 'Zestaw 1' },
+      { value: 'fantasy', label: 'Zestaw 2' },
+    ]);
+    expect(presentationPreferences({ visualTheme: 'standard', collectibleStyle: 'fantasy' })).toEqual({
+      visualTheme: 'standard',
+      collectibleStyle: 'festival',
+    });
+    expect(
+      presentationPreferences({ visualTheme: 'storybook', collectibleStyle: 'fantasy' }).collectibleStyle,
+    ).toBe('fantasy');
+  });
   it('migrates old progress and rejects unknown cosmetic values without resetting progress', () => {
     const value = loadProgress({
       getItem: () =>

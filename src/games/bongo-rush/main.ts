@@ -7,6 +7,7 @@ import {
   presentationPreferences,
   collectibleName,
   collectiblePreviewPath,
+  collectibleChoices,
   MENU_VISUAL_THEMES,
   THEME_LABELS,
   THEME_ACCENTS,
@@ -24,8 +25,10 @@ import {
 import { SpriteAnimator } from '../after/presentation/SpriteAnimator';
 import type { SpriteMetadata } from '../after/presentation/SpriteAnimator';
 import { ArcadeAudio } from './Audio';
-import { levelSoundtrack } from './Soundtrack';
+import { levelSoundtrack, musicPack } from './Soundtrack';
 import { GridInput } from './Input';
+import type { Direction } from './types';
+import { touchControlPreferences, TOUCH_PAD_SIZES, cameraSafeInsets } from './TouchControls';
 import { BIOMES, LEVELS } from './Levels';
 import { HEROES, HERO_LABELS, loadProgress, saveProgress } from './Progress';
 import type { Progress } from './Progress';
@@ -132,6 +135,8 @@ class BongoRush {
   private musicPosition?: ReturnType<ArcadeAudio['position']>;
   private appearanceReturnFocus?: HTMLElement;
   private draftAppearance: PresentationPreferences = presentationPreferences(this.progress);
+  private draftMusicPack = this.progress.musicPack;
+  private draftTouchControls = touchControlPreferences(this.progress.touchControls);
 
   /** Loads the chosen hero, Krzak and first backdrop; later selections and biomes reuse the cache. */
   async start(): Promise<void> {
@@ -148,6 +153,8 @@ class BongoRush {
     this.updateMute();
     this.observer.observe(element('board'));
     this.observer.observe(document.querySelector<HTMLElement>('.hud')!);
+    this.observer.observe(element('joystick-zone'));
+    this.applyTouchControls();
     this.resize();
     this.setMode('menu');
     await this.loadRun(this.selected);
@@ -232,7 +239,7 @@ class BongoRush {
   private pruneAssets(): void {
     if (this.pendingLoads) return;
     const keep = new Set(this.activeAssetUrls);
-    if (!this.disposed && this.progress.visualTheme !== 'standard') {
+    if (!this.disposed) {
       const root = `${BASE}game-assets/2d/bongo-rush/menu-v1/`;
       for (const file of ['logo.webp', 'interface.webp', menuSceneFile(this.menu.hero)])
         keep.add(new URL(`${root}${file}`, location.href).href);
@@ -457,6 +464,13 @@ class BongoRush {
     if (this.loading || !['menu', 'paused'].includes(this.mode)) return;
     this.appearanceReturnFocus = document.activeElement as HTMLElement;
     this.draftAppearance = presentationPreferences(this.progress);
+    this.draftMusicPack = this.progress.musicPack;
+    this.draftTouchControls = touchControlPreferences(this.progress.touchControls);
+    element<HTMLSelectElement>('touch-position').value = this.draftTouchControls.position;
+    element<HTMLSelectElement>('touch-size').value = this.draftTouchControls.size;
+    element<HTMLInputElement>('touch-opacity').value = String(this.draftTouchControls.opacity);
+    for (const input of Array.from(document.querySelectorAll<HTMLInputElement>('input[name="music-pack"]')))
+      input.checked = input.value === this.draftMusicPack;
     this.musicPosition = this.audio.position();
     this.audio.silence(false);
     const choices = element('theme-choices');
@@ -487,25 +501,39 @@ class BongoRush {
     ))
       input.checked = input.value === this.progress.collectibleStyle;
     element('appearance-status').textContent =
-      'Standardowy: klasyczna oprawa i festiwalowe znajdźki. Artystyczny: malarskie podziemia. Wybór zapisuje się na tym urządzeniu i zachowuje postęp.';
+      'Standardowa: klasyczna oprawa i jeden wygląd znajdziek. Artystyczna: malarskie podziemia i dwa zestawy znajdziek. Wybór zapisuje się na tym urządzeniu i zachowuje postęp.';
     this.appearancePreview = false;
     element('appearance-listen').textContent = 'Posłuchaj motywu';
     element<HTMLDialogElement>('appearance-panel').showModal();
+    element('appearance-panel').scrollTop = 0;
     this.readAppearance();
   }
 
   private readAppearance(): void {
+    this.draftTouchControls = touchControlPreferences({
+      position: element<HTMLSelectElement>('touch-position').value as typeof this.draftTouchControls.position,
+      size: element<HTMLSelectElement>('touch-size').value as typeof this.draftTouchControls.size,
+      opacity: Number(element<HTMLInputElement>('touch-opacity').value),
+    });
+    element('touch-opacity-value').textContent = `${this.draftTouchControls.opacity}%`;
+    this.draftMusicPack = musicPack(
+      document.querySelector<HTMLInputElement>('input[name="music-pack"]:checked')?.value,
+    );
     this.draftAppearance = presentationPreferences({
       visualTheme: document.querySelector<HTMLInputElement>('input[name="visual-theme"]:checked')
         ?.value as PresentationPreferences['visualTheme'],
       collectibleStyle: document.querySelector<HTMLInputElement>('input[name="collectible-style"]:checked')
         ?.value as PresentationPreferences['collectibleStyle'],
     });
-    const standard = this.draftAppearance.visualTheme === 'standard';
+    const choices = collectibleChoices(this.draftAppearance.visualTheme);
     for (const input of Array.from(
       document.querySelectorAll<HTMLInputElement>('input[name="collectible-style"]'),
     )) {
-      input.disabled = standard && input.value === 'fantasy';
+      const choice = choices.find((option) => option.value === input.value);
+      input.disabled = !choice;
+      const label = input.closest('label')!;
+      label.hidden = !choice;
+      label.querySelector('span')!.textContent = choice?.label ?? '';
       input.checked = input.value === this.draftAppearance.collectibleStyle;
     }
     const path = collectiblePreviewPath(BASE, this.draftAppearance, this.game.level.biome);
@@ -516,7 +544,7 @@ class BongoRush {
       this.draftAppearance,
       this.game.level.biome,
     );
-    const track = levelSoundtrack(this.game.level.id);
+    const track = levelSoundtrack(this.game.level.id, this.draftMusicPack);
     element('soundtrack-title').textContent = `Motyw planszy: ${track.title} · ${track.artist}`;
     if (this.audio.muted)
       element('appearance-status').textContent =
@@ -535,7 +563,11 @@ class BongoRush {
   /** Swaps only presentation; never constructs or steps a simulation. */
   private async applyAppearance(): Promise<void> {
     if (this.loading) return;
-    const preferences = { ...this.draftAppearance };
+    const preferences = {
+      ...this.draftAppearance,
+      musicPack: this.draftMusicPack,
+      touchControls: { ...this.draftTouchControls },
+    };
     const path = presentationPath(BASE, preferences, this.game.level.biome);
     const token = ++this.loadToken;
     this.loading = true;
@@ -618,6 +650,7 @@ class BongoRush {
       this.renderer!.items(sprites);
       this.renderer!.tablets(tablets);
       Object.assign(this.progress, preferences);
+      this.applyTouchControls();
       saveProgress(storage(), this.progress);
       element('bongo-app').style.setProperty('--scene-accent', THEME_ACCENTS[preferences.visualTheme]);
       element('bongo-app').style.setProperty('--scene-image', `url("${far.src}")`);
@@ -649,15 +682,14 @@ class BongoRush {
       this.menuArtState = 'idle';
       this.menuArtToken++;
     }
-    const signature = `${this.progress.visualTheme}:${this.menu.hero}:${this.availableLevels}:${this.resumeIndex}:${this.menuArtState}`;
+    const signature = `${this.menu.hero}:${this.availableLevels}:${this.resumeIndex}:${this.menuArtState}`;
     if (signature === this.titleSignature) return;
     this.titleSignature = signature;
-    const menu = element('menu'),
-      artistic = this.progress.visualTheme !== 'standard';
-    menu.dataset.artistic = String(artistic && this.menuArtState === 'ready');
+    const menu = element('menu');
+    menu.dataset.artistic = String(this.menuArtState === 'ready');
     const root = `${BASE}game-assets/2d/bongo-rush/menu-v1/`;
     const logo = element<HTMLImageElement>('menu-logo-image');
-    if (artistic && this.menuArtState === 'idle') {
+    if (this.menuArtState === 'idle') {
       this.menuArtState = 'loading';
       const token = ++this.menuArtToken;
       void settleImageBatch(
@@ -678,14 +710,14 @@ class BongoRush {
           this.pruneAssets();
         });
     }
-    element('menu-art-retry').hidden = !artistic || this.menuArtState !== 'failed';
+    element('menu-art-retry').hidden = this.menuArtState !== 'failed';
     element('menu-art-status').textContent =
-      !artistic || this.menuArtState === 'ready'
+      this.menuArtState === 'ready'
         ? ''
         : this.menuArtState === 'failed'
           ? 'Nie udało się wczytać oprawy menu. Możesz grać lub spróbować ponownie.'
           : 'Przygotowuję malarską scenę…';
-    if (artistic && this.menuArtState === 'ready') {
+    if (this.menuArtState === 'ready') {
       menu.style.setProperty('--menu-scene', `url("${root}${scene}")`);
       menu.dataset.sceneHero = this.menu.hero;
       menu.style.setProperty('--menu-atlas', `url("${root}interface.webp")`);
@@ -773,7 +805,7 @@ class BongoRush {
     if (mode !== 'menu' || this.menu.screen !== 'heroes') this.gallery.setActive(false);
     element('help-panel').hidden = true;
     this.input.reset();
-    this.updateKnob();
+    this.updatePadHighlights();
     this.lastTime = 0;
     element('menu').hidden = mode !== 'menu' || this.menu.screen !== 'title';
     element('hero-panel').hidden = mode !== 'menu' || this.menu.screen !== 'heroes';
@@ -836,6 +868,14 @@ class BongoRush {
     this.selected = this.game.level.id - 1;
     this.showMenu();
     void this.loadRun(this.selected);
+  }
+
+  /** Returning to the title keeps the selected hero and saved level progress. */
+  private returnToTitle(): void {
+    if (this.loading) return;
+    this.menuBiome = undefined;
+    this.menu.title();
+    this.showMenu();
   }
 
   /** Escape only toggles pause while in a run; it never sends the player straight to the main menu. */
@@ -988,10 +1028,8 @@ class BongoRush {
       this.menu.openLevels();
       void this.begin(this.resumeIndex);
     });
-    click('level-title-back', () => {
-      this.menu.title();
-      this.showMenu();
-    });
+    for (const id of ['level-title-back', 'pause-title-back', 'result-title-back', 'victory-title-back'])
+      click(id, () => this.returnToTitle());
     this.events.listen(document.querySelector('.biome-cards')!, 'click', (event) => {
       const card = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-biome]');
       if (!card || card.disabled || this.loading) return;
@@ -1122,16 +1160,23 @@ class BongoRush {
     const stick = element('joystick-zone');
     this.events.listen(stick, 'pointerdown', (event) => {
       const pointer = event as PointerEvent;
-      if (this.mode !== 'playing' || !this.input.joystick.begin(pointer.pointerId)) return;
+      const arrow = (pointer.target as HTMLElement).closest<HTMLButtonElement>('button[data-direction]');
+      if (
+        !arrow ||
+        pointer.button !== 0 ||
+        this.mode !== 'playing' ||
+        !this.input.beginPad(pointer.pointerId, arrow.dataset.direction as Direction)
+      )
+        return;
       pointer.preventDefault();
       stick.setPointerCapture(pointer.pointerId);
-      this.moveStick(pointer);
+      this.updatePadHighlights();
     });
-    this.events.listen(stick, 'pointermove', (event) => this.moveStick(event as PointerEvent));
+    this.events.listen(stick, 'pointermove', (event) => this.movePadPointer(event as PointerEvent));
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'])
       this.events.listen(stick, type, (event) => {
-        this.input.joystick.end((event as PointerEvent).pointerId);
-        this.updateKnob();
+        this.input.endPad((event as PointerEvent).pointerId, type !== 'pointerup');
+        this.updatePadHighlights();
       });
     this.events.listen(window, 'pagehide', (event) => {
       if ((event as PageTransitionEvent).persisted) {
@@ -1157,29 +1202,44 @@ class BongoRush {
     if (this.mode === 'playing') this.canvas.focus({ preventScroll: true });
   }
 
-  /** Converts pointer coordinates to existing radial joystick input; foreign fingers are ignored by ownership. */
-  private moveStick(pointer: PointerEvent): void {
+  /** Resolve a four-way slide; an imprecise initial touch is handled by the arrow's whole hit area. */
+  private movePadPointer(pointer: PointerEvent): void {
     if (this.mode !== 'playing') return;
     const rect = element('joystick').getBoundingClientRect();
-    this.input.joystick.move(
+    this.input.movePad(
       pointer.pointerId,
       pointer.clientX - rect.left - rect.width / 2,
       pointer.clientY - rect.top - rect.height / 2,
-      rect.width * 0.28,
+      rect.width,
     );
-    this.updateKnob();
+    this.updatePadHighlights();
   }
 
-  /** Updates only the knob transform; CSS handles responsive control placement. */
-  private updateKnob(): void {
-    const { knobX, knobY } = this.input.joystick.snapshot();
-    element('knob').style.transform = `translate(${knobX}px, ${knobY}px)`;
+  /** Highlights the actual interpreted direction, including cleanup on pause or cancellation. */
+  private updatePadHighlights(): void {
+    const direction = this.input.direction();
+    for (const arrow of Array.from(
+      element('joystick').querySelectorAll<HTMLButtonElement>('button[data-direction]'),
+    ))
+      arrow.setAttribute('aria-pressed', String(arrow.dataset.direction === direction));
   }
 
   /** Keeps mute state accessible and visible independently of platform audio availability. */
   private updateMute(): void {
     element('mute').textContent = this.progress.muted ? 'Dźwięk: wył.' : 'Dźwięk: wł.';
     element('mute').setAttribute('aria-pressed', String(this.progress.muted));
+  }
+
+  /** One saved control layout drives CSS and the existing camera's safe area. */
+  private applyTouchControls(): void {
+    const preferences = touchControlPreferences(this.progress.touchControls),
+      app = element('bongo-app');
+    app.dataset.touchPosition = preferences.position;
+    app.style.setProperty('--pad-size', `${TOUCH_PAD_SIZES[preferences.size]}px`);
+    app.style.setProperty('--pad-opacity', String(preferences.opacity / 100));
+    this.input.reset();
+    this.updatePadHighlights();
+    this.resize();
   }
 
   /** Caps backing-store memory on high-DPI phones and reflows the existing camera rather than recreating it. */
@@ -1206,17 +1266,23 @@ class BongoRush {
       height: hudRect.height,
     };
     const minimapTop = hud.hidden ? 58 : Math.max(8, hud.getBoundingClientRect().bottom - rect.top + 4);
-    this.renderer?.resize(
+    const touch = window.matchMedia('(pointer: coarse)').matches;
+    const padStyle = getComputedStyle(element('joystick-zone'));
+    const insets = cameraSafeInsets(
       this.width,
       this.height,
-      window.matchMedia('(pointer: coarse)').matches,
-      minimapTop,
+      hud.hidden ? 0 : hudRect.bottom - rect.top,
+      parseFloat(padStyle.height) || 168,
+      parseFloat(padStyle.bottom) || 0,
+      touchControlPreferences(this.progress.touchControls).position,
+      touch && this.mode !== 'menu',
     );
+    this.renderer?.resize(this.width, this.height, touch, minimapTop, insets);
     // Contextual hints can reflow the footer. A height-only board resize must not release held movement.
     // Width/orientation changes still reset pointer ownership; blur/visibility retain their own cleanup.
     if (widthChanged) {
       this.input.reset();
-      this.updateKnob();
+      this.updatePadHighlights();
     }
   }
 
@@ -1236,6 +1302,7 @@ class BongoRush {
         level: this.game.level.id,
         biome: this.game.level.biome,
         theme: appearanceOpen ? this.draftAppearance.visualTheme : this.progress.visualTheme,
+        musicPack: appearanceOpen ? this.draftMusicPack : this.progress.musicPack,
       },
     );
     const reduced = this.motionPreference.matches;
@@ -1245,7 +1312,7 @@ class BongoRush {
       this.accumulator += dt;
       while (this.accumulator >= STEP_SECONDS && this.mode === 'playing') {
         this.accumulator -= STEP_SECONDS;
-        this.game.step(this.input.direction());
+        this.game.step(this.input.consumeDirection());
         this.updateHud();
         const sounds = this.game.drainSounds();
         this.renderer?.effects(this.game.world, sounds);
