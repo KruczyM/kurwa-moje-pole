@@ -131,7 +131,9 @@ class BongoRush {
     if (this.artPreview)
       document.querySelector<HTMLElement>('.menu-note')!.textContent =
         'Podgląd grafik · wszystkie 24 poziomy dostępne. Oprawę zmienisz także w pauzie.';
-    this.audio.muted = this.progress.muted;
+    this.progress.muted = false;
+    this.audio.muted = false;
+    this.audio.unlock();
     this.gallery.select(this.menu.hero);
     this.renderLevels();
     this.bind();
@@ -817,13 +819,21 @@ class BongoRush {
 
   /** Binds controls once through EventScope, including pointer capture and automatic blur/visibility pause. */
   private bind(): void {
-    const click = (id: string, callback: () => void) => this.events.listen(element(id), 'click', callback);
-    click('menu-listen', () => {
-      this.audio.unlock();
-      this.progress.muted = this.audio.muted = false;
-      saveProgress(storage(), this.progress);
-      this.updateMute();
+    const unlockAudio = () => {
+      if (!this.progress.muted) {
+        this.audio.unlock();
+      }
+    };
+    unlockAudio();
+    for (const evt of ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'mouseup', 'click', 'keydown']) {
+      this.events.listen(window, evt, unlockAudio, { passive: true } as AddEventListenerOptions);
+    }
+    this.events.listen(document, 'visibilitychange', () => {
+      if (!document.hidden && !this.progress.muted) {
+        this.audio.unlock();
+      }
     });
+    const click = (id: string, callback: () => void) => this.events.listen(element(id), 'click', callback);
     click('appearance-open', () => this.openAppearance());
     click('pause-appearance', () => this.openAppearance());
     click('appearance-close', () => this.closeAppearance());

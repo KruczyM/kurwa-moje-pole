@@ -230,6 +230,33 @@ describe('recorded soundtrack in the existing audio host', () => {
     expect(fetcher.mock.calls[0][0]).toContain('/menu-jazz.mp3');
     audio.dispose();
   });
+  it('preloads and decodes menu soundtrack while suspended, and begins playing immediately when resumed', async () => {
+    vi.stubGlobal('AudioContext', RecordedContext);
+    const fetcher = vi.fn(async () => response());
+    vi.stubGlobal('fetch', fetcher);
+    const audio = new ArcadeAudio('/');
+    audio.unlock();
+    const context = FakeContext.latest as RecordedContext;
+    context.state = 'suspended';
+    audio.updateMusic(0, true, true, profile());
+    await flushMusic();
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(context.buffers).toHaveLength(0);
+    expect(audio.diagnostics()).toMatchObject({
+      track: 'menu-jazz',
+      playing: false,
+      state: 'ready',
+    });
+    context.state = 'running';
+    audio.updateMusic(0, true, true, profile());
+    expect(context.buffers).toHaveLength(1);
+    expect(audio.diagnostics()).toMatchObject({
+      track: 'menu-jazz',
+      playing: true,
+      state: 'ready',
+    });
+    audio.dispose();
+  });
   it('resumes the menu position after a level-track preview evicts its decoded buffer', async () => {
     vi.stubGlobal('AudioContext', RecordedContext);
     vi.stubGlobal(
