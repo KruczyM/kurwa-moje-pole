@@ -626,6 +626,33 @@ footer {
   margin-bottom: 12px;
   color: #e8c891;
 }
+.music-pack-choices label {
+  width: 100%;
+  margin-bottom: 6px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: #1b150f;
+}
+.music-pack-choices label:has(input:checked) {
+  border-color: #efcc8e;
+  background: #4a3825;
+}
+#appearance-panel > fieldset:not(.music-pack-choices) {
+  padding-top: 18px;
+  border-top: 1px solid #ae94714d;
+}
+#appearance-panel .menu-actions {
+  position: sticky;
+  bottom: -24px;
+  padding: 12px 0;
+  background: #241c14;
+  z-index: 1;
+}
+@media (max-width: 550px) {
+  #appearance-panel .menu-actions {
+    bottom: -16px;
+  }
+}
 #theme-choices {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

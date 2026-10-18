@@ -200,12 +200,28 @@
         <dialog id="appearance-panel" aria-labelledby="appearance-title">
           <span class="eyebrow">TWÓJ KLIMAT WYPRAWY</span>
           <h2 id="appearance-title">Oprawa i muzyka</h2>
+          <fieldset class="music-pack-choices collectible-choices">
+            <legend>Ścieżka dźwiękowa</legend>
+            <label
+              ><input type="radio" name="music-pack" value="pack-1" checked /> Ścieżka 1 — Spokojna
+              wyprawa</label
+            >
+            <label
+              ><input type="radio" name="music-pack" value="pack-2" /> Ścieżka 2 — Przygoda i tajemnica</label
+            >
+          </fieldset>
+          <p class="menu-note">
+            Muzykę wybierasz niezależnie od znajdziek i grafiki. Każda ścieżka zawiera utwory dobrane do
+            plansz.
+          </p>
+          <button id="appearance-listen">Posłuchaj motywu</button>
+          <p id="soundtrack-title"></p>
           <fieldset>
             <legend>Szata graficzna</legend>
             <div id="theme-choices"></div>
           </fieldset>
           <fieldset class="collectible-choices">
-            <legend>Znajdźki</legend>
+            <legend>Zestaw znajdziek</legend>
             <label
               ><input type="radio" name="collectible-style" value="festival" checked />
               <span>Standardowe</span></label
@@ -216,19 +232,6 @@
           </fieldset>
           <div id="collectible-preview" aria-hidden="true"></div>
           <p id="collectible-preview-label"></p>
-          <fieldset class="music-pack-choices collectible-choices">
-            <legend>Muzyka plansz</legend>
-            <label
-              ><input type="radio" name="music-pack" value="pack-1" checked /> Paczka 1 — Spokojna
-              wyprawa</label
-            >
-            <label
-              ><input type="radio" name="music-pack" value="pack-2" /> Paczka 2 — Przygoda i tajemnica</label
-            >
-          </fieldset>
-          <p class="menu-note">Każda plansza ma dobrany utwór. Motyw menu pozostaje bez zmian.</p>
-          <button id="appearance-listen">Posłuchaj motywu</button>
-          <p id="soundtrack-title"></p>
           <p id="appearance-status" role="status"></p>
           <div class="menu-actions">
             <button id="appearance-close">Wróć</button

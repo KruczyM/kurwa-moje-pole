@@ -4,7 +4,7 @@
 
 - Spadającą znajdźkę można podnieść ruchem poziomym na jej wysokości. Nadal nie wolno wejść w nią od dołu/góry, a spadająca na głowę znajdźka i skały nadal zabijają. Obowiązkowy przedmiot znika dokładnie raz, zwiększa licznik i zachowuje istniejące skutki zebrania.
 - Malarskie menu i scena wybranego bohatera są niezależne od Standardowej/Artystycznej oprawy planszy. Loader, retry i cache pozostają wspólne.
-- W Oprawa i muzyka dodano Paczkę 1 — Spokojna wyprawa oraz Paczkę 2 — Przygoda i tajemnica. Wybór zapisuje się dopiero po Zastosuj, działa w obu oprawach i ma odsłuch utworu bieżącej planszy. Menu nadal gra pełny motyw jazzowy. Starszy zapis domyślnie wybiera Paczkę 1.
+- W Oprawa i muzyka są dwa niezależne wybory: Ścieżka dźwiękowa (Ścieżka 1 — Spokojna wyprawa / Ścieżka 2 — Przygoda i tajemnica) i Zestaw znajdziek. Muzyka znajduje się na górze panelu, przed podglądami grafiki. Wybór zapisuje się dopiero po Zastosuj, działa w obu oprawach i ma odsłuch utworu bieżącej planszy. Menu nadal gra pełny motyw jazzowy. Starszy zapis domyślnie wybiera Paczkę 1.
 
 ## Przypisanie 24 plansz
 
@@ -72,3 +72,5 @@ Dobór nastroju oparto na opisach zawartych w nazwach źródeł, charakterze zag
 - Chromium: wybór, odsłuch Paczki 2 z istniejącym WebAudio, jeden aktywny bufor, zamknięcie bez zapisu, zapis/odtworzenie po reloadzie i niezmienione menu Standardowej oprawy PASS. Wszystkie 21 plików w całości zdekodowane również przez przeglądarkę.
 - WebKit: nawigacja, ustawienia, zapis i zachowanie menu PASS. W tym środowisku brak AudioContext/OfflineAudioContext — odsłuch i dekodowanie WebAudio w WebKit nie są potwierdzone.
 - Fizyczny telefon oraz subiektywny odsłuch całości: PENDING_HUMAN. Brak zmian na GitHub Pages; publikacja wymaga niezależnego review i orkiestratora.
+
+Dodatkowa kontrola panelu: Chromium i WebKit PASS dla widoczności obu ścieżek od razu po otwarciu na 1280×800 i 390×844. Zmiana zestawu znajdziek zachowuje muzykę; zmiana muzyki zachowuje zestaw znajdziek. Przyciski Wróć/Zastosuj pozostają przy dolnej krawędzi przewijanego panelu. TypeScript i ESLint PASS.

@@ -497,6 +497,7 @@ class BongoRush {
     this.appearancePreview = false;
     element('appearance-listen').textContent = 'Posłuchaj motywu';
     element<HTMLDialogElement>('appearance-panel').showModal();
+    element('appearance-panel').scrollTop = 0;
     this.readAppearance();
   }
 
