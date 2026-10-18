@@ -1,6 +1,7 @@
 """Production-build telebim QA with mobile Chromium and WebKit; not physical iPhone QA."""
 import asyncio
 import json
+import sys
 from pathlib import Path
 from playwright.async_api import async_playwright
 
@@ -16,7 +17,7 @@ async def run(engine):
     errors=[]
     page.on('pageerror',lambda e:errors.append(str(e)))
     try:
-        await page.goto('http://127.0.0.1:5174/kurwa-moje-pole/')
+        await page.goto(sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:5174/kurwa-moje-pole/')
         await page.wait_for_function('()=>typeof document.querySelector("#play")?.onclick==="function"')
         await page.locator('#player-nickname').fill('StageVideoQA')
         await page.locator('#play').click()

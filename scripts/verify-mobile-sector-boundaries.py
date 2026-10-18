@@ -1,6 +1,7 @@
 """Local Chromium touch integration QA; not physical phone performance measurements."""
 import asyncio
 import json
+import sys
 from pathlib import Path
 from playwright.async_api import async_playwright
 
@@ -15,7 +16,7 @@ async def main():
         page = await context.new_page()
         errors = []
         page.on('pageerror', lambda e: errors.append(str(e)))
-        await page.goto('http://127.0.0.1:5297/kurwa-moje-pole/?server=http://127.0.0.1:3107')
+        await page.goto(sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:5297/kurwa-moje-pole/?server=http://127.0.0.1:3107')
         await page.wait_for_function('()=>typeof document.querySelector("#play")?.onclick==="function"')
         await page.locator('#player-nickname').fill('SectorQA')
         await page.locator('#play').click()
