@@ -458,7 +458,11 @@ export class UIManager {
     // Optymalizacja dla urządzeń mobilnych: recykling węzłów DOM zamiast niszczenia innerHTML co klatkę.
     const container = this.qs<HTMLElement>('#guitar-notes-container');
     if (container) {
-      if (container.children && typeof container.removeChild === 'function' && typeof document !== 'undefined') {
+      if (
+        container.children &&
+        typeof container.removeChild === 'function' &&
+        typeof document !== 'undefined'
+      ) {
         const activeNotes = state.activeNotes;
         const children = container.children;
         while (children.length > activeNotes.length && container.lastChild) {
@@ -536,9 +540,7 @@ export class UIManager {
         if (!isNaN(lane) && lane >= 0 && lane < 5) {
           const keyChar = keys[lane];
           const chord = chords[lane];
-          btn.innerHTML = chord
-            ? `${keyChar}<span class="guitar-btn-chord">${chord}</span>`
-            : keyChar;
+          btn.innerHTML = chord ? `${keyChar}<span class="guitar-btn-chord">${chord}</span>` : keyChar;
         }
       });
     }

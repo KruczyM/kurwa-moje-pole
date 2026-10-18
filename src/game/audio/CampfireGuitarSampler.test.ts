@@ -51,7 +51,9 @@ function createMockAudioContext() {
     createBiquadFilter: vi.fn(() => biquadFilter),
     createGain: vi.fn(() => ({ ...gainNode, gain: { ...gainNode.gain } })),
     resume: vi.fn(() => Promise.resolve()),
-    decodeAudioData: vi.fn((buf: ArrayBuffer) => Promise.resolve({ length: buf.byteLength } as unknown as AudioBuffer)),
+    decodeAudioData: vi.fn((buf: ArrayBuffer) =>
+      Promise.resolve({ length: buf.byteLength } as unknown as AudioBuffer),
+    ),
   };
 
   return { ctx: ctx as unknown as AudioContext, gainNode, bufferSource, biquadFilter };

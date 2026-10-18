@@ -16,7 +16,7 @@ import { festivalAreaAt, festivalAreaLabel, MobileBotAllowance } from './world/m
 import { SectorTransitionDialog } from './ui/SectorTransitionDialog';
 import { fogWorldManifestUrl, mobileWorldManifestUrl, fogWorldSectorUrl } from './assets/assetManifest';
 import { AssetLoader } from './assets/AssetLoader';
-import { characterAssets, effectAssets, festivalNpcAssets, musicAsset } from './assets/assetManifest';
+import { characterAssets, effectAssets, musicAsset } from './assets/assetManifest';
 import { CampWorld, WORLD_LIMIT, terrainHeight } from './world/CampWorld';
 import { PlayerController } from './player/PlayerController';
 import { isMobileInputDevice, MobileControls } from './player/MobileControls';
