@@ -368,6 +368,52 @@ describe('FlankiGame', () => {
     expect(game.getPhase()).toBe('aiming');
   });
 
+  it.each([false, true])(
+    'lets a human runner hold USE before reaching the can (release early: %s)',
+    (releaseEarly) => {
+      game.prepareOfflineLobby();
+      expect(game.selectRunner('A', 'player')).toBe(true);
+      game.startMatch();
+      while (game.roster.getCurrentThrower().team !== 'B') game.roster.advanceTurn();
+      (game as any).phase = 'bot_drinking';
+      (game as any).tipOverCan();
+      game.update(0.01);
+      const start = game.runnerA.currentPosition.clone();
+      game.updateLocalRunnerPosition(start.clone().add(new THREE.Vector3(0, 1.9, 0)));
+      game.setPlayerDrinking(true);
+      expect(game.isCanUpright()).toBe(false);
+      if (releaseEarly) game.setPlayerDrinking(false);
+      game.updateLocalRunnerPosition(new THREE.Vector3(0, 1.9, 5.5));
+      expect(game.isCanUpright()).toBe(!releaseEarly);
+      if (releaseEarly) game.setPlayerDrinking(true);
+      expect(game.isCanUpright()).toBe(true);
+      expect(game.runnerA.getState()).toBe('running_back');
+      expect(game.getHudState().isChugging).toBe(false);
+      game.updateLocalRunnerPosition(start.clone().add(new THREE.Vector3(0, 1.9, 0)));
+      expect(game.getHudState().isStopActive).toBe(true);
+      expect(game.runnerA.getState()).toBe('crossed_line');
+    },
+  );
+
+  it('clears a held runner pickup when the match stops', () => {
+    game.prepareOfflineLobby();
+    game.selectRunner('A', 'player');
+    game.startMatch();
+    while (game.roster.getCurrentThrower().team !== 'B') game.roster.advanceTurn();
+    (game as any).phase = 'bot_drinking';
+    (game as any).tipOverCan();
+    game.update(0.01);
+    game.setPlayerDrinking(true);
+    game.stopMatch();
+    game.startMatch();
+    while (game.roster.getCurrentThrower().team !== 'B') game.roster.advanceTurn();
+    (game as any).phase = 'bot_drinking';
+    (game as any).tipOverCan();
+    game.update(0.01);
+    game.updateLocalRunnerPosition(new THREE.Vector3(0, 1.9, 5));
+    expect(game.isCanUpright()).toBe(false);
+  });
+
   it('validates a remote human runner: no distant pickup, no teleport, STOP only after return', () => {
     game.configureLobby(
       {

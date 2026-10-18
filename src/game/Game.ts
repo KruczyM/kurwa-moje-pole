@@ -967,8 +967,8 @@ export class Game {
       if (!event.repeat) {
         if (activeFlanki.canLocalRunnerMove()) {
           activeFlanki.updateLocalRunnerPosition(this.camera.position);
-          activeFlanki.standUpCanByPlayer();
-        } else activeFlanki.setPlayerDrinking(true);
+        }
+        activeFlanki.setPlayerDrinking(true);
       }
       return;
     }
@@ -1888,7 +1888,7 @@ export class Game {
       this.mobileBotAllowance.update(frameElapsed);
       this.updateMobilePopulation();
     }
-    if (state !== 'playing' && this.world?.flankiGame?.getHudState().isChugging)
+    if (state !== 'playing' && this.world?.flankiGame?.isPlayerActionHeld())
       this.world.flankiGame.setPlayerDrinking(false);
     if (state !== 'paused' && state !== 'error') {
       if (this.toiletTimer && state === 'playing') {
