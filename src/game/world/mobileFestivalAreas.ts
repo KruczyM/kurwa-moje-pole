@@ -51,3 +51,41 @@ export class MobileBotAllowance {
     return this.value;
   }
 }
+
+export type FestivalBoundary = { a: string; b: string; x1: number; z1: number; x2: number; z2: number };
+/** Shared edges only: no outer-world border and no duplicate lines. */
+export function festivalBoundaries(): FestivalBoundary[] {
+  const edges: FestivalBoundary[] = [];
+  for (let i = 0; i < MOBILE_FESTIVAL_AREAS.length; i++) {
+    const a = MOBILE_FESTIVAL_AREAS[i];
+    const [ax, bx, az, bz] = a.regions[0];
+    for (const b of MOBILE_FESTIVAL_AREAS.slice(i + 1)) {
+      const [cx, dx, cz, dz] = b.regions[0];
+      const minZ = Math.max(az, cz),
+        maxZ = Math.min(bz, dz);
+      const minX = Math.max(ax, cx),
+        maxX = Math.min(bx, dx);
+      if ((bx === cx || dx === ax) && minZ < maxZ) {
+        const x = bx === cx ? bx : ax;
+        edges.push({ a: a.id, b: b.id, x1: x, x2: x, z1: minZ, z2: maxZ });
+      }
+      if ((bz === cz || dz === az) && minX < maxX) {
+        const z = bz === cz ? bz : az;
+        edges.push({ a: a.id, b: b.id, x1: minX, x2: maxX, z1: z, z2: z });
+      }
+    }
+  }
+  return edges;
+}
+export const FESTIVAL_BOUNDARIES = festivalBoundaries();
+export function nearestFestivalBoundary(x: number, z: number, area: string, target?: string) {
+  return FESTIVAL_BOUNDARIES.filter(
+    (edge) => (edge.a === area || edge.b === area) && (!target || edge.a === target || edge.b === target),
+  )
+    .map((edge) => {
+      const px = Math.max(edge.x1, Math.min(edge.x2, x));
+      const pz = Math.max(edge.z1, Math.min(edge.z2, z));
+      return { edge, distance: Math.hypot(x - px, z - pz), target: edge.a === area ? edge.b : edge.a };
+    })
+    .sort((a, b) => a.distance - b.distance)[0];
+}

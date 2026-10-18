@@ -7,6 +7,36 @@ import {
 } from './FestivalMap';
 
 describe('FestivalMap', () => {
+  it('binds the ASP marker to the actual pavilion footprint', () => {
+    const map = new FestivalMap();
+    map.setAuthoredLayout([{ id: 'smallStage', category: 'Stages', x: -65, z: 97, width: 54, depth: 38 }]);
+    expect(map.getLandmarks().find((l) => l.id === 'asp')).toMatchObject({
+      label: 'Namiot ASP',
+      x: -65,
+      z: 97,
+      width: 54,
+      depth: 38,
+    });
+  });
+  it('draws seven sectors only in mobile mode and highlights the loaded area', () => {
+    const map = new FestivalMap();
+    const ctx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      fillRect: vi.fn(),
+      strokeRect: vi.fn(),
+      setLineDash: vi.fn(),
+      strokeText: vi.fn(),
+      fillText: vi.fn(),
+    };
+    map['drawMobileSectors'](ctx as unknown as CanvasRenderingContext2D, 800, 600);
+    expect(ctx.strokeRect).not.toHaveBeenCalled();
+    map.setMobileArea('south-passage');
+    map['drawMobileSectors'](ctx as unknown as CanvasRenderingContext2D, 800, 600);
+    expect(ctx.strokeRect).toHaveBeenCalledTimes(7);
+    expect(ctx.fillText.mock.calls.some((call) => String(call[0]).includes('ASP'))).toBe(true);
+    expect(ctx.setLineDash.mock.calls.filter((call) => (call[0] as number[]).length === 0)).toHaveLength(1);
+  });
   it('does not create or move a tent marker on click or pointer cancellation', () => {
     const map = new FestivalMap();
     const canvas = {

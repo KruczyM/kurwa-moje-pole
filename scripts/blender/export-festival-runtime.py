@@ -15,6 +15,8 @@ OUT = ROOT / 'public/game-assets/world/festival/authored-festival.glb'
 PENDING = OUT.with_name('authored-festival.pending.glb')
 source_hash = hashlib.sha256(SOURCE.read_bytes()).hexdigest()
 bpy.ops.wm.open_mainfile(filepath=str(SOURCE))
+import runpy
+runpy.run_path(str(ROOT / 'scripts/blender/ensure-asp-placement.py'))['ensure_asp'](ROOT)
 original_scene = bpy.context.scene
 runtime = bpy.data.scenes.new('Festival_Runtime_Export')
 bpy.context.window.scene = runtime

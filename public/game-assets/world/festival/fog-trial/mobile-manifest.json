@@ -1,63 +1,7 @@
 {
   "schema": 1,
-  "sourceSha256": "babf3cc36e8f11c67617b5d0b1b52a8cbc07cc3fd2f2129464e53997be67d583",
+  "sourceSha256": "203ab8f2bdef90dfde6a2a26e533efaea8041a66cc1a1109b9852de654907cd6",
   "areas": [
-    {
-      "id": "lidl-wheel",
-      "label": "Lidl i karuzela",
-      "regions": [
-        [
-          -290,
-          -105,
-          64,
-          290
-        ],
-        [
-          96,
-          155,
-          -96,
-          -50
-        ]
-      ],
-      "bots": 2,
-      "spawns": [
-        [
-          -107,
-          80
-        ],
-        [
-          101,
-          -58
-        ]
-      ]
-    },
-    {
-      "id": "main-stage",
-      "label": "Du\u017ca scena, bariery i wie\u017ce",
-      "regions": [
-        [
-          110,
-          290,
-          -28,
-          68
-        ]
-      ],
-      "bots": 3,
-      "spawns": [
-        [
-          170,
-          18
-        ],
-        [
-          175,
-          24
-        ],
-        [
-          180,
-          12
-        ]
-      ]
-    },
     {
       "id": "north-camps",
       "label": "Obozy za pasa\u017cem",
@@ -66,7 +10,7 @@
           -290,
           290,
           -290,
-          -60
+          -96
         ]
       ],
       "bots": 1,
@@ -83,8 +27,8 @@
       "regions": [
         [
           -290,
-          290,
-          -60,
+          96,
+          -96,
           -25
         ]
       ],
@@ -105,12 +49,31 @@
       ]
     },
     {
+      "id": "wheel",
+      "label": "Karuzela",
+      "regions": [
+        [
+          96,
+          290,
+          -96,
+          -25
+        ]
+      ],
+      "bots": 1,
+      "spawns": [
+        [
+          101,
+          -58
+        ]
+      ]
+    },
+    {
       "id": "camp",
       "label": "Kurwa Moje Pole i s\u0105siednie namioty",
       "regions": [
         [
           -290,
-          290,
+          110,
           -25,
           64
         ]
@@ -140,11 +103,57 @@
       ]
     },
     {
-      "id": "south-passage",
-      "label": "Drugi pasa\u017c, ASP, s\u0142oneczniki i brama",
+      "id": "main-stage",
+      "label": "Du\u017ca scena, bariery i wie\u017ce",
+      "regions": [
+        [
+          110,
+          290,
+          -25,
+          64
+        ]
+      ],
+      "bots": 3,
+      "spawns": [
+        [
+          170,
+          18
+        ],
+        [
+          175,
+          24
+        ],
+        [
+          180,
+          12
+        ]
+      ]
+    },
+    {
+      "id": "lidl",
+      "label": "Lidl",
       "regions": [
         [
           -290,
+          -105,
+          64,
+          290
+        ]
+      ],
+      "bots": 1,
+      "spawns": [
+        [
+          -107,
+          80
+        ]
+      ]
+    },
+    {
+      "id": "south-passage",
+      "label": "Drugi pasa\u017c i ASP",
+      "regions": [
+        [
+          -105,
           290,
           64,
           290
@@ -164,42 +173,6 @@
     }
   ],
   "sectors": [
-    {
-      "id": "lidl-wheel-0",
-      "area": "lidl-wheel",
-      "path": "sectors/mobile-lidl-wheel-0.glb",
-      "bounds": [
-        [
-          -137.96737903521228,
-          0.0,
-          77.99998674284458
-        ],
-        [
-          -113.81737667384324,
-          7.057538144290447,
-          97.07499202594565
-        ]
-      ],
-      "bytes": 584236
-    },
-    {
-      "id": "main-stage-0",
-      "area": "main-stage",
-      "path": "sectors/mobile-main-stage-0.glb",
-      "bounds": [
-        [
-          116.28237509455992,
-          0.0,
-          -34.312340115284805
-        ],
-        [
-          242.98494825515,
-          31.57498461387166,
-          77.23870145626356
-        ]
-      ],
-      "bytes": 10809136
-    },
     {
       "id": "north-camps-0",
       "area": "north-camps",
@@ -265,12 +238,30 @@
           -59.0649995803833
         ],
         [
-          138.56500005722046,
+          121.5724925994873,
           6.995000001043081,
           -24.734913893509322
         ]
       ],
-      "bytes": 6476700
+      "bytes": 6475244
+    },
+    {
+      "id": "wheel-0",
+      "area": "wheel",
+      "path": "sectors/mobile-wheel-0.glb",
+      "bounds": [
+        [
+          127.43499994277954,
+          0.0,
+          -50.82814073562622
+        ],
+        [
+          138.56500005722046,
+          5.71999979019165,
+          -41.17186093330383
+        ]
+      ],
+      "bytes": 543616
     },
     {
       "id": "camp-0",
@@ -399,6 +390,42 @@
       "bytes": 5931124
     },
     {
+      "id": "main-stage-0",
+      "area": "main-stage",
+      "path": "sectors/mobile-main-stage-0.glb",
+      "bounds": [
+        [
+          116.28237509455992,
+          0.0,
+          -34.312340115284805
+        ],
+        [
+          242.98494825515,
+          31.57498461387166,
+          77.23870145626356
+        ]
+      ],
+      "bytes": 10806492
+    },
+    {
+      "id": "lidl-0",
+      "area": "lidl",
+      "path": "sectors/mobile-lidl-0.glb",
+      "bounds": [
+        [
+          -137.96737903521228,
+          0.0,
+          77.99998674284458
+        ],
+        [
+          -113.81737667384324,
+          7.057538144290447,
+          97.07499202594565
+        ]
+      ],
+      "bytes": 584236
+    },
+    {
       "id": "south-passage-0",
       "area": "south-passage",
       "path": "sectors/mobile-south-passage-0.glb",
@@ -409,12 +436,12 @@
           63.69999982336591
         ],
         [
-          239.6812710033382,
+          239.68127184614215,
           23.000214099884033,
-          106.0
+          116.00000563793685
         ]
       ],
-      "bytes": 1469520
+      "bytes": 2095104
     }
   ]
 }

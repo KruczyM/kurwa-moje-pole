@@ -1,40 +1,16 @@
 {
   "areas": [
     {
-      "id": "lidl-wheel",
-      "label": "Lidl i karuzela",
-      "regions": [
-        [-290, -105, 64, 290],
-        [96, 155, -96, -50]
-      ],
-      "bots": 2,
-      "spawns": [
-        [-107, 80],
-        [101, -58]
-      ]
-    },
-    {
-      "id": "main-stage",
-      "label": "Duża scena, bariery i wieże",
-      "regions": [[110, 290, -28, 68]],
-      "bots": 3,
-      "spawns": [
-        [170, 18],
-        [175, 24],
-        [180, 12]
-      ]
-    },
-    {
       "id": "north-camps",
       "label": "Obozy za pasażem",
-      "regions": [[-290, 290, -290, -60]],
+      "regions": [[-290, 290, -290, -96]],
       "bots": 1,
       "spawns": [[-60, -103]]
     },
     {
       "id": "north-passage",
       "label": "Pierwszy pasaż",
-      "regions": [[-290, 290, -60, -25]],
+      "regions": [[-290, 96, -96, -25]],
       "bots": 3,
       "spawns": [
         [-85, -35],
@@ -43,9 +19,16 @@
       ]
     },
     {
+      "id": "wheel",
+      "label": "Karuzela",
+      "regions": [[96, 290, -96, -25]],
+      "bots": 1,
+      "spawns": [[101, -58]]
+    },
+    {
       "id": "camp",
       "label": "Kurwa Moje Pole i sąsiednie namioty",
-      "regions": [[-290, 290, -25, 64]],
+      "regions": [[-290, 110, -25, 64]],
       "bots": 3,
       "spawns": [
         [-5, -3],
@@ -56,9 +39,27 @@
       ]
     },
     {
+      "id": "main-stage",
+      "label": "Duża scena, bariery i wieże",
+      "regions": [[110, 290, -25, 64]],
+      "bots": 3,
+      "spawns": [
+        [170, 18],
+        [175, 24],
+        [180, 12]
+      ]
+    },
+    {
+      "id": "lidl",
+      "label": "Lidl",
+      "regions": [[-290, -105, 64, 290]],
+      "bots": 1,
+      "spawns": [[-107, 80]]
+    },
+    {
       "id": "south-passage",
-      "label": "Drugi pasaż, ASP, słoneczniki i brama",
-      "regions": [[-290, 290, 64, 290]],
+      "label": "Drugi pasaż i ASP",
+      "regions": [[-105, 290, 64, 290]],
       "bots": 2,
       "spawns": [
         [-40, 73],

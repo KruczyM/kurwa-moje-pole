@@ -22,6 +22,11 @@ def area_at(x, z):
 
 
 def build():
+    previous_paths = set()
+    for name in ['manifest.json', 'mobile-manifest.json']:
+        manifest_path = OUT / name
+        if manifest_path.exists():
+            previous_paths.update(s['path'] for s in json.loads(manifest_path.read_text(encoding='utf-8'))['sectors'])
     raw = SOURCE.read_bytes()
     size = struct.unpack_from('<I', raw, 12)[0]
     src = json.loads(raw[20:20 + size])
@@ -105,8 +110,12 @@ def build():
         owner = owners[i]
         extras = src['nodes'][owner].get('extras', {})
         name = extras.get('runtimePlacement', '')
-        if name in ['Lidl', 'AllegroWheel']:
-            return 'lidl-wheel'
+        if name == 'Lidl':
+            return 'lidl'
+        if name == 'AllegroWheel':
+            return 'wheel'
+        if name == 'smallStage':
+            return 'south-passage'
         if name == 'Road_0':
             return 'north-passage'
         if name == 'Road_1':
@@ -307,6 +316,14 @@ def build():
             size = emit(path, nodes)
             mobile_manifest['sectors'].append({'id': f'{key}-{index}', 'area': key, 'path': path, 'bounds': cell['bounds'], 'bytes': size})
     (OUT / 'mobile-manifest.json').write_text(json.dumps(mobile_manifest, indent=2), encoding='utf-8')
+    current_paths = {s['path'] for s in manifest['sectors'] + mobile_manifest['sectors']}
+    for path in previous_paths - current_paths:
+        target = (OUT / path).resolve()
+        assert target.parent == (OUT / 'sectors').resolve(), 'Unexpected generated path'
+        target.unlink(missing_ok=True)
+    for target in (OUT / 'textures').iterdir():
+        if target.stem.startswith('image-') and target.stem[6:].isdigit() and target.suffix in ['.png', '.jpg'] and f'textures/{target.name}' not in image_paths:
+            target.unlink()
     print(json.dumps({'baseBytes': base_size, 'sectors': len(cells), 'staticNodes': len(static), 'sourceSha256': revision}))
 
 

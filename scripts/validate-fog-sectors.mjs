@@ -115,7 +115,36 @@ for (const sector of mobile.sectors) {
   }
 }
 assert.deepEqual(actual, expected, 'Missing/extra mobile static meshes');
-assert.equal(new Set(mobile.sectors.map((sector) => sector.area)).size, 6);
+assert.equal(new Set(mobile.sectors.map((sector) => sector.area)).size, areas.areas.length);
 console.log(
-  `Mobile areas validated: 6 places, ${mobile.sectors.length} chunks, ${actual.size} meshes; complete placements preserved.`,
+  `Mobile areas validated: ${areas.areas.length} places, ${mobile.sectors.length} chunks, ${actual.size} meshes; complete placements preserved.`,
 );
+
+const asp = source.doc.nodes.findIndex((node) => node.extras?.runtimePlacement === 'smallStage');
+assert(asp >= 0, 'ASP placement missing from authored world');
+assert.equal(placementAreas.get(asp), 'south-passage', 'ASP missing or assigned to wrong mobile area');
+const aspMeshes = [...expected].filter((index) => {
+  let owner = index;
+  while (!source.doc.nodes[owner].extras?.runtimePlacement && parents.has(owner)) owner = parents.get(owner);
+  return owner === asp;
+});
+assert(aspMeshes.length > 0, 'ASP has no streamed geometry');
+const aspCanopy = aspMeshes.find(
+  (index) => source.doc.nodes[index].extras?.runtimeNode === 'ASP_Tent_Canopy',
+);
+assert(aspCanopy !== undefined, 'ASP canopy missing from mobile export');
+console.log(`ASP validated: ${aspMeshes.length} meshes in south-passage, including canopy.`);
+
+const layout = JSON.parse(readFileSync(new URL('map-layout.json', directory), 'utf8'));
+const aspMap = layout.scenery.find((item) => item.id === 'smallStage');
+assert(aspMap, 'ASP footprint missing from map');
+const aspArea = areas.areas.find((area) => area.id === 'south-passage');
+assert(aspArea.label.includes('ASP'));
+for (const x of [aspMap.x - aspMap.width / 2, aspMap.x + aspMap.width / 2]) {
+  for (const z of [aspMap.z - aspMap.depth / 2, aspMap.z + aspMap.depth / 2]) {
+    assert(
+      aspArea.regions.some(([x1, x2, z1, z2]) => x >= x1 && x < x2 && z >= z1 && z < z2),
+      'ASP footprint crosses a mobile boundary',
+    );
+  }
+}
