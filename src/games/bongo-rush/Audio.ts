@@ -68,8 +68,9 @@ export class ArcadeAudio {
       if (this.recordedVoice) this.stopRecording(false);
       return;
     }
-    if (this.disposed || !context || context.state !== 'running') return;
+    if (this.disposed || !context) return;
     if (profile && this.soundtrackBase !== undefined && this.updateRecording(profile, menu)) return;
+    if (context.state !== 'running') return;
     const now = context.currentTime;
     if (this.musicBiome !== biome || (profile && this.musicLevel !== profile.level)) {
       this.fadeMusic();
@@ -169,6 +170,7 @@ export class ArcadeAudio {
     }
     if (this.recordingFailed) return false;
     if (!this.recording) return true;
+    if (context.state !== 'running') return true;
     if (!this.recordedVoice) {
       this.fadeMusic();
       // A rapid sequence of selections cannot accumulate fading source nodes.
