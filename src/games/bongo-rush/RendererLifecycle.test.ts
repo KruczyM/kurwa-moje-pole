@@ -6,7 +6,7 @@ import { LEVELS } from './Levels';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('reopening the same cave on a phone', () => {
-  it('retains valid terrain caches and gameplay-only clipping after repeated runs and resizes', () => {
+  it('retains valid terrain caches and full-canvas clipping after repeated runs and resizes', () => {
     const images: unknown[][] = [],
       clips: number[][] = [];
     const makeContext = (record: boolean) =>
@@ -45,24 +45,29 @@ describe('reopening the same cave on a phone', () => {
       renderer.terrain(0, terrain);
       renderer.draw(new Simulation(LEVELS[0]), undefined, 0, 0, true);
       const viewport = renderer.diagnostics().viewport;
-      expect(clips).toContainEqual([0, 58, width, viewport.height]);
-      expect(viewport.y + viewport.height).toBeLessThanOrEqual(height - (height < 400 ? 160 : 220));
-      const map = renderer.diagnostics().minimap;
-      if (map) expect(map.y - 5).toBeGreaterThanOrEqual(viewport.y + viewport.height);
+      expect(viewport).toEqual({ x: 0, y: 0, width, height });
+      expect(clips).toContainEqual([0, 0, width, height]);
+      expect(renderer.diagnostics().minimap).toBeUndefined();
     }
-    // The measured compact CSS strips leave three full 40px rows on small phone landscape.
-    for (const [width, height] of [
-      [568, 272],
-      [640, 312],
-      [667, 327],
-    ]) {
-      renderer.resize(width, height, true, 88, 0, 64);
-      renderer.draw(new Simulation(LEVELS[0]), undefined, 0, 0, true);
-      const { viewport, minimap } = renderer.diagnostics();
-      expect(viewport.height).toBeGreaterThanOrEqual(120);
-      expect(clips).toContainEqual([0, 64, width, viewport.height]);
-      expect(minimap!.y - 5).toBeGreaterThanOrEqual(viewport.y + viewport.height);
-    }
+    // Showing or hiding the overlay must never resize or recenter the cave.
+    const game = new Simulation(LEVELS[2]);
+    renderer.resize(1912, 760, false);
+    renderer.draw(game, undefined, 0, 0, true);
+    const before = renderer.diagnostics();
+    expect(before.mapBounds!.x).toBeLessThanOrEqual(0.001);
+    expect(before.mapBounds!.x + before.mapBounds!.width).toBeGreaterThanOrEqual(1912 - 0.001);
+    expect(before.mapBounds!.y).toBeLessThanOrEqual(0.001);
+    expect(before.mapBounds!.y + before.mapBounds!.height).toBeGreaterThanOrEqual(760 - 0.001);
+    renderer.showMap = true;
+    renderer.draw(game, undefined, 0, 0, true);
+    expect(renderer.diagnostics().minimap).toBeDefined();
+    expect(renderer.diagnostics().viewport).toEqual(before.viewport);
+    expect(renderer.diagnostics().mapBounds).toEqual(before.mapBounds);
+    expect(renderer.diagnostics().tileSize).toBe(before.tileSize);
+    renderer.showMap = false;
+    renderer.draw(game, undefined, 0, 0, true);
+    expect(renderer.diagnostics().minimap).toBeUndefined();
+    expect(renderer.diagnostics().mapBounds).toEqual(before.mapBounds);
     const cachedTerrain = images
       .map((args) => args[0])
       .filter(

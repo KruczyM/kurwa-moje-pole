@@ -2,35 +2,30 @@ import { describe, expect, it } from 'vitest';
 import { minimapLayout } from './MinimapLayout';
 import { MenuFlow } from './MenuFlow';
 
-describe('mobile minimap separation', () => {
+describe('optional minimap overlay', () => {
   it.each([
-    [320, 450, 220, 52],
-    [390, 720, 220, 52],
-    [844, 280, 160, 30],
-    [667, 230, 160, 30],
-    [360, 390, 220, 52],
-  ])(
-    'keeps tall and wide maps outside gameplay and away from the joystick at %i×%i',
-    (width, height, strip, footer) => {
-      const top = 58,
-        playHeight = Math.max(1, height - top - strip);
-      for (const [columns, rows] of [
-        [19, 24],
-        [21, 39],
-        [35, 15],
-        [7, 60],
-      ]) {
-        const map = minimapLayout(width, height, top, playHeight, columns, rows, true, footer)!;
-        expect(map.y - 5).toBeGreaterThanOrEqual(top + playHeight);
-        expect(map.y + map.height + 5).toBeLessThanOrEqual(height - footer);
-        expect(map.x - 5).toBeGreaterThan(width / 2 + 62);
-        expect(map.x + map.width + 5).toBeLessThan(width);
-        expect(map.width / map.height).toBeCloseTo(columns / rows);
-      }
-    },
-  );
-  it('omits the overview when no non-gameplay space remains', () => {
-    expect(minimapLayout(320, 120, 58, 60, 19, 24, true)).toBeUndefined();
+    [320, 450],
+    [390, 720],
+    [844, 280],
+    [667, 230],
+    [1912, 760],
+  ])('fits the overlay under the HUD without distorting tall or wide maps at %i×%i', (width, height) => {
+    for (const [columns, rows] of [
+      [19, 24],
+      [21, 39],
+      [35, 15],
+      [7, 60],
+    ]) {
+      const map = minimapLayout(width, height, 58, columns, rows, width <= 844)!;
+      expect(map.y - 5).toBeGreaterThanOrEqual(58);
+      expect(map.x - 5).toBeGreaterThanOrEqual(0);
+      expect(map.x + map.width + 5).toBeLessThan(width);
+      expect(map.y + map.height + 5).toBeLessThan(height);
+      expect(map.width / map.height).toBeCloseTo(columns / rows);
+    }
+  });
+  it('omits the overview if the HUD leaves no room', () => {
+    expect(minimapLayout(320, 80, 70, 19, 24, true)).toBeUndefined();
   });
 });
 

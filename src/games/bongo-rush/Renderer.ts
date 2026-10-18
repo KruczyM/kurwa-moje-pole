@@ -1,3 +1,4 @@
+import type { ScreenRect } from './HudVisibility';
 import { composeScene, paintedSoilCrop } from './SceneComposition';
 import type { SceneComposition } from './SceneComposition';
 import { macroRect, macroVariant, paintedWallRect, paintedWallVariant } from './Presentation';
@@ -74,8 +75,8 @@ export class CaveRenderer {
   private width = 1;
   private height = 1;
   private touch = false;
-  private dockedMap = false;
-  private footerHeight = 52;
+  private minimapTop = 58;
+  private playerBox: ScreenRect = { x: 0, y: 0, width: 0, height: 0 };
   private minimapBox?: MinimapBox;
   private tile = 40;
   private tiles = new Map<string, HTMLCanvasElement>();
@@ -93,10 +94,10 @@ export class CaveRenderer {
   private clock = 0;
   private readonly debris = new VisualEffects();
   private playHeight = 1;
-  private topInset = 58;
+  private readonly topInset = 0;
   private world?: World;
   private composition?: SceneComposition;
-  showMap = true;
+  showMap = false;
   private map?: HTMLCanvasElement;
   private mapTick = -1;
   private authoredTick = -1;
@@ -108,6 +109,11 @@ export class CaveRenderer {
   /** Receives an existing canvas context and never owns animation scheduling or asset loading. */
   constructor(private readonly context: CanvasRenderingContext2D) {}
 
+  /** CSS-pixel actor bounds from this rendered frame, without allocating another camera. */
+  playerScreenBounds(): Readonly<ScreenRect> {
+    return this.playerBox;
+  }
+
   /** Receives sound observations from the fixed simulation step without changing the simulation. */
   effects(world: World, sounds: readonly SoundEvent[]): void {
     this.debris.observe(world, sounds);
@@ -117,7 +123,16 @@ export class CaveRenderer {
   diagnostics() {
     return {
       viewport: { x: 0, y: this.topInset, width: this.width, height: this.playHeight },
-      minimap: this.minimapBox ? { ...this.minimapBox, docked: this.dockedMap } : undefined,
+      tileSize: this.tile,
+      player: { ...this.playerBox },
+      mapBounds: this.world
+        ? {
+            ...this.camera.project({ x: 0, y: 0 }),
+            width: this.world.width * this.tile,
+            height: this.world.height * this.tile,
+          }
+        : undefined,
+      minimap: this.minimapBox ? { ...this.minimapBox, overlay: true } : undefined,
       authored: this.sceneryAssets?.authored
         ? {
             level: this.sceneryAssets.authored.level,
@@ -314,23 +329,13 @@ export class CaveRenderer {
   }
 
   /** Fits desktop caves and keeps mobile tiles large enough to read while the camera follows. */
-  resize(
-    width: number,
-    height: number,
-    touch = false,
-    controlHeight?: number,
-    footerHeight = 52,
-    topInset = 58,
-  ): void {
-    this.topInset = topInset;
+  resize(width: number, height: number, touch = false, minimapTop = 58): void {
     this.touch = touch;
-    this.dockedMap = touch || width <= 650;
+    this.minimapTop = minimapTop;
     this.width = width;
     this.height = height;
-    this.footerHeight = footerHeight;
-    const bottomInset = this.dockedMap ? (controlHeight ?? (height < 400 ? 160 : 220)) : 12;
-    this.playHeight = Math.max(1, height - this.topInset - bottomInset);
-    this.tile = caveTileSize(width, this.playHeight);
+    this.playHeight = Math.max(1, height);
+    this.tile = caveTileSize(width, this.playHeight, this.world?.width, this.world?.height);
     this.camera.resize({ width, height: this.playHeight, pixelsPerMeter: this.tile });
   }
 
@@ -519,6 +524,7 @@ export class CaveRenderer {
       this.enemyAnimationTick = -1;
       this.debris.clear();
       // One active instance of the existing camera, with this cave's real bounds rather than 24x18.
+      this.tile = caveTileSize(this.width, this.playHeight, world.width, world.height);
       this.camera = new CameraRig({ width: world.width, height: world.height });
       this.camera.resize({ width: this.width, height: this.playHeight, pixelsPerMeter: this.tile });
       this.mapTick = -1;
@@ -530,6 +536,8 @@ export class CaveRenderer {
       };
     }
     this.camera.follow({ x: playerPoint.x + 0.5, y: playerPoint.y + 0.5 }, dt, paused);
+    const playerScreen = this.camera.project(playerPoint);
+    this.playerBox = { x: playerScreen.x, y: playerScreen.y, width: this.tile, height: this.tile };
     if (this.enemyAnimationTick !== world.tick) {
       this.enemyAnimationTick = world.tick;
       this.patrolMotion.retain(world.enemies);
@@ -872,11 +880,6 @@ export class CaveRenderer {
     ctx.restore();
     if (!this.sceneryAssets) this.atmosphere(playerPoint);
     if (this.depthAtlas) this.depthLayer(this.depthAtlas, game.level.biome, 2, displacement);
-    if (this.dockedMap) {
-      // This is UI space, not a covered fragment of the cave. Camera and clipping agree.
-      ctx.fillStyle = '#101725';
-      ctx.fillRect(0, this.topInset + this.playHeight, this.width, this.height);
-    }
     if (this.showMap) this.minimap(world);
   }
 
@@ -1065,12 +1068,10 @@ export class CaveRenderer {
     const box = minimapLayout(
       this.width,
       this.height,
-      this.topInset,
-      this.playHeight,
+      this.minimapTop,
       world.width,
       world.height,
-      this.dockedMap,
-      this.footerHeight,
+      this.touch || this.width <= 650,
     );
     this.minimapBox = box;
     if (!box) return;

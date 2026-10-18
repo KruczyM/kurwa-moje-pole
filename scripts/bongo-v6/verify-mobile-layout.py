@@ -4,31 +4,34 @@ from pathlib import Path
 from playwright.async_api import async_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / 'reports/bongo-mobile-layout'
+OUT = ROOT / 'reports/bongo-fullscreen-layout'
 OUT.mkdir(parents=True, exist_ok=True)
 
 async def ready(page):
     await page.wait_for_function('window.__bongoSnapshot && !window.__bongoSnapshot().loading')
 
-async def check_layout(page):
-    await page.wait_for_timeout(150)
+async def check_layout(page, visible=False):
+    await page.wait_for_timeout(100)
     data = await page.evaluate("""() => {
       const s=window.__bongoSnapshot(), rect=id=>document.querySelector(id).getBoundingClientRect().toJSON();
-      return {rendering:s.rendering,board:rect('#board'),joystick:rect('#joystick'),restart:rect('#touch-restart'),footer:rect('footer'),level:s.level,mode:s.mode};
+      return {rendering:s.rendering,board:rect('#board'),joystick:rect('#joystick'),restart:rect('#touch-restart'),hud:rect('.hud'),level:s.level,mode:s.mode};
     }""")
     r, board = data['rendering'], data['board']
-    m, v = r.get('minimap'), r['viewport']
-    assert m and m['docked'], data
-    assert m['y']-5 >= v['y']+v['height']-.1, data
-    footer_top = data['footer']['y'] if data['footer']['height'] else board['y']+board['height']
-    assert m['y']+m['height']+5+board['y'] <= footer_top+.1, data
-    if board['width'] >= 568 and board['height'] < 400:
-        assert v['height'] >= 120, data
-    absolute={'x':m['x']-5+board['x'],'y':m['y']-5+board['y'],'width':m['width']+10,'height':m['height']+10}
-    def overlaps(a,b):
+    m, v, bounds = r.get('minimap'), r['viewport'], r['mapBounds']
+    assert v == {'x':0,'y':0,'width':board['width'],'height':board['height']}, data
+    assert bounds['x'] <= .01 and bounds['y'] <= .01, data
+    assert bounds['x']+bounds['width'] >= v['width']-.01, data
+    assert bounds['y']+bounds['height'] >= v['height']-.01, data
+    assert bool(m)==visible, data
+    if m:
+      assert m['overlay'],data
+      assert m['y']-5+board['y'] >= data['hud']['bottom'],data
+      assert m['y']+m['height']+5 <= board['height'],data
+      absolute={'x':m['x']-5+board['x'],'y':m['y']-5+board['y'],'width':m['width']+10,'height':m['height']+10}
+      def overlaps(a,b):
         return a['x'] < b['x']+b['width'] and b['x'] < a['x']+a['width'] and a['y'] < b['y']+b['height'] and b['y'] < a['y']+a['height']
-    assert not overlaps(absolute,data['joystick']),data
-    assert not overlaps(absolute,data['restart']),data
+      assert not overlaps(absolute,data['joystick']),data
+      assert not overlaps(absolute,data['restart']),data
     return data
 
 async def main(url):
@@ -45,19 +48,32 @@ async def main(url):
           await page.locator('#choose-level').click();await ready(page)
           assert await page.evaluate('window.__bongoSnapshot().menuScreen')=='levels'
           assert not await page.locator('#hero-confirm').is_visible()
-          for level in [6,15,24]:
+          for level in [3,6,13,14,15,24]:
             await page.locator(f'#levels button[data-level="{level-1}"]').click();await ready(page)
             await page.locator('#begin').click()
             await page.wait_for_function('window.__bongoSnapshot().mode==="playing"')
             for width,height in [(390,844),(844,390),(320,568),(667,375),(568,320),(640,360),(360,640),(320,480)]:
               await page.set_viewport_size({'width':width,'height':height})
+              await page.locator('#pause').click()
               data=await check_layout(page)
+              await page.locator('#map').click()
+              await page.wait_for_function('!!window.__bongoSnapshot().rendering.minimap')
+              shown=await check_layout(page,True)
+              assert shown['rendering']['mapBounds']==data['rendering']['mapBounds']
+              assert shown['rendering']['tileSize']==data['rendering']['tileSize']
+              await page.locator('#map').click()
+              await page.wait_for_function('!window.__bongoSnapshot().rendering.minimap')
+              await page.locator('#pause').click()
+              await page.wait_for_timeout(100)
+              hud_safe = await page.evaluate("""() => {
+                const p=window.__bongoSnapshot().rendering.player,b=document.querySelector('#board').getBoundingClientRect(),h=document.querySelector('.hud').getBoundingClientRect();
+                const overlaps=p.x<h.right-b.x+4 && p.x+p.width>h.x-b.x-4 && p.y<h.bottom-b.y+4 && p.y+p.height>h.y-b.y-4;
+                return !overlaps || Number(getComputedStyle(document.querySelector('.hud')).opacity)<=.2;
+              }""")
+              assert hud_safe, data
               records.append({'engine':engine,'style':style,'screen':[width,height],'level':level,'layout':data})
               if level==15 and width in [390,844]:
                 await page.screenshot(path=str(OUT/f'{engine}-{style}-{width}x{height}.png'))
-            await page.locator('#map').click()
-            await page.wait_for_function('!window.__bongoSnapshot().rendering.minimap')
-            await page.locator('#map').click();await check_layout(page)
             # Exercise existing joystick and restart handlers without adding a test-only controller.
             joy=await page.locator('#joystick').bounding_box()
             await page.mouse.move(joy['x']+joy['width']/2,joy['y']+joy['height']/2)
@@ -76,7 +92,7 @@ async def main(url):
           assert not errors,errors
           await context.close()
         await browser.close()
-    (OUT/'report.json').write_text(json.dumps({'status':'PASS','url':url,'checks':records,'quickLevelSelectionRetainsHero':True,'mapToggle':True,'joystickAndRestart':True},indent=2),encoding='utf-8')
-    print(f'PASS: {len(records)} real-browser mobile layouts, both styles, quick level selection, joystick/restart, map toggle')
+    (OUT/'report.json').write_text(json.dumps({'status':'PASS','url':url,'checks':records,'quickLevelSelectionRetainsHero':True,'mapToggleWithoutCameraChanges':True,'fullCanvas':True,'noLetterboxing':True,'hudFadesOverHero':True,'joystickAndRestart':True},indent=2),encoding='utf-8')
+    print(f'PASS: {len(records)} real-browser fullscreen layouts, both styles, quick level selection, joystick/restart, map toggle')
 
 asyncio.run(main(sys.argv[1]))
