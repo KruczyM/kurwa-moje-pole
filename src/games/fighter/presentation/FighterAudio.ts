@@ -54,13 +54,13 @@ export class FighterAudio {
       this.compressor.connect(this.ctx.destination);
     }
     if (!this.ctx) return;
+    this.unlocked = true;
+    this.update();
     try {
       await this.ctx.resume();
     } catch {
-      return;
+      /* Browser autoplay policy may defer running state until user gesture. */
     }
-    this.unlocked = true;
-    this.update();
     void this.ensureMusic();
   }
 
@@ -129,7 +129,8 @@ export class FighterAudio {
   }
 
   private async ensureMusic(): Promise<void> {
-    if (!this.unlocked || !this.ctx || this.musicScene === this.scene || this.musicPending) return;
+    if (!this.unlocked || !this.ctx || (this.musicScene === this.scene && this.music) || this.musicPending)
+      return;
     const scene = this.scene,
       generation = this.generation;
     this.musicPending = true;
