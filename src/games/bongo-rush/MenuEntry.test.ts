@@ -14,7 +14,9 @@ describe('Bongo Rush main menu entry', () => {
     expect(game).toContain('<title>After: Walka o tasiorowe bongo</title>');
     expect(game).not.toContain('BONGO RUSH');
     expect(game).not.toContain('id="menu-listen"');
-    expect(game).toContain('rel="preload" href="./game-assets/audio/bongo-rush/soundtrack-v1/menu-jazz.mp3"');
+    expect(game).toMatch(
+      /rel="preload"\s+href="\.\/game-assets\/audio\/bongo-rush\/soundtrack-v1\/menu-jazz\.mp3"/,
+    );
     expect(game).toContain('class="menu-track"');
   });
 });

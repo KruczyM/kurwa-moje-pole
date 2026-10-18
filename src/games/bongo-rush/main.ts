@@ -658,6 +658,9 @@ class BongoRush {
           if (!this.disposed) {
             this.titleSignature = '';
             this.updateTitleMenu();
+          } else {
+            // A late menu download must not retain rasters after navigation or HMR.
+            this.pruneAssets();
           }
         });
     }
