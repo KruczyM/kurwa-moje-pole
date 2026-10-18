@@ -480,6 +480,45 @@ window.addEventListener(
   { once: true },
 );
 
+// Natychmiastowe wyłączanie muzyki z głównej gry przy przejściu na minigry
+let wasSpeakerPlayingBeforeHidden = false;
+
+function stopMainGameAudio(): void {
+  tentMenuAudio.stopImmediate();
+  if (game?.speakerAudio) {
+    wasSpeakerPlayingBeforeHidden = game.speakerAudio.isPlaying;
+    if (game.speakerAudio.isPlaying) {
+      game.speakerAudio.stopImmediate();
+    }
+  }
+}
+
+// Zatrzymanie muzyki przy kliknięciu w dowolny link prowadzący do minigier 2D
+const handleMinigameNav = (event: Event) => {
+  const target = (event.target as HTMLElement | null)?.closest<HTMLAnchorElement>(
+    'a.minigame-link, #play-fighter, #play-bongo-rush, a[href*="fighter-demo"], a[href*="bongo-rush"]',
+  );
+  if (target) {
+    stopMainGameAudio();
+  }
+};
+document.addEventListener('click', handleMinigameNav, { capture: true });
+document.addEventListener('auxclick', handleMinigameNav, { capture: true });
+
+// Zatrzymanie muzyki przy ukryciu karty (np. otwarcie minigry w nowej karcie)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopMainGameAudio();
+  } else {
+    if (state.current === 'start') {
+      tentMenuAudio.muffleToTent(0.6);
+      tentMenuAudio.startTentAudio();
+    } else if (state.current === 'playing' && wasSpeakerPlayingBeforeHidden && game?.speakerAudio) {
+      void game.speakerAudio.play();
+    }
+  }
+});
+
 // Przewodnik festiwalowy i Mapa
 const GUIDE_TABS = [
   'controls',

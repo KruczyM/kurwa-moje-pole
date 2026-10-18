@@ -207,6 +207,29 @@ export class TentMenuAudio {
   }
 
   /**
+   * Natychmiastowe zatrzymanie dźwięku bez opóźnienia i bez fade-outu (np. przy przejściu do innej gry).
+   */
+  public stopImmediate(): void {
+    this.clearGestureResume();
+    if (!this.isPlaying) return;
+
+    this.isPlaying = false;
+    if (this.gainNode && this.ctx) {
+      const now = this.ctx.currentTime;
+      this.gainNode.gain.cancelScheduledValues(now);
+      this.gainNode.gain.setValueAtTime(0, now);
+    }
+    if (this.audio) {
+      try {
+        this.audio.pause();
+        this.audio.currentTime = 0;
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  /**
    * Płynne wyciszenie i zatrzymanie (np. przy przejściu na inny system dźwiękowy).
    */
   public stop(fadeDuration = 0.4): void {

@@ -160,6 +160,25 @@ describe('TentMenuAudio', () => {
     );
   });
 
+  it('stops immediately without fade duration', () => {
+    const { ctx, gainNode } = createMockAudioContext();
+    const mockAudio = createMockAudioElement();
+
+    const tentAudio = new TentMenuAudio({
+      audioContext: ctx,
+      audioFactory: () => mockAudio,
+    });
+
+    tentAudio.startTentAudio();
+    expect(tentAudio.active).toBe(true);
+
+    tentAudio.stopImmediate();
+    expect(tentAudio.active).toBe(false);
+    expect(mockAudio.pause).toHaveBeenCalled();
+    expect(gainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(ctx.currentTime);
+    expect(gainNode.gain.setValueAtTime).toHaveBeenCalledWith(0, ctx.currentTime);
+  });
+
   it('disposes cleanly without throwing', () => {
     const { ctx, biquadFilters, gainNode } = createMockAudioContext();
     const mockAudio = createMockAudioElement();
