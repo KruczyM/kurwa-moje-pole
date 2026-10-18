@@ -132,7 +132,7 @@ describe('Arcade Category 1 — HTML Elements & Cabinet Template', () => {
     expect(html).toContain('>PZ</span>');
     expect(html).toContain('>PB</span>');
     expect(html).toContain('>PC</span>');
-    expect(html).toContain('>CS</span>');
+    expect(html).not.toContain('>CS</span>');
     expect(html).toContain('>BLOK</span>');
 
     expect(html).toContain('class="btn-key-hint">U</small>');
@@ -142,7 +142,7 @@ describe('Arcade Category 1 — HTML Elements & Cabinet Template', () => {
     expect(html).toContain('class="btn-key-hint">K</small>');
     expect(html).toContain('class="btn-key-hint">H</small>');
     expect(html).toContain('class="btn-key-hint">N</small>');
-    expect(html).toContain('class="btn-key-hint">P</small>');
+    expect(html).not.toContain('class="btn-key-hint">P</small>');
     expect(html).toContain('class="btn-key-hint">L</small>');
 
     // D-Pad key hint badges

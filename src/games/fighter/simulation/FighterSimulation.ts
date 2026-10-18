@@ -267,10 +267,10 @@ export class FighterSimulation {
         fighter.moveTick >= move.startup + move.active &&
         fighter.moveTick <= move.startup + move.active + move.cancelWindow
       ) {
-        // Special or Ultimate cancel (requires full 100% meter)
+        // Ultimate cancel (requires full 100% meter)
         if (buf.justPressed(INPUT.SPECIAL)) {
           if (fighter.meter >= 100) {
-            const ultMove = def.moves[def.ultimateMoveId] ?? def.moves[def.specialMoveId];
+            const ultMove = def.moves[def.ultimateMoveId] ?? def.moves['ultimate'];
             if (ultMove) {
               this.executeMove(fighter, ultMove);
               fighter.meter = 0;
@@ -354,19 +354,6 @@ export class FighterSimulation {
 
     // Grounded neutral controls
     if (fighter.isGrounded) {
-      if (buf.justPressed(INPUT.TECHNIQUE)) {
-        const special = def.moves[def.specialMoveId];
-        if (special && fighter.meter >= special.meterCost) {
-          fighter.meter -= special.meterCost;
-          this.executeMove(fighter, special);
-          return;
-        }
-        this.events.push({
-          type: 'meter_empty',
-          tick: this.state.tick,
-          data: { fighterId: fighter.id, currentMeter: fighter.meter },
-        });
-      }
       const holdingDown = buf.isDown(INPUT.DOWN);
 
       // 1. Crouch / Directional Attack Inputs
@@ -413,7 +400,7 @@ export class FighterSimulation {
       // 2. Standing Attack Input Checks
       if (buf.justPressed(INPUT.SPECIAL)) {
         if (fighter.meter >= 100) {
-          const ultMove = def.moves[def.ultimateMoveId] ?? def.moves[def.specialMoveId];
+          const ultMove = def.moves[def.ultimateMoveId] ?? def.moves['ultimate'];
           if (ultMove) {
             this.executeMove(fighter, ultMove);
             fighter.meter = 0;

@@ -21,7 +21,8 @@ export function combatMove(move: MoveDefinition): MoveDefinition {
   return {
     ...move,
     attackHeight: move.id === 'ultimate' ? 'mid' : move.attackHeight,
-    meterCost: move.id === 'special' ? 30 : move.meterCost,
+    meterCost: move.id === 'ultimate' ? 100 : 0,
+    meterGain: move.id === 'ultimate' ? 0 : move.meterGain,
     startup: Math.max(startup, move.startup),
     recovery: Math.max(recovery, move.recovery),
   };

@@ -265,6 +265,7 @@ button.quick-btn:active {
 .btn-block {
   border-color: rgba(168, 85, 247, 0.7);
   color: #c084fc;
+  grid-column: span 2;
 }
 
 .btn-arcade:active,
