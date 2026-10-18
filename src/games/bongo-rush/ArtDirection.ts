@@ -1,6 +1,8 @@
 /** Closer framing preserves readable tiles on phones and gives desktop artwork room to breathe. */
-export function caveTileSize(width: number, playHeight: number): number {
-  return Math.max(40, Math.min(80, width / 17, playHeight / 12));
+export function caveTileSize(width: number, playHeight: number, columns?: number, rows?: number): number {
+  const readableScale = Math.max(40, Math.min(80, width / 17, playHeight / 12));
+  // Uniform cover scaling removes letterboxing; the existing camera follows the cropped map.
+  return Math.max(readableScale, columns ? width / columns : 0, rows ? playHeight / rows : 0);
 }
 
 /** The four pressed-tablet designs occupy a transparent two-by-two sheet. */

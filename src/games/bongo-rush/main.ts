@@ -1,3 +1,5 @@
+import { hudOverlapsPlayer } from './HudVisibility';
+import type { ScreenRect } from './HudVisibility';
 import {
   presentationPath,
   paintedSoilPath,
@@ -68,6 +70,9 @@ function storage(): Pick<Storage, 'getItem' | 'setItem'> {
 /** Hosts the standalone offline game using the existing lifecycle, sprite, cache and joystick mechanisms. */
 class BongoRush {
   private readonly events = new EventScope();
+  private readonly hud = document.querySelector<HTMLElement>('.hud')!;
+  private hudBounds: ScreenRect = { x: 0, y: 0, width: 0, height: 0 };
+  private hudFaded = false;
   private readonly canvas = element<HTMLCanvasElement>('cave');
   private readonly context = this.canvas.getContext('2d');
   private readonly renderer = this.context ? new CaveRenderer(this.context) : undefined;
@@ -132,6 +137,7 @@ class BongoRush {
     this.bind();
     this.updateMute();
     this.observer.observe(element('board'));
+    this.observer.observe(document.querySelector<HTMLElement>('.hud')!);
     this.resize();
     this.setMode('menu');
     await this.loadRun(this.selected);
@@ -1023,15 +1029,20 @@ class BongoRush {
     this.canvas.width = Math.max(1, Math.round(this.width * ratio));
     this.canvas.height = Math.max(1, Math.round(this.height * ratio));
     this.context?.setTransform(ratio, 0, 0, ratio, 0, 0);
+    const hud = this.hud;
+    const hudRect = hud.getBoundingClientRect();
+    this.hudBounds = {
+      x: hudRect.x - rect.x,
+      y: hudRect.y - rect.y,
+      width: hudRect.width,
+      height: hudRect.height,
+    };
+    const minimapTop = hud.hidden ? 58 : Math.max(8, hud.getBoundingClientRect().bottom - rect.top + 4);
     this.renderer?.resize(
       this.width,
       this.height,
       window.matchMedia('(pointer: coarse)').matches,
-      element('touch-controls').getBoundingClientRect().height ||
-        Number.parseFloat(getComputedStyle(element('touch-controls')).height) ||
-        undefined,
-      document.querySelector('footer')?.getBoundingClientRect().height ?? 52,
-      Number.parseFloat(getComputedStyle(element('board')).getPropertyValue('--cave-top-inset')) || 58,
+      minimapTop,
     );
     // Contextual hints can reflow the footer. A height-only board resize must not release held movement.
     // Width/orientation changes still reset pointer ownership; blur/visibility retain their own cleanup.
@@ -1084,6 +1095,12 @@ class BongoRush {
       this.mode !== 'playing',
       this.mode === 'menu',
     );
+    const player = this.renderer?.playerScreenBounds();
+    const fadeHud = this.mode === 'playing' && !!player && hudOverlapsPlayer(this.hudBounds, player);
+    if (fadeHud !== this.hudFaded) {
+      this.hudFaded = fadeHud;
+      this.hud.classList.toggle('over-player', fadeHud);
+    }
     if (this.mode === 'victory') {
       this.victoryTime += dt;
       this.renderer?.victory(this.victoryTime);

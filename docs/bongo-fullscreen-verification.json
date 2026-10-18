@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-18",
+  "base": "39337361013c12b6aebfa8e08d9e850046ad88f6",
+  "status": "PASS",
+  "unitTests": 2328,
+  "unitFiles": 230,
+  "ciCode": "PASS",
+  "productionBuild": "PASS",
+  "mobileCases": 192,
+  "desktopCases": 8,
+  "browsers": ["Chromium", "Playwright WebKit"],
+  "styles": ["standard", "storybook"],
+  "levels": [3, 6, 13, 14, 15, 24],
+  "screens": [
+    [320, 480],
+    [320, 568],
+    [360, 640],
+    [390, 844],
+    [568, 320],
+    [640, 360],
+    [667, 375],
+    [844, 390]
+  ],
+  "invariants": [
+    "camera viewport fills entire canvas behind floating UI",
+    "uniform cover scaling removes gutters without image distortion",
+    "minimap hidden initially, button and M toggle it",
+    "map toggle retains exact camera bounds and tile size",
+    "minimap stays below HUD and clear of joystick/restart",
+    "upper-row hero overlap fades HUD during play, full opacity on pause",
+    "quick level choice keeps current hero and level",
+    "orientation changes and pause/resize/resume",
+    "existing joystick and restart"
+  ],
+  "desktopScreens": [
+    [1912, 846],
+    [1280, 800]
+  ],
+  "productionSmoke": "PASS hidden minimap, toggle, hero HUD fade, pause HUD restore, quick level selection, no debug snapshot",
+  "independentHudRecheck": "PASS, 13 focused tests; L13 portrait actor remains visible",
+  "independentReview": "PASS; no outstanding P1/P2",
+  "independentChamberGameplay": {
+    "levels": [12, 18],
+    "status": "WON both",
+    "canonicalInputs": 274,
+    "roomTransitions": 5,
+    "resizeAndStableMinimapChecks": 15,
+    "sizes": [
+      [1912, 900],
+      [568, 320],
+      [390, 844]
+    ]
+  }
+}

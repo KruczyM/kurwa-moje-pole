@@ -6,28 +6,18 @@ export interface MinimapBox {
   scale: number;
 }
 
-/** The mobile overview lives in the existing control strip, never over the camera viewport. */
+/** Optional overview overlays the cave without changing its camera or tile scale. */
 export function minimapLayout(
   width: number,
   height: number,
   top: number,
-  playHeight: number,
   columns: number,
   rows: number,
-  docked: boolean,
-  footer = height < 400 ? 30 : 52,
+  compact: boolean,
 ): MinimapBox | undefined {
-  const maxWidth = docked ? Math.min(76, Math.max(8, (width - 124) / 2 - 28)) : 156;
-  const maxHeight = docked ? height - top - playHeight - footer - 20 : playHeight - 26;
-  if (maxHeight <= 0 || columns <= 0 || rows <= 0) return undefined;
+  const maxWidth = Math.min(compact ? 76 : 156, width - 28);
+  const maxHeight = Math.min(compact ? 140 : 220, (height - top - 20) * 0.45);
+  if (maxWidth <= 0 || maxHeight <= 0 || columns <= 0 || rows <= 0) return undefined;
   const scale = Math.min(maxWidth / columns, maxHeight / rows);
-  const mapWidth = columns * scale,
-    mapHeight = rows * scale;
-  return {
-    x: width - mapWidth - 14,
-    y: docked ? top + playHeight + 10 + (maxHeight - mapHeight) / 2 : top + 8,
-    width: mapWidth,
-    height: mapHeight,
-    scale,
-  };
+  return { x: width - columns * scale - 14, y: top + 8, width: columns * scale, height: rows * scale, scale };
 }

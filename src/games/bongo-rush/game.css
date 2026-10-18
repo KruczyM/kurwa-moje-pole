@@ -578,7 +578,7 @@ footer span {
   }
 }
 
-/* Mobile camera and minimap use separate areas above and within the control strip. */
+/* Controls float over the full cave; the optional minimap does not reserve layout space. */
 #bongo-app {
   position: relative;
   grid-template-rows: auto minmax(0, 1fr);
@@ -786,7 +786,7 @@ footer {
   }
 }
 
-/* Compact phone landscape: keep at least three rows visible at 568 × 320. */
+/* Compact phone landscape chrome leaves the full cave visible behind controls. */
 @media (max-height: 500px) and (orientation: landscape) {
   .topbar {
     min-height: 48px;
@@ -799,9 +799,6 @@ footer {
   .toolbar button {
     min-height: 44px;
     padding: 8px 10px;
-  }
-  #board {
-    --cave-top-inset: 64;
   }
   .hud {
     top: 4px;
@@ -837,4 +834,9 @@ footer {
     width: 52px;
     height: 48px;
   }
+}
+
+/* Preserve the hero silhouette when an upper-row spawn passes behind the floating HUD. */
+.hud.over-player {
+  opacity: 0.16;
 }
