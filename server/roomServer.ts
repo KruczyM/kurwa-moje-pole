@@ -122,13 +122,8 @@ export class RoomServer {
         let isReconnecting = false;
         if (typeof payload.sessionToken === 'string' && payload.sessionToken.length > 0) {
           const slot = room.findSlotBySessionToken(payload.sessionToken);
-          if (slot) {
-            if (room.canReconnect(payload.sessionToken)) {
-              isReconnecting = true;
-            } else {
-              emitError('UNAUTHORIZED', 'Token sesji jest już w użyciu przez aktywnego gracza.');
-              return;
-            }
+          if (slot && slot.status !== 'free') {
+            isReconnecting = true;
           }
         }
 

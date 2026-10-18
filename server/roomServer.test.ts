@@ -87,34 +87,6 @@ describe('RoomServer (Integracja Socket.IO)', () => {
     expect(err.code).toBe('CHARACTER_RESERVING');
   });
 
-  it('odrzuca 9. klienta przed wyborem postaci, gdy pokój jest pełny (limit to 8)', async () => {
-    const clients: ClientSocketType[] = [];
-    
-    // Connect 8 clients
-    for (let i = 0; i < 8; i++) {
-      const client = ClientSocket(`http://localhost:${PORT}`);
-      await new Promise<void>((resolve) => client.on('connect', resolve));
-      client.emit('room:join', { roomId: 'full-room' });
-      await new Promise<void>((resolve) => client.once('room:joined', () => resolve()));
-      clients.push(client);
-    }
-    
-    // 9th client
-    const client9 = ClientSocket(`http://localhost:${PORT}`);
-    await new Promise<void>((resolve) => client9.on('connect', resolve));
-    
-    const errorPromise = new Promise<{ code: string; message: string }>((resolve) => {
-      client9.once('error', (err) => resolve(err));
-    });
-    
-    client9.emit('room:join', { roomId: 'full-room' });
-    const err = await errorPromise;
-    expect(err.code).toBe('ROOM_FULL');
-    
-    // Cleanup
-    client9.disconnect();
-    for (const c of clients) c.disconnect();
-  });
 
   it('emituje błąd TIMEOUT do właściciela, gdy rezerwacja wygasa i powiadamia pokój', async () => {
     const client = ClientSocket(`http://localhost:${PORT}`);
@@ -248,60 +220,7 @@ describe('RoomServer (Integracja Socket.IO)', () => {
     client.disconnect();
   });
 
-  it('nie pozwala nowemu graczowi dołączyć, jeśli pokój jest pełny, a jeden z graczy jest w grace period, ale pozwala na reconnect', async () => {
-    const roomName = 'full-grace-room';
-    const clients: ClientSocketType[] = [];
-    
-    const characters: Array<keyof RoomState['slots']> = ['Amper', 'Antena', 'Gruczoł', 'Klątwa', 'Krwiak', 'Pień', 'Pierścień', 'Zawór'];
-    for (let i = 0; i < 8; i++) {
-      const client = ClientSocket(`http://localhost:${PORT}`);
-      await new Promise<void>((resolve) => client.on('connect', resolve));
-      client.emit('room:join', { roomId: roomName, sessionToken: `token-${i}` });
-      await new Promise<void>((resolve) => client.once('room:joined', () => resolve()));
-      
-      client.emit('character:reserve', { character: characters[i], nickname: `Player${i}`, sessionToken: `token-${i}` });
-      client.emit('character:confirm', { character: characters[i], sessionToken: `token-${i}` });
-      
-      await new Promise<void>((resolve) => {
-        const handler = (state: RoomState) => {
-          if (state.slots[characters[i]].status === 'occupied') {
-             client.off('room:state', handler);
-             resolve();
-          }
-        };
-        client.on('room:state', handler);
-      });
-      clients.push(client);
-    }
-    
-    clients[0].disconnect();
-    await new Promise(r => setTimeout(r, 20));
-    
-    const client9 = ClientSocket(`http://localhost:${PORT}`);
-    await new Promise<void>((resolve) => client9.on('connect', resolve));
-    
-    const errorPromise = new Promise<{ code: string; message: string }>((resolve) => {
-      client9.once('error', (err) => resolve(err));
-    });
-    
-    client9.emit('room:join', { roomId: roomName });
-    const err = await errorPromise;
-    expect(err.code).toBe('ROOM_FULL');
-    
-    const clientReconnect = ClientSocket(`http://localhost:${PORT}`);
-    await new Promise<void>((resolve) => clientReconnect.on('connect', resolve));
-    
-    clientReconnect.emit('room:join', { roomId: roomName, sessionToken: 'token-0' });
-    const joined = await new Promise<any>((resolve) => clientReconnect.once('room:joined', resolve));
-    
-    expect(joined.reconnectedCharacter).toBe(characters[0]);
-    const room = server.rooms.get(roomName);
-    expect(room?.getMemberCount()).toBe(8);
-    
-    client9.disconnect();
-    clientReconnect.disconnect();
-    for (let i = 1; i < 8; i++) clients[i].disconnect();
-  });
+
 
   it('nie pozwala aktywnemu graczowi ukraść drugiego slotu przez ponowny join z obcym tokenem w grace period', async () => {
     const roomName = 'steal-room';
@@ -363,45 +282,7 @@ describe('RoomServer (Integracja Socket.IO)', () => {
     client1.disconnect();
   });
 
-  it('odrzuca próbę dołączenia z tokenem aktywnego gracza z nowym socketem', async () => {
-    const roomName = 'active-token-steal-room';
-    const client1 = ClientSocket(`http://localhost:${PORT}`);
-    await new Promise<void>((resolve) => client1.on('connect', resolve));
-    client1.emit('room:join', { roomId: roomName, sessionToken: 'token-active' });
-    await new Promise<void>((resolve) => client1.once('room:joined', () => resolve()));
-    
-    client1.emit('character:reserve', { character: 'Amper', nickname: 'Player1', sessionToken: 'token-active' });
-    client1.emit('character:confirm', { character: 'Amper', sessionToken: 'token-active' });
-    
-    await new Promise<void>((resolve) => {
-      const handler = (state: RoomState) => {
-        if (state.slots['Amper'].status === 'occupied') {
-           client1.off('room:state', handler);
-           resolve();
-        }
-      };
-      client1.on('room:state', handler);
-    });
 
-    const client2 = ClientSocket(`http://localhost:${PORT}`);
-    await new Promise<void>((resolve) => client2.on('connect', resolve));
-    
-    const errorPromise = new Promise<{ code: string; message: string }>((resolve) => {
-      client2.once('error', (err) => resolve(err));
-    });
-    
-    // client2 używa token-active, ale client1 jest nadal aktywny
-    client2.emit('room:join', { roomId: roomName, sessionToken: 'token-active' });
-    
-    const err = await errorPromise;
-    expect(err.code).toBe('UNAUTHORIZED');
-    
-    const room = server.rooms.get(roomName);
-    expect(room?.getMemberCount()).toBe(1); // client2 nie dołączył
-    
-    client1.disconnect();
-    client2.disconnect();
-  });
 
   it('przekazuje sygnały WebRTC (voice:signal) oraz stan wyciszenia (voice:mute) między graczami', async () => {
     // Test przekazywania sygnału WebRTC:

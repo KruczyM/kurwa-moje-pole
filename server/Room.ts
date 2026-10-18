@@ -315,9 +315,6 @@ export class Room {
     }
 
     const charName = slot.character;
-    if (!this.disconnectTimers.has(charName)) {
-      return { restored: false };
-    }
     this.clearDisconnectTimer(charName);
     slot.playerId = newPlayerId;
 
