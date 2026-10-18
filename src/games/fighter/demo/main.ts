@@ -214,13 +214,11 @@ class FighterDemo {
       ArrowRight: INPUT.RIGHT,
 
       // --- UKŁAD GŁÓWNY (Prawa ręka - 2 rzędy klawiszy obok siebie) ---
-      // Górny rząd: Y (Special), U (Lekka Pięść), I (Mocna Pięść), O (Ultimate)
-      KeyY: INPUT.TECHNIQUE, // Special move pod palcem wskazującym obok U
+      // Górny rząd: U (Lekka Pięść), I (Mocna Pięść), O (Ultimate)
       KeyU: INPUT.LP, // Lekka Pięść (Góra - Wskazujący)
       KeyI: INPUT.RP, // Mocna Pięść (Góra - Środkowy)
       KeyH: INPUT.DOWN | INPUT.RP, // Podbródkowy (skrót)
       KeyN: INPUT.DOWN | INPUT.RK, // Podcięcie (skrót)
-      KeyP: INPUT.TECHNIQUE, // Special move (alternatywa)
       KeyO: INPUT.SPECIAL, // SUPER MOVE / ULTIMATE (Góra - Serdeczny)
 
       KeyJ: INPUT.LK, // Lekkie Kopnięcie
@@ -233,7 +231,6 @@ class FighterDemo {
       KeyX: INPUT.RP, // Mocna Pięść (Lewa ręka)
       KeyC: INPUT.LK, // Lekkie Kopnięcie (Lewa ręka)
       KeyV: INPUT.RK, // Mocne Kopnięcie (Lewa ręka)
-      KeyF: INPUT.TECHNIQUE, // Special Move (Lewa ręka)
       KeyG: INPUT.SPECIAL, // Ultimate / Super (Lewa ręka)
       ShiftLeft: INPUT.BLOCK, // Blok lewym shiftem
       ShiftRight: INPUT.BLOCK, // Blok prawym shiftem
@@ -242,7 +239,6 @@ class FighterDemo {
       Numpad4: INPUT.LP,
       Numpad5: INPUT.RP,
       Numpad6: INPUT.SPECIAL,
-      Numpad7: INPUT.TECHNIQUE,
       Numpad1: INPUT.LK,
       Numpad2: INPUT.RK,
       Numpad3: INPUT.BLOCK,
@@ -259,7 +255,6 @@ class FighterDemo {
       KeyG: INPUT.RP,
       KeyV: INPUT.LK,
       KeyB: INPUT.RK,
-      KeyR: INPUT.TECHNIQUE,
       KeyT: INPUT.SPECIAL,
       KeyC: INPUT.BLOCK,
     };
@@ -278,8 +273,6 @@ class FighterDemo {
       Numpad1: INPUT.LK,
       KeyL: INPUT.RK,
       Numpad2: INPUT.RK,
-      KeyP: INPUT.TECHNIQUE,
-      Numpad6: INPUT.TECHNIQUE,
       BracketLeft: INPUT.SPECIAL,
       NumpadAdd: INPUT.SPECIAL,
       Enter: INPUT.BLOCK,
@@ -401,7 +394,6 @@ class FighterDemo {
     const previewTitle = document.getElementById('preview-title')!;
     const previewStyle = document.getElementById('preview-style')!;
     const previewDesc = document.getElementById('preview-desc')!;
-    const previewSpecial = document.getElementById('preview-special')!;
     const previewUltimate = document.getElementById('preview-ultimate')!;
     const selectScreen = document.getElementById('char-select-screen')!;
     const startFightBtn = document.getElementById('start-fight-btn')!;
@@ -418,7 +410,6 @@ class FighterDemo {
       previewTitle.textContent = entry.definition.title;
       previewStyle.textContent = `Styl: ${entry.fightingStyle}`;
       previewDesc.textContent = entry.description;
-      previewSpecial.textContent = entry.definition.moves['special']?.name || 'Ruch specjalny';
       previewUltimate.textContent = entry.definition.moves['ultimate']?.name || 'Super cios';
 
       // Update stat meters

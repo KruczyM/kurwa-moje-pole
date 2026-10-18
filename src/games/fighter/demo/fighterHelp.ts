@@ -16,6 +16,6 @@ export function renderFighterHelp(host: HTMLElement, def: FighterDefinition): vo
     <p><strong>Online:</strong> wybierasz swoją postać i potwierdzasz gotowość. Po otwarciu menu walka online trwa dalej. Powrót do wyboru postaci opuszcza pokój.</p>`;
   const signature = document.createElement('p');
   signature.className = 'fighter-signature';
-  signature.textContent = `${def.name} · CS: ${def.moves.special?.name ?? 'Cios specjalny'} · ULT: ${def.moves.ultimate?.name ?? 'Super cios'}`;
+  signature.textContent = `${def.name} · ULT: ${def.moves.ultimate?.name ?? 'Super cios'}`;
   host.append(signature);
 }

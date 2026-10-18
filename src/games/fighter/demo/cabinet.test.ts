@@ -19,7 +19,7 @@ describe('cabinet menu content', () => {
         expect(host.innerHTML).toContain(text);
       }
       expect(appended[0]?.textContent).toContain(entry.definition.moves.ultimate!.name);
-      expect(appended[0]?.textContent).toContain(entry.definition.moves.special!.name);
+      expect(appended[0]?.textContent).not.toContain('CS:');
     }
   });
 
