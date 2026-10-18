@@ -406,10 +406,7 @@ export class SpatialVoiceManager {
         return;
       }
       await peer.connection.setLocalDescription(offer);
-      this.networkClient.sendVoiceSignal(
-        peer.peerId,
-        peer.connection.localDescription?.toJSON() ?? offer,
-      );
+      this.networkClient.sendVoiceSignal(peer.peerId, peer.connection.localDescription?.toJSON() ?? offer);
     } catch {
       // Ignorujemy błędy negocjacji oferty
     } finally {
@@ -420,7 +417,10 @@ export class SpatialVoiceManager {
   private getOrCreatePeer(peerId: string, shouldCreateOffer = false): RemotePeerAudio {
     let peer = this.peers.get(peerId);
     if (peer) {
-      if (shouldCreateOffer && (!peer.connection.signalingState || peer.connection.signalingState === 'stable')) {
+      if (
+        shouldCreateOffer &&
+        (!peer.connection.signalingState || peer.connection.signalingState === 'stable')
+      ) {
         void this.renegotiatePeer(peer);
       }
       return peer;
@@ -523,7 +523,9 @@ export class SpatialVoiceManager {
     try {
       if (sig.type === 'offer') {
         const myId = this.networkClient?.getMyPlayerId();
-        const offerCollision = peer.isMakingOffer || (peer.connection.signalingState && peer.connection.signalingState !== 'stable');
+        const offerCollision =
+          peer.isMakingOffer ||
+          (peer.connection.signalingState && peer.connection.signalingState !== 'stable');
         const isPolite = myId ? myId > senderPeerId : false;
 
         if (offerCollision) {
@@ -533,7 +535,9 @@ export class SpatialVoiceManager {
           }
           if (typeof peer.connection.setLocalDescription === 'function') {
             try {
-              await peer.connection.setLocalDescription({ type: 'rollback' } as unknown as RTCLocalSessionDescriptionInit);
+              await peer.connection.setLocalDescription({
+                type: 'rollback',
+              } as unknown as RTCLocalSessionDescriptionInit);
             } catch {
               // Rollback fallback
             }
@@ -550,7 +554,10 @@ export class SpatialVoiceManager {
 
         const answer = await peer.connection.createAnswer();
         await peer.connection.setLocalDescription(answer);
-        this.networkClient?.sendVoiceSignal(senderPeerId, peer.connection.localDescription?.toJSON() ?? answer);
+        this.networkClient?.sendVoiceSignal(
+          senderPeerId,
+          peer.connection.localDescription?.toJSON() ?? answer,
+        );
       } else if (sig.type === 'answer') {
         const desc =
           typeof RTCSessionDescription !== 'undefined'
@@ -793,26 +800,34 @@ export class SpatialVoiceManager {
   /**
    * Zwraca diagnostyczny stan połączonych peerów audio.
    */
-  getPeers(): ReadonlyMap<string, {
-    isMuted: boolean;
-    isSpeaking: boolean;
-    distance: number;
-    connectionState?: string;
-    hasStream: boolean;
-  }> {
-    const map = new Map<string, {
+  getPeers(): ReadonlyMap<
+    string,
+    {
       isMuted: boolean;
       isSpeaking: boolean;
       distance: number;
       connectionState?: string;
       hasStream: boolean;
-    }>();
+    }
+  > {
+    const map = new Map<
+      string,
+      {
+        isMuted: boolean;
+        isSpeaking: boolean;
+        distance: number;
+        connectionState?: string;
+        hasStream: boolean;
+      }
+    >();
     for (const [id, peer] of this.peers) {
       map.set(id, {
         isMuted: peer.isMuted,
         isSpeaking: peer.isSpeaking,
         distance: peer.distance,
-        connectionState: peer.connection.connectionState || (peer.connection as unknown as { iceConnectionState?: string }).iceConnectionState,
+        connectionState:
+          peer.connection.connectionState ||
+          (peer.connection as unknown as { iceConnectionState?: string }).iceConnectionState,
         hasStream: Boolean(peer.stream),
       });
     }
