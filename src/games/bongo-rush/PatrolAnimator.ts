@@ -5,9 +5,15 @@ import type { Facing } from '../after/simulation/WorldState';
 export class PatrolAnimator {
   private readonly sprite: SpriteAnimator;
   private walkingFor = 0;
+  private readonly distanceBased: boolean;
 
   constructor(metadata: SpriteMetadata) {
-    this.sprite = new SpriteAnimator(metadata, { preservePhase: true, idleFps: 2, walkFps: 10 });
+    this.distanceBased = metadata.walkTilesPerCycle !== undefined;
+    this.sprite = new SpriteAnimator(metadata, {
+      preservePhase: true,
+      idleFps: metadata.idleFps ?? 2,
+      walkFps: 10,
+    });
   }
 
   update(
@@ -18,7 +24,17 @@ export class PatrolAnimator {
     paused = false,
     trapped = false,
     continuous = false,
+    distance = 0,
   ) {
+    if (this.distanceBased)
+      return this.sprite.update(
+        dt,
+        facing,
+        !trapped && distance > 1e-8,
+        running,
+        paused,
+        trapped ? 0 : distance,
+      );
     if (!paused) {
       const elapsed = Number.isFinite(dt) ? Math.max(0, dt) : 0;
       // A scheduled patrol step can be 0.6 s apart. Keep the gait through that dwell,

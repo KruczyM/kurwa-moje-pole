@@ -4,6 +4,7 @@ interface Chip extends Point {
   vx: number;
   vy: number;
   life: number;
+  kind: 'dig' | 'impact';
 }
 
 /** Presentation-only bounded debris receives observations, never changes physics or puzzle timing. */
@@ -13,7 +14,7 @@ export class VisualEffects {
 
   /** Emits digging debris and dust where a previously falling object has landed. */
   observe(world: World, sounds: readonly SoundEvent[]): void {
-    if (sounds.includes('dig')) this.emit(world.player, 6);
+    if (sounds.includes('dig')) this.emit(world.player, 6, 'dig');
     if (sounds.includes('impact')) {
       for (const body of world.objects) {
         if (this.falling.has(body.id) && !body.falling) this.emit(body, 8);
@@ -24,7 +25,7 @@ export class VisualEffects {
   }
 
   /** Uses a reproducible fan of trajectories, capped even during simultaneous cave-ins. */
-  emit(point: Point, count: number): void {
+  emit(point: Point, count: number, kind: 'dig' | 'impact' = 'impact'): void {
     for (let i = 0; i < Math.min(count, 32); i++) {
       if (this.chips.length >= 32) this.chips.shift();
       this.chips.push({
@@ -32,7 +33,8 @@ export class VisualEffects {
         y: point.y + 0.65,
         vx: ((i % 5) - 2) * 0.65,
         vy: -1.8 - (i % 3) * 0.3,
-        life: 0.42,
+        kind,
+        life: kind === 'dig' ? 0.28 : 0.42,
       });
     }
   }

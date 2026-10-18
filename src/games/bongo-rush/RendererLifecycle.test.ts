@@ -6,7 +6,7 @@ import { LEVELS } from './Levels';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('reopening the same cave on a phone', () => {
-  it('retains valid terrain caches and full viewport clipping after repeated runs and resizes', () => {
+  it('retains valid terrain caches and gameplay-only clipping after repeated runs and resizes', () => {
     const images: unknown[][] = [],
       clips: number[][] = [];
     const makeContext = (record: boolean) =>
@@ -39,11 +39,29 @@ describe('reopening the same cave on a phone', () => {
       [390, 700],
       [390, 650],
       [800, 320],
+      [667, 230],
     ]) {
       renderer.resize(width, height, true);
       renderer.terrain(0, terrain);
       renderer.draw(new Simulation(LEVELS[0]), undefined, 0, 0, true);
-      expect(clips).toContainEqual([0, 58, width, height - 58]);
+      const viewport = renderer.diagnostics().viewport;
+      expect(clips).toContainEqual([0, 58, width, viewport.height]);
+      expect(viewport.y + viewport.height).toBeLessThanOrEqual(height - (height < 400 ? 160 : 220));
+      const map = renderer.diagnostics().minimap;
+      if (map) expect(map.y - 5).toBeGreaterThanOrEqual(viewport.y + viewport.height);
+    }
+    // The measured compact CSS strips leave three full 40px rows on small phone landscape.
+    for (const [width, height] of [
+      [568, 272],
+      [640, 312],
+      [667, 327],
+    ]) {
+      renderer.resize(width, height, true, 88, 0, 64);
+      renderer.draw(new Simulation(LEVELS[0]), undefined, 0, 0, true);
+      const { viewport, minimap } = renderer.diagnostics();
+      expect(viewport.height).toBeGreaterThanOrEqual(120);
+      expect(clips).toContainEqual([0, 64, width, viewport.height]);
+      expect(minimap!.y - 5).toBeGreaterThanOrEqual(viewport.y + viewport.height);
     }
     const cachedTerrain = images
       .map((args) => args[0])

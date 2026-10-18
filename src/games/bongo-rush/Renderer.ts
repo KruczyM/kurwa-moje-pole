@@ -1,3 +1,6 @@
+import { composeScene, paintedSoilCrop } from './SceneComposition';
+import type { SceneComposition } from './SceneComposition';
+import { macroRect, macroVariant, paintedWallRect, paintedWallVariant } from './Presentation';
 import { CameraRig } from '../after/presentation/CameraRig';
 import { SpriteAnimator } from '../after/presentation/SpriteAnimator';
 import { PatrolAnimator } from './PatrolAnimator';
@@ -5,7 +8,7 @@ import { PatrolMotion } from './PatrolMotion';
 import { CAMPAIGN_LEVEL_COUNT } from './Campaign';
 import { colonyPose, COLONY_SHAKE_SECONDS } from './ColonyMotion';
 import type { ColonyPose } from './ColonyMotion';
-import type { SpriteMetadata } from '../after/presentation/SpriteAnimator';
+import type { SpriteMetadata, SpriteFrame } from '../after/presentation/SpriteAnimator';
 import type { Facing } from '../after/simulation/WorldState';
 import { BIOMES } from './Levels';
 import { paintCaveTile } from './CaveVisuals';
@@ -24,6 +27,26 @@ import type { Body, Enemy, LooseObject, Point } from './types';
 import type { World } from './types';
 import type { Simulation } from './Simulation';
 import type { SpriteCrop } from './SpriteBounds';
+import {
+  paintSceneryEdges,
+  rayEnd,
+  rayOpacity,
+  SCENERY_PROPS,
+  sceneryEdges,
+  sceneryMaterial,
+  sceneryTileRect,
+} from './SceneryArt';
+import type { SceneryArtwork } from './SceneryArt';
+import {
+  authoredCellRect,
+  authoredColony,
+  authoredEdges,
+  AUTHORED_DIRECTIONS,
+  isAuthoredSolid,
+} from './AuthoredScenery';
+import type { AuthoredEdge, AuthoredScenery } from './AuthoredScenery';
+import { minimapLayout } from './MinimapLayout';
+import type { MinimapBox } from './MinimapLayout';
 
 export interface HeroAtlas {
   image: HTMLImageElement;
@@ -36,6 +59,8 @@ const FACINGS: Record<string, Facing> = { up: 'north', right: 'east', down: 'sou
 export class CaveRenderer {
   private camera = new CameraRig({ width: 1, height: 1 });
   private animator?: SpriteAnimator;
+  private heroPresented?: Point;
+  private readonly enemyPresented = new Map<number, Point>();
   private atlas?: HeroAtlas;
   private bushAtlas?: HeroAtlas;
   private colonyFace?: HTMLCanvasElement;
@@ -49,23 +74,36 @@ export class CaveRenderer {
   private width = 1;
   private height = 1;
   private touch = false;
+  private dockedMap = false;
+  private footerHeight = 52;
+  private minimapBox?: MinimapBox;
   private tile = 40;
   private tiles = new Map<string, HTMLCanvasElement>();
   private terrainAtlases = new Map<number, HTMLImageElement>();
   private itemAtlas?: HTMLImageElement;
+  private cartAtlas?: HTMLImageElement;
   private tabletAtlas?: HTMLImageElement;
   private depthAtlas?: HTMLImageElement;
+  private sceneryAssets?: SceneryArtwork;
+  private propFrames: { x: number; y: number; width: number; height: number }[] = [];
+  private viewCells = new Set<number>();
   private depthAnchor: Point = { x: 0, y: 0 };
   private readonly motionPreference =
     typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)') : undefined;
   private clock = 0;
   private readonly debris = new VisualEffects();
   private playHeight = 1;
-  private readonly topInset = 58;
+  private topInset = 58;
   private world?: World;
+  private composition?: SceneComposition;
   showMap = true;
   private map?: HTMLCanvasElement;
   private mapTick = -1;
+  private authoredTick = -1;
+  private authoredWorld?: World;
+  private authoredExposure: AuthoredEdge[] = [];
+  private colonyLayout = { tiles: new Map<number, number>(), cores: new Set<number>() };
+  private topologyUpdates = 0;
 
   /** Receives an existing canvas context and never owns animation scheduling or asset loading. */
   constructor(private readonly context: CanvasRenderingContext2D) {}
@@ -78,7 +116,33 @@ export class CaveRenderer {
   /** Read-only counters for the existing DEV snapshot; no canvas or simulation state escapes. */
   diagnostics() {
     return {
+      viewport: { x: 0, y: this.topInset, width: this.width, height: this.playHeight },
+      minimap: this.minimapBox ? { ...this.minimapBox, docked: this.dockedMap } : undefined,
+      authored: this.sceneryAssets?.authored
+        ? {
+            level: this.sceneryAssets.authored.level,
+            rooms: this.sceneryAssets.authored.rooms.size,
+            exposedEdges: this.authoredExposure.length,
+            oldEdges: this.authoredExposure.filter((edge) => edge.old).length,
+            freshEdges: this.authoredExposure.filter((edge) => !edge.old).length,
+            colonyCells: this.colonyLayout.tiles.size,
+            colonyCores: this.colonyLayout.cores.size,
+            topologyUpdates: this.topologyUpdates,
+            sourceCoordinates: 'fixed-map-cells',
+          }
+        : undefined,
+      composition: this.composition
+        ? {
+            motif: this.composition.motif,
+            roots: this.composition.roots.size,
+            assemblies: this.composition.scenery.props.length,
+          }
+        : undefined,
       cachedTiles: this.tiles.size,
+      cacheBytes:
+        [...this.tiles.values()].reduce((sum, tile) => sum + tile.width * tile.height * 4, 0) +
+        (this.map ? this.map.width * this.map.height * 4 : 0) +
+        (this.colonyFace ? this.colonyFace.width * this.colonyFace.height * 4 : 0),
       enemyAnimators: this.enemyAnimators.size,
       decorations: this.terrainLayout
         ? {
@@ -95,6 +159,11 @@ export class CaveRenderer {
     this.itemAtlas = image;
   }
 
+  /** A separately illustrated vehicle uses the same loader and renderer as other actors. */
+  cart(image: HTMLImageElement | undefined): void {
+    this.cartAtlas = image;
+  }
+
   /** Rave uses pressed tablets while other biomes keep their existing item sheet. */
   tablets(image: HTMLImageElement | undefined): void {
     this.tabletAtlas = image;
@@ -103,6 +172,54 @@ export class CaveRenderer {
   /** Receives the shared transparent frame atlas, never owns a second loader or camera. */
   depth(image: HTMLImageElement): void {
     this.depthAtlas = image;
+  }
+
+  /** Installs one active illustrated biome in the existing renderer and bounded tile cache. */
+  sceneryArtwork(artwork: SceneryArtwork | undefined): void {
+    const frames: typeof this.propFrames = [];
+    if (artwork?.presentation) {
+      const probe = document.createElement('canvas');
+      probe.width = probe.height = 512;
+      const c = probe.getContext('2d')!;
+      c.drawImage(artwork.props, 0, 0, 512, 512);
+      const pixels = c.getImageData(0, 0, 512, 512).data;
+      for (let cell = 0; cell < 16; cell++) {
+        const ox = (cell % 4) * 128,
+          oy = Math.floor(cell / 4) * 128;
+        let left = 128,
+          top = 128,
+          right = 0,
+          bottom = 0;
+        for (let y = 0; y < 128; y++)
+          for (let x = 0; x < 128; x++)
+            if (pixels[((oy + y) * 512 + ox + x) * 4 + 3] > 8) {
+              left = Math.min(left, x);
+              right = Math.max(right, x + 1);
+              top = Math.min(top, y);
+              bottom = Math.max(bottom, y + 1);
+            }
+        frames.push({
+          x: ox + left,
+          y: oy + top,
+          width: Math.max(1, right - left),
+          height: Math.max(1, bottom - top),
+        });
+      }
+      probe.width = probe.height = 0;
+    }
+    this.sceneryAssets = artwork;
+    this.authoredTick = -1;
+    this.authoredWorld = undefined;
+    this.authoredExposure = [];
+    this.colonyLayout = { tiles: new Map(), cores: new Set() };
+    this.propFrames = frames;
+    for (const tile of this.tiles.values()) tile.width = tile.height = 0;
+    this.tiles.clear();
+    this.terrainAtlases.clear();
+    if (artwork) {
+      this.terrainAtlases.set(artwork.biome, artwork.terrain);
+      this.depthAtlas = undefined;
+    }
   }
 
   private depthLayer(image: HTMLImageElement, biome: number, layer: number, displacement: Point): void {
@@ -123,7 +240,7 @@ export class CaveRenderer {
     if (layer === 2) {
       for (const band of foregroundBands(this.width, this.playHeight))
         ctx.rect(band.x, band.y + this.topInset, band.width, band.height);
-    } else ctx.rect(0, this.topInset, this.width, this.height - this.topInset);
+    } else ctx.rect(0, this.topInset, this.width, this.playHeight);
     ctx.clip();
     ctx.globalAlpha = config.opacity;
     ctx.drawImage(
@@ -151,7 +268,12 @@ export class CaveRenderer {
   /** Swaps cosmetic art only; there is no character-specific simulation configuration. */
   hero(atlas: HeroAtlas): void {
     this.atlas = atlas;
-    this.animator = new SpriteAnimator(atlas.metadata, { preservePhase: true, idleFps: 2, walkFps: 10 });
+    this.animator = new SpriteAnimator(atlas.metadata, {
+      preservePhase: true,
+      idleFps: atlas.metadata.idleFps ?? 2,
+      walkFps: 10,
+    });
+    this.heroPresented = undefined;
   }
 
   /** Uses Kobra's existing artwork exclusively for the non-playable spreading Krzak. */
@@ -159,8 +281,10 @@ export class CaveRenderer {
     this.bushAtlas = atlas;
   }
 
-  bushFace(image: HTMLImageElement): void {
+  bushFace(image: HTMLImageElement | undefined): void {
     if (this.colonyFace) this.colonyFace.width = this.colonyFace.height = 0;
+    this.colonyFace = undefined;
+    if (!image) return;
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = 128;
     canvas.getContext('2d')!.drawImage(image, 0, 0, 128, 128);
@@ -168,11 +292,12 @@ export class CaveRenderer {
   }
 
   /** Installs baked views of the generated 3D models without loading heavy GLBs during gameplay. */
-  enemyHeroes(red: HeroAtlas, blue: HeroAtlas, undercover: HeroAtlas, boss: HeroAtlas): void {
-    this.enemyAtlases.set('red', red);
-    this.enemyAtlases.set('blue', blue);
-    this.enemyAtlases.set('undercover', undercover);
-    this.enemyAtlases.set('boss', boss);
+  enemyHeroes(red?: HeroAtlas, blue?: HeroAtlas, undercover?: HeroAtlas, boss?: HeroAtlas): void {
+    this.enemyAtlases.clear();
+    if (red) this.enemyAtlases.set('red', red);
+    if (blue) this.enemyAtlases.set('blue', blue);
+    if (undercover) this.enemyAtlases.set('undercover', undercover);
+    if (boss) this.enemyAtlases.set('boss', boss);
     this.enemyAnimators.clear();
   }
 
@@ -189,12 +314,22 @@ export class CaveRenderer {
   }
 
   /** Fits desktop caves and keeps mobile tiles large enough to read while the camera follows. */
-  resize(width: number, height: number, touch = false): void {
+  resize(
+    width: number,
+    height: number,
+    touch = false,
+    controlHeight?: number,
+    footerHeight = 52,
+    topInset = 58,
+  ): void {
+    this.topInset = topInset;
     this.touch = touch;
+    this.dockedMap = touch || width <= 650;
     this.width = width;
     this.height = height;
-    const bottomInset = touch ? (height < 400 ? 160 : 220) : 12;
-    this.playHeight = Math.max(90, height - this.topInset - bottomInset);
+    this.footerHeight = footerHeight;
+    const bottomInset = this.dockedMap ? (controlHeight ?? (height < 400 ? 160 : 220)) : 12;
+    this.playHeight = Math.max(1, height - this.topInset - bottomInset);
     this.tile = caveTileSize(width, this.playHeight);
     this.camera.resize({ width, height: this.playHeight, pixelsPerMeter: this.tile });
   }
@@ -209,8 +344,14 @@ export class CaveRenderer {
     this.tiles.clear();
     this.terrainAtlases.clear();
     this.itemAtlas = undefined;
+    this.cartAtlas = undefined;
     this.tabletAtlas = undefined;
     this.depthAtlas = undefined;
+    this.sceneryAssets = undefined;
+    this.authoredWorld = undefined;
+    this.authoredExposure = [];
+    this.colonyLayout = { tiles: new Map(), cores: new Set() };
+    this.viewCells.clear();
     this.animator = undefined;
     this.atlas = undefined;
     this.bushAtlas = undefined;
@@ -221,6 +362,8 @@ export class CaveRenderer {
     this.enemyAtlases.clear();
     this.enemyAnimators.clear();
     this.terrainLayout = undefined;
+    this.heroPresented = undefined;
+    this.enemyPresented.clear();
     this.world = undefined;
     if (this.map) this.map.width = this.map.height = 0;
     this.map = undefined;
@@ -278,6 +421,15 @@ export class CaveRenderer {
         78,
       );
     }
+    if (this.sceneryAssets?.presentation?.collectibleStyle === 'fantasy') {
+      ctx.save();
+      ctx.translate(-40, -6);
+      ctx.scale(1.3, 1.3);
+      this.pickup(3, 2);
+      ctx.restore();
+      ctx.restore();
+      return;
+    }
     this.bong(0, 33, 1.3, 2);
     const flame = 4 + Math.sin(time * 14) * 2;
     ctx.fillStyle = '#ffb867';
@@ -312,6 +464,7 @@ export class CaveRenderer {
       world = game.world,
       biome = BIOMES[game.level.biome];
     const reduced = this.motionPreference?.matches ?? false;
+    this.minimapBox = undefined;
     if ((!paused || menu) && !reduced) this.clock += dt;
     ctx.clearRect(0, 0, this.width, this.height);
     ctx.fillStyle = '#101725';
@@ -333,7 +486,26 @@ export class CaveRenderer {
       return;
     }
     const playerPoint = this.interpolate(world.player, alpha);
+    const authored = this.sceneryAssets?.authored;
+    const scene = authored?.level === game.level.id ? authored.rooms.get(game.chamberId) : undefined;
+    if (scene && (scene.width !== world.width || scene.height !== world.height))
+      throw new Error('Scenografia nie pasuje do wymiarów mapy.');
+    if (scene && (this.authoredWorld !== world || this.authoredTick !== world.tick)) {
+      this.authoredExposure = authoredEdges(world, scene.initial);
+      this.colonyLayout = authoredColony(world, scene.initial);
+      this.authoredWorld = world;
+      this.authoredTick = world.tick;
+      this.topologyUpdates++;
+    }
     if (this.world !== world) {
+      this.composition = composeScene(game.level, game.chamberId, game.currentScenery);
+      this.viewCells = new Set(
+        this.composition?.scenery?.views.flatMap((view) => view.mask.map((p) => p.y * world.width + p.x)) ??
+          [],
+      );
+      this.heroPresented = undefined;
+      this.enemyPresented.clear();
+      this.animator?.reset();
       this.colonyBirthCount = -1;
       this.world = world;
       this.terrainLayout = buildTerrainLayout(
@@ -363,20 +535,29 @@ export class CaveRenderer {
       this.patrolMotion.retain(world.enemies);
       for (const id of this.enemyAnimators.keys())
         if (!world.enemies.some((enemy) => enemy.id === id)) this.enemyAnimators.delete(id);
+      for (const id of this.enemyPresented.keys())
+        if (!world.enemies.some((enemy) => enemy.id === id)) this.enemyPresented.delete(id);
     }
     const anchor = this.camera.project(this.depthAnchor);
     const displacement = { x: this.width / 2 - anchor.x, y: this.playHeight / 2 - anchor.y };
-    if (background) this.depthLayer(background, game.level.biome, 0, displacement);
-    paintSceneMotion(ctx, this.width, this.height, game.level.biome, this.clock, false, reduced);
-    ctx.fillStyle = '#07101855';
-    ctx.fillRect(0, 0, this.width, this.height);
+    if (background && !scene) this.depthLayer(background, game.level.biome, 0, displacement);
+    if (!this.sceneryAssets)
+      paintSceneMotion(ctx, this.width, this.height, game.level.biome, this.clock, false, reduced);
+    if (!scene) {
+      ctx.fillStyle = '#07101855';
+      ctx.fillRect(0, 0, this.width, this.height);
+    }
     if (this.depthAtlas) this.depthLayer(this.depthAtlas, game.level.biome, 1, displacement);
     ctx.save();
     ctx.beginPath();
-    ctx.rect(0, this.topInset, this.width, this.height - this.topInset);
+    ctx.rect(0, this.topInset, this.width, this.playHeight);
     ctx.clip();
     ctx.translate(0, this.topInset);
     const origin = this.camera.project({ x: 0, y: 0 });
+    if (scene && authored) {
+      ctx.drawImage(scene.background, origin.x, origin.y, world.width * this.tile, world.height * this.tile);
+      this.authoredShadows(authored, world, origin);
+    } else if (this.sceneryAssets && background) this.sceneryViews(game, background);
     if (this.colonyBirthCount !== (world.bushBirths?.length ?? 0)) {
       this.colonyBirthIndex.clear();
       for (const birth of world.bushBirths ?? [])
@@ -386,7 +567,7 @@ export class CaveRenderer {
     const firstX = Math.floor(-origin.x / this.tile) - 1;
     const firstY = Math.floor(-origin.y / this.tile) - 1;
     const lastX = Math.ceil((this.width - origin.x) / this.tile) + 1;
-    const lastY = Math.ceil((this.height - this.topInset - origin.y) / this.tile) + 1;
+    const lastY = Math.ceil((this.playHeight - origin.y) / this.tile) + 1;
     for (let y = firstY; y < lastY; y++)
       for (let x = firstX; x < lastX; x++) {
         const position = this.camera.project({ x, y });
@@ -394,33 +575,118 @@ export class CaveRenderer {
           position.x < -this.tile ||
           position.y < -this.tile ||
           position.x > this.width ||
-          position.y > this.height - this.topInset
+          position.y > this.playHeight
         )
           continue;
         const inside = x >= 0 && y >= 0 && x < world.width && y < world.height;
+        if (!inside && this.sceneryAssets?.presentation?.visualTheme === 'storybook') continue;
         const cell = inside ? world.cells[y * world.width + x] : 'wall';
+        if (
+          !scene &&
+          this.sceneryAssets &&
+          inside &&
+          cell === 'wall' &&
+          this.viewCells.has(y * world.width + x)
+        )
+          continue;
         if (cell === 'wall' || cell === 'soil' || cell === 'buried-bush') {
-          if (cell !== 'wall') {
-            ctx.fillStyle = '#070b1299';
+          if (scene) {
+            const crop = authoredCellRect(x, y);
+            ctx.drawImage(
+              cell === 'wall' ? scene.walls : scene.soil,
+              ...crop,
+              position.x,
+              position.y,
+              this.tile + 0.5,
+              this.tile + 0.5,
+            );
+          } else {
+            if (cell !== 'wall') {
+              if (this.sceneryAssets?.floor)
+                ctx.drawImage(
+                  this.tileArt(game.level.biome, 'floor', macroVariant(x, y)),
+                  position.x,
+                  position.y,
+                  this.tile + 0.5,
+                  this.tile + 0.5,
+                );
+              ctx.fillStyle = this.sceneryAssets?.floor ? '#070b1222' : '#070b1299';
+              ctx.fillRect(position.x, position.y, this.tile + 0.5, this.tile + 0.5);
+            }
+            const painting = cell !== 'wall' ? this.sceneryAssets?.soil : undefined;
+            if (painting) {
+              const bounds = this.composition?.soilBounds ?? {
+                x: 0,
+                y: 0,
+                width: world.width,
+                height: world.height,
+              };
+              const crop = paintedSoilCrop(bounds, x, y, painting.naturalWidth, painting.naturalHeight);
+              ctx.drawImage(
+                painting,
+                crop.x,
+                crop.y,
+                crop.width,
+                crop.height,
+                position.x,
+                position.y,
+                this.tile + 0.5,
+                this.tile + 0.5,
+              );
+              // A narrow depth seam follows actual excavations; all bark, moss and foliage come from the painting.
+              const edges = terrainEdges(world, x, y);
+              ctx.fillStyle = '#080b14a0';
+              const lip = Math.max(1, this.tile * 0.035);
+              if (edges & 1) ctx.fillRect(position.x, position.y, this.tile, lip);
+              if (edges & 2) ctx.fillRect(position.x + this.tile - lip, position.y, lip, this.tile);
+              if (edges & 4) ctx.fillRect(position.x, position.y + this.tile - lip, this.tile, lip);
+              if (edges & 8) ctx.fillRect(position.x, position.y, lip, this.tile);
+            } else {
+              ctx.drawImage(
+                this.tileArt(
+                  game.level.biome,
+                  cell === 'wall' ? 'wall' : 'soil',
+                  this.sceneryAssets
+                    ? cell === 'wall'
+                      ? this.sceneryAssets.walls
+                        ? this.sceneryAssets.presentation?.visualTheme === 'storybook'
+                          ? paintedWallVariant(x, y, sceneryMaterial(this.composition?.scenery, x, y))
+                          : macroVariant(x, y, sceneryMaterial(this.composition?.scenery, x, y))
+                        : sceneryMaterial(this.composition?.scenery, x, y) * 4 + (((x % 4) + 4) % 4)
+                      : this.sceneryAssets.presentation?.visualTheme === 'storybook'
+                        ? macroVariant(x, y)
+                        : ((Math.imul(x, 73856093) ^ Math.imul(y, 19349663)) >>> 3) % 4
+                    : inside
+                      ? (this.terrainLayout?.cells[y * world.width + x] ?? terrainVariant(x, y))
+                      : (game.currentTerrainTheme % 4) * 2 + (terrainVariant(x, y) % 2),
+                  terrainEdges(world, x, y),
+                  this.sceneryAssets && cell === 'wall' ? sceneryEdges(world, x, y).corners : 0,
+                  this.sceneryAssets && cell === 'wall' ? sceneryEdges(world, x, y).sides : undefined,
+                ),
+                position.x,
+                position.y,
+                this.tile + 0.5,
+                this.tile + 0.5,
+              );
+            }
+          }
+        } else {
+          if (this.sceneryAssets && !scene)
+            ctx.drawImage(
+              this.tileArt(
+                game.level.biome,
+                'floor',
+                this.sceneryAssets.walls ? macroVariant(x, y) : (((x + 3 * y) % 4) + 4) % 4,
+              ),
+              position.x,
+              position.y,
+              this.tile + 0.5,
+              this.tile + 0.5,
+            );
+          else if (!scene) {
+            ctx.fillStyle = '#090f1966';
             ctx.fillRect(position.x, position.y, this.tile + 0.5, this.tile + 0.5);
           }
-          ctx.drawImage(
-            this.tileArt(
-              game.level.biome,
-              cell === 'wall' ? 'wall' : 'soil',
-              inside
-                ? (this.terrainLayout?.cells[y * world.width + x] ?? terrainVariant(x, y))
-                : (game.currentTerrainTheme % 4) * 2 + (terrainVariant(x, y) % 2),
-              terrainEdges(world, x, y),
-            ),
-            position.x,
-            position.y,
-            this.tile + 0.5,
-            this.tile + 0.5,
-          );
-        } else {
-          ctx.fillStyle = '#090f1966';
-          ctx.fillRect(position.x, position.y, this.tile + 0.5, this.tile + 0.5);
           if (cell === 'exit')
             this.exit(position, game.exitOpen, game.level.id === CAMPAIGN_LEVEL_COUNT, biome.accent);
           if (cell === 'portal') {
@@ -470,21 +736,35 @@ export class CaveRenderer {
             world.nextBushGrowth !== undefined &&
             (world.nextBushGrowth - world.tick - alpha) * STEP_SECONDS <= COLONY_SHAKE_SECONDS;
           const birth = this.colonyBirthIndex.get(y * world.width + x);
-          this.bush(
-            cell === 'buried-bush',
-            colonyPose(
-              point,
-              world.tick,
-              alpha,
-              world.nextBushGrowth,
-              !reduced && closeToWave && game.canSpreadFrom(point),
-              birth,
-              reduced,
-            ),
+          const pose = colonyPose(
+            point,
+            world.tick,
+            alpha,
+            world.nextBushGrowth,
+            !reduced && closeToWave && game.canSpreadFrom(point),
+            birth,
+            reduced,
           );
+          if (scene && authored) {
+            const index = y * world.width + x;
+            if (cell === 'bush') {
+              const bits = this.colonyLayout.tiles.get(index)!;
+              ctx.drawImage(this.authoredColonyTile(authored, bits, x, y), 0, 0, 64, 64);
+              if (this.colonyLayout.cores.has(index)) {
+                ctx.save();
+                ctx.translate(32 + pose.x, 32 + pose.y);
+                ctx.rotate(pose.angle);
+                ctx.scale(pose.scaleX, pose.scaleY);
+                ctx.drawImage(authored.colonyCores, 120, 0, 40, 40, -32, -32, 64, 64);
+                ctx.restore();
+              }
+            } else ctx.drawImage(authored.colonyCores, 0, 0, 40, 40, 0, 0, 64, 64);
+          } else this.bush(cell === 'buried-bush', pose);
           ctx.restore();
         }
       }
+    if (scene && authored) this.authoredLips(authored, world, origin);
+    else if (this.sceneryAssets) this.sceneryLight(game, reduced);
     if (game.level.gate && !world.trapped) {
       const point = this.camera.project(game.level.gate);
       ctx.strokeStyle = '#ffdb78';
@@ -507,7 +787,7 @@ export class CaveRenderer {
         position.x < -this.tile * 2 ||
         position.y < -this.tile * 2 ||
         position.x > this.width ||
-        position.y > this.height - this.topInset
+        position.y > this.playHeight
       )
         continue;
       ctx.save();
@@ -522,33 +802,49 @@ export class CaveRenderer {
       this.shadow();
       if ('kind' in body) {
         if (body.kind === 'rock') {
-          if (!this.item(3)) this.rock(body.variant, biome.wall, biome.light);
+          if (authored) ctx.drawImage(authored.actors, (body.variant % 4) * 128, 0, 128, 128, 0, 0, 64, 64);
+          else if (this.sceneryAssets) this.sceneryProp(`rock-${body.variant % 4}`, 0, 0, 64, 64);
+          else if (!this.item(3)) this.rock(body.variant, biome.wall, biome.light);
         } else if (body.kind === 'pickup') {
           this.pickup(game.level.biome, body.variant);
           if (body.required) {
-            ctx.strokeStyle = '#ffdf68';
-            ctx.lineWidth = 2;
+            ctx.fillStyle = '#ffdf68';
+            ctx.strokeStyle = '#3b2c0e';
+            ctx.lineWidth = 1.25;
             ctx.beginPath();
-            ctx.arc(32, 31, 27, 0, Math.PI * 2);
+            ctx.moveTo(50, 7);
+            ctx.lineTo(55, 13);
+            ctx.lineTo(50, 19);
+            ctx.lineTo(45, 13);
+            ctx.closePath();
+            ctx.fill();
             ctx.stroke();
           }
-        } else this.patrol(body as Enemy, world.trapped, dt, paused, !same(rendered, body));
+        } else {
+          const prior = this.enemyPresented.get(body.id);
+          const travel = prior ? Math.hypot(rendered.x - prior.x, rendered.y - prior.y) : 0;
+          this.enemyPresented.set(body.id, { ...rendered });
+          this.patrol(
+            body as Enemy,
+            world.trapped,
+            dt,
+            paused,
+            !same(rendered, body),
+            travel <= 1.1 ? travel : 0,
+          );
+        }
       } else if (this.atlas && this.animator) {
-        const moving = !same(body, body.previous) && world.status === 'playing';
-        const frame = this.animator.update(dt, FACINGS[body.direction], moving, false, paused);
-        const crop = this.atlas.crop;
-        const width = (58 * crop.width) / crop.height;
-        ctx.drawImage(
-          this.atlas.image,
-          frame.x + crop.x,
-          frame.y + crop.y,
-          crop.width,
-          crop.height,
-          32 - width / 2,
-          0,
-          width,
-          58,
-        );
+        const travel = this.heroPresented
+          ? Math.hypot(rendered.x - this.heroPresented.x, rendered.y - this.heroPresented.y)
+          : 0;
+        this.heroPresented = { ...rendered };
+        const distance = travel <= 1.1 ? travel : 0;
+        const moving =
+          (this.atlas.metadata.walkTilesPerCycle !== undefined
+            ? distance > 1e-8
+            : !same(body, body.previous)) && world.status === 'playing';
+        const frame = this.animator.update(dt, FACINGS[body.direction], moving, false, paused, distance);
+        this.humanoid(this.atlas, frame);
       }
       ctx.restore();
     }
@@ -557,13 +853,171 @@ export class CaveRenderer {
     for (const chip of this.debris.chips) {
       const point = this.camera.project(chip);
       ctx.globalAlpha = Math.max(0, chip.life / 0.42) * 0.7;
-      ctx.fillRect(point.x, point.y, 3, 3);
+      if (chip.kind === 'dig' && this.sceneryAssets?.presentation) {
+        ctx.save();
+        ctx.translate(point.x, point.y);
+        ctx.rotate(chip.life * 9 + chip.vx);
+        if (scene) {
+          const crop = authoredCellRect(
+            Math.max(0, Math.min(world.width - 1, Math.floor(chip.x))),
+            Math.max(0, Math.min(world.height - 1, Math.floor(chip.y))),
+          );
+          ctx.drawImage(scene.soil, ...crop, -3, -5, 6, 10);
+        } else ctx.drawImage(this.sceneryAssets.terrain, 24, 24, 48, 48, -3, -5, 6, 10);
+        ctx.restore();
+      } else ctx.fillRect(point.x, point.y, 3, 3);
     }
     ctx.globalAlpha = 1;
+    if (this.sceneryAssets && !scene) this.sceneryProps(game, 'frame');
     ctx.restore();
-    this.atmosphere(playerPoint);
+    if (!this.sceneryAssets) this.atmosphere(playerPoint);
     if (this.depthAtlas) this.depthLayer(this.depthAtlas, game.level.biome, 2, displacement);
+    if (this.dockedMap) {
+      // This is UI space, not a covered fragment of the cave. Camera and clipping agree.
+      ctx.fillStyle = '#101725';
+      ctx.fillRect(0, this.topInset + this.playHeight, this.width, this.height);
+    }
     if (this.showMap) this.minimap(world);
+  }
+
+  private authoredVisible(
+    world: World,
+    origin: Point,
+    visit: (i: number, x: number, y: number) => void,
+  ): void {
+    const x0 = Math.max(0, Math.floor(-origin.x / this.tile) - 1),
+      y0 = Math.max(0, Math.floor(-origin.y / this.tile) - 1);
+    const x1 = Math.min(world.width, Math.ceil((this.width - origin.x) / this.tile) + 1);
+    const y1 = Math.min(world.height, Math.ceil((this.playHeight - origin.y) / this.tile) + 1);
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) visit(y * world.width + x, x, y);
+  }
+
+  /** Source strips stay upright; only their saved raster rectangles are scaled. */
+  private authoredFragment(art: AuthoredScenery, key: string, x: number, y: number, origin: Point): void {
+    const rect = art.edgeRects[key];
+    this.context.drawImage(
+      art.edges,
+      ...rect,
+      origin.x + (x * this.tile) / 80,
+      origin.y + (y * this.tile) / 80,
+      (rect[2] * this.tile) / 80,
+      (rect[3] * this.tile) / 80,
+    );
+  }
+
+  private authoredShadows(art: AuthoredScenery, world: World, origin: Point): void {
+    const ctx = this.context;
+    ctx.save();
+    ctx.beginPath();
+    this.authoredVisible(world, origin, (i, x, y) => {
+      if (!isAuthoredSolid(world.cells[i]))
+        ctx.rect(origin.x + x * this.tile, origin.y + y * this.tile, this.tile + 0.5, this.tile + 0.5);
+    });
+    ctx.clip();
+    for (const { x, y, side } of this.authoredExposure) {
+      const offsets = [
+        [-6, -18],
+        [80, -6],
+        [-6, 80],
+        [-18, -6],
+      ][side];
+      if (
+        origin.x + x * this.tile < -2 * this.tile ||
+        origin.y + y * this.tile < -2 * this.tile ||
+        origin.x + x * this.tile > this.width ||
+        origin.y + y * this.tile > this.playHeight
+      )
+        continue;
+      this.authoredFragment(art, `shadow-${side}`, x * 80 + offsets[0], y * 80 + offsets[1], origin);
+    }
+    ctx.restore();
+  }
+
+  /** Draw after every body, so fresh lips cover root cuts instead of being overpainted. */
+  private authoredLips(art: AuthoredScenery, world: World, origin: Point): void {
+    for (const { x, y, side, wall, old } of this.authoredExposure) {
+      if (
+        origin.x + x * this.tile < -2 * this.tile ||
+        origin.y + y * this.tile < -2 * this.tile ||
+        origin.x + x * this.tile > this.width ||
+        origin.y + y * this.tile > this.playHeight
+      )
+        continue;
+      for (const row of [wall ? 2 : 0, ...(old ? [1] : [])]) {
+        const key = `edge-${row}-${side}-${(x + y) % 2}`,
+          rect = art.edgeRects[key];
+        const offsets = [
+          [0, -4],
+          [80 - rect[2] + 4, 0],
+          [0, 80 - rect[3] + 4],
+          [-4, 0],
+        ][side];
+        this.authoredFragment(art, key, x * 80 + offsets[0], y * 80 + offsets[1], origin);
+      }
+    }
+    const ctx = this.context;
+    ctx.save();
+    ctx.beginPath();
+    this.authoredVisible(world, origin, (i, x, y) => {
+      if (isAuthoredSolid(world.cells[i]) || world.cells[i] === 'bush')
+        ctx.rect(origin.x + x * this.tile, origin.y + y * this.tile, this.tile + 0.5, this.tile + 0.5);
+    });
+    ctx.clip();
+    this.authoredVisible(world, origin, (i, x, y) => {
+      const cell = world.cells[i];
+      if (cell !== 'soil' && cell !== 'buried-bush' && cell !== 'bush') return;
+      const family = cell === 'bush' ? 'colony' : 'soil',
+        depth = family === 'colony' ? 22 : 16;
+      for (const [side, [dx, dy]] of AUTHORED_DIRECTIONS.entries()) {
+        const nx = x + dx,
+          ny = y + dy;
+        if (
+          nx < 0 ||
+          ny < 0 ||
+          nx >= world.width ||
+          ny >= world.height ||
+          world.cells[ny * world.width + nx] !== 'wall'
+        )
+          continue;
+        const offsets = [
+          [0, -depth / 2],
+          [80 - depth / 2, 0],
+          [0, 80 - depth / 2],
+          [-depth / 2, 0],
+        ][side];
+        this.authoredFragment(
+          art,
+          `contact-${family}-${side}`,
+          x * 80 + offsets[0],
+          y * 80 + offsets[1],
+          origin,
+        );
+      }
+    });
+    ctx.restore();
+  }
+
+  private authoredColonyTile(art: AuthoredScenery, bits: number, x: number, y: number): HTMLCanvasElement {
+    const key = `colony:${art.biome}:${bits}:${x % 8}:${y % 8}`,
+      existing = this.tiles.get(key);
+    if (existing) {
+      this.tiles.delete(key);
+      this.tiles.set(key, existing);
+      return existing;
+    }
+    const tile = document.createElement('canvas');
+    tile.width = tile.height = 64;
+    const ctx = tile.getContext('2d')!,
+      slot = art.colonyTopologies.indexOf(bits),
+      sx = (slot % 8) * 40,
+      sy = Math.floor(slot / 8) * 40;
+    if (slot < 0) throw new Error('Brak konfiguracji połączenia kolonii.');
+    ctx.drawImage(art.colonyBody, (x % 8) * 40, (y % 8) * 40, 40, 40, 0, 0, 64, 64);
+    ctx.drawImage(art.colonyOverlays, sx, sy, 40, 40, 0, 0, 64, 64);
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.drawImage(art.colonyMasks, sx, sy, 40, 40, 0, 0, 64, 64);
+    this.rememberTile(key, tile);
+    return tile;
   }
 
   /** Adds soft local depth without hiding the readable tiles, obstacles or opponents. */
@@ -608,11 +1062,19 @@ export class CaveRenderer {
       }
       this.mapTick = world.tick;
     }
-    const width = Math.min(this.touch ? 76 : 156, ((this.playHeight - 26) * world.width) / world.height);
-    const scale = width / world.width,
-      height = world.height * scale;
-    const x = this.width - width - 14,
-      y = this.touch ? Math.max(this.topInset + 8, this.height - height - 64) : this.topInset + 8;
+    const box = minimapLayout(
+      this.width,
+      this.height,
+      this.topInset,
+      this.playHeight,
+      world.width,
+      world.height,
+      this.dockedMap,
+      this.footerHeight,
+    );
+    this.minimapBox = box;
+    if (!box) return;
+    const { width, height, scale, x, y } = box;
     ctx.fillStyle = '#0a111be8';
     ctx.fillRect(x - 5, y - 5, width + 10, height + 10);
     ctx.imageSmoothingEnabled = false;
@@ -638,9 +1100,190 @@ export class CaveRenderer {
     };
   }
 
+  private sceneryProp(asset: string, x: number, y: number, width: number, height: number): void {
+    const art = this.sceneryAssets;
+    if (!art) return;
+    const index = asset === 'throne' ? 15 : SCENERY_PROPS.findIndex((name) => name === asset);
+    if (index < 0) return;
+    if (art.presentation && this.propFrames[index]) {
+      const f = this.propFrames[index],
+        scale = Math.min(width / f.width, height / f.height);
+      this.context.drawImage(
+        art.props,
+        f.x,
+        f.y,
+        f.width,
+        f.height,
+        x + (width - f.width * scale) / 2,
+        y + (height - f.height * scale) / 2,
+        f.width * scale,
+        f.height * scale,
+      );
+      return;
+    }
+    this.context.drawImage(
+      art.props,
+      (index % 4) * 128,
+      Math.floor(index / 4) * 128,
+      128,
+      128,
+      x,
+      y,
+      width,
+      height,
+    );
+  }
+
+  /** Every architectural prop is clipped to actual walls, keeping all gameplay silhouettes clear. */
+  private sceneryProps(game: Simulation, layer: 'depth' | 'frame'): void {
+    const ctx = this.context;
+    for (const prop of this.composition?.scenery?.props ?? []) {
+      if (prop.layer !== layer) continue;
+      const p = this.camera.project(prop.at),
+        width = prop.width * this.tile,
+        height = prop.height * this.tile;
+      if (p.x + width < 0 || p.y + height < 0 || p.x > this.width || p.y > this.playHeight) continue;
+      ctx.save();
+      ctx.beginPath();
+      for (let y = Math.floor(prop.at.y); y < Math.ceil(prop.at.y + prop.height); y++)
+        for (let x = Math.floor(prop.at.x); x < Math.ceil(prop.at.x + prop.width); x++)
+          if (game.world.cells[y * game.world.width + x] === 'wall') {
+            const at = this.camera.project({ x, y });
+            ctx.rect(at.x, at.y, this.tile + 0.5, this.tile + 0.5);
+          }
+      ctx.clip();
+      this.sceneryProp(prop.asset, p.x, p.y, width, height);
+      ctx.restore();
+    }
+  }
+
+  private sceneryViews(game: Simulation, background: HTMLImageElement): void {
+    const ctx = this.context;
+    for (const view of this.composition?.scenery?.views ?? []) {
+      const b = view.bounds,
+        p = this.camera.project(b),
+        width = b.width * this.tile,
+        height = b.height * this.tile;
+      if (p.x + width < 0 || p.y + height < 0 || p.x > this.width || p.y > this.playHeight) continue;
+      ctx.save();
+      ctx.beginPath();
+      for (const cell of view.mask) {
+        const at = this.camera.project(cell);
+        if (at.x + this.tile >= 0 && at.y + this.tile >= 0 && at.x <= this.width && at.y <= this.playHeight)
+          ctx.rect(at.x, at.y, this.tile + 0.5, this.tile + 0.5);
+      }
+      ctx.clip();
+      const scale = Math.max(width / background.naturalWidth, height / background.naturalHeight);
+      ctx.drawImage(
+        background,
+        p.x + (width - background.naturalWidth * scale) / 2,
+        p.y + (height - background.naturalHeight * scale) / 2,
+        background.naturalWidth * scale,
+        background.naturalHeight * scale,
+      );
+      if (this.sceneryAssets) {
+        if (!this.sceneryAssets.presentation) ctx.drawImage(this.sceneryAssets.mid, p.x, p.y, width, height);
+      }
+      ctx.fillStyle = '#131b2430';
+      ctx.fillRect(p.x, p.y, width, height);
+      // A continuous frame and sparse bars communicate that the visible depth is solid.
+      ctx.strokeStyle = '#121b20';
+      ctx.lineWidth = this.tile * 0.12;
+      ctx.strokeRect(p.x + 1, p.y + 1, width - 2, height - 2);
+      ctx.strokeStyle = '#b4c3a377';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(
+        p.x + this.tile * 0.14,
+        p.y + this.tile * 0.14,
+        width - this.tile * 0.28,
+        height - this.tile * 0.28,
+      );
+      ctx.strokeStyle = '#343e3ce8';
+      ctx.lineWidth = Math.max(3, this.tile * 0.065);
+      ctx.beginPath();
+      for (let x = b.x + 1; x < b.x + b.width; x += 3) {
+        const at = this.camera.project({ x, y: b.y });
+        ctx.moveTo(at.x, at.y);
+        ctx.lineTo(at.x, at.y + height);
+      }
+      ctx.moveTo(p.x, p.y + height - this.tile * 0.25);
+      ctx.lineTo(p.x + width, p.y + height - this.tile * 0.25);
+      ctx.stroke();
+      ctx.restore();
+    }
+    this.sceneryProps(game, 'depth');
+  }
+
+  private sceneryLight(game: Simulation, reduced: boolean): void {
+    const ctx = this.context;
+    for (const detail of this.composition?.scenery?.floorDetails ?? []) {
+      const p = this.camera.project(detail.at);
+      if (p.x + this.tile < 0 || p.y + this.tile < 0 || p.x > this.width || p.y > this.playHeight) continue;
+      ctx.save();
+      ctx.globalAlpha = 0.14;
+      ctx.drawImage(this.tileArt(game.level.biome, 'floor', 1), p.x, p.y, this.tile, this.tile);
+      ctx.restore();
+    }
+    for (const [index, ray] of (this.composition?.scenery?.rays ?? []).entries()) {
+      const start = this.camera.project(ray.at),
+        end = this.camera.project(rayEnd(ray));
+      const radius = (ray.width * this.tile) / 2;
+      if (
+        Math.max(start.x, end.x) + radius < 0 ||
+        Math.max(start.y, end.y) + radius < 0 ||
+        Math.min(start.x, end.x) - radius > this.width ||
+        Math.min(start.y, end.y) - radius > this.playHeight
+      )
+        continue;
+      const length = Math.hypot(end.x - start.x, end.y - start.y),
+        nx = -(end.y - start.y) / length,
+        ny = (end.x - start.x) / length;
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = rayOpacity(this.touch, reduced, this.clock, index);
+      const gradient = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+      gradient.addColorStop(0, '#ffeebccc');
+      gradient.addColorStop(0.8, '#e8d69a35');
+      gradient.addColorStop(1, '#e8d69a00');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(start.x + nx * 2, start.y + ny * 2);
+      ctx.lineTo(end.x + nx * radius, end.y + ny * radius);
+      ctx.lineTo(end.x - nx * radius, end.y - ny * radius);
+      ctx.lineTo(start.x - nx * 2, start.y - ny * 2);
+      ctx.closePath();
+      ctx.fill();
+      if (!reduced)
+        for (let particle = 0; particle < (this.touch ? (index === 0 ? 3 : 0) : 6); particle++) {
+          const phase = (this.clock * 0.04 + particle * 0.17 + index * 0.13) % 1,
+            side = Math.sin(particle * 3.1) * radius * 0.5 * phase;
+          ctx.globalAlpha =
+            Math.min(0.12, rayOpacity(this.touch, reduced, this.clock, index) * 0.6) * (1 - phase);
+          ctx.fillStyle = '#fff3cc';
+          ctx.beginPath();
+          ctx.arc(
+            start.x + (end.x - start.x) * phase + nx * side,
+            start.y + (end.y - start.y) * phase + ny * side,
+            1.1,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+        }
+      ctx.restore();
+    }
+  }
+
   /** Caches rough cave textures; variants are deterministic and allocated only once per biome. */
-  private tileArt(biomeIndex: number, kind: 'wall' | 'soil', variant: number, edges = 0): HTMLCanvasElement {
-    const key = `${biomeIndex}:${kind}:${variant}:${edges}`;
+  private tileArt(
+    biomeIndex: number,
+    kind: 'wall' | 'soil' | 'floor',
+    variant: number,
+    edges = 0,
+    corners = 0,
+    wallSides?: number,
+  ): HTMLCanvasElement {
+    const key = `${this.sceneryAssets?.presentation?.visualTheme ?? 'v6'}:${biomeIndex}:${kind}:${variant}:${wallSides ?? edges}:${corners}`;
     const cached = this.tiles.get(key);
     if (cached) {
       this.tiles.delete(key);
@@ -651,10 +1294,53 @@ export class CaveRenderer {
     canvas.width = canvas.height = 64;
     const context = canvas.getContext('2d')!;
     const atlas = this.terrainAtlases.get(biomeIndex);
-    if (atlas) paintBiomeTile(context, atlas, kind, variant);
-    else paintCaveTile(context, biomeIndex, kind, variant);
-    if (kind === 'soil') punchSoil(context, biomeIndex, variant % 4);
-    paintTerrainEdges(context, edges, biomeIndex);
+    if (this.sceneryAssets?.walls && this.sceneryAssets.floor) {
+      const art = this.sceneryAssets;
+      const rect =
+        kind === 'soil'
+          ? { x: (variant % 4) * 128, y: 0, width: 128, height: 128 }
+          : kind === 'wall' && art.presentation?.visualTheme === 'storybook'
+            ? paintedWallRect(variant)
+            : macroRect(kind, variant);
+      const image = kind === 'wall' ? art.walls! : kind === 'floor' ? art.floor! : art.terrain;
+      context.drawImage(image, rect.x, rect.y, rect.width, rect.height, 0, 0, 64, 64);
+      if (kind !== 'soil') {
+        context.fillStyle = kind === 'floor' ? '#080f1baa' : '#14202a24';
+        context.fillRect(0, 0, 64, 64);
+      }
+      if (kind === 'wall')
+        paintSceneryEdges(
+          context,
+          wallSides ?? edges,
+          corners,
+          biomeIndex,
+          this.sceneryAssets?.presentation?.visualTheme,
+          variant,
+        );
+      if (kind === 'soil') paintTerrainEdges(context, edges, biomeIndex);
+    } else if (this.sceneryAssets && atlas) {
+      const rect = sceneryTileRect(kind, variant);
+      context.drawImage(atlas, rect.x, rect.y, rect.width, rect.height, 0, 0, 64, 64);
+      if (kind === 'wall')
+        paintSceneryEdges(
+          context,
+          wallSides ?? edges,
+          corners,
+          biomeIndex,
+          this.sceneryAssets?.presentation?.visualTheme,
+          variant,
+        );
+    } else if (kind !== 'floor') {
+      if (atlas) paintBiomeTile(context, atlas, kind, variant);
+      else paintCaveTile(context, biomeIndex, kind, variant);
+      if (kind === 'soil') punchSoil(context, biomeIndex, variant % 4);
+      paintTerrainEdges(context, edges, biomeIndex);
+    }
+    this.rememberTile(key, canvas);
+    return canvas;
+  }
+
+  private rememberTile(key: string, canvas: HTMLCanvasElement): void {
     if (this.tiles.size >= 256) {
       const oldest = this.tiles.keys().next().value!;
       const evicted = this.tiles.get(oldest)!;
@@ -662,7 +1348,6 @@ export class CaveRenderer {
       this.tiles.delete(oldest);
     }
     this.tiles.set(key, canvas);
-    return canvas;
   }
 
   /** Grounds sprites with a subtle footprint without obscuring the logical tile. */
@@ -785,7 +1470,23 @@ export class CaveRenderer {
   /** Creates four collectible silhouettes and flavour/shape variations using original vector artwork. */
   private pickup(biome: number, variant: number): void {
     const ctx = this.context;
-    if (biome === 2 && this.tabletAtlas) {
+    if (this.sceneryAssets?.authored && this.sceneryAssets.presentation?.collectibleStyle === 'fantasy') {
+      ctx.drawImage(
+        this.sceneryAssets.authored.actors,
+        (Math.abs(variant) % 4) * 128,
+        256,
+        128,
+        128,
+        3,
+        3,
+        58,
+        58,
+      );
+    } else if (this.sceneryAssets?.presentation) {
+      const image = this.sceneryAssets.terrain;
+      const row = this.sceneryAssets.presentation.collectibleStyle === 'fantasy' ? 3 : 2;
+      ctx.drawImage(image, (Math.abs(variant) % 4) * 128, row * 128, 128, 128, 3, 3, 58, 58);
+    } else if (biome === 2 && this.tabletAtlas) {
       const image = this.tabletAtlas;
       const rect = raveTabletRect(image.naturalWidth, image.naturalHeight, variant);
       ctx.drawImage(image, rect.x, rect.y, rect.width, rect.height, 0, 0, 64, 64);
@@ -853,6 +1554,11 @@ export class CaveRenderer {
     ctx.save();
     ctx.translate(x - 32 * scale, y - 36 * scale);
     ctx.scale(scale, scale);
+    if (this.sceneryAssets?.presentation) {
+      this.pickup(3, variant);
+      ctx.restore();
+      return;
+    }
     if (this.item(4 + (Math.abs(Math.trunc(variant)) % 4))) {
       ctx.restore();
       return;
@@ -888,29 +1594,56 @@ export class CaveRenderer {
   }
 
   /** Draws original uniformed cartoon patrols; the finale character is clearly a fictional caricature. */
-  private patrol(enemy: Enemy, trapped: boolean, dt = 0, paused = true, visualMoving?: boolean): void {
+  private humanoid(atlas: HeroAtlas, frame: SpriteFrame): void {
+    const { image, metadata, crop } = atlas;
+    if (metadata.pivot) {
+      const scale = 58 / metadata.pivot.y;
+      this.context.drawImage(
+        image,
+        frame.x,
+        frame.y,
+        frame.width,
+        frame.height,
+        32 - metadata.pivot.x * scale,
+        58 - metadata.pivot.y * scale,
+        frame.width * scale,
+        frame.height * scale,
+      );
+    } else {
+      const width = (58 * crop.width) / crop.height;
+      this.context.drawImage(
+        image,
+        frame.x + crop.x,
+        frame.y + crop.y,
+        crop.width,
+        crop.height,
+        32 - width / 2,
+        0,
+        width,
+        58,
+      );
+    }
+  }
+
+  private patrol(
+    enemy: Enemy,
+    trapped: boolean,
+    dt = 0,
+    paused = true,
+    visualMoving?: boolean,
+    distance = 0,
+  ): void {
     const ctx = this.context,
       boss = enemy.kind === 'boss';
     if (enemy.kind === 'sweeper') {
-      ctx.fillStyle = '#17252c';
-      ctx.fillRect(9, 9, 46, 46);
-      ctx.strokeStyle = '#f2b45a';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(9, 9, 46, 46);
-      ctx.lineWidth = 1.5;
-      for (let offset = 18; offset <= 46; offset += 9) {
-        ctx.beginPath();
-        ctx.moveTo(offset, 10);
-        ctx.lineTo(offset, 54);
-        ctx.moveTo(10, offset);
-        ctx.lineTo(54, offset);
-        ctx.stroke();
-      }
+      if (!this.cartAtlas) throw new Error('Brak grafiki wózka');
+      const index = { down: 0, right: 1, up: 2, left: 3 }[enemy.direction];
+      ctx.drawImage(this.cartAtlas, (index % 2) * 128, Math.floor(index / 2) * 128, 128, 128, 0, 0, 64, 64);
       return;
     }
     const atlas = this.enemyAtlases.get(enemy.kind);
     if (atlas) {
-      const { crop, image, metadata } = atlas;
+      const { metadata } = atlas;
       let animator = this.enemyAnimators.get(enemy.id);
       if (!animator) {
         animator = new PatrolAnimator(metadata);
@@ -925,19 +1658,9 @@ export class CaveRenderer {
         paused,
         trapped,
         visualMoving !== undefined,
+        distance,
       );
-      const width = (58 * crop.width) / crop.height;
-      ctx.drawImage(
-        image,
-        frame.x + crop.x,
-        frame.y + crop.y,
-        crop.width,
-        crop.height,
-        32 - width / 2,
-        0,
-        width,
-        58,
-      );
+      this.humanoid(atlas, frame);
       if (enemy.chasing) {
         ctx.fillStyle = '#ffdf7e';
         ctx.font = 'bold 16px sans-serif';

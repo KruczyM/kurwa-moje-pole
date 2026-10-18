@@ -1,4 +1,4 @@
-import { buildCampaignV5 } from './CampaignV5';
+import { buildCampaignV6 } from './CampaignV6';
 import { buildCave } from './CaveBuilder';
 import type { CaveSketch } from './CaveBuilder';
 import type { LevelDefinition } from './types';
@@ -101,4 +101,4 @@ export const LEGACY_LEVELS: readonly LevelDefinition[] = [
   ...buildChallenges(EXIT_PUZZLES),
 ];
 
-export const LEVELS = buildCampaignV5();
+export const LEVELS = buildCampaignV6();

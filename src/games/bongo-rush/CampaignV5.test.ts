@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS, LEGACY_LEVELS } from './Levels';
-import { deepDeposit, puzzleLevel } from './CampaignV5';
+import { LEGACY_LEVELS } from './Levels';
+import { buildCampaignV5, deepDeposit, puzzleLevel } from './CampaignV5';
 import { createWorld, Simulation } from './Simulation';
 import { buildTerrainLayout } from './TerrainLayout';
 import { loadProgress } from './Progress';
@@ -11,6 +11,7 @@ const play = (level: LevelDefinition, route: readonly ReplayInput[] = level.repl
   for (const input of route) game.step(input);
   return game;
 };
+const LEVELS = buildCampaignV5();
 
 describe('authored twenty-four cave campaign', () => {
   it('includes twenty main caves, four recognisable challenges and only two portal networks', () => {

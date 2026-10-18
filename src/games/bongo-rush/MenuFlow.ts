@@ -13,6 +13,12 @@ export class MenuFlow {
     this.hero = HEROES.includes(savedHero as (typeof HEROES)[number]) ? savedHero : HEROES[0];
   }
 
+  /** Main's quick-level entry keeps the selected hero without reopening the gallery. */
+  openLevels(): void {
+    this.screen = 'levels';
+    this.confirmed = true;
+  }
+
   /** Opens the gallery; every fresh visit requires explicit confirmation. */
   openHeroes(): void {
     this.screen = 'heroes';

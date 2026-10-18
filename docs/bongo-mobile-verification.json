@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-18",
+  "base": "352a7b705b3ff4fd6c9c16b0451db9e88e28ed1b",
+  "status": "PASS",
+  "browserCases": 96,
+  "browsers": ["Chromium", "Playwright WebKit"],
+  "styles": ["standard", "storybook"],
+  "levels": [6, 15, 24],
+  "viewports": [
+    [320, 480],
+    [320, 568],
+    [360, 640],
+    [390, 844],
+    [568, 320],
+    [640, 360],
+    [667, 375],
+    [844, 390]
+  ],
+  "minimumLandscapeGameplayHeight": 120,
+  "checks": [
+    "minimap outside clipped gameplay viewport",
+    "minimap separate from joystick and restart",
+    "aspect ratio retained for tall maps",
+    "portrait and landscape orientation changes",
+    "pause resize resume",
+    "quick level choice retains saved hero/current level",
+    "map toggle",
+    "existing joystick and restart"
+  ],
+  "unitTests": 2326,
+  "unitFiles": 229,
+  "ciCode": "PASS",
+  "ciAssets": "PASS",
+  "productionBuild": "PASS",
+  "independentReview": "PASS, no outstanding P1/P2",
+  "mainPreserved": [
+    "Fighter",
+    "After",
+    "3D festival",
+    "guitar audio",
+    "loading UI",
+    "archived Bongo snapshot"
+  ],
+  "integration": "Rebuilt current main with current Bongo sources; removed historical postbuild override; retained quick level menu feature",
+  "baselineGateRepairs": "Prettier-only in 10 existing main files; unused import removed; redundant volume initialization removed without changing branch assignments"
+}
