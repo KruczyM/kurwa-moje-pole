@@ -16,6 +16,9 @@ describe('explicit cosmetic menu navigation', () => {
     expect(flow.choose('kobra')).toBe(false);
     expect(flow.canStart(0, 1)).toBe(false);
     flow.confirm();
+    expect(flow.screen).toBe('title');
+    expect(flow.canStart(0, 1)).toBe(false);
+    flow.openLevels();
     expect(flow.canStart(0, 1)).toBe(true);
     for (const index of [-1, 1, 0.5, NaN]) expect(flow.canStart(index, 1)).toBe(false);
     flow.back();
@@ -31,6 +34,9 @@ describe('explicit cosmetic menu navigation', () => {
       expect(flow.choose(hero)).toBe(true);
       flow.confirm();
       expect(flow.hero).toBe(hero);
+      expect(flow.screen).toBe('title');
+      expect(flow.canStart(15, 16)).toBe(false);
+      flow.openLevels();
       expect(flow.canStart(15, 16)).toBe(true);
       flow.title();
       expect(flow.canStart(15, 16)).toBe(false);

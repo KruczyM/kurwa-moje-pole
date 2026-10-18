@@ -3,7 +3,7 @@
 ## Zakres
 
 Menu w stylu Artystycznym odtwarza zaakceptowaną kompozycję: jesienna podziemna budowla,
-Amper przy gramofonie, kamienne złote logo, drewniane przyciski i cztery karty biomów.
+Wybrana postać przy gramofonie, kamienne złote logo, drewniane przyciski i cztery karty biomów.
 Scena, logo i ramy są grafikami rastrowymi. CSS odpowiada za układ, stany kontrolek i delikatną
 zmianę jasności sceny; animacja respektuje `prefers-reduced-motion`.
 
@@ -36,7 +36,47 @@ Konwersja nie zmienia wymiarów; logo i atlas zachowują przezroczystość.
 Portret wybranej postaci wykorzystuje dotychczasowy atlas i miniatury HeroGallery.
 Menu nie dodaje nowego loadera postaci ani pętli requestAnimationFrame.
 
-## Walidacja
+## Wybrana postać przy gramofonie
+
+Amper wykorzystuje oryginalny, niezmieniony `scene.webp`. Pozostałe gotowe widoki
+są kompletnymi malowanymi scenami: postać siedzi przy gramofonie, ma kontakt
+ze skrzynią, światło lampionów i cień zgodny z otoczeniem. Nie nakładamy sprite'a
+na puste tło. Kadrowanie desktopowe i mobilne pozostało takie jak w oryginale.
+
+Źródłem tożsamości są widoki `front.png` i `left.png` z
+`E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/<hero>/`, wskazane przez użytkownika.
+Sceny dla Ambony, Chlebaka, Dziąsła, Hemoroida, Jęczmienia, Klątwy, Korby,
+Szerszenia i Zaworu korzystają z tych materiałów, z zachowaniem ubrań i dodatków.
+Dla Anteny, Gruczoła, Krwiaka, Pierścienia i Pnia wykorzystano czterostronne
+referencje dosłane przez użytkownika w tej kolejności. Kopie znajdują się w
+`source-assets/bongo-menu-v1/references/<hero>.jpg`. Cała piętnastka ma już
+indywidualną ilustrację. Amper zachowuje dokładnie ten sam oryginalny obraz.
+
+Zatwierdzenie postaci wraca do menu głównego i od razu zapisuje bohatera.
+Gracz wybiera następnie „Kontynuuj” albo „Wybierz poziom”. Samo zatwierdzenie
+nie zmienia mapy ani zapisanego poziomu kontynuacji.
+
+Nowe źródła: `source-assets/bongo-menu-v1/scenes/<hero>.png`; eksporty:
+`public/game-assets/2d/bongo-rush/menu-v1/scenes/<hero>.webp`.
+Użyto wbudowanego imagegen, bez kluczy API. Pełny prompt, referencje i sumy
+kontrolne zapisano w `docs/bongo-menu-character-scenes.json`.
+Pobierana jest tylko wybrana scena przez istniejący ImageCache. Token wyboru
+chroni przed spóźnioną odpowiedzią poprzedniej sceny; poprzednie sceny są zwalniane.
+
+Kontrola: `python scripts/bongo-v6/verify-menu-scene-hero.py [URL]`.
+Raport i zrzuty: `reports/menu-selected-character/`. Skrypt sprawdza wszystkie
+gotowe sceny, powrót z galerii do menu głównego, zapis wyboru przed startem gry,
+przeładowanie, przyciski kontynuacji i map, mobilne kadrowanie oraz spóźnione obrazy.
+Testy deterministyczne obejmują kompletność assetów, mapowanie bohaterów i nawigację.
+
+Aktualna walidacja zmiany: build, lint zmienionych plików, formatowanie, UTF-8 i
+716 testów Bongo Rush PASS. Chromium i WebKit: wszystkie 15 scen,
+powrót do menu, zapis wyboru, kontynuacja, mapy i spóźniony obraz
+PASS; 1672×941, 390×844, 844×390, 320×568 bez błędów JS.
+Dotychczasowy skrypt `verify-painted-menu.py` także PASS dla obu silników,
+obu stylów, nawigacji, kontynuacji, błędów pobierania i ręcznego ponowienia.
+
+## Walidacja pierwotnego menu
 
 - `npm run ci:code`: PASS, 231 plików / 2338 testów, format, lint i TypeScript.
 - `npm run ci:assets`: PASS, walidacja assetów, rigów i sektorów mgły.
