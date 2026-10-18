@@ -7,6 +7,7 @@ import {
   presentationPreferences,
   collectibleName,
   collectiblePreviewPath,
+  collectibleChoices,
   MENU_VISUAL_THEMES,
   THEME_LABELS,
   THEME_ACCENTS,
@@ -487,7 +488,7 @@ class BongoRush {
     ))
       input.checked = input.value === this.progress.collectibleStyle;
     element('appearance-status').textContent =
-      'Standardowy: klasyczna oprawa i festiwalowe znajdźki. Artystyczny: malarskie podziemia. Wybór zapisuje się na tym urządzeniu i zachowuje postęp.';
+      'Standardowa: klasyczna oprawa i jeden wygląd znajdziek. Artystyczna: malarskie podziemia i dwa zestawy znajdziek. Wybór zapisuje się na tym urządzeniu i zachowuje postęp.';
     this.appearancePreview = false;
     element('appearance-listen').textContent = 'Posłuchaj motywu';
     element<HTMLDialogElement>('appearance-panel').showModal();
@@ -501,11 +502,15 @@ class BongoRush {
       collectibleStyle: document.querySelector<HTMLInputElement>('input[name="collectible-style"]:checked')
         ?.value as PresentationPreferences['collectibleStyle'],
     });
-    const standard = this.draftAppearance.visualTheme === 'standard';
+    const choices = collectibleChoices(this.draftAppearance.visualTheme);
     for (const input of Array.from(
       document.querySelectorAll<HTMLInputElement>('input[name="collectible-style"]'),
     )) {
-      input.disabled = standard && input.value === 'fantasy';
+      const choice = choices.find((option) => option.value === input.value);
+      input.disabled = !choice;
+      const label = input.closest('label')!;
+      label.hidden = !choice;
+      label.querySelector('span')!.textContent = choice?.label ?? '';
       input.checked = input.value === this.draftAppearance.collectibleStyle;
     }
     const path = collectiblePreviewPath(BASE, this.draftAppearance, this.game.level.biome);
@@ -838,6 +843,14 @@ class BongoRush {
     void this.loadRun(this.selected);
   }
 
+  /** Returning to the title keeps the selected hero and saved level progress. */
+  private returnToTitle(): void {
+    if (this.loading) return;
+    this.menuBiome = undefined;
+    this.menu.title();
+    this.showMenu();
+  }
+
   /** Escape only toggles pause while in a run; it never sends the player straight to the main menu. */
   private togglePause(): void {
     if (this.loading || element<HTMLDialogElement>('appearance-panel').open) return;
@@ -988,10 +1001,8 @@ class BongoRush {
       this.menu.openLevels();
       void this.begin(this.resumeIndex);
     });
-    click('level-title-back', () => {
-      this.menu.title();
-      this.showMenu();
-    });
+    for (const id of ['level-title-back', 'pause-title-back', 'result-title-back', 'victory-title-back'])
+      click(id, () => this.returnToTitle());
     this.events.listen(document.querySelector('.biome-cards')!, 'click', (event) => {
       const card = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-biome]');
       if (!card || card.disabled || this.loading) return;

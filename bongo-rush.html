@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#171b2b" />
-    <title>After: Walka o tasiorowe bongo</title>
+    <title>Bongo Rush — Walka o tasiorowe bongo</title>
     <link
       rel="preload"
       href="./game-assets/audio/bongo-rush/soundtrack-v1/menu-jazz.mp3"
@@ -15,7 +15,7 @@
   <body>
     <main id="bongo-app">
       <header class="topbar">
-        <a class="brand" href="./bongo-rush.html"><span>AFTER</span> WALKA O TASIOROWE BONGO</a>
+        <a class="brand" href="./bongo-rush.html"><span>BONGO RUSH</span></a>
         <div class="toolbar">
           <button id="help" aria-label="Pomoc — zasady gry">?</button>
           <button id="map" aria-pressed="false" title="Pokaż lub ukryj mapę (M)">Mapa</button>
@@ -78,7 +78,7 @@
           </nav>
           <div class="title-footer">
             <div class="links">
-              <a href="./after-demo.html">After: ostatnia noc</a><a href="./">Festiwal 3D</a>
+              <a href="./">Festiwal 3D</a>
             </div>
             <small class="disclaimer">Fikcyjna, satyryczna gra dla dorosłych.</small>
           </div>
@@ -122,7 +122,7 @@
             </p>
           </details>
           <div class="links">
-            <a href="./after-demo.html">After: ostatnia noc</a><a href="./">Festiwal 3D</a>
+            <a href="./">Festiwal 3D</a>
           </div>
           <small class="disclaimer"
             >Fikcyjna, satyryczna gra dla dorosłych. Nie jest reklamą ani instrukcją używania
@@ -178,14 +178,15 @@
           <p>Jaskinia poczeka. Wzrost Krzaka jest zatrzymany.</p>
           <button id="resume" class="primary">Wróć do gry</button
           ><button id="pause-appearance">Oprawa i muzyka</button
-          ><button id="pause-restart">Restart poziomu</button><button id="to-menu">Wybór poziomu</button>
+          ><button id="pause-restart">Restart poziomu</button><button id="to-menu">Wybór poziomu</button
+          ><button id="pause-title-back">Menu główne</button>
         </section>
         <section id="result" class="panel compact" hidden aria-label="Wynik poziomu">
           <span id="result-label" class="eyebrow"></span>
           <h2 id="result-title"></h2>
           <p id="result-text"></p>
           <button id="next" class="primary">Następny poziom</button><button id="retry">Zagraj ponownie</button
-          ><button id="result-menu">Wybór poziomu</button>
+          ><button id="result-menu">Wybór poziomu</button><button id="result-title-back">Menu główne</button>
         </section>
         <section id="victory" class="panel victory-panel" hidden aria-label="Koniec kampanii">
           <span class="eyebrow">KAMPANIA UKOŃCZONA · ODBLOKOWANO 4 WYZWANIA</span>
@@ -194,21 +195,25 @@
             Dostawa odebrana! Satyryczny Owsiak opala legendarne bongo — nagroda jest Twoja! W wyborze poziomu
             czekają cztery dodatkowe wyzwania.
           </p>
-          <button id="victory-menu" class="primary">Wróć do odblokowanych poziomów</button>
+          <button id="victory-menu" class="primary">Wróć do odblokowanych poziomów</button
+          ><button id="victory-title-back">Menu główne</button>
         </section>
         <dialog id="appearance-panel" aria-labelledby="appearance-title">
           <span class="eyebrow">TWÓJ KLIMAT WYPRAWY</span>
           <h2 id="appearance-title">Oprawa i muzyka</h2>
           <fieldset>
-            <legend>Styl grafiki</legend>
+            <legend>Szata graficzna</legend>
             <div id="theme-choices"></div>
           </fieldset>
           <fieldset class="collectible-choices">
             <legend>Znajdźki</legend>
             <label
-              ><input type="radio" name="collectible-style" value="festival" checked /> Festiwalowe</label
+              ><input type="radio" name="collectible-style" value="festival" checked />
+              <span>Standardowe</span></label
             >
-            <label><input type="radio" name="collectible-style" value="fantasy" /> Skarby fantasy</label>
+            <label
+              ><input type="radio" name="collectible-style" value="fantasy" /> <span>Zestaw 2</span></label
+            >
           </fieldset>
           <div id="collectible-preview" aria-hidden="true"></div>
           <p id="collectible-preview-label"></p>
