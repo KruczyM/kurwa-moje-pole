@@ -139,9 +139,14 @@ class FighterDemo {
         this.audio.preloadFighters([this.p1Key, this.p2Key]);
       });
     };
-    window.addEventListener('pointerdown', unlock, { passive: true });
-    window.addEventListener('keydown', unlock);
-    document.addEventListener('visibilitychange', () => this.audio.setVisible(!document.hidden));
+    unlock();
+    for (const evt of ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'mouseup', 'click', 'keydown']) {
+      window.addEventListener(evt, unlock, { passive: true });
+    }
+    document.addEventListener('visibilitychange', () => {
+      this.audio.setVisible(!document.hidden);
+      if (!document.hidden) unlock();
+    });
     window.addEventListener('pagehide', () => this.audio.dispose());
   }
 
