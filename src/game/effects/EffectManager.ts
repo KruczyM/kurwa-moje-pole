@@ -4,11 +4,38 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { EffectTimeline } from './EffectTimeline';
 import { DEFAULT_GRASS_PRESET, type GrassQualityPreset } from '../world/grassQuality';
 import type { MatrixPhaseMode } from './MatrixPhaseController';
 import type { MatrixQualityPreset } from './MatrixRainOverlay';
-export type EffectId = 'Piwo' | 'Papieros' | 'Joint' | 'Kreska' | 'Grzyb' | 'MDMA' | 'LSD';
+import type { AspectRatioPreset } from '../rendering/viewportAspect';
+
+/**
+ * Sprawdza, czy urządzenie obsługuje blendowanie buforów zmiennoprzecinkowych.
+ * Na urządzeniach iOS WebKit brak EXT_float_blend powoduje błąd INVALID_OPERATION i biały ekran.
+ */
+export function isFloatBlendSupported(renderer: THREE.WebGLRenderer): boolean {
+  try {
+    const gl = renderer.getContext?.();
+    if (!gl) return true;
+    gl.getExtension?.('EXT_color_buffer_float');
+    gl.getExtension?.('EXT_color_buffer_half_float');
+    const floatBlend = gl.getExtension?.('EXT_float_blend');
+    const isIOS =
+      typeof navigator !== 'undefined' &&
+      (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints ?? 0) > 1));
+    if (isIOS && !floatBlend) {
+      return false;
+    }
+    return true;
+  } catch {
+    return true;
+  }
+}
+export type EffectId =
+  'Piwo' | 'Papieros' | 'Joint' | 'Kreska' | 'Grzyb' | 'MDMA' | 'LSD' | 'Woda' | 'Okulary';
 export type EffectPhase = 'inactive' | 'fadeIn' | 'active' | 'fadeOut';
 export type VisualSettings = {
   intensity: number;
@@ -21,6 +48,8 @@ export type VisualSettings = {
   matrixMode: MatrixPhaseMode;
   matrixQuality: MatrixQualityPreset;
   grassQuality: GrassQualityPreset;
+  preloadCrowd: boolean;
+  aspectRatio: AspectRatioPreset;
 };
 export const defaultVisualSettings: VisualSettings = {
   intensity: 1,
@@ -33,6 +62,8 @@ export const defaultVisualSettings: VisualSettings = {
   matrixMode: 'auto',
   matrixQuality: 'medium',
   grassQuality: DEFAULT_GRASS_PRESET,
+  preloadCrowd: true,
+  aspectRatio: 'auto',
 };
 export type EffectConfig = {
   fadeIn: number;
@@ -241,6 +272,54 @@ export const effectConfigs: Record<EffectId, EffectConfig> = {
     audioVolume: 0.9,
     visualLanguage: 'prismatic',
   },
+  Woda: {
+    fadeIn: 0.2,
+    active: 1,
+    fadeOut: 0.2,
+    speed: 1,
+    fov: 65,
+    bloom: 0,
+    saturation: 1,
+    warp: 0,
+    afterimage: 0,
+    sway: 0,
+    shake: 0,
+    bob: 1,
+    hue: 0,
+    chroma: 0,
+    contrast: 1,
+    brightness: 0,
+    vignette: 0,
+    blur: 0,
+    pulse: 0,
+    audioRate: 1,
+    audioVolume: 1,
+    visualLanguage: 'subtle',
+  },
+  Okulary: {
+    fadeIn: 0.2,
+    active: 60,
+    fadeOut: 0.5,
+    speed: 1,
+    fov: 65,
+    bloom: 0,
+    saturation: 0.95,
+    warp: 0,
+    afterimage: 0,
+    sway: 0,
+    shake: 0,
+    bob: 1,
+    hue: 0,
+    chroma: 0,
+    contrast: 1.05,
+    brightness: -0.12,
+    vignette: 0.15,
+    blur: 0,
+    pulse: 0,
+    audioRate: 1,
+    audioVolume: 1,
+    visualLanguage: 'subtle',
+  },
 };
 
 export type AudioEffectState = { volume: number; playbackRate: number };
@@ -309,29 +388,34 @@ void main(){
  float wave=sin(centered.y*14.+time*.75)+cos(centered.x*12.-time*.53);
  centered*=1.+distortion*(.015+.022*sin(time*pulse))*r*r;
  centered+=normalize(centered+vec2(.0001))*wave*distortion*.004;
- vec2 uv=centered+.5;
+ vec2 uv=clamp(centered+.5,vec2(0.001),vec2(0.999));
  float alternate=.5+.5*sin(time*.62);
  float drip=sin(uv.x*9.+time*1.3)*.012+sin(uv.x*23.-time*.7)*.006;
  uv.y+=melt*alternate*drip*(.35+uv.y);
+ uv=clamp(uv,vec2(0.001),vec2(0.999));
  vec2 mixOffset=vec2(sin(time*.9+uv.y*17.),cos(time*.72+uv.x*15.))*.009*mixing*(1.-alternate);
  float ca=chroma*(.25+r*.9);
  vec2 d=normalize(uv-.5+vec2(.0001))*ca;
  vec3 col;
- col.r=texture2D(tDiffuse,uv+d).r;
+ col.r=texture2D(tDiffuse,clamp(uv+d,0.0,1.0)).r;
  col.g=texture2D(tDiffuse,uv).g;
- col.b=texture2D(tDiffuse,uv-d).b;
+ col.b=texture2D(tDiffuse,clamp(uv-d,0.0,1.0)).b;
  if(mixing>0.){
-  vec3 mixed=(col+texture2D(tDiffuse,uv+mixOffset).rgb+texture2D(tDiffuse,uv-mixOffset*1.35).rgb)/3.;
+  vec3 mixed=(col+texture2D(tDiffuse,clamp(uv+mixOffset,0.0,1.0)).rgb+texture2D(tDiffuse,clamp(uv-mixOffset*1.35,0.0,1.0)).rgb)/3.;
   col=mix(col,mixed,mixing*(1.-alternate)*.88);
  }
  if(sharpen>0.){
-  vec2 texelSize=vec2(1.0)/max(resolution,vec2(800.0,600.0));
-  vec3 n=(texture2D(tDiffuse,uv+vec2(texelSize.x,0.0)).rgb+texture2D(tDiffuse,uv-vec2(texelSize.x,0.0)).rgb+texture2D(tDiffuse,uv+vec2(0.0,texelSize.y)).rgb+texture2D(tDiffuse,uv-vec2(0.0,texelSize.y)).rgb)*0.25;
+  vec2 texelSize=vec2(1.0)/max(resolution,vec2(1.0));
+  vec3 n=(texture2D(tDiffuse,clamp(uv+vec2(texelSize.x,0.0),0.0,1.0)).rgb+texture2D(tDiffuse,clamp(uv-vec2(texelSize.x,0.0),0.0,1.0)).rgb+texture2D(tDiffuse,clamp(uv+vec2(0.0,texelSize.y),0.0,1.0)).rgb+texture2D(tDiffuse,clamp(uv-vec2(0.0,texelSize.y),0.0,1.0)).rgb)*0.25;
   vec3 edge=col-n;
   float centerMult=focus>0.?mix(1.4,0.45,smoothstep(0.0,0.55,r)):1.0;
   col=clamp(col+edge*(sharpen*centerMult),0.0,1.0);
  }
- if(blur>0.){col+=texture2D(tDiffuse,uv+vec2(blur*.003,0.)).rgb;col+=texture2D(tDiffuse,uv-vec2(blur*.003,0.)).rgb;col/=3.;}
+ if(blur>0.){
+  col+=texture2D(tDiffuse,clamp(uv+vec2(blur*.003,0.),0.0,1.0)).rgb;
+  col+=texture2D(tDiffuse,clamp(uv-vec2(blur*.003,0.),0.0,1.0)).rgb;
+  col/=3.;
+ }
  col=mix(col,sqrt(max(col,vec3(0.))),lift);
  float l=dot(col,vec3(.299,.587,.114));
  col=mix(vec3(l),col,saturation);
@@ -342,7 +426,7 @@ void main(){
   col=mix(col,milky,pastel);
  }
  col=hueShift(col,hue*sin(time*.22+wave*.12));
- col=(col-.5)*contrast+.5+brightness;
+ col=clamp((col-.5)*contrast+.5+brightness,0.0,1.0);
  col*=1.-smoothstep(.15,.72,r)*vignette;
  if(focus>0.){
   float edgeDist=smoothstep(.16,.62,r);
@@ -356,23 +440,38 @@ void main(){
 export class EffectManager {
   composer: EffectComposer;
   bloom: UnrealBloomPass;
+  bloomResolutionScale = 1;
   afterimage: AfterimagePass;
   shader: ShaderPass;
+  outputPass: OutputPass;
   private timeline = new EffectTimeline();
   private snapshot?: EffectSnapshot;
   private disposed = false;
+  private sunglassesRemaining = 0;
   settings: VisualSettings = { ...defaultVisualSettings };
   constructor(
-    renderer: THREE.WebGLRenderer,
-    scene: THREE.Scene,
-    private camera: THREE.PerspectiveCamera,
-    private audio?: EffectAudioTarget,
+    private readonly renderer: THREE.WebGLRenderer,
+    private readonly scene: THREE.Scene,
+    private readonly camera: THREE.PerspectiveCamera,
+    private readonly audio?: EffectAudioTarget,
   ) {
-    this.composer = new EffectComposer(renderer);
-    this.composer.addPass(new RenderPass(scene, camera));
     const width = typeof innerWidth !== 'undefined' ? innerWidth : 800;
     const height = typeof innerHeight !== 'undefined' ? innerHeight : 600;
+    const floatBlendSafe = isFloatBlendSupported(renderer);
+    const rtType = floatBlendSafe ? THREE.HalfFloatType : THREE.UnsignedByteType;
+    const customTarget = new THREE.WebGLRenderTarget(width, height, {
+      type: rtType,
+      format: THREE.RGBAFormat,
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+      generateMipmaps: false,
+    });
+    this.composer = new EffectComposer(renderer, customTarget);
+    this.composer.addPass(new RenderPass(scene, camera));
     this.bloom = new UnrealBloomPass(new THREE.Vector2(width, height), 0, 0.3, 0.8);
+    if (!floatBlendSafe) {
+      this.bloom.enabled = false;
+    }
     this.composer.addPass(this.bloom);
     this.afterimage = new AfterimagePass(0.88);
     this.afterimage.enabled = false;
@@ -380,11 +479,55 @@ export class EffectManager {
     this.shader = new ShaderPass(shader);
     this.shader.uniforms.resolution.value.set(width, height);
     this.composer.addPass(this.shader);
+    this.outputPass = new OutputPass();
+    this.composer.addPass(this.outputPass);
   }
 
-  /** Uruchamia wybrany efekt i zaczyna jego łagodne pojawianie się. */
+  /** Wykonuje próbny przebieg kompozytora efektów, aby skompilować shadery post-processingu przed startem gry. */
+  warmUp() {
+    try {
+      this.composer.render(0.001);
+    } catch {
+      // Bezpieczny fallback dla środowisk bez pełnego WebGL (np. jsdom/testy)
+    }
+  }
+
+  /** Informuje, czy filtr okularów przeciwsłonecznych jest aktywny. */
+  get sunglassesActive(): boolean {
+    return this.sunglassesRemaining > 0;
+  }
+
+  /** Zwraca pozostały czas działania okularów przeciwsłonecznych w sekundach. */
+  get sunglassesTimeRemaining(): number {
+    return Math.max(0, this.sunglassesRemaining);
+  }
+
+  /** Włącza okulary przeciwsłoneczne redukując bloom i ekspozycję na podany czas (domyślnie 60s). */
+  applySunglasses(durationSeconds = 60) {
+    this.sunglassesRemaining = Math.max(this.sunglassesRemaining, durationSeconds);
+  }
+
+  /** Zdejmuje okulary przeciwsłoneczne i przywraca standardową ekspozycję. */
+  removeSunglasses() {
+    this.sunglassesRemaining = 0;
+  }
+
+  /** Skraca czas trwania aktywnego tripu/efektu o wskazany ułamek (domyślnie 40%). */
+  shortenActiveEffect(fraction = 0.4): boolean {
+    return this.timeline.shorten(fraction);
+  }
+
+  /** Uruchamia wybrany efekt i zaczyna jego łagodne pojawianie się lub aplikuje przedmiot użytkowy. */
   use(id: EffectId) {
     if (this.disposed) return;
+    if (id === 'Woda') {
+      this.shortenActiveEffect(0.4);
+      return;
+    }
+    if (id === 'Okulary') {
+      this.applySunglasses(60);
+      return;
+    }
     if (!this.timeline.active) this.snapshot = this.captureSnapshot();
     if (this.timeline.active && this.timeline.active !== id) this.afterimage.uniforms.damp.value = 0;
     this.timeline.use(id, effectConfigs[id]);
@@ -403,6 +546,10 @@ export class EffectManager {
   /** Przelicza fazę efektu, shader, post-processing oraz pole widzenia kamery. */
   update(dt: number) {
     if (this.disposed) return;
+    const delta = Math.max(0, dt);
+    if (this.sunglassesRemaining > 0) {
+      this.sunglassesRemaining = Math.max(0, this.sunglassesRemaining - delta);
+    }
     const beforeUpdate = this.timeline.active;
     const completed = this.timeline.update(dt, beforeUpdate ? effectConfigs[beforeUpdate] : null);
     if (completed) {
@@ -415,9 +562,20 @@ export class EffectManager {
       allowFlashes = !this.settings.disableFlashes && allowMotion,
       allowAberration = !this.settings.disableAberration && allowMotion,
       pulse = c && allowFlashes ? 1 + Math.sin(this.shader.uniforms.time.value * c.pulse) * 0.08 * level : 1;
-    if (!c || !this.snapshot) return;
-    this.bloom.enabled = !this.settings.disableBloom && (this.snapshot.bloom.enabled || c.bloom > 0);
-    this.bloom.strength = THREE.MathUtils.lerp(this.snapshot.bloom.strength, c.bloom, level) * pulse;
+    if (!c || !this.snapshot) {
+      if (this.sunglassesActive) {
+        this.bloom.strength = 0;
+        this.shader.uniforms.brightness.value = -0.12;
+        this.shader.uniforms.time.value += delta;
+      }
+      return;
+    }
+    const bloomScale = this.sunglassesActive ? 0.5 : 1.0;
+    const floatBlendSafe = isFloatBlendSupported(this.renderer);
+    this.bloom.enabled =
+      floatBlendSafe && !this.settings.disableBloom && (this.snapshot.bloom.enabled || c.bloom > 0);
+    this.bloom.strength =
+      THREE.MathUtils.lerp(this.snapshot.bloom.strength, c.bloom, level) * pulse * bloomScale;
     this.afterimage.enabled =
       allowMotion && (this.snapshot.afterimage.enabled || (c.afterimage > 0 && level > 0.02));
     this.afterimage.uniforms.damp.value = THREE.MathUtils.lerp(
@@ -432,7 +590,8 @@ export class EffectManager {
     u.hue.value = THREE.MathUtils.lerp(base.hue, c.hue, level);
     u.chroma.value = allowAberration ? THREE.MathUtils.lerp(base.chroma, c.chroma, level) : base.chroma;
     u.contrast.value = THREE.MathUtils.lerp(base.contrast, c.contrast, level);
-    u.brightness.value = THREE.MathUtils.lerp(base.brightness, c.brightness, level);
+    const baseBrightness = THREE.MathUtils.lerp(base.brightness, c.brightness, level);
+    u.brightness.value = this.sunglassesActive ? baseBrightness * 0.5 - 0.08 : baseBrightness;
     u.vignette.value = THREE.MathUtils.lerp(base.vignette, c.vignette, level);
     u.blur.value = THREE.MathUtils.lerp(base.blur, c.blur, level);
     u.melt.value = THREE.MathUtils.lerp(base.melt, allowMotion ? c.melt || 0 : 0, level);
@@ -539,14 +698,33 @@ export class EffectManager {
     };
   }
 
-  /** Renderuje scenę przez łańcuch efektów post-processingu. */
+  /** Zwraca true, jeśli aktywny jest postprocessing wymagający EffectComposera. */
+  get isPostProcessingActive(): boolean {
+    if (this.sunglassesActive) return true;
+    if (this.active && this.phase !== 'inactive') return true;
+    if (this.bloom.enabled && this.bloom.strength > 0.01) return true;
+    if (this.afterimage.enabled && (this.afterimage.uniforms.damp?.value ?? 0) > 0) return true;
+    return false;
+  }
+
+  /** Renderuje scenę bezpośrednio lub przez EffectComposer, gdy aktywny jest efekt. */
   render() {
-    this.composer.render();
+    if (this.isPostProcessingActive) {
+      this.composer.render();
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
   }
 
   /** Dopasowuje bufory post-processingu do nowego rozmiaru widoku. */
   resize(w: number, h: number) {
+    const maxComposerDpr = 1.5;
+    const effectiveDpr = Math.min(this.renderer.getPixelRatio(), maxComposerDpr);
+    this.composer.setPixelRatio(effectiveDpr);
     this.composer.setSize(w, h);
+    const bloomDpr = effectiveDpr * this.bloomResolutionScale;
+    this.bloom.setSize(Math.round(w * bloomDpr), Math.round(h * bloomDpr));
+    this.afterimage.setSize(Math.round(w * effectiveDpr), Math.round(h * effectiveDpr));
     this.shader.uniforms.resolution.value.set(w, h);
   }
 
@@ -556,6 +734,7 @@ export class EffectManager {
     this.restoreSnapshot();
     this.timeline.reset();
     this.disposed = true;
+    this.outputPass.dispose();
     this.composer.dispose();
   }
 }

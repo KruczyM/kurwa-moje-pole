@@ -42,6 +42,7 @@ describe('PBR material policy', () => {
   it('assigns stable profiles to approved interactive props', () => {
     expect(interactivePbrProfile('table')).toBe('wood');
     expect(interactivePbrProfile('mdma')).toBe('plastic');
+    expect(interactivePbrProfile('sunglasses')).toBe('plastic');
     expect(interactivePbrProfile('mushrooms')).toBe('organic');
     expect(interactivePbrProfile('lsd')).toBe('paper');
   });

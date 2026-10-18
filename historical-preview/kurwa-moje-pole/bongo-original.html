@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#171b2b" />
+    <title>After: Walka o tasiorowe bongo</title>
+    <script type="module" crossorigin src="/kurwa-moje-pole/assets/bongo-B7Wb6hvb.js"></script>
+    <link rel="modulepreload" crossorigin href="/kurwa-moje-pole/assets/modulepreload-polyfill-B5Qt9EMX.js">
+    <link rel="modulepreload" crossorigin href="/kurwa-moje-pole/assets/MobileControls-CAkBG4WB.js">
+    <link rel="modulepreload" crossorigin href="/kurwa-moje-pole/assets/ImageCache-By4-CPcJ.js">
+    <link rel="stylesheet" crossorigin href="/kurwa-moje-pole/assets/bongo-CqiYysdy.css">
+  </head>
+  <body>
+    <main id="bongo-app">
+      <header class="topbar">
+        <a class="brand" href="./bongo-rush.html"><span>AFTER</span> WALKA O TASIOROWE BONGO</a>
+        <div class="toolbar">
+          <button id="help" aria-label="Pomoc — zasady gry">?</button>
+          <button id="map" aria-pressed="true" title="Pokaż lub ukryj mapę (M)">Mapa</button>
+          <button id="mute" aria-pressed="false">Dźwięk: wł.</button
+          ><button id="pause" disabled>Pauza</button>
+        </div>
+      </header>
+      <section id="board" aria-label="Plansza gry">
+        <canvas
+          id="cave"
+          tabindex="0"
+          aria-label="Kopalnia — poruszaj się klawiszami WASD lub strzałkami"
+        ></canvas>
+        <div class="hud">
+          <span id="level-title">24 poziomy · 4 biomy</span
+          ><strong id="counter">Zbieraj. Kop. Nie daj się przygnieść.</strong><strong id="timer"></strong
+          ><span id="exit-status"></span>
+        </div>
+        <section id="menu" class="panel menu-panel" aria-label="Menu główne">
+          <span class="eyebrow">ZRĘCZNOŚĆ × ZAGADKI × AFTER</span>
+          <h1>WALKA O<br />TASIOROWE<br /><em>BONGO</em><span class="dot">.</span></h1>
+          <p class="intro">
+            Dwadzieścia wypraw i cztery wyzwania. Komory, szyby i lawiny.<br />Jedno legendarne Bongo Tasiora.
+          </p>
+          <button id="play" class="primary">Graj →</button>
+          <button id="title-help">Jak grać?</button>
+          <p class="menu-note">Wybierz bohatera. Przygotuj drogę ucieczki.</p>
+          <div class="links">
+            <a href="./after-demo.html">After: ostatnia noc</a><a href="./">Festiwal 3D</a>
+          </div>
+          <small class="disclaimer"
+            >Fikcyjna, satyryczna gra dla dorosłych. Nie jest reklamą ani instrukcją używania
+            substancji.</small
+          >
+        </section>
+        <section id="hero-panel" class="panel gallery-panel" hidden aria-label="Wybór postaci">
+          <span class="eyebrow">01 / TWOJA EKIPA</span>
+          <h2>Wybierz postać</h2>
+          <p>Wygląd inny. Zasady te same. Kobra jest przeszkodą, nie bohaterem.</p>
+          <figure class="hero-preview">
+            <canvas id="hero-preview" width="192" height="224" aria-hidden="true"></canvas>
+            <figcaption id="hero-preview-name" aria-live="polite"></figcaption>
+          </figure>
+          <div id="hero-gallery" class="hero-grid" aria-label="Grywalne postacie"></div>
+          <p id="hero-status" role="status">Wczytywanie miniatur…</p>
+          <div class="menu-actions">
+            <button id="hero-back">← Wstecz</button
+            ><button id="hero-confirm" class="primary">Zatwierdź postać →</button>
+          </div>
+        </section>
+        <section id="level-panel" class="panel menu-panel" hidden aria-label="Wybór poziomu">
+          <span class="eyebrow">02 / WYBIERZ WYPRAWĘ</span>
+          <h2>Wejście do podziemi</h2>
+          <p id="chosen-hero"></p>
+          <div id="levels" class="level-grid" aria-label="Wybierz odblokowany poziom"></div>
+          <p id="selected-level"></p>
+          <button id="begin" class="primary" disabled>Ładowanie…</button>
+          <p id="load-status" role="status">Przygotowuję lekką wersję 2D…</p>
+          <button id="level-back">← Wybór postaci</button>
+          <details>
+            <summary>Jak grać?</summary>
+            <p>
+              WASD / strzałki lub gałka — ruch. Kop ziemię, zbierz wymagane przedmioty i znajdź wyjście ↑.
+              Skały pchasz poziomo, tylko na wolne pole. Spadające skały i przedmioty przygniatają. Patrole
+              nie potrafią kopać. Usunięcie sąsiedniej podpory odsłania Kobrę, która powiela się na wolne
+              pola. Przedmioty i ziemia blokują wzrost; zebranie podpory może go uwolnić. Nie zwlekaj, bo
+              krzaki mogą odciąć wyjście! Esc — pauza / powrót (zatrzymuje także wzrost). R — restart. Bez
+              limitu prób. Szukaj odnóg i skrótów; nie musisz zbierać wszystkich przedmiotów. M / Mapa —
+              minimapa.
+            </p>
+          </details>
+          <div class="links">
+            <a href="./after-demo.html">After: ostatnia noc</a><a href="./">Festiwal 3D</a>
+          </div>
+          <small class="disclaimer"
+            >Fikcyjna, satyryczna gra dla dorosłych. Nie jest reklamą ani instrukcją używania
+            substancji.</small
+          >
+        </section>
+        <section id="help-panel" class="panel compact help-panel" hidden aria-label="Pomoc">
+          <button id="help-close" class="primary">Zamknij pomoc ×</button>
+          <h2>Jak przejść jaskinię?</h2>
+          <p id="context-hint"></p>
+          <p>
+            Spadający głaz eliminuje patrole i wózki. Łup pojawia się nad głazem: wróć po niego po uderzeniu.
+            Wózek obchodzi krawędzie przeszkód i nie kopie. W wyzwaniach obserwuj jego ruch przed
+            uruchomieniem pułapki; po odkopaniu podpory od razu cofnij się w bok.
+          </p>
+          <ol>
+            <li>Zbierz liczbę przedmiotów pokazaną u góry. Nie musisz zebrać wszystkich.</li>
+            <li>
+              Łup ze złotą obwódką w komorach skalnych jest obowiązkowy. Nadmiar zwykłych przedmiotów go nie
+              zastąpi.
+            </li>
+            <li>
+              Portale występują na dwóch planszach i łączą komory w pętle. Przygotuj złoże oraz drogę powrotu.
+              Łup i odkopane przejścia zostają zachowane, a grawitacja, patrole i Kobra działają także w
+              opuszczonych komorach.
+            </li>
+            <li>
+              Złoty kafelek z liczbą i literą K uwalnia tyle przedmiotów i może odsłonić miejsce dla Kobry.
+              Łup pojawia się w ujściu pojedynczo. Najpierw przygotuj drogę odwrotu.
+            </li>
+            <li>Kop ziemię WASD, strzałkami lub gałką. M / Mapa pokazuje całą jaskinię.</li>
+            <li>Skały pchasz tylko poziomo na puste pole. Najpierw przygotuj wnękę i odwrót.</li>
+            <li>
+              Omijaj patrole i już spadające przedmioty. Stojąca skała nad Tobą ruszy po odejściu — przygotuj
+              boczny odwrót.
+            </li>
+            <li>
+              Każda twarz Kobry jest kolonią. Rozmnaża się co 5 sekund, a w szybkich wariantach co 2,4
+              sekundy, jeśli obok jest puste pole. Drganie zapowiada podział. Nie trzeba niszczyć jej kafelka;
+              przygotuj odwrót przed odsłonięciem przestrzeni.
+            </li>
+            <li>
+              Rozwiąż komorę przy wyjściu ↑. Zegar obowiązuje tylko w dodatkowych wyzwaniach. W finale zamknij
+              też zagrodę złotą skałą.
+            </li>
+          </ol>
+          <p>Esc — pauza. R / ↻ — restart bez limitu prób. Pauza i pomoc zatrzymują zegar oraz Kobrę.</p>
+        </section>
+        <section id="pause-panel" class="panel compact" hidden aria-label="Pauza">
+          <span class="eyebrow">CHWILA ODDECHU</span>
+          <h2>Pauza</h2>
+          <p>Jaskinia poczeka. Wzrost Krzaka jest zatrzymany.</p>
+          <button id="resume" class="primary">Wróć do gry</button
+          ><button id="pause-restart">Restart poziomu</button
+          ><button id="to-menu">Wybór poziomu i postaci</button>
+        </section>
+        <section id="result" class="panel compact" hidden aria-label="Wynik poziomu">
+          <span id="result-label" class="eyebrow"></span>
+          <h2 id="result-title"></h2>
+          <p id="result-text"></p>
+          <button id="next" class="primary">Następny poziom</button><button id="retry">Zagraj ponownie</button
+          ><button id="result-menu">Wybór poziomu</button>
+        </section>
+        <section id="victory" class="panel victory-panel" hidden aria-label="Koniec kampanii">
+          <span class="eyebrow">KAMPANIA UKOŃCZONA · ODBLOKOWANO 4 WYZWANIA</span>
+          <h2>Bongo<br /><em>Tasiora</em></h2>
+          <p>
+            Dostawa odebrana! Satyryczny Owsiak opala legendarne bongo — nagroda jest Twoja! W wyborze poziomu
+            czekają cztery dodatkowe wyzwania.
+          </p>
+          <button id="victory-menu" class="primary">Wróć do odblokowanych poziomów</button>
+        </section>
+        <nav id="touch-controls" hidden aria-label="Sterowanie dotykowe">
+          <div id="joystick-zone">
+            <div id="joystick" role="group" aria-label="Gałka ruchu — przeciągnij palcem">
+              <span id="knob"></span>
+            </div>
+          </div>
+          <button id="touch-restart" aria-label="Restart poziomu">↻</button>
+        </nav>
+      </section>
+      <footer>
+        <p id="hint">Zbieraj przedmioty, unikaj patroli i spadających skał.</p>
+        <span>WASD / ↑↓←→ · Esc pauza · R restart</span>
+      </footer>
+    </main>
+  </body>
+</html>

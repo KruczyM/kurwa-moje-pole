@@ -1,0 +1,15 @@
+{
+  "input": "E:\\kodowanie\\gra\\Hunyuan3D-2GP\\output\\characters_mv\\070_vintage_denim_shorts\\variant_e8059e9cb4c582bd0ec03ea58af80b44cb3c6c352689d5f98df58070f40c03bd\\textured.glb",
+  "output": "E:\\kodowanie\\gra\\.ai\\worktrees\\festival-2026-tent-upgrades\\source-assets\\rigged-festival\\070_vintage_denim_shorts\\t-pose.glb",
+  "bones": 22,
+  "clips": [
+    "Idle",
+    "Run",
+    "Walk"
+  ],
+  "firstViewExtracted": false,
+  "quality": "automatic-draft-needs-visual-review",
+  "vertices": 27863,
+  "fallbackVertices": 27863,
+  "heatWarning": "Bone heat left unweighted vertices; geometric fallback used"
+}

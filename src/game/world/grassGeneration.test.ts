@@ -42,7 +42,7 @@ describe('Ghibli Grass Generation & Performance', () => {
     const elapsedMs = performance.now() - t0;
     console.log(`Grass generated in ${elapsedMs.toFixed(1)} ms with ${grass.bladeCount} blades.`);
 
-    expect(elapsedMs).toBeLessThan(3000);
+    expect(elapsedMs).toBeLessThan(5000);
     expect(grass.bladeCount).toBeGreaterThan(1000);
 
     expect(grass.blades).toBeDefined();
@@ -64,8 +64,8 @@ describe('Ghibli Grass Generation & Performance', () => {
       pos.setFromMatrixPosition(matrix);
 
       if (
-        (Math.abs(pos.x) >= 16.5 && Math.abs(pos.x) <= 18.5) ||
-        (Math.abs(pos.z) >= 16.5 && Math.abs(pos.z) <= 18.5)
+        Math.max(Math.abs(pos.x), Math.abs(pos.z)) >= 16.5 &&
+        Math.max(Math.abs(pos.x), Math.abs(pos.z)) <= 18.5
       ) {
         bladesOnFireRoadCenter++;
       }

@@ -1,0 +1,204 @@
+{
+  "version": 1,
+  "characterId": "pien",
+  "size": 256,
+  "columns": 6,
+  "pivot": [
+    0.5,
+    0.8984375
+  ],
+  "worldSize": 200,
+  "facing": 1,
+  "clips": {
+    "jab": {
+      "file": "jab.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "worldSize": 217.39130434782606
+    },
+    "idle": {
+      "file": "idle.png",
+      "frames": 6,
+      "durationTicks": 60,
+      "worldSize": 217.39130434782606
+    },
+    "cross": {
+      "file": "cross.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "worldSize": 217.39130434782606
+    },
+    "kick": {
+      "file": "kick.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "worldSize": 217.39130434782606
+    },
+    "heavy_kick": {
+      "file": "heavy_kick.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "worldSize": 217.39130434782606
+    },
+    "uppercut": {
+      "file": "uppercut_power.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "powers": true,
+      "size": 256,
+      "pivot": [
+        0.5,
+        0.8984375
+      ],
+      "facing": 1,
+      "worldSize": 200.0
+    },
+    "sweep": {
+      "file": "sweep.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "worldSize": 200.0
+    },
+    "crouch_punch": {
+      "file": "crouch_punch.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "worldSize": 200.0
+    },
+    "crouch": {
+      "file": "crouch.png",
+      "frames": 6,
+      "durationTicks": 60,
+      "worldSize": 200.0
+    },
+    "crouch_kick": {
+      "file": "crouch_kick.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "worldSize": 200.0
+    },
+    "jump_punch": {
+      "file": "jump_punch.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "worldSize": 279.17638944972316
+    },
+    "air_kick": {
+      "file": "air_kick.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "worldSize": 279.17638944972316
+    },
+    "special": {
+      "file": "special_power.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "powers": true,
+      "size": 256,
+      "pivot": [
+        0.5,
+        0.8984375
+      ],
+      "facing": 1,
+      "worldSize": 200.0
+    },
+    "ultimate": {
+      "file": "ultimate_power.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "powers": true,
+      "size": 256,
+      "pivot": [
+        0.5,
+        0.8984375
+      ],
+      "facing": 1,
+      "worldSize": 200.0
+    },
+    "block": {
+      "file": "block.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "worldSize": 200.0
+    },
+    "block_low": {
+      "file": "block_low.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "worldSize": 200.0
+    },
+    "hit_head": {
+      "file": "hit_head.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "worldSize": 200.0
+    },
+    "hit_body": {
+      "file": "hit_body.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "worldSize": 200.0
+    },
+    "walk": {
+      "file": "walk.png",
+      "frames": 6,
+      "durationTicks": 62,
+      "source": "@Walk",
+      "sourceSha256": "267e523d95883226591ca24b7368774339c111a443a862e2f82002ec4c68814c",
+      "derivedGuard": false,
+      "legacy": true,
+      "size": 192,
+      "pivot": [
+        0.5,
+        0.8567567567567568
+      ],
+      "worldSize": 259.0,
+      "facing": -1
+    },
+    "fall": {
+      "file": "fall.png",
+      "frames": 6,
+      "durationTicks": 182,
+      "source": "Flying Back Death.fbx",
+      "sourceSha256": "e73fd9e9a5fc7a1977e7d0010d2f279cf58119afb5aa43b20686bca8f0225647",
+      "derivedGuard": false,
+      "legacy": true,
+      "size": 192,
+      "pivot": [
+        0.5,
+        0.8567567567567568
+      ],
+      "worldSize": 259.0,
+      "facing": -1
+    },
+    "get_up": {
+      "file": "get_up.png",
+      "frames": 6,
+      "durationTicks": 162,
+      "source": "Getting Up.fbx",
+      "sourceSha256": "70970510fb67861865e2f0407634d98915f2038bdfec92fd7c18653882ff84ad",
+      "derivedGuard": false,
+      "legacy": true,
+      "size": 192,
+      "pivot": [
+        0.5,
+        0.8567567567567568
+      ],
+      "worldSize": 259.0,
+      "facing": -1
+    },
+    "launch_hit": {
+      "file": "launch_hit.png",
+      "frames": 6,
+      "durationTicks": 48,
+      "powers": true,
+      "size": 256,
+      "pivot": [
+        0.5,
+        0.8984375
+      ],
+      "facing": 1,
+      "worldSize": 200.0
+    }
+  }
+}

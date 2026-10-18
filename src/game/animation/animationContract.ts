@@ -1,6 +1,13 @@
 import contract from './characterAnimationContract.json';
+import motionManifest from './festivalMotionManifest.json';
 
-export const canonicalAnimationClips = Object.freeze(Object.values(contract.clips));
+export const canonicalAnimationClips = Object.freeze([
+  ...new Set([
+    ...Object.values(contract.clips),
+    ...motionManifest.clips.map((name) => (name === 'Walking' ? 'WalkingVariant' : name)),
+    'LieDown',
+  ]),
+]);
 export const locomotionClipNames = Object.freeze(contract.locomotion) as readonly ['Idle', 'Walk', 'Run'];
 export type CanonicalAnimationClip = (typeof canonicalAnimationClips)[number];
 export type LocomotionClip = (typeof locomotionClipNames)[number];

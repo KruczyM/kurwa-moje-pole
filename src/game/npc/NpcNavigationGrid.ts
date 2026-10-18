@@ -93,7 +93,8 @@ export class NpcNavigationGrid {
   }
 
   /** Sprawdza punkt świata z dokładnym predykatem colliderów, nie tylko przybliżeniem komórki. */
-  canStandAt(x: number, z: number) {
+  canStandAt(x: number, z: number, isExcluded?: (x: number, z: number) => boolean) {
+    if (isExcluded && isExcluded(x, z)) return false;
     return (
       x >= this.bounds.minX &&
       x <= this.bounds.maxX &&
@@ -104,7 +105,11 @@ export class NpcNavigationGrid {
   }
 
   /** Losuje środek przechodniej komórki, opcjonalnie ograniczony do centralnego obszaru. */
-  randomWalkablePoint(random = Math.random, bounds: Partial<NavigationBounds> = {}) {
+  randomWalkablePoint(
+    random = Math.random,
+    bounds: Partial<NavigationBounds> = {},
+    isExcluded?: (x: number, z: number) => boolean,
+  ) {
     if (!this.walkableIndices.length) return null;
     const minColumn = Math.max(
       0,
@@ -127,22 +132,28 @@ export class NpcNavigationGrid {
       const column = minColumn + Math.floor(random() * (maxColumn - minColumn + 1));
       const row = minRow + Math.floor(random() * (maxRow - minRow + 1));
       const index = row * this.width + column;
-      if (this.walkable[index]) return this.pointForIndex(index);
+      if (this.walkable[index]) {
+        const pt = this.pointForIndex(index);
+        if (!isExcluded || !isExcluded(pt.x, pt.z)) return pt;
+      }
     }
     for (let row = minRow; row <= maxRow; row += 1) {
       for (let column = minColumn; column <= maxColumn; column += 1) {
         const index = row * this.width + column;
-        if (this.walkable[index]) return this.pointForIndex(index);
+        if (this.walkable[index]) {
+          const pt = this.pointForIndex(index);
+          if (!isExcluded || !isExcluded(pt.x, pt.z)) return pt;
+        }
       }
     }
     return null;
   }
 
   /** Wyznacza pełną trasę A* i usuwa pośrednie waypointy widoczne w linii prostej. */
-  findPath(start: THREE.Vector3, goal: THREE.Vector3) {
+  findPath(start: THREE.Vector3, goal: THREE.Vector3, isExcluded?: (x: number, z: number) => boolean) {
     const started = now();
-    const startIndex = this.nearestWalkableIndex(start.x, start.z);
-    const goalIndex = this.nearestWalkableIndex(goal.x, goal.z);
+    const startIndex = this.nearestWalkableIndex(start.x, start.z, isExcluded);
+    const goalIndex = this.nearestWalkableIndex(goal.x, goal.z, isExcluded);
     if (startIndex < 0 || goalIndex < 0) return this.finishSearch(started, 0, [], []);
 
     const cameFrom = new Int32Array(this.walkable.length).fill(-1);
@@ -157,12 +168,12 @@ export class NpcNavigationGrid {
       const current = open.pop()!;
       if (closed[current.index]) continue;
       if (current.index === goalIndex) {
-        const raw = this.reconstruct(cameFrom, current.index, start, goal);
-        return this.finishSearch(started, expandedNodes, raw, this.smooth(raw));
+        const raw = this.reconstruct(cameFrom, current.index, start, goal, isExcluded);
+        return this.finishSearch(started, expandedNodes, raw, this.smooth(raw, isExcluded));
       }
       closed[current.index] = 1;
       expandedNodes += 1;
-      for (const [neighbor, stepCost] of this.neighbors(current.index)) {
+      for (const [neighbor, stepCost] of this.neighbors(current.index, isExcluded)) {
         if (closed[neighbor]) continue;
         const candidate = cost[current.index] + stepCost;
         if (candidate >= cost[neighbor]) continue;
@@ -175,13 +186,17 @@ export class NpcNavigationGrid {
   }
 
   /** Próbkuje odcinek gęściej niż rozmiar komórki, aby bezpiecznie skracać trasę. */
-  hasLineOfSight(from: THREE.Vector3, to: THREE.Vector3) {
+  hasLineOfSight(from: THREE.Vector3, to: THREE.Vector3, isExcluded?: (x: number, z: number) => boolean) {
     const distance = from.distanceTo(to);
     const steps = Math.max(1, Math.ceil(distance / (this.cellSize * 0.4)));
     for (let step = 0; step <= steps; step += 1) {
       const alpha = step / steps;
       if (
-        !this.canStandAt(THREE.MathUtils.lerp(from.x, to.x, alpha), THREE.MathUtils.lerp(from.z, to.z, alpha))
+        !this.canStandAt(
+          THREE.MathUtils.lerp(from.x, to.x, alpha),
+          THREE.MathUtils.lerp(from.z, to.z, alpha),
+          isExcluded,
+        )
       ) {
         return false;
       }
@@ -207,13 +222,14 @@ export class NpcNavigationGrid {
   }
 
   /** Usuwa waypointy, które można ominąć jednym bezkolizyjnym odcinkiem. */
-  private smooth(path: THREE.Vector3[]) {
+  private smooth(path: THREE.Vector3[], isExcluded?: (x: number, z: number) => boolean) {
     if (path.length <= 2) return path;
     const result = [path[0]];
     let anchor = 0;
     while (anchor < path.length - 1) {
       let visible = path.length - 1;
-      while (visible > anchor + 1 && !this.hasLineOfSight(path[anchor], path[visible])) visible -= 1;
+      while (visible > anchor + 1 && !this.hasLineOfSight(path[anchor], path[visible], isExcluded))
+        visible -= 1;
       result.push(path[visible]);
       anchor = visible;
     }
@@ -221,24 +237,33 @@ export class NpcNavigationGrid {
   }
 
   /** Odtwarza trasę komórek i zachowuje dokładne, poprawne punkty początku oraz celu. */
-  private reconstruct(cameFrom: Int32Array, end: number, start: THREE.Vector3, goal: THREE.Vector3) {
+  private reconstruct(
+    cameFrom: Int32Array,
+    end: number,
+    start: THREE.Vector3,
+    goal: THREE.Vector3,
+    isExcluded?: (x: number, z: number) => boolean,
+  ) {
     const reversed: THREE.Vector3[] = [];
     for (let current = end; current >= 0; current = cameFrom[current])
       reversed.push(this.pointForIndex(current));
     reversed.reverse();
     const exactStart = new THREE.Vector3(start.x, 0, start.z);
-    if (this.canStandAt(start.x, start.z) && this.hasLineOfSight(exactStart, reversed[0])) {
+    if (
+      this.canStandAt(start.x, start.z, isExcluded) &&
+      this.hasLineOfSight(exactStart, reversed[0], isExcluded)
+    ) {
       reversed[0] = exactStart;
     }
     const exactGoal = new THREE.Vector3(goal.x, 0, goal.z);
     const last = reversed[reversed.length - 1];
-    if (this.canStandAt(goal.x, goal.z) && this.hasLineOfSight(last, exactGoal))
+    if (this.canStandAt(goal.x, goal.z, isExcluded) && this.hasLineOfSight(last, exactGoal, isExcluded))
       reversed[reversed.length - 1] = exactGoal;
     return reversed;
   }
 
   /** Zwraca sąsiadów 8-kierunkowych bez ścinania zablokowanych narożników. */
-  private neighbors(index: number): [number, number][] {
+  private neighbors(index: number, isExcluded?: (x: number, z: number) => boolean): [number, number][] {
     const row = Math.floor(index / this.width);
     const column = index % this.width;
     const result: [number, number][] = [];
@@ -254,11 +279,24 @@ export class NpcNavigationGrid {
           continue;
         const neighbor = (row + dz) * this.width + column + dx;
         if (!this.walkable[neighbor]) continue;
+        if (isExcluded) {
+          const pt = this.pointForIndex(neighbor);
+          if (isExcluded(pt.x, pt.z)) continue;
+        }
         if (dx && dz) {
           const horizontal = row * this.width + column + dx;
           const vertical = (row + dz) * this.width + column;
           if (!this.walkable[horizontal] || !this.walkable[vertical]) continue;
+          if (isExcluded) {
+            const hPt = this.pointForIndex(horizontal);
+            const vPt = this.pointForIndex(vertical);
+            if (isExcluded(hPt.x, hPt.z) || isExcluded(vPt.x, vPt.z)) continue;
+          }
         }
+        // Walkable cell centres alone do not guarantee a clear edge: a tent corner
+        // can lie between them and otherwise leave an NPC stuck on that edge.
+        if (!this.hasLineOfSight(this.pointForIndex(index), this.pointForIndex(neighbor), isExcluded))
+          continue;
         result.push([neighbor, dx && dz ? Math.SQRT2 : 1]);
       }
     }
@@ -275,11 +313,14 @@ export class NpcNavigationGrid {
   }
 
   /** Znajduje komórkę punktu albo najbliższy przechodni odpowiednik celu w przeszkodzie. */
-  private nearestWalkableIndex(x: number, z: number) {
+  private nearestWalkableIndex(x: number, z: number, isExcluded?: (x: number, z: number) => boolean) {
     const column = Math.max(0, Math.min(this.width - 1, Math.round((x - this.bounds.minX) / this.cellSize)));
     const row = Math.max(0, Math.min(this.depth - 1, Math.round((z - this.bounds.minZ) / this.cellSize)));
     const direct = row * this.width + column;
-    if (this.walkable[direct]) return direct;
+    if (this.walkable[direct]) {
+      const pt = this.pointForIndex(direct);
+      if (!isExcluded || !isExcluded(pt.x, pt.z)) return direct;
+    }
     const limit = Math.max(this.width, this.depth);
     for (let radius = 1; radius < limit; radius += 1) {
       for (let dz = -radius; dz <= radius; dz += 1) {
@@ -295,7 +336,11 @@ export class NpcNavigationGrid {
           )
             continue;
           const candidate = candidateRow * this.width + candidateColumn;
-          if (this.walkable[candidate]) return candidate;
+          if (this.walkable[candidate]) {
+            if (!isExcluded) return candidate;
+            const pt = this.pointForIndex(candidate);
+            if (!isExcluded(pt.x, pt.z)) return candidate;
+          }
         }
       }
     }

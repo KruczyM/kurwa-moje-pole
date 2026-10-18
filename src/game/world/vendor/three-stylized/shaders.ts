@@ -75,6 +75,7 @@ export const grassVertexShader = /* glsl */ `
 
 export const grassFragmentShader = /* glsl */ `
   #include <common>
+  #include <packing>
   #include <shadowmap_pars_fragment>
   uniform vec3 uGrassBottom;
   uniform vec3 uGrassTop;
@@ -123,6 +124,7 @@ export const grassFragmentShader = /* glsl */ `
     float shadowLighting = mix(0.58, 1.0, shadow);
     vec3 lit = grassColor * (diffuse * uLightColor * uLightIntensity) * shadowLighting;
     lit += uBacklightColor * uLightColor * uLightIntensity * transmission * shadow;
+    lit = max(lit, grassColor * 0.45);
     gl_FragColor = vec4(lit * uBrightness, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

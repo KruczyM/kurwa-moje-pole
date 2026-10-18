@@ -1,0 +1,112 @@
+[
+  {
+    "id": "swiece",
+    "label": "Świece ręcznie malowane",
+    "background": "#23352a",
+    "ink": "#f6c851",
+    "title": "ŚWIECE",
+    "subtitle": "ręcznie malowane",
+    "source": "user-attachments:festival-stalls",
+    "artwork": "photo-led-typographic-reconstruction-not-extracted-logo"
+  },
+  {
+    "id": "bizuteria",
+    "label": "Biżuteria naturalna",
+    "background": "#f5f2e8",
+    "ink": "#455246",
+    "title": "Biżuteria naturalna",
+    "subtitle": "",
+    "source": "user-attachments:festival-stalls",
+    "artwork": "photo-led-typographic-reconstruction-not-extracted-logo"
+  },
+  {
+    "id": "ksiazki",
+    "label": "Książki z dedykacją od autorów",
+    "background": "#eee9dc",
+    "ink": "#262623",
+    "title": "Wyjątkowe książki",
+    "subtitle": "z dedykacją od autorów",
+    "source": "user-attachments:festival-stalls",
+    "artwork": "photo-led-typographic-reconstruction-not-extracted-logo"
+  },
+  {
+    "id": "kwiatek",
+    "label": "Kwiatek Lasu",
+    "background": "#f7f5eb",
+    "ink": "#544c86",
+    "title": "KWIATEK LASU",
+    "subtitle": "",
+    "source": "user-attachments:festival-stalls",
+    "artwork": "photo-led-typographic-reconstruction-not-extracted-logo"
+  },
+  {
+    "id": "zuch",
+    "label": "Zuch Olek",
+    "background": "#364834",
+    "ink": "#e6ce84",
+    "title": "ZUCH OLEK",
+    "subtitle": "MILITARIA • BUSHCRAFT • TURYSTYKA",
+    "source": "user-attachments:festival-stalls",
+    "artwork": "photo-led-typographic-reconstruction-not-extracted-logo"
+  },
+  {
+    "id": "altercore",
+    "label": "Altercore",
+    "background": "#18191d",
+    "ink": "#eeeeea",
+    "title": "ALTERCORE",
+    "subtitle": "",
+    "source": "user-attachments:festival-stalls",
+    "artwork": "photo-led-typographic-reconstruction-not-extracted-logo"
+  },
+  {
+    "id": "sankowo",
+    "label": "Sankowo",
+    "background": "#f1e7cf",
+    "ink": "#3d947a",
+    "title": "Sankowo.com",
+    "subtitle": "Ręcznie robione KOTY",
+    "source": "user-attachments:festival-stalls",
+    "artwork": "photo-led-typographic-reconstruction-not-extracted-logo"
+  },
+  {
+    "id": "vesper",
+    "label": "Wydawnictwo Vesper / In Rock",
+    "background": "#1c2026",
+    "ink": "#f1eeea",
+    "title": "wydawnictwo Vesper",
+    "subtitle": "wydawnictwo In Rock",
+    "source": "user-attachments:festival-stalls",
+    "artwork": "photo-led-typographic-reconstruction-not-extracted-logo"
+  },
+  {
+    "id": "militaria",
+    "label": "Militaria",
+    "background": "#958362",
+    "ink": "#eaddb7",
+    "title": "MILITARIA",
+    "subtitle": "",
+    "source": "user-attachments:festival-stalls",
+    "artwork": "photo-led-typographic-reconstruction-not-extracted-logo"
+  },
+  {
+    "id": "lokaah",
+    "label": "Lokaah",
+    "background": "#f0e9dc",
+    "ink": "#b74558",
+    "title": "Lokaah",
+    "subtitle": "",
+    "source": "user-attachments:festival-stalls",
+    "artwork": "photo-led-typographic-reconstruction-not-extracted-logo"
+  },
+  {
+    "id": "siva",
+    "label": "ŠIVA SHOP",
+    "background": "#742226",
+    "ink": "#ead6a8",
+    "title": "ŠIVA SHOP",
+    "subtitle": "ORIGINAL STYLE",
+    "source": "user-attachments:festival-stalls",
+    "artwork": "photo-led-typographic-reconstruction-not-extracted-logo"
+  }
+]

@@ -62,6 +62,13 @@ export class Room {
     );
   }
 
+  get isFull(): boolean {
+    const nonFreeCount = Object.values(this.slots).filter((slot) => slot.status !== 'free').length;
+    return (
+      nonFreeCount >= CANONICAL_CHARACTERS.length ||
+      this.members.size + this.disconnectTimers.size >= CANONICAL_CHARACTERS.length
+    );
+  }
 
   getPublicState(): RoomState {
     const publicSlots = {} as Record<CharacterName, CharacterSlot>;
@@ -86,10 +93,6 @@ export class Room {
 
   getSlot(character: CharacterName): InternalCharacterSlot | undefined {
     return this.slots[character];
-  }
-
-  isFull(): boolean {
-    return this.members.size + this.disconnectTimers.size >= 8;
   }
 
   addMember(playerId: string): void {
@@ -243,6 +246,7 @@ export class Room {
     if (slot.status === 'occupied') {
       // Grace period na ponowne połączenie:
       slot.playerId = undefined;
+      this.playerTransforms.delete(charName);
       this.clearDisconnectTimer(charName);
 
       const timer = setTimeout(() => {

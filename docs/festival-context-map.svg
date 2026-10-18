@@ -1,0 +1,820 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1800" width="100%" height="100%" style="background:#0e1710; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+
+<defs>
+  <filter id="fest-shadow" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="3" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.6"/>
+  </filter>
+  <filter id="fest-glow" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="4" result="b"/>
+    <feComposite in="SourceGraphic" in2="b" operator="over"/>
+  </filter>
+  <pattern id="fest-grid20" width="100" height="100" patternUnits="userSpaceOnUse">
+    <path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+  </pattern>
+  <linearGradient id="concreteGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#7f8c8d"/>
+    <stop offset="50%" stop-color="#95a5a6"/>
+    <stop offset="100%" stop-color="#7f8c8d"/>
+  </linearGradient>
+</defs>
+
+<rect width="1800" height="1800" fill="#162917" />
+<rect width="1800" height="1800" fill="url(#fest-grid20)" />
+
+<rect x="100.0" y="100.0" width="1600.0" height="1600.0" fill="none" stroke="#27ae60" stroke-width="2.5" stroke-dasharray="10,5">
+  <title>Granica Świata Gry (320m x 320m, WORLD_LIMIT = 160m)</title>
+</rect>
+
+<!-- PARCELE NAMIOTOWE -->
+
+    <rect x="810.0" y="810.0" width="180.0" height="180.0" rx="6" fill="rgba(46, 204, 113, 0.22)" stroke="#2ed573" stroke-width="3.0" filter="url(#fest-shadow)">
+      <title>Główny Obóz #KURWAMOJEPOLE (-18m do 18m, -18m do 18m)</title>
+    </rect>
+    <text x="900.0" y="828.0" fill="#2ed573" font-size="11" font-weight="bold" text-anchor="middle">Camp</text>
+    
+
+    <rect x="310.0" y="200.0" width="180.0" height="180.0" rx="6" fill="rgba(39, 174, 96, 0.08)" stroke="rgba(46, 204, 113, 0.35)" stroke-width="1.5" filter="url(#fest-shadow)">
+      <title>Pole Namiotowe Północne N1-1 (-118m do -82m, -140m do -104m)</title>
+    </rect>
+    <text x="400.0" y="218.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">N1-1</text>
+    
+<rect x="324.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="359.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="394.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="429.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="464.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="324.0" y="250.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="464.0" y="250.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="324.0" y="285.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="464.0" y="285.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="324.0" y="320.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="464.0" y="320.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="324.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="359.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="394.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="429.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="464.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+
+    <rect x="510.0" y="200.0" width="180.0" height="180.0" rx="6" fill="rgba(39, 174, 96, 0.08)" stroke="rgba(46, 204, 113, 0.35)" stroke-width="1.5" filter="url(#fest-shadow)">
+      <title>Pole Namiotowe Północne N1-2 (-78m do -42m, -140m do -104m)</title>
+    </rect>
+    <text x="600.0" y="218.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">N1-2</text>
+    
+<rect x="524.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="559.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="594.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="629.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="664.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="524.0" y="250.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="664.0" y="250.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="524.0" y="285.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="664.0" y="285.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="524.0" y="320.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="664.0" y="320.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="524.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="559.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="594.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="629.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="664.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+
+    <rect x="710.0" y="200.0" width="180.0" height="180.0" rx="6" fill="rgba(39, 174, 96, 0.08)" stroke="rgba(46, 204, 113, 0.35)" stroke-width="1.5" filter="url(#fest-shadow)">
+      <title>Pole Namiotowe Północne N1-3 (-38m do -2m, -140m do -104m)</title>
+    </rect>
+    <text x="800.0" y="218.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">N1-3</text>
+    
+<rect x="724.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="759.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="794.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="829.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="864.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="724.0" y="250.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="864.0" y="250.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="724.0" y="285.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="864.0" y="285.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="724.0" y="320.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="864.0" y="320.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="724.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="759.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="794.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="829.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="864.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+
+    <rect x="910.0" y="200.0" width="180.0" height="180.0" rx="6" fill="rgba(39, 174, 96, 0.08)" stroke="rgba(46, 204, 113, 0.35)" stroke-width="1.5" filter="url(#fest-shadow)">
+      <title>Pole Namiotowe Północne N1-4 (2m do 38m, -140m do -104m)</title>
+    </rect>
+    <text x="1000.0" y="218.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">N1-4</text>
+    
+<rect x="924.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="959.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="994.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1029.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1064.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="924.0" y="250.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1064.0" y="250.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="924.0" y="285.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1064.0" y="285.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="924.0" y="320.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1064.0" y="320.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="924.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="959.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="994.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1029.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1064.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+
+    <rect x="1110.0" y="200.0" width="180.0" height="180.0" rx="6" fill="rgba(39, 174, 96, 0.08)" stroke="rgba(46, 204, 113, 0.35)" stroke-width="1.5" filter="url(#fest-shadow)">
+      <title>Pole Namiotowe Północne N1-5 (42m do 78m, -140m do -104m)</title>
+    </rect>
+    <text x="1200.0" y="218.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">N1-5</text>
+    
+<rect x="1124.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1159.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1194.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1229.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1264.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1124.0" y="250.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1264.0" y="250.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1124.0" y="285.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1264.0" y="285.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1124.0" y="320.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1264.0" y="320.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1124.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1159.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1194.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1229.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1264.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+
+    <rect x="1310.0" y="200.0" width="180.0" height="180.0" rx="6" fill="rgba(39, 174, 96, 0.08)" stroke="rgba(46, 204, 113, 0.35)" stroke-width="1.5" filter="url(#fest-shadow)">
+      <title>Pole Namiotowe Północne N1-6 (82m do 118m, -140m do -104m)</title>
+    </rect>
+    <text x="1400.0" y="218.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">N1-6</text>
+    
+<rect x="1324.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1359.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1394.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1429.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1464.0" y="215.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1324.0" y="250.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1464.0" y="250.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1324.0" y="285.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1464.0" y="285.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1324.0" y="320.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1464.0" y="320.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1324.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1359.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1394.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1429.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1464.0" y="355.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+
+    <rect x="610.0" y="810.0" width="180.0" height="180.0" rx="6" fill="rgba(39, 174, 96, 0.08)" stroke="rgba(46, 204, 113, 0.35)" stroke-width="1.5" filter="url(#fest-shadow)">
+      <title>Sąsiedzi Zachód (Neighbour-1) (-58m do -22m, -18m do 18m)</title>
+    </rect>
+    <text x="700.0" y="828.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">Neighbour-1</text>
+    
+<rect x="624.0" y="825.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="659.0" y="825.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="694.0" y="825.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="729.0" y="825.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="764.0" y="825.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="624.0" y="860.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="764.0" y="860.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="624.0" y="895.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="764.0" y="895.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="624.0" y="930.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="764.0" y="930.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="624.0" y="965.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="659.0" y="965.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="694.0" y="965.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="729.0" y="965.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="764.0" y="965.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+
+    <rect x="1010.0" y="810.0" width="180.0" height="180.0" rx="6" fill="rgba(39, 174, 96, 0.08)" stroke="rgba(46, 204, 113, 0.35)" stroke-width="1.5" filter="url(#fest-shadow)">
+      <title>Sąsiedzi Wschód (Neighbour-2) (22m do 58m, -18m do 18m)</title>
+    </rect>
+    <text x="1100.0" y="828.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">Neighbour-2</text>
+    
+<rect x="1024.0" y="825.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1059.0" y="825.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1094.0" y="825.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1129.0" y="825.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1164.0" y="825.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1024.0" y="860.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1164.0" y="860.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1024.0" y="895.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1164.0" y="895.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1024.0" y="930.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1164.0" y="930.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1024.0" y="965.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1059.0" y="965.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1094.0" y="965.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1129.0" y="965.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="1164.0" y="965.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+
+    <rect x="390.0" y="1210.0" width="180.0" height="180.0" rx="6" fill="rgba(39, 174, 96, 0.08)" stroke="rgba(46, 204, 113, 0.35)" stroke-width="1.5" filter="url(#fest-shadow)">
+      <title>Sąsiedzi Południe (Neighbour-3) (-102m do -66m, 62m do 98m)</title>
+    </rect>
+    <text x="480.0" y="1228.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">Neighbour-3</text>
+    
+<rect x="404.0" y="1225.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="439.0" y="1225.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="474.0" y="1225.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="509.0" y="1225.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="544.0" y="1225.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="404.0" y="1260.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="544.0" y="1260.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="404.0" y="1295.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="544.0" y="1295.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="404.0" y="1330.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="544.0" y="1330.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="404.0" y="1365.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="439.0" y="1365.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="474.0" y="1365.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="509.0" y="1365.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="544.0" y="1365.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+
+    <rect x="810.0" y="1210.0" width="180.0" height="180.0" rx="6" fill="rgba(39, 174, 96, 0.08)" stroke="rgba(46, 204, 113, 0.35)" stroke-width="1.5" filter="url(#fest-shadow)">
+      <title>Sąsiedzi Południe (Neighbour-4) (-18m do 18m, 62m do 98m)</title>
+    </rect>
+    <text x="900.0" y="1228.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">Neighbour-4</text>
+    
+<rect x="824.0" y="1225.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="859.0" y="1225.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="894.0" y="1225.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="929.0" y="1225.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="964.0" y="1225.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="824.0" y="1260.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="964.0" y="1260.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="824.0" y="1295.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="964.0" y="1295.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="824.0" y="1330.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="964.0" y="1330.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="824.0" y="1365.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="859.0" y="1365.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="894.0" y="1365.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="929.0" y="1365.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="964.0" y="1365.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+
+    <rect x="610.0" y="1410.0" width="180.0" height="180.0" rx="6" fill="rgba(39, 174, 96, 0.08)" stroke="rgba(46, 204, 113, 0.35)" stroke-width="1.5" filter="url(#fest-shadow)">
+      <title>Sąsiedzi Południe (Neighbour-5) (-58m do -22m, 102m do 138m)</title>
+    </rect>
+    <text x="700.0" y="1428.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">Neighbour-5</text>
+    
+<rect x="624.0" y="1425.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="659.0" y="1425.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="694.0" y="1425.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="729.0" y="1425.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="764.0" y="1425.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="624.0" y="1460.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="764.0" y="1460.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="624.0" y="1495.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="764.0" y="1495.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="624.0" y="1530.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="764.0" y="1530.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="624.0" y="1565.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="659.0" y="1565.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="694.0" y="1565.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="729.0" y="1565.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="764.0" y="1565.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+
+    <rect x="810.0" y="1410.0" width="180.0" height="180.0" rx="6" fill="rgba(39, 174, 96, 0.08)" stroke="rgba(46, 204, 113, 0.35)" stroke-width="1.5" filter="url(#fest-shadow)">
+      <title>Sąsiedzi Południe (Neighbour-6) (-18m do 18m, 102m do 138m)</title>
+    </rect>
+    <text x="900.0" y="1428.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">Neighbour-6</text>
+    
+<rect x="824.0" y="1425.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="859.0" y="1425.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="894.0" y="1425.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="929.0" y="1425.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="964.0" y="1425.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="824.0" y="1460.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="964.0" y="1460.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="824.0" y="1495.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="964.0" y="1495.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="824.0" y="1530.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="964.0" y="1530.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="824.0" y="1565.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="859.0" y="1565.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="894.0" y="1565.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="929.0" y="1565.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<rect x="964.0" y="1565.0" width="12" height="10" rx="2" fill="#3c6340" stroke="#254228" stroke-width="0.8"/>
+<!-- BETONOWE ALEJE 10m x 280m -->
+
+    <rect x="200.0" y="700.0" width="1400.0" height="50.0" fill="url(#concreteGrad)" stroke="#bdc3c7" stroke-width="2" rx="4" filter="url(#fest-shadow)">
+      <title>Północna Aleja Betonowa (Główny Pasaż) • 10m x 280m • Płyty betonowe Concrete019</title>
+    </rect>
+    <!-- Linie dylatacji płyt co 10m -->
+    
+<line x1="200.0" y1="700.0" x2="200.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="250.0" y1="700.0" x2="250.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="300.0" y1="700.0" x2="300.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="350.0" y1="700.0" x2="350.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="400.0" y1="700.0" x2="400.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="450.0" y1="700.0" x2="450.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="500.0" y1="700.0" x2="500.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="550.0" y1="700.0" x2="550.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="600.0" y1="700.0" x2="600.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="650.0" y1="700.0" x2="650.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="700.0" y1="700.0" x2="700.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="750.0" y1="700.0" x2="750.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="800.0" y1="700.0" x2="800.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="850.0" y1="700.0" x2="850.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="900.0" y1="700.0" x2="900.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="950.0" y1="700.0" x2="950.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1000.0" y1="700.0" x2="1000.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1050.0" y1="700.0" x2="1050.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1100.0" y1="700.0" x2="1100.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1150.0" y1="700.0" x2="1150.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1200.0" y1="700.0" x2="1200.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1250.0" y1="700.0" x2="1250.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1300.0" y1="700.0" x2="1300.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1350.0" y1="700.0" x2="1350.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1400.0" y1="700.0" x2="1400.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1450.0" y1="700.0" x2="1450.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1500.0" y1="700.0" x2="1500.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1550.0" y1="700.0" x2="1550.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1600.0" y1="700.0" x2="1600.0" y2="750.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<text x="900.0" y="730.0" fill="#2c3e50" font-size="14" font-weight="900" letter-spacing="2" text-anchor="middle">PÓŁNOCNA ALEJA BETONOWA (GŁÓWNY PASAŻ)</text>
+
+    <rect x="200.0" y="1030.0" width="1400.0" height="50.0" fill="url(#concreteGrad)" stroke="#bdc3c7" stroke-width="2" rx="4" filter="url(#fest-shadow)">
+      <title>Południowa Aleja Betonowa • 10m x 280m • Płyty betonowe Concrete019</title>
+    </rect>
+    <!-- Linie dylatacji płyt co 10m -->
+    
+<line x1="200.0" y1="1030.0" x2="200.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="250.0" y1="1030.0" x2="250.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="300.0" y1="1030.0" x2="300.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="350.0" y1="1030.0" x2="350.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="400.0" y1="1030.0" x2="400.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="450.0" y1="1030.0" x2="450.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="500.0" y1="1030.0" x2="500.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="550.0" y1="1030.0" x2="550.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="600.0" y1="1030.0" x2="600.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="650.0" y1="1030.0" x2="650.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="700.0" y1="1030.0" x2="700.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="750.0" y1="1030.0" x2="750.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="800.0" y1="1030.0" x2="800.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="850.0" y1="1030.0" x2="850.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="900.0" y1="1030.0" x2="900.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="950.0" y1="1030.0" x2="950.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1000.0" y1="1030.0" x2="1000.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1050.0" y1="1030.0" x2="1050.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1100.0" y1="1030.0" x2="1100.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1150.0" y1="1030.0" x2="1150.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1200.0" y1="1030.0" x2="1200.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1250.0" y1="1030.0" x2="1250.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1300.0" y1="1030.0" x2="1300.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1350.0" y1="1030.0" x2="1350.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1400.0" y1="1030.0" x2="1400.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1450.0" y1="1030.0" x2="1450.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1500.0" y1="1030.0" x2="1500.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1550.0" y1="1030.0" x2="1550.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="1600.0" y1="1030.0" x2="1600.0" y2="1080.0" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<text x="900.0" y="1060.0" fill="#2c3e50" font-size="14" font-weight="900" letter-spacing="2" text-anchor="middle">POŁUDNIOWA ALEJA BETONOWA</text>
+
+<!-- NASZ GŁÓWNY OBÓZ -->
+<!-- Mad Dog -->
+<rect x="841.2" y="824.9" width="111.6" height="111.2" fill="rgba(15,15,20,0.85)" rx="4" stroke="#ffffff" stroke-width="2">
+  <title>Mad Dog (22.3m x 22.2m) - Zadaszenie centralne obozu</title>
+</rect>
+<text x="897.0" y="876.5" fill="#f1c40f" font-size="12" font-weight="bold" text-anchor="middle">MAD DOG</text>
+<text x="897.0" y="890.5" fill="#fff" font-size="9" text-anchor="middle">Stół • Krzesła S01-S08 • Używki</text>
+
+<!-- Flaga maszt 16.4m -->
+<circle cx="903.0" cy="903.0" r="8" fill="#e74c3c" stroke="#ffffff" stroke-width="2"/>
+<text x="915.0" y="907.0" fill="#f1c40f" font-size="11" font-weight="bold">FLAGA #kurwamojepole (16.4m)</text>
+
+<!-- Toi-toi wcTron -->
+<rect x="829.0" y="844.0" width="16" height="16" fill="#2980b9" stroke="#fff" stroke-width="1.5"/>
+<text x="837.0" y="840.0" fill="#2980b9" font-size="9" font-weight="bold" text-anchor="middle">wcTron</text>
+
+
+    <!-- SCENA: Duża Scena (Main Stage) -->
+    <g id="mainStage" filter="url(#fest-shadow)">
+      <rect x="1420.0" y="885.0" width="120.0" height="210.0" fill="#2c3e50" stroke="#c0392b" stroke-width="4" rx="6">
+        <title>Duża Scena (Main Stage)
+Wymiary: 42m x 24m, wys. 22m
+Monumentalna scena główna festiwalu. Front skierowany na zachód na wielkie pole koncertowe. Nagłośnienie liniowe, potężne telebimy LED i wieże delay.</title>
+      </rect>
+      <!-- Zadaszenie i podest -->
+      <rect x="1428.0" y="893.0" width="104.0" height="194.0" fill="#c0392b" rx="3"/>
+      <text x="1480.0" y="986.0" fill="#ffffff" font-size="14" font-weight="900" text-anchor="middle">DUŻA SCENA (MAIN STAGE)</text>
+      <text x="1480.0" y="1002.0" fill="#f1f2f6" font-size="10" text-anchor="middle">42m × 24m • wys. 22m</text>
+    </g>
+    
+
+    <!-- SCENA: Mała Scena / Namiot ASP -->
+    <g id="smallStage" filter="url(#fest-shadow)">
+      <rect x="1065.0" y="1080.0" width="190.0" height="270.0" fill="#2c3e50" stroke="#d35400" stroke-width="4" rx="6">
+        <title>Mała Scena / Namiot ASP
+Wymiary: 38m x 54m, wys. 19m
+Monumentalny zadaszony namiot koncertowo-warsztatowy ASP na południe od alei południowej. Spotkania, koncerty nocne i warsztaty.</title>
+      </rect>
+      <!-- Zadaszenie i podest -->
+      <rect x="1073.0" y="1088.0" width="174.0" height="254.0" fill="#d35400" rx="3"/>
+      <text x="1160.0" y="1211.0" fill="#ffffff" font-size="14" font-weight="900" text-anchor="middle">MAŁA SCENA / NAMIOT ASP</text>
+      <text x="1160.0" y="1227.0" fill="#f1f2f6" font-size="10" text-anchor="middle">38m × 54m • wys. 19m</text>
+    </g>
+    
+
+<!-- POLE KONCERTOWE POGO -->
+<ellipse cx="1340.0" cy="990.0" rx="110" ry="140" fill="rgba(231, 76, 60, 0.12)" stroke="#e74c3c" stroke-width="2" stroke-dasharray="6,4">
+  <title>Pole Koncertowe pod Dużą Sceną (tysiące uczestników, pogo, strefa FOH)</title>
+</ellipse>
+<text x="1340.0" y="990.0" fill="#ff7675" font-size="13" font-weight="bold" text-anchor="middle">POLE KONCERTOWE (POGO)</text>
+
+
+<!-- DIABELSKI MŁYN -->
+<g id="FerrisWheel" filter="url(#fest-shadow)">
+  <circle cx="1480.0" cy="605.0" r="45" fill="rgba(52, 152, 219, 0.25)" stroke="#3498db" stroke-width="3"/>
+  <circle cx="1480.0" cy="605.0" r="8" fill="#e74c3c" stroke="#fff" stroke-width="2"/>
+  <!-- Szprychy koła -->
+  <line x1="1435.0" y1="605.0" x2="1525.0" y2="605.0" stroke="#3498db" stroke-width="2"/>
+  <line x1="1480.0" y1="560.0" x2="1480.0" y2="650.0" stroke="#3498db" stroke-width="2"/>
+  <line x1="1448.0" y1="573.0" x2="1512.0" y2="637.0" stroke="#3498db" stroke-width="1.5"/>
+  <line x1="1448.0" y1="637.0" x2="1512.0" y2="573.0" stroke="#3498db" stroke-width="1.5"/>
+  <text x="1480.0" y="553.0" fill="#3498db" font-size="12" font-weight="900" text-anchor="middle">DIABELSKI MŁYN</text>
+  <text x="1480.0" y="663.0" fill="#ecf0f1" font-size="9" text-anchor="middle">Obrót co 120s • Gondole widokowe</text>
+</g>
+
+
+    <!-- STREFA: Strefa Pomorza Zachodniego -->
+    <g id="pomorze" filter="url(#fest-shadow)">
+      <rect x="247.5" y="664.0" width="85.0" height="32.0" fill="#34495e" stroke="#f1c40f" stroke-width="2" rx="4">
+        <title>Strefa Pomorza Zachodniego
+Pop-artowa strefa z kontenerami, tarasem widokowym i animacjami na zachodnim krańcu alei.</title>
+      </rect>
+      <text x="290.0" y="684.0" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">Strefa Pomorza Zachodniego</text>
+    </g>
+    
+
+    <!-- STREFA: Strefa Red Bull (Zachód) -->
+    <g id="redBull_1" filter="url(#fest-shadow)">
+      <rect x="638.2" y="645.5" width="56.5" height="49.0" fill="#34495e" stroke="#f1c40f" stroke-width="2" rx="4">
+        <title>Strefa Red Bull (Zachód)
+Namiot gwiazdowy Red Bulla z barem i strefą relaksu.</title>
+      </rect>
+      <text x="666.5" y="674.0" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">Strefa Red Bull (Zachód)</text>
+    </g>
+    
+
+    <!-- STREFA: Strefa IQOS -->
+    <g id="iqos" filter="url(#fest-shadow)">
+      <rect x="1347.5" y="665.8" width="45.0" height="28.5" fill="#34495e" stroke="#f1c40f" stroke-width="2" rx="4">
+        <title>Strefa IQOS
+Strefa partnerska dla dorosłych.</title>
+      </rect>
+      <text x="1370.0" y="684.0" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">Strefa IQOS</text>
+    </g>
+    
+
+    <!-- STREFA: Strefa Red Bull (Wschód) -->
+    <g id="redBull_2" filter="url(#fest-shadow)">
+      <rect x="1536.8" y="645.5" width="56.5" height="49.0" fill="#34495e" stroke="#f1c40f" stroke-width="2" rx="4">
+        <title>Strefa Red Bull (Wschód)
+Drugi namiot gwiazdowy Red Bull przy Diabelskim Młynie.</title>
+      </rect>
+      <text x="1565.0" y="674.0" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">Strefa Red Bull (Wschód)</text>
+    </g>
+    
+
+    <!-- STREFA: Lidl Rock Shop -->
+    <g id="lidlRockShop" filter="url(#fest-shadow)">
+      <rect x="589.2" y="1084.2" width="121.5" height="91.5" fill="#34495e" stroke="#f1c40f" stroke-width="2" rx="4">
+        <title>Lidl Rock Shop
+Wielki sklep festiwalowy Lidla przy południowej alei betonowej. Świeże pieczywo, napoje, lód i zaopatrzenie.</title>
+      </rect>
+      <text x="650.0" y="1134.0" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">Lidl Rock Shop</text>
+    </g>
+    
+<!-- STOISKA JARMARKU -->
+
+    <rect x="1214.2" y="604.2" width="121.5" height="91.5" fill="#e74c3c" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>SiemaShop (Oficjalny Sklep WOŚP) (x=75m, z=-50m)</title>
+    </rect>
+    <text x="1275.0" y="600.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 1275.0, 600.25)">SiemaShop </text>
+    
+
+    <rect x="387.8" y="674.2" width="24.5" height="21.5" fill="#f39c12" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Strefa Gastronomiczna (Food Court) (x=-100m, z=-43m)</title>
+    </rect>
+    <text x="400.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 400.0, 670.25)">Strefa Gastronomiczna </text>
+    
+
+    <rect x="422.8" y="674.2" width="24.5" height="21.5" fill="#d35400" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Kawiarnia Festiwalowa (x=-93m, z=-43m)</title>
+    </rect>
+    <text x="435.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 435.0, 670.25)">Kawiarnia Festiwalowa</text>
+    
+
+    <rect x="457.8" y="674.2" width="24.5" height="21.5" fill="#8e44ad" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Festiwalowy Antykwariat (x=-86m, z=-43m)</title>
+    </rect>
+    <text x="470.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 470.0, 670.25)">Festiwalowy Antykwariat</text>
+    
+
+    <rect x="492.8" y="674.2" width="24.5" height="21.5" fill="#2980b9" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Punkt Informacyjny WOŚP (x=-79m, z=-43m)</title>
+    </rect>
+    <text x="505.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 505.0, 670.25)">Punkt Informacyjny WOŚP</text>
+    
+
+    <rect x="527.8" y="674.2" width="24.5" height="21.5" fill="#16a085" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Kodano Optyk (x=-72m, z=-43m)</title>
+    </rect>
+    <text x="540.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 540.0, 670.25)">Kodano Optyk</text>
+    
+
+    <rect x="562.8" y="674.2" width="24.5" height="21.5" fill="#27ae60" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Rock Merch (x=-65m, z=-43m)</title>
+    </rect>
+    <text x="575.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 575.0, 670.25)">Rock Merch</text>
+    
+
+    <rect x="722.8" y="674.2" width="24.5" height="21.5" fill="#f1c40f" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Świece Ręcznie Malowane (x=-33m, z=-43m)</title>
+    </rect>
+    <text x="735.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 735.0, 670.25)">Świece Ręcznie Malowane</text>
+    
+
+    <rect x="757.8" y="674.2" width="24.5" height="21.5" fill="#e67e22" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Biżuteria Naturalna (x=-26m, z=-43m)</title>
+    </rect>
+    <text x="770.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 770.0, 670.25)">Biżuteria Naturalna</text>
+    
+
+    <rect x="792.8" y="674.2" width="24.5" height="21.5" fill="#34495e" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Książki z Dedykacją (x=-19m, z=-43m)</title>
+    </rect>
+    <text x="805.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 805.0, 670.25)">Książki z Dedykacją</text>
+    
+
+    <rect x="827.8" y="674.2" width="24.5" height="21.5" fill="#9b59b6" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Kwiatek Lasu (Wianki) (x=-12m, z=-43m)</title>
+    </rect>
+    <text x="840.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 840.0, 670.25)">Kwiatek Lasu </text>
+    
+
+    <rect x="862.8" y="674.2" width="24.5" height="21.5" fill="#27ae60" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Zuch Olek (Militaria & Bushcraft) (x=-5m, z=-43m)</title>
+    </rect>
+    <text x="875.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 875.0, 670.25)">Zuch Olek </text>
+    
+
+    <rect x="897.8" y="674.2" width="24.5" height="21.5" fill="#2c3e50" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Altercore (Glany & Odzież) (x=2m, z=-43m)</title>
+    </rect>
+    <text x="910.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 910.0, 670.25)">Altercore </text>
+    
+
+    <rect x="932.8" y="674.2" width="24.5" height="21.5" fill="#1abc9c" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Sankowo (Rękodzieło) (x=9m, z=-43m)</title>
+    </rect>
+    <text x="945.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 945.0, 670.25)">Sankowo </text>
+    
+
+    <rect x="967.8" y="674.2" width="24.5" height="21.5" fill="#2980b9" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Wydawnictwo Vesper / In Rock (x=16m, z=-43m)</title>
+    </rect>
+    <text x="980.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 980.0, 670.25)">Wydawnictwo Vesper / In Rock</text>
+    
+
+    <rect x="1002.8" y="674.2" width="24.5" height="21.5" fill="#7f8c8d" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Militaria & Outdoor (x=23m, z=-43m)</title>
+    </rect>
+    <text x="1015.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 1015.0, 670.25)">Militaria & Outdoor</text>
+    
+
+    <rect x="1037.8" y="674.2" width="24.5" height="21.5" fill="#e84393" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Lokaah (Kadzidła & Orient) (x=30m, z=-43m)</title>
+    </rect>
+    <text x="1050.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 1050.0, 670.25)">Lokaah </text>
+    
+
+    <rect x="1072.8" y="674.2" width="24.5" height="21.5" fill="#fdcb6e" stroke="#2c3e50" stroke-width="1.5" rx="2" filter="url(#fest-shadow)">
+      <title>Siva (Herbata Indyjska) (x=37m, z=-43m)</title>
+    </rect>
+    <text x="1085.0" y="670.2" fill="#ecf0f1" font-size="8" font-weight="bold" text-anchor="middle" transform="rotate(-30, 1085.0, 670.25)">Siva </text>
+    
+<!-- INFRASTRUKTURA I SŁUŻBY -->
+
+    <g id="festivalGate" filter="url(#fest-shadow)">
+      <rect x="855.0" y="550.0" width="90.0" height="20.0" fill="#e74c3c" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Główna Brama Festiwalowa
+Monumentalna brama wejściowa na teren festiwalu.</title>
+      </rect>
+      <text x="900.0" y="580.0" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Główna Brama Festiwalowa</text>
+    </g>
+    
+
+    <g id="signpost_1" filter="url(#fest-shadow)">
+      <rect x="966.2" y="771.2" width="7.5" height="7.5" fill="#f39c12" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Drogowskaz: Skrzyżowanie Obozowe
+Kierunki: Duża Scena, ASP, Pasaż, Obóz.</title>
+      </rect>
+      <text x="970.0" y="788.8" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Drogowskaz: Skrzyżowanie Obozowe</text>
+    </g>
+    
+
+    <g id="signpost_2" filter="url(#fest-shadow)">
+      <rect x="1136.2" y="1036.2" width="7.5" height="7.5" fill="#f39c12" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Drogowskaz: Aleja Scen
+Kierunki: Duża Scena, ASP, Lidl.</title>
+      </rect>
+      <text x="1140.0" y="1053.8" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Drogowskaz: Aleja Scen</text>
+    </g>
+    
+
+    <g id="fohTower" filter="url(#fest-shadow)">
+      <rect x="1243.8" y="978.0" width="32.5" height="24.0" fill="#f39c12" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Wieża FOH (Reżyseria Dużej Sceny)
+Centrum realizacji dźwięku i oświetlenia sceny głównej.</title>
+      </rect>
+      <text x="1260.0" y="1012.0" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Wieża FOH </text>
+    </g>
+    
+
+    <g id="delayNorth" filter="url(#fest-shadow)">
+      <rect x="1160.0" y="870.0" width="20.0" height="20.0" fill="#f39c12" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Wieża Nagłośnieniowa Delay (Północ)
+Wieża opóźniająca nagłośnienia pola koncertowego.</title>
+      </rect>
+      <text x="1170.0" y="900.0" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Wieża Nagłośnieniowa Delay </text>
+    </g>
+    
+
+    <g id="delaySouth" filter="url(#fest-shadow)">
+      <rect x="1160.0" y="1090.0" width="20.0" height="20.0" fill="#f39c12" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Wieża Nagłośnieniowa Delay (Południe)
+Wieża nagłośnieniowa południowego sektora koncertowego.</title>
+      </rect>
+      <text x="1170.0" y="1120.0" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Wieża Nagłośnieniowa Delay </text>
+    </g>
+    
+
+    <g id="mudBath" filter="url(#fest-shadow)">
+      <rect x="1196.0" y="816.0" width="48.0" height="48.0" fill="#795548" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Kąpiel Błotna (Tradycyjne Błoto)
+Słynna festiwalowa kąpiel błotna chłodząca uczestników.</title>
+      </rect>
+      <text x="1220.0" y="874.0" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Kąpiel Błotna </text>
+    </g>
+    
+
+    <g id="fireTruck" filter="url(#fest-shadow)">
+      <rect x="1212.0" y="784.5" width="16.0" height="41.0" fill="#e74c3c" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Wóz Bojowy OSP Czaplinek
+Wóz strażacki OSP podlewający błoto i kurtyny wodne.</title>
+      </rect>
+      <text x="1220.0" y="835.5" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Wóz Bojowy OSP Czaplinek</text>
+    </g>
+    
+
+    <g id="waterCurtain" filter="url(#fest-shadow)">
+      <rect x="1042.0" y="943.8" width="36.0" height="12.5" fill="#3498db" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Kurtyna Wodna (Aleja Główna)
+Brama wodna dająca ochłodę w upalne dni.</title>
+      </rect>
+      <text x="1060.0" y="966.2" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Kurtyna Wodna </text>
+    </g>
+    
+
+    <g id="grzybek" filter="url(#fest-shadow)">
+      <rect x="1271.2" y="981.2" width="17.5" height="17.5" fill="#3498db" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Grzybek Wodny — Zraszacz
+Festiwalowy grzybek wodny z cząsteczkami kropel wody.</title>
+      </rect>
+      <text x="1280.0" y="1008.8" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Grzybek Wodny — Zraszacz</text>
+    </g>
+    
+
+    <g id="patrolTent" filter="url(#fest-shadow)">
+      <rect x="769.0" y="764.0" width="22.0" height="22.0" fill="#e74c3c" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Pokojowy Patrol & Punkt Medyczny
+Centrum ratownictwa, pierwszej pomocy i wolontariuszy WOŚP.</title>
+      </rect>
+      <text x="780.0" y="796.0" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Pokojowy Patrol & Punkt Medyczny</text>
+    </g>
+    
+
+    <g id="krishna" filter="url(#fest-shadow)">
+      <rect x="433.8" y="1021.2" width="52.5" height="37.5" fill="#f39c12" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Wioska Kryszny (Kuchnia & Strefa Pokoju)
+Ciepłe wegetariańskie posiłki, medytacja i spokój.</title>
+      </rect>
+      <text x="460.0" y="1068.8" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Wioska Kryszny </text>
+    </g>
+    
+
+    <g id="trash_1" filter="url(#fest-shadow)">
+      <rect x="828.0" y="762.0" width="24.0" height="16.0" fill="#f39c12" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Eko Zagroda Odpadów (Pasaż)
+Punkt segregacji odpadów „Zaraz Będzie Czysto”.</title>
+      </rect>
+      <text x="840.0" y="788.0" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Eko Zagroda Odpadów </text>
+    </g>
+    
+
+    <g id="trash_2" filter="url(#fest-shadow)">
+      <rect x="1108.0" y="912.0" width="24.0" height="16.0" fill="#f39c12" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Eko Zagroda Odpadów (Pole Koncertowe)
+Punkt segregacji odpadów przy FOH.</title>
+      </rect>
+      <text x="1120.0" y="938.0" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Eko Zagroda Odpadów </text>
+    </g>
+    
+
+    <g id="toitoiCamp" filter="url(#fest-shadow)">
+      <rect x="980.0" y="644.5" width="40.0" height="11.0" fill="#3498db" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Bateria Kabin TOI TOI (Sektor Obozowy)
+Rząd toalet festiwalowych.</title>
+      </rect>
+      <text x="1000.0" y="665.5" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Bateria Kabin TOI TOI </text>
+    </g>
+    
+
+    <g id="washCamp" filter="url(#fest-shadow)">
+      <rect x="1023.8" y="643.5" width="32.5" height="13.0" fill="#3498db" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Krany Wielostanowiskowe (Sektor Obozowy)
+Umywalnie z bieżącą wodą.</title>
+      </rect>
+      <text x="1040.0" y="666.5" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Krany Wielostanowiskowe </text>
+    </g>
+    
+
+    <g id="toitoiWest" filter="url(#fest-shadow)">
+      <rect x="594.5" y="930.0" width="11.0" height="40.0" fill="#3498db" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Bateria Kabin TOI TOI (Sektor Zachodni)
+Rząd toalet zachodnich.</title>
+      </rect>
+      <text x="600.0" y="980.0" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Bateria Kabin TOI TOI </text>
+    </g>
+    
+
+    <g id="washWest" filter="url(#fest-shadow)">
+      <rect x="593.5" y="973.8" width="13.0" height="32.5" fill="#3498db" stroke="#ffffff" stroke-width="1.5" rx="3">
+        <title>Krany Wielostanowiskowe (Sektor Zachodni)
+Umywalnie zachodnie.</title>
+      </rect>
+      <text x="600.0" y="1016.2" fill="#ecf0f1" font-size="9" font-weight="bold" text-anchor="middle">Krany Wielostanowiskowe </text>
+    </g>
+    
+
+<!-- RÓŻA WIATRÓW -->
+<g transform="translate(1680, 120)" filter="url(#fest-shadow)">
+  <circle cx="0" cy="0" r="50" fill="#1b281c" stroke="#27ae60" stroke-width="2"/>
+  <polygon points="0,-40 7,-8 0,-14" fill="#e74c3c"/>
+  <polygon points="0,-40 -7,-8 0,-14" fill="#c0392b"/>
+  <polygon points="0,40 7,8 0,14" fill="#ecf0f1"/>
+  <polygon points="0,40 -7,8 0,14" fill="#bdc3c7"/>
+  <polygon points="40,0 8,7 14,0" fill="#ecf0f1"/>
+  <polygon points="-40,0 -8,7 -14,0" fill="#ecf0f1"/>
+  <text x="0" y="-45" fill="#e74c3c" font-size="14" font-weight="900" text-anchor="middle">N (-Z)</text>
+  <text x="0" y="55" fill="#ecf0f1" font-size="12" font-weight="bold" text-anchor="middle">S (+Z)</text>
+  <text x="52" y="4" fill="#ecf0f1" font-size="12" font-weight="bold" text-anchor="start">E (+X)</text>
+  <text x="-52" y="4" fill="#ecf0f1" font-size="12" font-weight="bold" text-anchor="end">W (-X)</text>
+</g>
+
+
+<!-- TYTUŁ -->
+<g transform="translate(60, 50)">
+  <rect x="0" y="0" width="680" height="95" rx="8" fill="rgba(15, 25, 15, 0.95)" stroke="#2ed573" stroke-width="2" filter="url(#fest-shadow)"/>
+  <text x="25" y="32" fill="#2ed573" font-size="22" font-weight="900" letter-spacing="1">POL'AND'ROCK FESTIVAL — CAŁY ŚWIAT GRY (320 × 320 m)</text>
+  <text x="25" y="56" fill="#ffffff" font-size="13" font-weight="bold">Rzeczywisty rozkład obiektów z silnika Three.js (worktree festival-2026-tent-upgrades)</text>
+  <text x="25" y="78" fill="#a4b0be" font-size="11">Dwie aleje betonowe 280m • Duża Scena • ASP • Diabelski Młyn • Lidl • Jarmark • 200+ namiotów</text>
+</g>
+
+
+<!-- LEGENDA -->
+<g transform="translate(60, 1580)" filter="url(#fest-shadow)">
+  <rect x="0" y="0" width="1020" height="150" rx="8" fill="rgba(15, 25, 15, 0.95)" stroke="#2ed573" stroke-width="2"/>
+  <text x="20" y="24" fill="#2ed573" font-size="14" font-weight="900">KOMPLETNA LEGENDA INFRASTRUKTURY FESTIWALU</text>
+  
+  <g transform="translate(20, 38)">
+    <rect x="0" y="0" width="20" height="14" fill="#2ed573" stroke="#fff" stroke-width="1.5"/>
+    <text x="30" y="12" fill="#fff" font-size="12">Główny Obóz #KURWAMOJEPOLE (X: [-18, 18], Z: [-18, 18])</text>
+
+    <rect x="0" y="22" width="20" height="14" fill="url(#concreteGrad)" stroke="#bdc3c7"/>
+    <text x="30" y="34" fill="#fff" font-size="12">Aleje Betonowe (Północna Z: [-40, -30], Południowa Z: [26, 36])</text>
+
+    <rect x="0" y="44" width="20" height="14" fill="#c0392b"/>
+    <text x="30" y="56" fill="#fff" font-size="12">Duża Scena (116, 18) & Mała Scena / ASP (52, 63)</text>
+
+    <circle cx="10" cy="74" r="8" fill="#3498db" stroke="#fff" stroke-width="1.5"/>
+    <text x="30" y="78" fill="#fff" font-size="12">Diabelski Młyn (116, -59 • Obrót co 120s)</text>
+  </g>
+
+  <g transform="translate(480, 38)">
+    <rect x="0" y="0" width="20" height="14" fill="#f1c40f" stroke="#2c3e50"/>
+    <text x="30" y="12" fill="#fff" font-size="12">Pasaż Handlowy (SiemaShop, stoiska rękodzieła, food trucki)</text>
+
+    <rect x="0" y="22" width="20" height="14" fill="#34495e" stroke="#f1c40f"/>
+    <text x="30" y="34" fill="#fff" font-size="12">Strefy Partnerskie: Lidl Rock Shop, Pomorze Zachodnie, Red Bull, IQOS</text>
+
+    <rect x="0" y="44" width="20" height="14" fill="#795548"/>
+    <text x="30" y="56" fill="#fff" font-size="12">Kąpiel Błotna (64, -12) + Wóz Bojowy OSP Czaplinek (64, -19)</text>
+
+    <rect x="0" y="66" width="20" height="14" fill="#3498db"/>
+    <text x="30" y="78" fill="#fff" font-size="12">Woda i Sanitariaty: Grzybek Wodny (76, 18), Kurtyny, Baterie TOI TOI</text>
+  </g>
+</g>
+
+</svg>

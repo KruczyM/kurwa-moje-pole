@@ -1,0 +1,98 @@
+{
+  "android-forest": {
+    "title": "Android Forest",
+    "artist": "Armotonic",
+    "file": "android-forest.mp3",
+    "seconds": 25.312656
+  },
+  "glitch-ambient": {
+    "title": "Glitch Ambient Atmosphere with Reverb Kick",
+    "artist": "black_kumizhi",
+    "file": "glitch-ambient.mp3",
+    "seconds": 40.0
+  },
+  "lofi-bells": {
+    "title": "Lofi Ambient Bell Atmosphere",
+    "artist": "black_kumizhi",
+    "file": "lofi-bells.mp3",
+    "seconds": 42.187781
+  },
+  "sunshine-rain": {
+    "title": "Sunshine Rain",
+    "artist": "Brendon Moeller",
+    "file": "sunshine-rain.mp3",
+    "seconds": 40.0
+  },
+  "indie-guitar": {
+    "title": "Indie Guitar Loop",
+    "artist": "Farran EZ",
+    "file": "indie-guitar.mp3",
+    "seconds": 13.296344
+  },
+  "ambient-loop": {
+    "title": "Ambient Loop",
+    "artist": "freesound_community",
+    "file": "ambient-loop.mp3",
+    "seconds": 27.984
+  },
+  "intrigued": {
+    "title": "Intrigued",
+    "artist": "Fronbondi Skegs",
+    "file": "intrigued.mp3",
+    "seconds": 40.0
+  },
+  "clarity-1": {
+    "title": "Ambient Clarity 1",
+    "artist": "GrumpyNora",
+    "file": "clarity-1.mp3",
+    "seconds": 29.570625
+  },
+  "clarity-2": {
+    "title": "Ambient Clarity 2",
+    "artist": "GrumpyNora",
+    "file": "clarity-2.mp3",
+    "seconds": 29.570625
+  },
+  "dark-melancholy": {
+    "title": "Melancholy Dark Ambient",
+    "artist": "Musinova",
+    "file": "dark-melancholy.mp3",
+    "seconds": 6.744
+  },
+  "science-1": {
+    "title": "Science Technology Ambient Techno 1",
+    "artist": "Musinova",
+    "file": "science-1.mp3",
+    "seconds": 6.696
+  },
+  "science-2": {
+    "title": "Science Technology Ambient Techno 2",
+    "artist": "Musinova",
+    "file": "science-2.mp3",
+    "seconds": 6.696
+  },
+  "mysterious-piano": {
+    "title": "Thoughtful Mysterious Ambient Piano",
+    "artist": "Zec53",
+    "file": "mysterious-piano.mp3",
+    "seconds": 34.324906
+  },
+  "warm-technology": {
+    "title": "Warm Technology Chill Ambient",
+    "artist": "Zec53",
+    "file": "warm-technology.mp3",
+    "seconds": 34.951844
+  },
+  "herbarium": {
+    "title": "Szept zapomnianego zielnika",
+    "artist": "Bongo Rush · kompozycja lokalna",
+    "file": "herbarium.mp3",
+    "seconds": 48.0
+  },
+  "tower-clock": {
+    "title": "Zegar pod wygasłą wieżą",
+    "artist": "Bongo Rush · kompozycja lokalna",
+    "file": "tower-clock.mp3",
+    "seconds": 48.0
+  }
+}

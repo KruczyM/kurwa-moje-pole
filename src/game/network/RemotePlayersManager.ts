@@ -1,6 +1,7 @@
 import * as THREE from 'three';
+import { CharacterVisibility } from '../rendering/CharacterVisibility';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { createFlankiActor } from '../interactions/FlankiActors';
 import {
   type CharacterName,
   type LocomotionState,
@@ -12,6 +13,7 @@ import { NpcAnimator } from '../npc/NpcAnimator';
 import { PlayerNametag } from '../ui/PlayerNametag';
 import { characterAssets } from '../assets/assetManifest';
 import { terrainHeight } from '../world/CampWorld';
+import type { SpatialVoiceManager } from '../audio/SpatialVoiceManager';
 
 const fallbackGeometry = new THREE.CapsuleGeometry(0.34, 0.75, 4, 10);
 const fallbackMaterial = new THREE.MeshStandardMaterial({ color: 0x4fc3f7 });
@@ -31,38 +33,69 @@ export interface RemotePlayerEntity {
   locomotion: LocomotionState;
   speed: number;
   lastUpdateTime: number;
+  isSpeaking?: boolean;
+  groundFeet?: () => void;
+  disposeVisual?: () => void;
 }
 
 export class RemotePlayersManager {
+  readonly visibility = new CharacterVisibility();
   readonly remotePlayers = new Map<string, RemotePlayerEntity>();
   private unsubscribeSnapshot?: () => void;
+  private unsubscribeSpeaking?: () => void;
+  private unsubscribeAction?: () => void;
+  private unsubscribeStatus?: () => void;
+  private latestSnapshot?: WorldSnapshotPayload;
 
   constructor(
     private readonly scene: THREE.Scene,
     private readonly characterModels: Map<string, GLTF>,
     private readonly networkClient?: NetworkClient,
+    private spatialVoice?: SpatialVoiceManager,
+    private readonly isResident?: (player: PlayerSnapshot) => boolean,
   ) {
     if (this.networkClient) {
+      this.unsubscribeStatus = this.networkClient.onStatusChange((status) => {
+        if (status === 'disconnected' || status === 'error') {
+          this.latestSnapshot = undefined;
+          for (const id of [...this.remotePlayers.keys()]) this.removeRemotePlayer(id);
+        }
+      });
       this.unsubscribeSnapshot = this.networkClient.onWorldSnapshot((snapshot) => {
         this.handleWorldSnapshot(snapshot);
       });
+      this.unsubscribeAction = this.networkClient.onActionTrigger((payload) => {
+        this.handleRemoteAction(payload);
+      });
+    }
+
+    if (this.spatialVoice) {
+      this.bindSpatialVoice(this.spatialVoice);
     }
   }
 
-  /** Normalizuje wysokość modelu gracza (2.45m) i włącza rzucanie/odbieranie cieni. */
-  private fit(object: THREE.Object3D, height = 2.45) {
-    object.traverse((o) => {
-      const m = o as THREE.Mesh;
-      if (m.isMesh) {
-        m.castShadow = true;
-        m.receiveShadow = true;
+  setSpatialVoice(spatialVoice?: SpatialVoiceManager): void {
+    this.unsubscribeSpeaking?.();
+    this.unsubscribeSpeaking = undefined;
+    this.spatialVoice = spatialVoice;
+    if (spatialVoice) {
+      this.bindSpatialVoice(spatialVoice);
+    }
+  }
+
+  private bindSpatialVoice(voice: SpatialVoiceManager): void {
+    this.unsubscribeSpeaking = voice.onSpeakingPeersChange((speakingPeers) => {
+      for (const [id, entity] of this.remotePlayers) {
+        entity.nametag.setSpeaking(speakingPeers.has(id));
       }
     });
-    const box = new THREE.Box3().setFromObject(object);
-    const currentHeight = Math.max(0.01, box.max.y - box.min.y);
-    object.scale.setScalar(height / currentHeight);
-    box.setFromObject(object);
-    object.position.y = -box.min.y;
+  }
+
+  setPlayerSpeaking(playerId: string, isSpeaking: boolean): void {
+    const entity = this.remotePlayers.get(playerId);
+    if (entity) {
+      entity.nametag.setSpeaking(isSpeaking);
+    }
   }
 
   /** Zwraca identyfikator zasobu GLTF dla podanej nazwy kanonicznej postaci. */
@@ -80,19 +113,23 @@ export class RemotePlayersManager {
     const initialGroundY = terrainHeight(px, pz);
     root.position.set(px, initialGroundY, pz);
     root.rotation.set(0, player.transform.yaw, 0, 'YXZ');
-    root.rotation.set(0, player.transform.yaw + Math.PI, 0, 'YXZ');
 
     const assetId = this.resolveAssetId(player.character);
     const gltf = this.characterModels.get(assetId);
 
     let visual: THREE.Object3D | undefined;
     let animator: NpcAnimator | undefined;
+    let groundFeet: (() => void) | undefined;
+    let disposeVisual: (() => void) | undefined;
 
     if (gltf) {
-      visual = clone(gltf.scene);
-      animator = new NpcAnimator(visual, gltf.animations);
-      animator.update(0);
-      this.fit(visual, 2.45);
+      const actor = createFlankiActor(assetId, this.characterModels);
+      visual = actor.root;
+      // Camera yaw looks down -Z; the imported festival characters face +Z.
+      visual.rotation.y = Math.PI;
+      animator = actor.animator;
+      groundFeet = actor.groundFeet;
+      disposeVisual = actor.dispose;
       root.add(visual);
     } else {
       // Fallbackowa bryła kapsuły, jeśli model nie jest jeszcze dostępny:
@@ -108,6 +145,9 @@ export class RemotePlayersManager {
       nickname: player.nickname,
       characterName: player.character,
     });
+    if (this.spatialVoice) {
+      nametag.setSpeaking(this.spatialVoice.isPeerSpeaking(player.playerId));
+    }
 
     const entity: RemotePlayerEntity = {
       playerId: player.playerId,
@@ -124,6 +164,8 @@ export class RemotePlayersManager {
       locomotion: player.transform.locomotion,
       speed: player.transform.speed,
       lastUpdateTime: player.transform.timestamp,
+      groundFeet,
+      disposeVisual,
     };
 
     if (animator) {
@@ -141,13 +183,25 @@ export class RemotePlayersManager {
     if (!entity) return;
 
     this.scene.remove(entity.root);
-    entity.animator?.dispose();
+    if (entity.disposeVisual) entity.disposeVisual();
+    else {
+      entity.animator?.dispose();
+      if (entity.visual instanceof THREE.Mesh) {
+        entity.visual.geometry.dispose();
+        const materials = Array.isArray(entity.visual.material)
+          ? entity.visual.material
+          : [entity.visual.material];
+        materials.forEach((material) => material.dispose());
+      }
+    }
     entity.nametag.dispose();
+    entity.root.clear();
     this.remotePlayers.delete(playerId);
   }
 
   /** Przetwarza snapshot świata z serwera: dodaje, aktualizuje lub usuwa innych graczy. */
   handleWorldSnapshot(snapshot: WorldSnapshotPayload): void {
+    this.latestSnapshot = snapshot;
     const myId = this.networkClient?.getMyPlayerId();
     const activePlayerIds = new Set<string>();
 
@@ -156,6 +210,9 @@ export class RemotePlayersManager {
       if (myId && player.playerId === myId) {
         continue;
       }
+
+      // Keep the global snapshot, but create skeletons/nametags only for the resident map.
+      if (this.isResident && !this.isResident(player)) continue;
 
       activePlayerIds.add(player.playerId);
       const existing = this.remotePlayers.get(player.playerId);
@@ -194,6 +251,26 @@ export class RemotePlayersManager {
     }
   }
 
+  refreshResidentPlayers(): void {
+    if (this.latestSnapshot) this.handleWorldSnapshot(this.latestSnapshot);
+  }
+
+  getResidentCharacterNames(): string[] {
+    return [...this.remotePlayers.values()].map((entity) => entity.characterName);
+  }
+
+  /** Voice and the map keep global positions even when an avatar is not loaded locally. */
+  getPlayerPositions(): Map<string, { x: number; y: number; z: number }> {
+    const positions = new Map<string, { x: number; y: number; z: number }>();
+    for (const player of this.latestSnapshot?.players ?? []) {
+      if (player.playerId === this.networkClient?.getMyPlayerId()) continue;
+      const entity = this.remotePlayers.get(player.playerId);
+      const [x, y, z] = player.transform.position;
+      positions.set(player.playerId, entity?.currentPosition ?? { x, y, z });
+    }
+    return positions;
+  }
+
   /** Aktualizuje pozycje, obrót, animacje i nametagi wszystkich zdalnych graczy. */
   update(deltaTime: number, camera: THREE.Camera): void {
     const dt = Math.max(0, deltaTime);
@@ -211,7 +288,13 @@ export class RemotePlayersManager {
 
       // Dopasowanie do wysokości terenu na pozycji (x, z):
       const groundY = terrainHeight(entity.currentPosition.x, entity.currentPosition.z);
-      entity.root.position.set(entity.currentPosition.x, groundY, entity.currentPosition.z);
+      const jumpSeconds = Number(entity.root.userData.jumpSeconds ?? 0);
+      entity.root.userData.jumpSeconds = Math.max(0, jumpSeconds - dt);
+      entity.root.position.set(
+        entity.currentPosition.x,
+        jumpSeconds > 0 ? Math.max(groundY, entity.currentPosition.y) : groundY,
+        entity.currentPosition.z,
+      );
 
       // 2. Interpolacja kąta yaw (najkrótszą drogą):
       let diff = (entity.targetYaw - entity.currentYaw) % (Math.PI * 2);
@@ -221,24 +304,113 @@ export class RemotePlayersManager {
       const yawFactor = 1 - Math.exp(-18 * dt);
       entity.currentYaw += diff * yawFactor;
       entity.root.rotation.set(0, entity.currentYaw, 0, 'YXZ');
-      entity.root.rotation.set(0, entity.currentYaw + Math.PI, 0, 'YXZ');
 
       // 3. Aktualizacja animacji:
-      if (entity.animator) {
+      const animate = this.visibility.update(entity.root, camera.position);
+      if (entity.animator && animate) {
         entity.animator.setMovementSpeed(entity.speed);
         entity.animator.play(entity.locomotion);
         entity.animator.update(dt);
       }
+      if (animate) entity.groundFeet?.();
 
-      // 4. Aktualizacja pozycji nametaga na ekranie:
+      // 4. Aktualizacja pozycji nametaga na ekranie oraz wskaźnika mówienia:
+      if (this.spatialVoice) {
+        const speaking = this.spatialVoice.isPeerSpeaking(entity.playerId);
+        entity.isSpeaking = speaking;
+        entity.nametag.setSpeaking(speaking);
+      }
       entity.nametag.update(entity.root.position, camera);
     }
   }
 
+  /** Obsługuje jednorazowe akcje animacyjne graczy (picie, palenie, taniec, siadanie, gesty). */
+  handleRemoteAction(payload: {
+    playerId: string;
+    character: CharacterName;
+    action: string;
+    timestamp: number;
+  }): void {
+    const entity = this.remotePlayers.get(payload.playerId);
+    if (!entity || !entity.animator) return;
+    if (payload.action.toLowerCase() === 'jump') entity.root.userData.jumpSeconds = 1.2;
+    const actionClipMap: Record<string, import('../animation/animationContract').CanonicalAnimationClip[]> = {
+      jump: ['Jump'],
+      drink: ['Drinking'],
+      drinking: ['Drinking'],
+      smoke: ['RelievedSigh', 'HappyHandGesture'],
+      smoking: ['RelievedSigh', 'HappyHandGesture'],
+      dance: ['HipHopDancing', 'SillyDancing'],
+      dancing: ['HipHopDancing', 'SillyDancing'],
+      sit: ['SittingIdle', 'Sitting'],
+      cheer: ['Cheering', 'HappyHandGesture'],
+      clap: ['Clapping'],
+      wave: ['Waving'],
+    };
+    const candidates = actionClipMap[payload.action.toLowerCase()] ?? [
+      payload.action as import('../animation/animationContract').CanonicalAnimationClip,
+    ];
+    for (const clip of candidates) {
+      if (entity.animator.hasClip(clip)) {
+        entity.animator.queueOneShot(clip);
+        break;
+      }
+    }
+  }
+
+  /** Zwraca listę pozycji, obrotu i stanów mówienia zdalnych graczy dla HUD mapy. */
+  getPlayerMarkers(): {
+    id: string;
+    name: string;
+    x: number;
+    z: number;
+    yaw?: number;
+    isSpeaking?: boolean;
+  }[] {
+    const markers: {
+      id: string;
+      name: string;
+      x: number;
+      z: number;
+      yaw?: number;
+      isSpeaking?: boolean;
+    }[] = [];
+    for (const [id, entity] of this.remotePlayers.entries()) {
+      markers.push({
+        id,
+        name: entity.nickname?.trim() || entity.characterName,
+        x: entity.currentPosition.x,
+        z: entity.currentPosition.z,
+        yaw: entity.currentYaw,
+        isSpeaking: entity.isSpeaking,
+      });
+    }
+    for (const player of this.latestSnapshot?.players ?? []) {
+      if (this.remotePlayers.has(player.playerId) || player.playerId === this.networkClient?.getMyPlayerId())
+        continue;
+      markers.push({
+        id: player.playerId,
+        name: player.nickname?.trim() || player.character,
+        x: player.transform.position[0],
+        z: player.transform.position[2],
+        yaw: player.transform.yaw,
+        isSpeaking: this.spatialVoice?.isPeerSpeaking(player.playerId),
+      });
+    }
+    return markers;
+  }
+
   /** Zwalnia wszystkie modele zdalnych graczy, nametagi i odłącza subskrypcję snapshotów. */
   dispose(): void {
+    this.latestSnapshot = undefined;
+    this.unsubscribeStatus?.();
+    this.unsubscribeStatus = undefined;
     this.unsubscribeSnapshot?.();
     this.unsubscribeSnapshot = undefined;
+    this.unsubscribeAction?.();
+    this.unsubscribeAction = undefined;
+    this.unsubscribeSpeaking?.();
+    this.unsubscribeSpeaking = undefined;
 
     for (const playerId of Array.from(this.remotePlayers.keys())) {
       this.removeRemotePlayer(playerId);

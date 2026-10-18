@@ -1,0 +1,2563 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <title>#KURWAMOJEPOLE — Interaktywna Mapa Obozu 3D (Rzut z góry)</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        background: #0f1610;
+        color: #ecf0f1;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+      #map-container {
+        flex: 1;
+        position: relative;
+        background: radial-gradient(circle at center, #1b3017 0%, #0d170d 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        cursor: grab;
+      }
+      #map-container:active {
+        cursor: grabbing;
+      }
+      #map-viewport {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.05s ease-out;
+        transform-origin: center center;
+      }
+      #map-viewport svg {
+        width: 92vh;
+        height: 92vh;
+        max-width: 95vw;
+        border-radius: 12px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+        user-select: none;
+      }
+      /* Interaktywne elementy SVG */
+      g[id^='Tent_'],
+      g[id^='NPC_'],
+      #MadDogCanopy,
+      #CampTable,
+      #ToiletWcTron,
+      #PlayerSpawn,
+      #CampFlag,
+      g[id^='S0'] {
+        cursor: pointer;
+        transition:
+          filter 0.2s,
+          transform 0.2s;
+      }
+      g[id^='Tent_']:hover,
+      g[id^='NPC_']:hover,
+      #ToiletWcTron:hover,
+      #PlayerSpawn:hover,
+      #CampFlag:hover,
+      #CampTable:hover {
+        filter: drop-shadow(0 0 10px #2ecc71) !important;
+      }
+
+      /* Panel boczny */
+      #sidebar {
+        width: 440px;
+        background: rgba(18, 26, 18, 0.96);
+        border-left: 1px solid #2e4a27;
+        display: flex;
+        flex-direction: column;
+        z-index: 10;
+        box-shadow: -5px 0 25px rgba(0, 0, 0, 0.5);
+      }
+      #sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid #2e4a27;
+        background: rgba(12, 18, 12, 0.8);
+      }
+      #sidebar-header h1 {
+        font-size: 19px;
+        color: #2ecc71;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+      }
+      #sidebar-header p {
+        font-size: 12px;
+        color: #95a5a6;
+      }
+      #coords-bar {
+        margin-top: 10px;
+        padding: 6px 12px;
+        background: #090e09;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 12px;
+        color: #f1c40f;
+        display: flex;
+        justify-content: space-between;
+      }
+      #sidebar-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+      }
+      .info-card {
+        background: #141f14;
+        border: 1px solid #2f4f26;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .info-card h2 {
+        font-size: 17px;
+        color: #2ed573;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .badge {
+        font-size: 10px;
+        padding: 3px 8px;
+        border-radius: 12px;
+        background: #27ae60;
+        color: #fff;
+        text-transform: uppercase;
+        font-weight: bold;
+      }
+      .prop-row {
+        display: flex;
+        margin-bottom: 8px;
+        font-size: 13px;
+      }
+      .prop-name {
+        width: 110px;
+        color: #7f8c8d;
+        font-weight: 500;
+        flex-shrink: 0;
+      }
+      .prop-val {
+        color: #ecf0f1;
+        font-weight: 600;
+        word-break: break-all;
+      }
+      .prop-desc {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px dashed #2c4424;
+        font-size: 13px;
+        line-height: 1.45;
+        color: #bdc3c7;
+      }
+      /* Przyciski sterowania zoomem */
+      #zoom-controls {
+        position: absolute;
+        bottom: 24px;
+        right: 464px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 20;
+      }
+      .btn-zoom {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        border: 1px solid #38612f;
+        background: rgba(20, 30, 20, 0.9);
+        color: #2ecc71;
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+      .btn-zoom:hover {
+        background: #2ecc71;
+        color: #0f1610;
+      }
+      /* Lista szybkiego wyboru */
+      .quick-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 12px;
+      }
+      .quick-btn {
+        padding: 5px 10px;
+        background: #192a18;
+        border: 1px solid #2d4c25;
+        border-radius: 4px;
+        color: #bdc3c7;
+        font-size: 11px;
+        cursor: pointer;
+        transition: 0.15s;
+      }
+      .quick-btn:hover {
+        background: #2ecc71;
+        color: #0f1610;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map-container">
+      <div id="map-viewport">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 1400 1400"
+          width="100%"
+          height="100%"
+          style="
+            background: #1b2e17;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          "
+        >
+          <defs>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="3" dy="5" stdDeviation="4" flood-color="#000000" flood-opacity="0.45" />
+            </filter>
+            <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <radialGradient id="compassGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#2c3e50" stop-opacity="0.8" />
+              <stop offset="100%" stop-color="#1a252f" stop-opacity="0.95" />
+            </radialGradient>
+            <linearGradient id="flagPoleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f5f6fa" />
+              <stop offset="100%" stop-color="#718093" />
+            </linearGradient>
+            <pattern id="grid1m" width="32" height="32" patternUnits="userSpaceOnUse">
+              <path d="M 32 0 L 0 0 0 32" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1" />
+            </pattern>
+          </defs>
+
+          <rect width="1400" height="1400" fill="#1c3017" />
+          <rect width="1400" height="1400" fill="url(#grid1m)" />
+          <!-- DROGI POŻAROWE -->
+          <rect x="148.0" y="436.0" width="1024.0" height="70.4" fill="#726146" rx="4" opacity="0.85">
+            <title>Północna Droga Pożarowa W-E</title>
+          </rect>
+          <rect x="148.0" y="698.4" width="1024.0" height="51.2" fill="#726146" rx="4" opacity="0.85">
+            <title>Południowa Droga Pożarowa W-E</title>
+          </rect>
+          <rect x="148.0" y="884.0" width="1024.0" height="38.4" fill="#726146" rx="4" opacity="0.85">
+            <title>Droga Międzyrzędowa Południe W-E</title>
+          </rect>
+          <rect x="640.8" y="148.0" width="44.8" height="1024.0" fill="#726146" rx="4" opacity="0.85">
+            <title>Główna Aleja N-S</title>
+          </rect>
+          <rect x="186.4" y="301.6" width="140.8" height="166.4" fill="#726146" rx="4" opacity="0.85">
+            <title>Aleja Dojazdowa Do Toi-Toia</title>
+          </rect>
+          <rect x="116.0" y="116.0" width="89.6" height="1088.0" fill="#726146" rx="4" opacity="0.85">
+            <title>Obwodnica Zachodnia</title>
+          </rect>
+          <rect x="1114.4" y="116.0" width="89.6" height="1088.0" fill="#726146" rx="4" opacity="0.85">
+            <title>Obwodnica Wschodnia</title>
+          </rect>
+          <rect x="116.0" y="116.0" width="1088.0" height="89.6" fill="#726146" rx="4" opacity="0.85">
+            <title>Obwodnica Północna</title>
+          </rect>
+          <rect x="116.0" y="1114.4" width="1088.0" height="89.6" fill="#726146" rx="4" opacity="0.85">
+            <title>Obwodnica Południowa</title>
+          </rect>
+          <!-- SEKTORY TRAWIASTE -->
+          <rect
+            x="205.6"
+            y="205.6"
+            width="435.2"
+            height="230.4"
+            fill="#2e5223"
+            rx="8"
+            stroke="#3b692d"
+            stroke-width="1.5"
+            opacity="0.9"
+          >
+            <title>Sektor Północny - Zachód</title>
+          </rect>
+          <rect
+            x="685.6"
+            y="205.6"
+            width="428.8"
+            height="230.4"
+            fill="#2e5223"
+            rx="8"
+            stroke="#3b692d"
+            stroke-width="1.5"
+            opacity="0.9"
+          >
+            <title>Sektor Północny - Wschód</title>
+          </rect>
+          <rect
+            x="205.6"
+            y="749.6"
+            width="435.2"
+            height="134.4"
+            fill="#2e5223"
+            rx="8"
+            stroke="#3b692d"
+            stroke-width="1.5"
+            opacity="0.9"
+          >
+            <title>Sektor SW - Górny</title>
+          </rect>
+          <rect
+            x="205.6"
+            y="922.4"
+            width="435.2"
+            height="192.0"
+            fill="#2e5223"
+            rx="8"
+            stroke="#3b692d"
+            stroke-width="1.5"
+            opacity="0.9"
+          >
+            <title>Sektor SW - Dolny</title>
+          </rect>
+          <rect
+            x="685.6"
+            y="749.6"
+            width="428.8"
+            height="134.4"
+            fill="#2e5223"
+            rx="8"
+            stroke="#3b692d"
+            stroke-width="1.5"
+            opacity="0.9"
+          >
+            <title>Sektor SE - Górny</title>
+          </rect>
+          <rect
+            x="685.6"
+            y="922.4"
+            width="428.8"
+            height="192.0"
+            fill="#2e5223"
+            rx="8"
+            stroke="#3b692d"
+            stroke-width="1.5"
+            opacity="0.9"
+          >
+            <title>Sektor SE - Dolny</title>
+          </rect>
+          <rect
+            x="205.6"
+            y="468.0"
+            width="160.0"
+            height="249.6"
+            fill="#2e5223"
+            rx="8"
+            stroke="#3b692d"
+            stroke-width="1.5"
+            opacity="0.9"
+          >
+            <title>Sektor Boczny W przy T06</title>
+          </rect>
+          <rect
+            x="890.4"
+            y="468.0"
+            width="224.0"
+            height="249.6"
+            fill="#2e5223"
+            rx="8"
+            stroke="#3b692d"
+            stroke-width="1.5"
+            opacity="0.9"
+          >
+            <title>Sektor Boczny E przy T07</title>
+          </rect>
+          <!-- OSIE WSPÓŁRZĘDNYCH -->
+          <line
+            x1="148.0"
+            y1="80"
+            x2="148.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="212.0"
+            y1="80"
+            x2="212.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="276.0"
+            y1="80"
+            x2="276.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="340.0"
+            y1="80"
+            x2="340.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.2)"
+            stroke-width="1.5"
+            stroke-dasharray="3,3"
+          />
+          <text x="340.0" y="70" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">
+            -10m
+          </text>
+          <text x="340.0" y="1255" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">
+            -10m
+          </text>
+          <line
+            x1="404.0"
+            y1="80"
+            x2="404.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="468.0"
+            y1="80"
+            x2="468.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="532.0"
+            y1="80"
+            x2="532.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="596.0"
+            y1="80"
+            x2="596.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="660.0"
+            y1="80"
+            x2="660.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.5)"
+            stroke-width="2.0"
+            stroke-dasharray="none"
+          />
+          <text x="660.0" y="70" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">
+            0m
+          </text>
+          <text x="660.0" y="1255" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">
+            0m
+          </text>
+          <line
+            x1="724.0"
+            y1="80"
+            x2="724.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="788.0"
+            y1="80"
+            x2="788.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="852.0"
+            y1="80"
+            x2="852.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="916.0"
+            y1="80"
+            x2="916.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="980.0"
+            y1="80"
+            x2="980.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.2)"
+            stroke-width="1.5"
+            stroke-dasharray="3,3"
+          />
+          <text x="980.0" y="70" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">
+            10m
+          </text>
+          <text x="980.0" y="1255" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="middle">
+            10m
+          </text>
+          <line
+            x1="1044.0"
+            y1="80"
+            x2="1044.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="1108.0"
+            y1="80"
+            x2="1108.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="1172.0"
+            y1="80"
+            x2="1172.0"
+            y2="1240"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="80"
+            y1="148.0"
+            x2="1240"
+            y2="148.0"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="80"
+            y1="212.0"
+            x2="1240"
+            y2="212.0"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="80"
+            y1="276.0"
+            x2="1240"
+            y2="276.0"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="80"
+            y1="340.0"
+            x2="1240"
+            y2="340.0"
+            stroke="rgba(255,255,255,0.2)"
+            stroke-width="1.5"
+            stroke-dasharray="3,3"
+          />
+          <text x="65" y="344.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="end">
+            -10m
+          </text>
+          <text x="1255" y="344.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="start">
+            -10m
+          </text>
+          <line
+            x1="80"
+            y1="404.0"
+            x2="1240"
+            y2="404.0"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="80"
+            y1="468.0"
+            x2="1240"
+            y2="468.0"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="80"
+            y1="532.0"
+            x2="1240"
+            y2="532.0"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="80"
+            y1="596.0"
+            x2="1240"
+            y2="596.0"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="80"
+            y1="660.0"
+            x2="1240"
+            y2="660.0"
+            stroke="rgba(255,255,255,0.5)"
+            stroke-width="2.0"
+            stroke-dasharray="none"
+          />
+          <text x="65" y="664.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="end">0m</text>
+          <text x="1255" y="664.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="start">
+            0m
+          </text>
+          <line
+            x1="80"
+            y1="724.0"
+            x2="1240"
+            y2="724.0"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="80"
+            y1="788.0"
+            x2="1240"
+            y2="788.0"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="80"
+            y1="852.0"
+            x2="1240"
+            y2="852.0"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="80"
+            y1="916.0"
+            x2="1240"
+            y2="916.0"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="80"
+            y1="980.0"
+            x2="1240"
+            y2="980.0"
+            stroke="rgba(255,255,255,0.2)"
+            stroke-width="1.5"
+            stroke-dasharray="3,3"
+          />
+          <text x="65" y="984.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="end">10m</text>
+          <text x="1255" y="984.0" fill="#a4b0be" font-size="11" font-weight="bold" text-anchor="start">
+            10m
+          </text>
+          <line
+            x1="80"
+            y1="1044.0"
+            x2="1240"
+            y2="1044.0"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="80"
+            y1="1108.0"
+            x2="1240"
+            y2="1108.0"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <line
+            x1="80"
+            y1="1172.0"
+            x2="1240"
+            y2="1172.0"
+            stroke="rgba(255,255,255,0.08)"
+            stroke-width="1.0"
+            stroke-dasharray="3,3"
+          />
+          <!-- MAD DOG CANOPY -->
+
+          <g id="MadDogCanopy">
+            <rect
+              x="283.7"
+              y="179.5"
+              width="714.1"
+              height="711.4"
+              fill="rgba(20, 20, 24, 0.45)"
+              rx="16"
+              stroke="#121214"
+              stroke-width="3"
+              stroke-dasharray="8,4"
+              filter="url(#shadow)"
+            >
+              <title>
+                Zadaszenie Mad Dog (22.3m × 22.2m) - otwarte ze wszystkich stron, ochrona przed słońcem
+              </title>
+            </rect>
+            <text x="303.7" y="209.5" fill="#f1f2f6" font-size="14" font-weight="900" letter-spacing="2">
+              MAD DOG (ZADASZENIE 22.3m × 22.2m)
+            </text>
+            <text x="303.7" y="227.5" fill="#ced6e0" font-size="11">
+              Brak kolizji wewnętrznej • Swobodne przejście i cień
+            </text>
+          </g>
+
+          <!-- STÓŁ BIESIADNY -->
+
+          <g id="CampTable" transform="translate(640.8, 535.2) rotate(-28.6)" filter="url(#shadow)">
+            <rect
+              x="-38.4"
+              y="-19.2"
+              width="76.8"
+              height="38.4"
+              fill="#5c3818"
+              rx="6"
+              stroke="#3d240d"
+              stroke-width="2"
+            >
+              <title>Stół Biesiadny pod Mad Dogiem (2.4m × 1.2m, r=1.35m kolizja)</title>
+            </rect>
+            <text
+              x="0"
+              y="4"
+              fill="#f5cd79"
+              font-size="10"
+              font-weight="bold"
+              text-anchor="middle"
+              transform="rotate(28.6)"
+            >
+              STÓŁ (UŻYWKI)
+            </text>
+
+            <circle cx="0.0" cy="5.8" r="4.5" fill="#ffffff" stroke="#1e272e" stroke-width="1.5">
+              <title>Papieros (cigarette): Pojedynczy papieros z filtrem</title>
+            </circle>
+
+            <circle cx="-26.2" cy="-5.8" r="4.5" fill="#7bed9f" stroke="#1e272e" stroke-width="1.5">
+              <title>Blant (joint): Zwijany blant z dobrym ziołem</title>
+            </circle>
+
+            <circle cx="-13.1" cy="5.8" r="4.5" fill="#f1f2f6" stroke="#1e272e" stroke-width="1.5">
+              <title>Kreska (cocaine): Biała kreska na blacie stołu</title>
+            </circle>
+
+            <circle cx="0.0" cy="-5.8" r="4.5" fill="#70a1ff" stroke="#1e272e" stroke-width="1.5">
+              <title>MDMA (mdma): Piguła MDMA</title>
+            </circle>
+
+            <circle cx="13.1" cy="5.8" r="4.5" fill="#eccc68" stroke="#1e272e" stroke-width="1.5">
+              <title>Grzyby (mushrooms): Suszone grzybki halucynogenne</title>
+            </circle>
+
+            <circle cx="21.8" cy="3.8" r="4.5" fill="#ff6b81" stroke="#1e272e" stroke-width="1.5">
+              <title>LSD (lsd): Kartonik LSD</title>
+            </circle>
+          </g>
+          <!-- KRZESŁA S01-S08 -->
+
+          <g id="S01" transform="translate(773.6, 535.2) rotate(90.0)" filter="url(#shadow)">
+            <circle
+              cx="0"
+              cy="0"
+              r="15.4"
+              fill="none"
+              stroke="rgba(56, 92, 130, 0.4)"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+            />
+            <rect
+              x="-8"
+              y="-8"
+              width="16"
+              height="16"
+              rx="3"
+              fill="#2980b9"
+              stroke="#1c5980"
+              stroke-width="1.5"
+            >
+              <title>Miejsce siedzące S01 (Usiądź: E)</title>
+            </rect>
+            <line x1="-8" y1="-8" x2="8" y2="-8" stroke="#f1c40f" stroke-width="2.5" />
+            <text
+              x="0"
+              y="18"
+              fill="#ecf0f1"
+              font-size="9"
+              font-weight="bold"
+              text-anchor="middle"
+              transform="rotate(-90.0)"
+            >
+              S01
+            </text>
+          </g>
+
+          <g id="S02" transform="translate(737.7, 607.5) rotate(53.3)" filter="url(#shadow)">
+            <circle
+              cx="0"
+              cy="0"
+              r="15.4"
+              fill="none"
+              stroke="rgba(56, 92, 130, 0.4)"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+            />
+            <rect
+              x="-8"
+              y="-8"
+              width="16"
+              height="16"
+              rx="3"
+              fill="#2980b9"
+              stroke="#1c5980"
+              stroke-width="1.5"
+            >
+              <title>Miejsce siedzące S02 (Usiądź: E)</title>
+            </rect>
+            <line x1="-8" y1="-8" x2="8" y2="-8" stroke="#f1c40f" stroke-width="2.5" />
+            <text
+              x="0"
+              y="18"
+              fill="#ecf0f1"
+              font-size="9"
+              font-weight="bold"
+              text-anchor="middle"
+              transform="rotate(-53.3)"
+            >
+              S02
+            </text>
+          </g>
+
+          <g id="S03" transform="translate(640.8, 642.4) rotate(0.0)" filter="url(#shadow)">
+            <circle
+              cx="0"
+              cy="0"
+              r="15.4"
+              fill="none"
+              stroke="rgba(56, 92, 130, 0.4)"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+            />
+            <rect
+              x="-8"
+              y="-8"
+              width="16"
+              height="16"
+              rx="3"
+              fill="#2980b9"
+              stroke="#1c5980"
+              stroke-width="1.5"
+            >
+              <title>Miejsce siedzące S03 (Usiądź: E)</title>
+            </rect>
+            <line x1="-8" y1="-8" x2="8" y2="-8" stroke="#f1c40f" stroke-width="2.5" />
+            <text
+              x="0"
+              y="18"
+              fill="#ecf0f1"
+              font-size="9"
+              font-weight="bold"
+              text-anchor="middle"
+              transform="rotate(-0.0)"
+            >
+              S03
+            </text>
+          </g>
+
+          <g id="S04" transform="translate(543.9, 607.5) rotate(306.7)" filter="url(#shadow)">
+            <circle
+              cx="0"
+              cy="0"
+              r="15.4"
+              fill="none"
+              stroke="rgba(56, 92, 130, 0.4)"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+            />
+            <rect
+              x="-8"
+              y="-8"
+              width="16"
+              height="16"
+              rx="3"
+              fill="#2980b9"
+              stroke="#1c5980"
+              stroke-width="1.5"
+            >
+              <title>Miejsce siedzące S04 (Usiądź: E)</title>
+            </rect>
+            <line x1="-8" y1="-8" x2="8" y2="-8" stroke="#f1c40f" stroke-width="2.5" />
+            <text
+              x="0"
+              y="18"
+              fill="#ecf0f1"
+              font-size="9"
+              font-weight="bold"
+              text-anchor="middle"
+              transform="rotate(-306.7)"
+            >
+              S04
+            </text>
+          </g>
+
+          <g id="S05" transform="translate(508.0, 535.2) rotate(270.0)" filter="url(#shadow)">
+            <circle
+              cx="0"
+              cy="0"
+              r="15.4"
+              fill="none"
+              stroke="rgba(56, 92, 130, 0.4)"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+            />
+            <rect
+              x="-8"
+              y="-8"
+              width="16"
+              height="16"
+              rx="3"
+              fill="#2980b9"
+              stroke="#1c5980"
+              stroke-width="1.5"
+            >
+              <title>Miejsce siedzące S05 (Usiądź: E)</title>
+            </rect>
+            <line x1="-8" y1="-8" x2="8" y2="-8" stroke="#f1c40f" stroke-width="2.5" />
+            <text
+              x="0"
+              y="18"
+              fill="#ecf0f1"
+              font-size="9"
+              font-weight="bold"
+              text-anchor="middle"
+              transform="rotate(-270.0)"
+            >
+              S05
+            </text>
+          </g>
+
+          <g id="S06" transform="translate(543.9, 462.9) rotate(233.3)" filter="url(#shadow)">
+            <circle
+              cx="0"
+              cy="0"
+              r="15.4"
+              fill="none"
+              stroke="rgba(56, 92, 130, 0.4)"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+            />
+            <rect
+              x="-8"
+              y="-8"
+              width="16"
+              height="16"
+              rx="3"
+              fill="#2980b9"
+              stroke="#1c5980"
+              stroke-width="1.5"
+            >
+              <title>Miejsce siedzące S06 (Usiądź: E)</title>
+            </rect>
+            <line x1="-8" y1="-8" x2="8" y2="-8" stroke="#f1c40f" stroke-width="2.5" />
+            <text
+              x="0"
+              y="18"
+              fill="#ecf0f1"
+              font-size="9"
+              font-weight="bold"
+              text-anchor="middle"
+              transform="rotate(-233.3)"
+            >
+              S06
+            </text>
+          </g>
+
+          <g id="S07" transform="translate(640.8, 428.0) rotate(180.0)" filter="url(#shadow)">
+            <circle
+              cx="0"
+              cy="0"
+              r="15.4"
+              fill="none"
+              stroke="rgba(56, 92, 130, 0.4)"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+            />
+            <rect
+              x="-8"
+              y="-8"
+              width="16"
+              height="16"
+              rx="3"
+              fill="#2980b9"
+              stroke="#1c5980"
+              stroke-width="1.5"
+            >
+              <title>Miejsce siedzące S07 (Usiądź: E)</title>
+            </rect>
+            <line x1="-8" y1="-8" x2="8" y2="-8" stroke="#f1c40f" stroke-width="2.5" />
+            <text
+              x="0"
+              y="18"
+              fill="#ecf0f1"
+              font-size="9"
+              font-weight="bold"
+              text-anchor="middle"
+              transform="rotate(-180.0)"
+            >
+              S07
+            </text>
+          </g>
+
+          <g id="S08" transform="translate(737.7, 462.9) rotate(126.7)" filter="url(#shadow)">
+            <circle
+              cx="0"
+              cy="0"
+              r="15.4"
+              fill="none"
+              stroke="rgba(56, 92, 130, 0.4)"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+            />
+            <rect
+              x="-8"
+              y="-8"
+              width="16"
+              height="16"
+              rx="3"
+              fill="#2980b9"
+              stroke="#1c5980"
+              stroke-width="1.5"
+            >
+              <title>Miejsce siedzące S08 (Usiądź: E)</title>
+            </rect>
+            <line x1="-8" y1="-8" x2="8" y2="-8" stroke="#f1c40f" stroke-width="2.5" />
+            <text
+              x="0"
+              y="18"
+              fill="#ecf0f1"
+              font-size="9"
+              font-weight="bold"
+              text-anchor="middle"
+              transform="rotate(-126.7)"
+            >
+              S08
+            </text>
+          </g>
+
+          <!-- TOI-TOI wcTron -->
+
+          <g id="ToiletWcTron" transform="translate(256.8, 352.8)" filter="url(#shadow)">
+            <rect
+              x="-24.0"
+              y="-24.0"
+              width="48.0"
+              height="48.0"
+              fill="#2980b9"
+              rx="4"
+              stroke="#1b4f72"
+              stroke-width="2.5"
+            >
+              <title>wcTron (Toi-Toi) wys. 3.6m - Interakcja: E Wejdź do toi-toia</title>
+            </rect>
+            <!-- Dach / wywietrznik -->
+            <rect x="-16.0" y="-16.0" width="32.0" height="32.0" fill="#3498db" rx="2" />
+            <!-- Drzwi (od południa) -->
+            <line x1="-20.0" y1="24.0" x2="20.0" y2="24.0" stroke="#e74c3c" stroke-width="3" />
+            <text x="0" y="-14" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">
+              wcTron
+            </text>
+            <text x="0" y="4" fill="#f1f2f6" font-size="9" font-weight="bold" text-anchor="middle">
+              TOI-TOI
+            </text>
+          </g>
+
+          <!-- SPAWN GRACZA -->
+
+          <g id="PlayerSpawn" transform="translate(256.8, 442.4)" filter="url(#glow)">
+            <circle
+              cx="0"
+              cy="0"
+              r="16"
+              fill="rgba(46, 204, 113, 0.25)"
+              stroke="#2ecc71"
+              stroke-width="2"
+              stroke-dasharray="3,2"
+            />
+            <circle cx="0" cy="0" r="7" fill="#2ecc71" stroke="#ffffff" stroke-width="2">
+              <title>Początkowy Spawn Gracza (x=-12.60m, z=-6.80m)</title>
+            </circle>
+            <!-- Strzałka kierunku patrzenia -->
+            <g transform="rotate(-28.4)">
+              <line x1="0" y1="0" x2="22" y2="0" stroke="#2ecc71" stroke-width="3" />
+              <polygon points="26,0 18,-5 18,5" fill="#2ecc71" />
+            </g>
+            <text x="0" y="28" fill="#2ecc71" font-size="10" font-weight="bold" text-anchor="middle">
+              SPAWN GRACZA
+            </text>
+          </g>
+
+          <!-- FLAGA OBOZOWA -->
+
+          <g id="CampFlag" transform="translate(679.2, 679.2)" filter="url(#shadow)">
+            <!-- Fundament i promień kolizji masztu -->
+            <circle cx="0" cy="0" r="9.0" fill="#2f3542" stroke="#ffffff" stroke-width="1.5">
+              <title>Maszt flagi #kurwamojepole (wys. 16.4m, r=0.28m)</title>
+            </circle>
+            <circle
+              cx="0"
+              cy="0"
+              r="12"
+              fill="none"
+              stroke="#f1c40f"
+              stroke-width="2"
+              stroke-dasharray="4,2"
+            />
+            <!-- Płat flagi -->
+            <path d="M 0 0 L 28 -8 L 28 10 L 0 4 Z" fill="#e74c3c" stroke="#c0392b" stroke-width="1.5" />
+            <text x="34" y="5" fill="#f1c40f" font-size="11" font-weight="bold">#FLAGA (16.4m)</text>
+            <text x="34" y="18" fill="#ecf0f1" font-size="9">#kurwamojepole</text>
+          </g>
+
+          <!-- NAMIOTY T01-T15 -->
+
+          <g id="Tent_T01" transform="translate(410.4, 343.2) rotate(270.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-121.0"
+              y="-185.5"
+              width="241.9"
+              height="370.9"
+              fill="none"
+              stroke="#2d3b28"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-83.2"
+              y="-121.6"
+              width="166.4"
+              height="243.2"
+              fill="#4a6042"
+              rx="5"
+              stroke="#2d3b28"
+              stroke-width="2.5"
+            >
+              <title>
+                T01 - Rodzinny T01 (big2) Wymiary: 7.56m x 11.59m, wys. 5.04m Kolizja: 5.20m x 7.60m
+                Współrzędne świata: (-7.80m, -9.90m) Największy namiot wojskowy/rodzinny
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-117.6" x2="0" y2="117.6" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T01</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="410.4"
+            y="440.4"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T01 (big2)
+          </text>
+
+          <g id="Tent_T02" transform="translate(602.4, 333.6) rotate(-3.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="none"
+              stroke="#254a30"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="#3f784e"
+              rx="5"
+              stroke="#254a30"
+              stroke-width="2.5"
+            >
+              <title>
+                T02 - Namiot T02 (small) Wymiary: 4.20m x 3.60m, wys. 2.80m Kolizja: 4.20m x 3.60m Współrzędne
+                świata: (-1.80m, -10.20m) Mały namiot igloo
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-53.6" x2="0" y2="53.6" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T02</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="602.4"
+            y="405.2"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T02 (small)
+          </text>
+
+          <g id="Tent_T03" transform="translate(727.2, 333.6) rotate(0.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="none"
+              stroke="#244563"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="#3d6c96"
+              rx="5"
+              stroke="#244563"
+              stroke-width="2.5"
+            >
+              <title>
+                T03 - Namiot T03 (blue) Wymiary: 4.20m x 3.60m, wys. 2.80m Kolizja: 4.20m x 3.60m Współrzędne
+                świata: (2.10m, -10.20m) Niebieski namiot igloo
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-53.6" x2="0" y2="53.6" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T03</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="727.2"
+            y="405.2"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T03 (blue)
+          </text>
+
+          <g id="Tent_T04" transform="translate(861.6, 343.2) rotate(3.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="none"
+              stroke="#8a8575"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="#d8d4c7"
+              rx="5"
+              stroke="#8a8575"
+              stroke-width="2.5"
+            >
+              <title>
+                T04 - Namiot T04 (white) Wymiary: 4.20m x 3.60m, wys. 2.80m Kolizja: 4.20m x 3.60m Współrzędne
+                świata: (6.30m, -9.90m) Biały namiot igloo
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-53.6" x2="0" y2="53.6" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T04</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="861.6"
+            y="414.8"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T04 (white)
+          </text>
+
+          <g id="Tent_T05" transform="translate(1024.8, 381.6) rotate(15.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="none"
+              stroke="#355231"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="#588252"
+              rx="5"
+              stroke="#355231"
+              stroke-width="2.5"
+            >
+              <title>
+                T05 - Namiot T05 (small2) Wymiary: 4.20m x 3.60m, wys. 2.80m Kolizja: 4.20m x 3.60m
+                Współrzędne świata: (11.40m, -8.70m) Kopułowy namiot small2
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-53.6" x2="0" y2="53.6" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T05</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="1024.8"
+            y="453.2"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T05 (small2)
+          </text>
+
+          <g id="Tent_T06" transform="translate(276.0, 564.0) rotate(-3.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="none"
+              stroke="#254a30"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="#3f784e"
+              rx="5"
+              stroke="#254a30"
+              stroke-width="2.5"
+            >
+              <title>
+                T06 - Namiot T06 (small) Wymiary: 4.20m x 3.60m, wys. 2.80m Kolizja: 4.20m x 3.60m Współrzędne
+                świata: (-12.00m, -3.00m) Mały namiot boczny zachodni
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-53.6" x2="0" y2="53.6" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T06</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="276.0"
+            y="635.6"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T06 (small)
+          </text>
+
+          <g id="Tent_T07" transform="translate(976.8, 554.4) rotate(0.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="none"
+              stroke="#7a361e"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="#c25c38"
+              rx="5"
+              stroke="#7a361e"
+              stroke-width="2.5"
+            >
+              <title>
+                T07 - Namiot T07 (colorful) Wymiary: 4.20m x 3.60m, wys. 2.80m Kolizja: 4.20m x 3.60m
+                Współrzędne świata: (9.90m, -3.30m) Kolorowy namiot wschodni
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-53.6" x2="0" y2="53.6" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T07</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="976.8"
+            y="626.0"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T07 (colorful)
+          </text>
+
+          <g id="Tent_T08" transform="translate(285.6, 775.2) rotate(0.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="none"
+              stroke="#80451a"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="#d47a37"
+              rx="5"
+              stroke="#80451a"
+              stroke-width="2.5"
+            >
+              <title>
+                T08 - Namiot T08 (blueOrange) Wymiary: 4.20m x 3.60m, wys. 2.80m Kolizja: 4.20m x 3.60m
+                Współrzędne świata: (-11.70m, 3.60m) Niebiesko-pomarańczowy szeroki
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-53.6" x2="0" y2="53.6" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T08</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="285.6"
+            y="846.8"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T08 (blueOrange)
+          </text>
+
+          <g id="Tent_T09" transform="translate(458.4, 794.4) rotate(-6.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-67.2"
+              y="-103.0"
+              width="134.3"
+              height="206.1"
+              fill="none"
+              stroke="#163628"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-67.2"
+              y="-103.0"
+              width="134.3"
+              height="206.1"
+              fill="#2a5944"
+              rx="5"
+              stroke="#163628"
+              stroke-width="2.5"
+            >
+              <title>
+                T09 - Rodzinny T09 (large) Wymiary: 4.20m x 6.44m, wys. 2.80m Kolizja: 4.20m x 6.44m
+                Współrzędne świata: (-6.30m, 4.20m) Duży tunelowy namiot rodzinny
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-99.0" x2="0" y2="99.0" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T09</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="458.4"
+            y="911.4"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T09 (large)
+          </text>
+
+          <g id="Tent_T10" transform="translate(612.0, 804.0) rotate(-5.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="none"
+              stroke="#254a30"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="#3f784e"
+              rx="5"
+              stroke="#254a30"
+              stroke-width="2.5"
+            >
+              <title>
+                T10 - Namiot T10 (small) Wymiary: 4.20m x 3.60m, wys. 2.80m Kolizja: 4.20m x 3.60m Współrzędne
+                świata: (-1.50m, 4.50m) Mały namiot igloo
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-53.6" x2="0" y2="53.6" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T10</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="612.0"
+            y="875.6"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T10 (small)
+          </text>
+
+          <g id="Tent_T11" transform="translate(784.8, 804.0) rotate(-7.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="none"
+              stroke="#244563"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="#3d6c96"
+              rx="5"
+              stroke="#244563"
+              stroke-width="2.5"
+            >
+              <title>
+                T11 - Namiot T11 (blue) Wymiary: 4.20m x 3.60m, wys. 2.80m Kolizja: 4.20m x 3.60m Współrzędne
+                świata: (3.90m, 4.50m) Niebieski namiot igloo
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-53.6" x2="0" y2="53.6" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T11</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="784.8"
+            y="875.6"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T11 (blue)
+          </text>
+
+          <g id="Tent_T12" transform="translate(909.6, 775.2) rotate(-6.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="none"
+              stroke="#7a361e"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="#c25c38"
+              rx="5"
+              stroke="#7a361e"
+              stroke-width="2.5"
+            >
+              <title>
+                T12 - Namiot T12 (colorful) Wymiary: 4.20m x 3.60m, wys. 2.80m Kolizja: 4.20m x 3.60m
+                Współrzędne świata: (7.80m, 3.60m) Kolorowy namiot południowo-wschodni
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-53.6" x2="0" y2="53.6" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T12</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="909.6"
+            y="846.8"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T12 (colorful)
+          </text>
+
+          <g id="Tent_T13" transform="translate(391.2, 967.2) rotate(-7.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="none"
+              stroke="#8a8575"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="#d8d4c7"
+              rx="5"
+              stroke="#8a8575"
+              stroke-width="2.5"
+            >
+              <title>
+                T13 - Namiot T13 (white) Wymiary: 4.20m x 3.60m, wys. 2.80m Kolizja: 4.20m x 3.60m Współrzędne
+                świata: (-8.40m, 9.60m) Biały namiot rząd dolny
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-53.6" x2="0" y2="53.6" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T13</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="391.2"
+            y="1038.8"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T13 (white)
+          </text>
+
+          <g id="Tent_T14" transform="translate(535.2, 976.8) rotate(-5.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-67.2"
+              y="-103.0"
+              width="134.3"
+              height="206.1"
+              fill="none"
+              stroke="#163628"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-67.2"
+              y="-103.0"
+              width="134.3"
+              height="206.1"
+              fill="#2a5944"
+              rx="5"
+              stroke="#163628"
+              stroke-width="2.5"
+            >
+              <title>
+                T14 - Rodzinny T14 (large) Wymiary: 4.20m x 6.44m, wys. 2.80m Kolizja: 4.20m x 6.44m
+                Współrzędne świata: (-3.90m, 9.90m) Duży tunelowy namiot rodzinny
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-99.0" x2="0" y2="99.0" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T14</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="535.2"
+            y="1093.8"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T14 (large)
+          </text>
+
+          <g id="Tent_T15" transform="translate(775.2, 976.8) rotate(3.0)" filter="url(#shadow)">
+            <!-- Obrys fizyczny modelu (np. z linkami) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="none"
+              stroke="#355231"
+              stroke-width="1"
+              stroke-dasharray="2,2"
+              opacity="0.6"
+            />
+            <!-- Collider właściwy namiotu (blokujący przejście) -->
+            <rect
+              x="-67.2"
+              y="-57.6"
+              width="134.4"
+              height="115.2"
+              fill="#588252"
+              rx="5"
+              stroke="#355231"
+              stroke-width="2.5"
+            >
+              <title>
+                T15 - Namiot T15 (small2) Wymiary: 4.20m x 3.60m, wys. 2.80m Kolizja: 4.20m x 3.60m
+                Współrzędne świata: (3.60m, 9.90m) Kopułowy namiot rząd dolny
+              </title>
+            </rect>
+            <!-- Grzbiet namiotu (linia kalenicy) -->
+            <line x1="0" y1="-53.6" x2="0" y2="53.6" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+            <!-- Etykieta ID -->
+            <rect x="-18" y="-9" width="36" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+            <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">T15</text>
+          </g>
+          <!-- Zewnętrzny podpis pod namiotem -->
+          <text
+            x="775.2"
+            y="1048.4"
+            fill="#f1f2f6"
+            font-size="10"
+            font-weight="bold"
+            text-anchor="middle"
+            filter="url(#shadow)"
+          >
+            T15 (small2)
+          </text>
+
+          <!-- POSTACIE NPC -->
+
+          <g id="NPC_Amper" transform="translate(596.0, 628.0)" filter="url(#glow)">
+            <circle cx="0" cy="0" r="10" fill="#ff4757" stroke="#ffffff" stroke-width="2">
+              <title>NPC: Amper Początkowy spawn: (-2.00m, -1.00m) Głośnik JBL, pod Mad Dogiem</title>
+            </circle>
+            <circle cx="0" cy="0" r="3.5" fill="#ffffff" />
+            <rect x="-24" y="-23" width="48" height="13" rx="3" fill="rgba(0,0,0,0.75)" />
+            <text x="0" y="-13" fill="#ffffff" font-size="9" font-weight="bold" text-anchor="middle">
+              Amper
+            </text>
+
+            <g transform="translate(10, 2)">
+              <rect
+                x="0"
+                y="-5"
+                width="10"
+                height="10"
+                rx="2"
+                fill="#eb4d4b"
+                stroke="#ffffff"
+                stroke-width="1"
+              />
+              <text x="5" y="2" fill="#ffffff" font-size="6" font-weight="bold" text-anchor="middle">
+                JBL
+              </text>
+            </g>
+          </g>
+
+          <g id="NPC_Antena" transform="translate(692.0, 628.0)" filter="url(#glow)">
+            <circle cx="0" cy="0" r="10" fill="#ffa502" stroke="#ffffff" stroke-width="2">
+              <title>NPC: Antena Początkowy spawn: (1.00m, -1.00m) Rozmowa, pod Mad Dogiem</title>
+            </circle>
+            <circle cx="0" cy="0" r="3.5" fill="#ffffff" />
+            <rect x="-24" y="-23" width="48" height="13" rx="3" fill="rgba(0,0,0,0.75)" />
+            <text x="0" y="-13" fill="#ffffff" font-size="9" font-weight="bold" text-anchor="middle">
+              Antena
+            </text>
+          </g>
+
+          <g id="NPC_Gruczoł" transform="translate(736.8, 692.0)" filter="url(#glow)">
+            <circle cx="0" cy="0" r="10" fill="#2ed573" stroke="#ffffff" stroke-width="2">
+              <title>NPC: Gruczoł Początkowy spawn: (2.40m, 1.00m) Przy krawędzi Mad Dog / Fladze</title>
+            </circle>
+            <circle cx="0" cy="0" r="3.5" fill="#ffffff" />
+            <rect x="-24" y="-23" width="48" height="13" rx="3" fill="rgba(0,0,0,0.75)" />
+            <text x="0" y="-13" fill="#ffffff" font-size="9" font-weight="bold" text-anchor="middle">
+              Gruczoł
+            </text>
+          </g>
+
+          <g id="NPC_Klątwa" transform="translate(576.8, 698.4)" filter="url(#glow)">
+            <circle cx="0" cy="0" r="10" fill="#1e90ff" stroke="#ffffff" stroke-width="2">
+              <title>NPC: Klątwa Początkowy spawn: (-2.60m, 1.20m) Na południe od Mad Doga</title>
+            </circle>
+            <circle cx="0" cy="0" r="3.5" fill="#ffffff" />
+            <rect x="-24" y="-23" width="48" height="13" rx="3" fill="rgba(0,0,0,0.75)" />
+            <text x="0" y="-13" fill="#ffffff" font-size="9" font-weight="bold" text-anchor="middle">
+              Klątwa
+            </text>
+          </g>
+
+          <g id="NPC_Krwiak" transform="translate(660.0, 701.6)" filter="url(#glow)">
+            <circle cx="0" cy="0" r="10" fill="#e84118" stroke="#ffffff" stroke-width="2">
+              <title>NPC: Krwiak Początkowy spawn: (0.00m, 1.30m) Na głównej alei przy fladze</title>
+            </circle>
+            <circle cx="0" cy="0" r="3.5" fill="#ffffff" />
+            <rect x="-24" y="-23" width="48" height="13" rx="3" fill="rgba(0,0,0,0.75)" />
+            <text x="0" y="-13" fill="#ffffff" font-size="9" font-weight="bold" text-anchor="middle">
+              Krwiak
+            </text>
+          </g>
+
+          <g id="NPC_Pień" transform="translate(813.6, 746.4)" filter="url(#glow)">
+            <circle cx="0" cy="0" r="10" fill="#9b59b6" stroke="#ffffff" stroke-width="2">
+              <title>NPC: Pień Początkowy spawn: (4.80m, 2.70m) aka Peposz, na południowej drodze</title>
+            </circle>
+            <circle cx="0" cy="0" r="3.5" fill="#ffffff" />
+            <rect x="-24" y="-23" width="48" height="13" rx="3" fill="rgba(0,0,0,0.75)" />
+            <text x="0" y="-13" fill="#ffffff" font-size="9" font-weight="bold" text-anchor="middle">
+              Pień
+            </text>
+          </g>
+
+          <g id="NPC_Pierścień" transform="translate(884.0, 532.0)" filter="url(#glow)">
+            <circle cx="0" cy="0" r="10" fill="#00d2d3" stroke="#ffffff" stroke-width="2">
+              <title>NPC: Pierścień Początkowy spawn: (7.00m, -4.00m) Przejście wschodnie przy T07</title>
+            </circle>
+            <circle cx="0" cy="0" r="3.5" fill="#ffffff" />
+            <rect x="-24" y="-23" width="48" height="13" rx="3" fill="rgba(0,0,0,0.75)" />
+            <text x="0" y="-13" fill="#ffffff" font-size="9" font-weight="bold" text-anchor="middle">
+              Pierścień
+            </text>
+          </g>
+
+          <g id="NPC_Zawór" transform="translate(404.0, 820.0)" filter="url(#glow)">
+            <circle cx="0" cy="0" r="10" fill="#57606f" stroke="#ffffff" stroke-width="2">
+              <title>NPC: Zawór Początkowy spawn: (-8.00m, 5.00m) Sektor SW przy namiocie T09</title>
+            </circle>
+            <circle cx="0" cy="0" r="3.5" fill="#ffffff" />
+            <rect x="-24" y="-23" width="48" height="13" rx="3" fill="rgba(0,0,0,0.75)" />
+            <text x="0" y="-13" fill="#ffffff" font-size="9" font-weight="bold" text-anchor="middle">
+              Zawór
+            </text>
+          </g>
+
+          <!-- RÓŻA WIATRÓW / KOMPAS -->
+          <g id="Compass" transform="translate(1260, 140)" filter="url(#shadow)">
+            <circle cx="0" cy="0" r="50" fill="url(#compassGrad)" stroke="#485460" stroke-width="2.5" />
+            <circle cx="0" cy="0" r="42" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1" />
+
+            <!-- Strzałka Północ (-Z) -->
+            <polygon points="0,-38 7,-6 0,-12" fill="#e74c3c" />
+            <polygon points="0,-38 -7,-6 0,-12" fill="#c0392b" />
+            <!-- Strzałka Południe (+Z) -->
+            <polygon points="0,38 7,6 0,12" fill="#ecf0f1" />
+            <polygon points="0,38 -7,6 0,12" fill="#bdc3c7" />
+            <!-- Strzałka Wschód (+X) -->
+            <polygon points="38,0 6,7 12,0" fill="#ecf0f1" />
+            <polygon points="38,0 6,-7 12,0" fill="#bdc3c7" />
+            <!-- Strzałka Zachód (-X) -->
+            <polygon points="-38,0 -6,7 -12,0" fill="#ecf0f1" />
+            <polygon points="-38,0 -6,-7 -12,0" fill="#bdc3c7" />
+
+            <text x="0" y="-42" fill="#e74c3c" font-size="14" font-weight="900" text-anchor="middle">
+              N (-Z)
+            </text>
+            <text x="0" y="54" fill="#ecf0f1" font-size="12" font-weight="bold" text-anchor="middle">
+              S (+Z)
+            </text>
+            <text x="52" y="4" fill="#ecf0f1" font-size="12" font-weight="bold" text-anchor="start">
+              E (+X)
+            </text>
+            <text x="-52" y="4" fill="#ecf0f1" font-size="12" font-weight="bold" text-anchor="end">
+              W (-X)
+            </text>
+            <circle cx="0" cy="0" r="3" fill="#f1c40f" />
+          </g>
+
+          <!-- NAGŁÓWEK -->
+          <g id="Header" transform="translate(60, 50)">
+            <rect
+              x="0"
+              y="0"
+              width="460"
+              height="75"
+              rx="8"
+              fill="rgba(20, 25, 20, 0.85)"
+              stroke="#385c2c"
+              stroke-width="1.5"
+              filter="url(#shadow)"
+            />
+            <text x="20" y="30" fill="#2ed573" font-size="20" font-weight="900" letter-spacing="1">
+              #KURWAMOJEPOLE — PLAN OBOZU
+            </text>
+            <text x="20" y="50" fill="#f1f2f6" font-size="12">
+              Aktualny stan runtime • Rzut z góry (Top-Down)
+            </text>
+            <text x="20" y="65" fill="#a4b0be" font-size="10">
+              Pole 30×30m (świat 117.6m) • 1 jednostka = 1 metr • 1m = 32px
+            </text>
+          </g>
+
+          <!-- LEGENDA -->
+          <g id="Legend" transform="translate(60, 1060)" filter="url(#shadow)">
+            <rect
+              x="0"
+              y="0"
+              width="520"
+              height="200"
+              rx="8"
+              fill="rgba(18, 24, 18, 0.92)"
+              stroke="#2ed573"
+              stroke-width="1.5"
+            />
+            <text x="20" y="24" fill="#2ed573" font-size="13" font-weight="900" letter-spacing="1">
+              LEGENDA I IDENTYFIKACJA OBIEKTÓW
+            </text>
+
+            <!-- Kolumna 1: Namioty -->
+            <g transform="translate(20, 42)">
+              <rect x="0" y="0" width="16" height="12" fill="#4a6042" rx="2" stroke="#2d3b28" />
+              <text x="24" y="10" fill="#f1f2f6" font-size="11">T01 (big2 - rodzinny wielki 7.6×11.6m)</text>
+
+              <rect x="0" y="18" width="16" height="12" fill="#2a5944" rx="2" stroke="#163628" />
+              <text x="24" y="28" fill="#f1f2f6" font-size="11">
+                T09, T14 (dużynamiot - rodzinne 4.2×6.4m)
+              </text>
+
+              <rect x="0" y="36" width="16" height="12" fill="#3f784e" rx="2" stroke="#254a30" />
+              <text x="24" y="46" fill="#f1f2f6" font-size="11">T02, T06, T10 (small - małe igloo)</text>
+
+              <rect x="0" y="54" width="16" height="12" fill="#3d6c96" rx="2" stroke="#244563" />
+              <text x="24" y="64" fill="#f1f2f6" font-size="11">T03, T11 (niebieski - standardowe)</text>
+
+              <rect x="0" y="72" width="16" height="12" fill="#d8d4c7" rx="2" stroke="#8a8575" />
+              <text x="24" y="82" fill="#f1f2f6" font-size="11">T04, T13 (biały - standardowe)</text>
+
+              <rect x="0" y="90" width="16" height="12" fill="#c25c38" rx="2" stroke="#7a361e" />
+              <text x="24" y="100" fill="#f1f2f6" font-size="11">T07, T12 (kolorowy) / T08 (nieb-pom)</text>
+
+              <rect x="0" y="108" width="16" height="12" fill="#588252" rx="2" stroke="#355231" />
+              <text x="24" y="118" fill="#f1f2f6" font-size="11">T05, T15 (small2 - kopułowe)</text>
+            </g>
+
+            <!-- Kolumna 2: Obiekty i postacie -->
+            <g transform="translate(300, 42)">
+              <rect x="0" y="0" width="16" height="12" fill="#2980b9" rx="2" stroke="#1b4f72" />
+              <text x="24" y="10" fill="#f1f2f6" font-size="11">wcTron (Toi-Toi w rogu)</text>
+
+              <circle cx="8" cy="24" r="6" fill="#2ecc71" stroke="#ffffff" stroke-width="1.5" />
+              <text x="24" y="28" fill="#f1f2f6" font-size="11">Spawn Gracza (2.8m przed WC)</text>
+
+              <rect x="0" y="36" width="16" height="12" fill="rgba(20,20,24,0.7)" rx="2" stroke="#111" />
+              <text x="24" y="46" fill="#f1f2f6" font-size="11">Mad Dog (Zadaszenie 22.3×22.2m)</text>
+
+              <circle cx="8" cy="60" r="5" fill="#f1c40f" stroke="#c0392b" stroke-width="1.5" />
+              <text x="24" y="64" fill="#f1f2f6" font-size="11">Flaga #kurwamojepole (16.4m)</text>
+
+              <rect x="0" y="72" width="16" height="12" fill="#2980b9" rx="2" stroke="#f1c40f" />
+              <text x="24" y="82" fill="#f1f2f6" font-size="11">S01–S08 (8 Miejsc siedzących)</text>
+
+              <circle cx="8" cy="96" r="6" fill="#ff4757" stroke="#ffffff" stroke-width="1.5" />
+              <text x="24" y="100" fill="#f1f2f6" font-size="11">NPC (Amper, Antena, Pień itd.)</text>
+
+              <rect x="0" y="108" width="16" height="12" fill="#726146" rx="2" />
+              <text x="24" y="118" fill="#f1f2f6" font-size="11">Drogi pożarowe / dojazdowe</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <div id="zoom-controls">
+        <button class="btn-zoom" id="btn-zoom-in" title="Przybliż">+</button>
+        <button class="btn-zoom" id="btn-zoom-out" title="Oddal">−</button>
+        <button class="btn-zoom" id="btn-zoom-reset" title="Wyśrodkuj / Reset" style="font-size: 14px">
+          ↺
+        </button>
+      </div>
+    </div>
+
+    <div id="sidebar">
+      <div id="sidebar-header">
+        <h1>#KURWAMOJEPOLE</h1>
+        <p>Mapa Obozu 3D — Rzut z góry (Top-Down View)</p>
+        <div id="coords-bar">
+          <span>KURSOR ŚWIATA:</span>
+          <span id="coords-display">X: 0.00m | Z: 0.00m</span>
+        </div>
+
+        <div class="quick-list">
+          <button class="quick-btn" onclick="selectObj('MadDogCanopy')">Mad Dog</button>
+          <button class="quick-btn" onclick="selectObj('ToiletWcTron')">wcTron</button>
+          <button class="quick-btn" onclick="selectObj('CampFlag')">Flaga</button>
+          <button class="quick-btn" onclick="selectObj('CampTable')">Stół</button>
+          <button class="quick-btn" onclick="selectObj('PlayerSpawn')">Spawn</button>
+          <button class="quick-btn" onclick="selectObj('T01')">T01</button>
+          <button class="quick-btn" onclick="selectObj('T09')">T09</button>
+          <button class="quick-btn" onclick="selectObj('NPC_Amper')">Amper</button>
+          <button class="quick-btn" onclick="selectObj('NPC_Pień')">Pień</button>
+        </div>
+      </div>
+
+      <div id="sidebar-content">
+        <div id="details-panel">
+          <div class="info-card">
+            <h2>Witaj na mapie obozu!</h2>
+            <p style="font-size: 13px; color: #bdc3c7; line-height: 1.5">
+              Kliknij dowolny namiot (T01–T15), postać NPC, krzesło, toi-toi, stół lub flagę, aby zobaczyć
+              dokładne parametry fizyczne, model GLB, pozycję w świecie 3D oraz rolę w grze.
+            </p>
+            <div class="prop-desc">
+              <strong>Nawigacja:</strong><br />
+              • <strong>Przeciąganie:</strong> przesuwanie mapy (Pan)<br />
+              • <strong>Kółko myszy:</strong> płynne przybliżanie i oddalanie (Zoom)<br />
+              • <strong>Najedź kursorem:</strong> podgląd współrzędnych świata (X, Z) w czasie rzeczywistym.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const db = {
+        T01: {
+          nazwa: 'Rodzinny namiot T01',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/big2.glb',
+          pozycja: 'X = -7.80 m, Z = -9.90 m',
+          wymiary: '7.56 m (szer.) × 11.59 m (dł.) × 5.04 m (wys.)',
+          obrot: '270.0° (1.5π rad)',
+          kolizja: 'Box: 5.20 m × 7.60 m (pomija odciągi i linki)',
+          opis: 'Największy namiot w obozie, zlokalizowany w północno-zachodnim narożniku tuż obok toi-toia. Posiada obniżenie podłoża groundOffset = -2.2 m.',
+        },
+        T02: {
+          nazwa: 'Namiot T02',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/small.glb',
+          pozycja: 'X = -1.80 m, Z = -10.20 m',
+          wymiary: '4.20 m × 3.60 m × 2.80 m',
+          obrot: '-3.0° (-0.052 rad)',
+          kolizja: 'Box: 4.20 m × 3.60 m',
+          opis: 'Mały zielony namiot igloo w rzędzie północnym, na zachód od głównej alei.',
+        },
+        T03: {
+          nazwa: 'Namiot T03',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/niebieski.glb',
+          pozycja: 'X = 2.10 m, Z = -10.20 m',
+          wymiary: '4.20 m × 3.60 m × 2.80 m',
+          obrot: '0.0° (0.0 rad)',
+          kolizja: 'Box: 4.20 m × 3.60 m',
+          opis: 'Niebieski namiot igloo po wschodniej stronie głównej alei w rzędzie północnym.',
+        },
+        T04: {
+          nazwa: 'Namiot T04',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/biały.glb',
+          pozycja: 'X = 6.30 m, Z = -9.90 m',
+          wymiary: '4.20 m × 3.60 m × 2.80 m',
+          obrot: '+3.0° (0.052 rad)',
+          kolizja: 'Box: 4.20 m × 3.60 m',
+          opis: 'Biały namiot w północno-wschodniej części obozu. Posiada groundOffset = -0.45 m.',
+        },
+        T05: {
+          nazwa: 'Namiot T05',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/small2.glb',
+          pozycja: 'X = 11.40 m, Z = -8.70 m',
+          wymiary: '4.20 m × 3.60 m × 2.80 m',
+          obrot: '+15.0° (0.262 rad)',
+          kolizja: 'Box: 4.20 m × 3.60 m',
+          opis: 'Kopułowy namiot small2 wysunięty najbardziej na wschód w sektorze północnym.',
+        },
+        T06: {
+          nazwa: 'Namiot T06',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/small.glb',
+          pozycja: 'X = -12.00 m, Z = -3.00 m',
+          wymiary: '4.20 m × 3.60 m × 2.80 m',
+          obrot: '-3.0° (-0.052 rad)',
+          kolizja: 'Box: 4.20 m × 3.60 m',
+          opis: 'Mały namiot boczny na zachodniej flance obozu, przy drodze dojazdowej.',
+        },
+        T07: {
+          nazwa: 'Namiot T07',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/kolorwy.glb',
+          pozycja: 'X = 9.90 m, Z = -3.30 m',
+          wymiary: '4.20 m × 3.60 m × 2.80 m',
+          obrot: '0.0° (0.0 rad)',
+          kolizja: 'Box: 4.20 m × 3.60 m',
+          opis: 'Kolorowy namiot na wschodniej flance obozu, obok którego patroluje Pierścień.',
+        },
+        T08: {
+          nazwa: 'Namiot T08',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/niebppom.glb',
+          pozycja: 'X = -11.70 m, Z = 3.60 m',
+          wymiary: '4.20 m × 3.60 m × 2.80 m',
+          obrot: '0.0° (0.0 rad)',
+          kolizja: 'Box: 4.20 m × 3.60 m',
+          opis: 'Niebiesko-pomarańczowy szeroki namiot na zachodnim skraju środkowo-południowego rzędu.',
+        },
+        T09: {
+          nazwa: 'Rodzinny namiot T09',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/dużynamiot.glb',
+          pozycja: 'X = -6.30 m, Z = 4.20 m',
+          wymiary: '4.20 m × 6.44 m × 2.80 m',
+          obrot: '-6.0° (-0.105 rad)',
+          kolizja: 'Box: 4.20 m × 6.44 m',
+          opis: 'Duży tunelowy namiot rodzinny w południowo-zachodnim sektorze.',
+        },
+        T10: {
+          nazwa: 'Namiot T10',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/small.glb',
+          pozycja: 'X = -1.50 m, Z = 4.50 m',
+          wymiary: '4.20 m × 3.60 m × 2.80 m',
+          obrot: '-5.0° (-0.087 rad)',
+          kolizja: 'Box: 4.20 m × 3.60 m',
+          opis: 'Mały namiot igloo w rzędzie środkowo-południowym, tuż przy głównej alei.',
+        },
+        T11: {
+          nazwa: 'Namiot T11',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/niebieski.glb',
+          pozycja: 'X = 3.90 m, Z = 4.50 m',
+          wymiary: '4.20 m × 3.60 m × 2.80 m',
+          obrot: '-7.0° (-0.122 rad)',
+          kolizja: 'Box: 4.20 m × 3.60 m',
+          opis: 'Niebieski namiot we wschodniej części rzędu środkowo-południowego.',
+        },
+        T12: {
+          nazwa: 'Namiot T12',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/kolorwy.glb',
+          pozycja: 'X = 7.80 m, Z = 3.60 m',
+          wymiary: '4.20 m × 3.60 m × 2.80 m',
+          obrot: '-6.0° (-0.105 rad)',
+          kolizja: 'Box: 4.20 m × 3.60 m',
+          opis: 'Kolorowy namiot w sektorze południowo-wschodnim.',
+        },
+        T13: {
+          nazwa: 'Namiot T13',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/biały.glb',
+          pozycja: 'X = -8.40 m, Z = 9.60 m',
+          wymiary: '4.20 m × 3.60 m × 2.80 m',
+          obrot: '-7.0° (-0.122 rad)',
+          kolizja: 'Box: 4.20 m × 3.60 m',
+          opis: 'Biały namiot w najniższym (południowym) rzędzie. Posiada groundOffset = -0.45 m.',
+        },
+        T14: {
+          nazwa: 'Rodzinny namiot T14',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/dużynamiot.glb',
+          pozycja: 'X = -3.90 m, Z = 9.90 m',
+          wymiary: '4.20 m × 6.44 m × 2.80 m',
+          obrot: '-5.0° (-0.087 rad)',
+          kolizja: 'Box: 4.20 m × 6.44 m',
+          opis: 'Duży namiot rodzinny w najdalszym rzędzie południowym.',
+        },
+        T15: {
+          nazwa: 'Namiot T15',
+          kategoria: 'Namiot',
+          model: 'public/game-assets/world/tents/small2.glb',
+          pozycja: 'X = 3.60 m, Z = 9.90 m',
+          wymiary: '4.20 m × 3.60 m × 2.80 m',
+          obrot: '+3.0° (0.052 rad)',
+          kolizja: 'Box: 4.20 m × 3.60 m',
+          opis: 'Kopułowy namiot small2 na południu. Na wschód od niego rozciąga się otwarta łąka.',
+        },
+        MadDogCanopy: {
+          nazwa: 'Mad Dog (Centralne Zadaszenie)',
+          kategoria: 'Główny Landmark',
+          model: 'public/game-assets/world/tents/main.glb',
+          pozycja: 'X = -0.60 m, Z = -3.90 m',
+          wymiary: '22.32 m (szer.) × 22.23 m (dł.) × 6.58 m (wys.)',
+          obrot: '0.0°',
+          kolizja: 'Brak collidera wewnętrznego (pełna swoboda przejścia)',
+          opis: 'Serce obozu. Czarne, otwarte ze wszystkich stron zadaszenie chroniące przed słońcem i deszczem. Pod spodem mieści się stół biesiadny, 8 krzeseł S01-S08, oświetlenie wypełniające (ambient & local fill) oraz główne postacie.',
+        },
+        CampTable: {
+          nazwa: 'Stół Biesiadny',
+          kategoria: 'Meble / Interakcje',
+          model: 'public/game-assets/interactables/table.glb',
+          pozycja: 'X = -0.60 m, Z = -3.90 m (centrum Mad Doga)',
+          wymiary: '2.40 m × 1.20 m, wys. 1.12 m',
+          obrot: '-28.6° (-0.5 rad)',
+          kolizja: 'Cylinder: promień 1.35 m',
+          opis: 'Centralny stół z drewna, na którym rozłożone są używki (Papieros, Blant, Kreska, MDMA, Grzyby, LSD). Każdy przedmiot można podnieść lub zbadać klawiszem E.',
+        },
+        ToiletWcTron: {
+          nazwa: 'wcTron (Kabina Toi-Toi)',
+          kategoria: 'Sanitariat / Landmark',
+          model: 'public/game-assets/world/toilet.glb',
+          pozycja: 'X = -12.60 m, Z = -9.60 m',
+          wymiary: '1.50 m × 1.50 m, wys. 3.60 m',
+          obrot: '0.0°',
+          kolizja: 'Box kabiny z wycięciem na wejście',
+          opis: "Legendarny festiwalowy toi-toi w północno-zachodnim rogu obozu. Interakcja klawiszem E przy drzwiach ('Wejdź do toi-toia').",
+        },
+        PlayerSpawn: {
+          nazwa: 'Punkt Spawnu Gracza',
+          kategoria: 'Spawn',
+          model: 'Kapsuła gracza (r=0.34m, h=1.80m)',
+          pozycja: 'X = -12.60 m, Z = -6.80 m',
+          wymiary: 'Pozycja 2.80 m przed wejściem do wcTronu',
+          obrot: 'Zwrócony w stronę centrum obozu (yaw ≈ -121°)',
+          kolizja: 'Kapsuła dynamiczna gracza',
+          opis: 'Miejsce pojawienia się gracza po dołączeniu do gry i wyborze postaci. Bezpieczna strefa poza kolizjami namiotów i kabiny toalety.',
+        },
+        CampFlag: {
+          nazwa: 'Flaga Obozowa #kurwamojepole',
+          kategoria: 'Landmark',
+          model: 'public/game-assets/world/flaga2.glb',
+          pozycja: 'X = 0.60 m, Z = 0.60 m',
+          wymiary: 'Wysokość masztu: 16.40 m, promień kolizji: 0.28 m',
+          obrot: '0.0°',
+          kolizja: 'Cylinder masztu (r=0.28m), płat flagi przenikalny',
+          opis: 'Wielki maszt z flagą obozu stojący na południowej krawędzi Mad Doga, przy głównej alei. Widoczny z całego pola kempingowego.',
+        },
+        NPC_Amper: {
+          nazwa: 'Amper (z głośnikiem JBL)',
+          kategoria: 'NPC',
+          model: 'public/game-assets/characters/amper/npc-animations.glb',
+          pozycja: 'X = -2.00 m, Z = -1.00 m (pod Mad Dogiem)',
+          wymiary: 'Wysokość nominalna: 1.80 m (hitbox 2.50m × 1.05m)',
+          obrot: 'Dynamiczny (NpcSteering & A*)',
+          kolizja: 'Kapsuła r=0.34m',
+          opis: "Nosi głośnik JBL grający muzykę. Kwestie dialogowe: 'Dobrze, że jesteś. Pod plandeką jest jeszcze miejsce.', 'Nie zgub się między namiotami.'",
+        },
+        NPC_Antena: {
+          nazwa: 'Antena',
+          kategoria: 'NPC',
+          model: 'public/game-assets/characters/antena/npc-animations.glb',
+          pozycja: 'X = 1.00 m, Z = -1.00 m (pod Mad Dogiem)',
+          wymiary: 'Wysokość: 1.80 m',
+          obrot: 'Dynamiczny',
+          kolizja: 'Kapsuła r=0.34m',
+          opis: "Kwestie dialogowe: 'Maszt pokazuje drogę do obozu.', 'Wieczorem tu jest najjaśniej.'",
+        },
+        NPC_Gruczoł: {
+          nazwa: 'Gruczoł',
+          kategoria: 'NPC',
+          model: 'public/game-assets/characters/gruczol/npc-animations.glb',
+          pozycja: 'X = 2.40 m, Z = 1.00 m (obok flagi)',
+          wymiary: 'Wysokość: 1.80 m',
+          obrot: 'Dynamiczny',
+          kolizja: 'Kapsuła r=0.34m',
+          opis: "Kwestie dialogowe: 'Widziałeś już nasze pole?', 'Spokojnie, wszystko jest pod kontrolą.'",
+        },
+        NPC_Klątwa: {
+          nazwa: 'Klątwa',
+          kategoria: 'NPC',
+          model: 'public/game-assets/characters/klatwa/npc-animations.glb',
+          pozycja: 'X = -2.60 m, Z = 1.20 m (na południe od Mad Dog)',
+          wymiary: 'Wysokość: 1.80 m',
+          obrot: 'Dynamiczny',
+          kolizja: 'Kapsuła r=0.34m',
+          opis: "Kwestie dialogowe: 'Namioty stoją, czyli jest dobrze.', 'Chodź pod plandekę, jeśli pada.'",
+        },
+        NPC_Krwiak: {
+          nazwa: 'Krwiak',
+          kategoria: 'NPC',
+          model: 'public/game-assets/characters/krwiak/npc-animations.glb',
+          pozycja: 'X = 0.00 m, Z = 1.30 m (główna aleja)',
+          wymiary: 'Wysokość: 1.80 m',
+          obrot: 'Dynamiczny',
+          kolizja: 'Kapsuła r=0.34m',
+          opis: "Kwestie dialogowe: 'Najkrótsza droga zawsze prowadzi przez błoto.', 'Miło cię widzieć.'",
+        },
+        NPC_Pień: {
+          nazwa: 'Pień (aka Peposz)',
+          kategoria: 'NPC',
+          model: 'public/game-assets/characters/pien/npc-animations.glb',
+          pozycja: 'X = 4.80 m, Z = 2.70 m (droga południowa)',
+          wymiary: 'Wysokość: 1.80 m',
+          obrot: 'Dynamiczny',
+          kolizja: 'Kapsuła r=0.34m',
+          opis: "Gospodarz pola. Kwestie dialogowe: 'To naprawdę moje pole.', 'Przy wejściu jest flaga, nie miniesz jej.'",
+        },
+        NPC_Pierścień: {
+          nazwa: 'Pierścień',
+          kategoria: 'NPC',
+          model: 'public/game-assets/characters/pierscien/npc-animations.glb',
+          pozycja: 'X = 7.00 m, Z = -4.00 m (przejście wschodnie)',
+          wymiary: 'Wysokość: 1.80 m',
+          obrot: 'Dynamiczny',
+          kolizja: 'Kapsuła r=0.34m',
+          opis: "Kwestie dialogowe: 'Pilnuję przejścia między namiotami.', 'Jest tu więcej miejsca niż wygląda.'",
+        },
+        NPC_Zawór: {
+          nazwa: 'Zawór',
+          kategoria: 'NPC',
+          model: 'public/game-assets/characters/zawor/npc-animations.glb',
+          pozycja: 'X = -8.00 m, Z = 5.00 m (sektor SW)',
+          wymiary: 'Wysokość: 1.80 m',
+          obrot: 'Dynamiczny',
+          kolizja: 'Kapsuła r=0.34m',
+          opis: "Kwestie dialogowe: 'Toi-toi jest w rogu, jak zwykle.', 'Nie stój za długo w słońcu.'",
+        },
+      };
+      const viewport = document.getElementById('map-viewport');
+      const container = document.getElementById('map-container');
+      const coordsDisplay = document.getElementById('coords-display');
+      const detailsPanel = document.getElementById('details-panel');
+
+      let scale = 1.0;
+      let translateX = 0;
+      let translateY = 0;
+      let isDragging = false;
+      let startX = 0,
+        startY = 0;
+
+      function updateTransform() {
+        viewport.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+      }
+
+      container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomFactor = 1.15;
+        if (e.deltaY < 0) {
+          scale = Math.min(scale * zoomFactor, 5.0);
+        } else {
+          scale = Math.max(scale / zoomFactor, 0.4);
+        }
+        updateTransform();
+      });
+
+      container.addEventListener('mousedown', (e) => {
+        if (e.button === 0) {
+          isDragging = true;
+          startX = e.clientX - translateX;
+          startY = e.clientY - translateY;
+        }
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          translateX = e.clientX - startX;
+          translateY = e.clientY - startY;
+          updateTransform();
+        }
+
+        // Obliczanie współrzędnych świata
+        const svg = document.querySelector('svg');
+        if (svg) {
+          const pt = svg.createSVGPoint();
+          pt.x = e.clientX;
+          pt.y = e.clientY;
+          const ctm = svg.getScreenCTM();
+          if (ctm) {
+            const svgP = pt.matrixTransform(ctm.inverse());
+            // SVG: Origin (660, 660), Scale: 32 px/m
+            const worldX = ((svgP.x - 660) / 32.0).toFixed(2);
+            const worldZ = ((svgP.y - 660) / 32.0).toFixed(2);
+            if (svgP.x >= 0 && svgP.x <= 1400 && svgP.y >= 0 && svgP.y <= 1400) {
+              coordsDisplay.textContent = `X: ${worldX}m | Z: ${worldZ}m`;
+            }
+          }
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+
+      document.getElementById('btn-zoom-in').addEventListener('click', () => {
+        scale = Math.min(scale * 1.3, 5.0);
+        updateTransform();
+      });
+      document.getElementById('btn-zoom-out').addEventListener('click', () => {
+        scale = Math.max(scale / 1.3, 0.4);
+        updateTransform();
+      });
+      document.getElementById('btn-zoom-reset').addEventListener('click', () => {
+        scale = 1.0;
+        translateX = 0;
+        translateY = 0;
+        updateTransform();
+      });
+
+      function selectObj(id) {
+        const cleanId = id.replace('Tent_', '');
+        const data = db[cleanId] || db[id];
+        if (!data) return;
+
+        detailsPanel.innerHTML = `
+        <div class="info-card">
+          <h2>${data.nazwa} <span class="badge">${data.kategoria}</span></h2>
+          <div class="prop-row"><span class="prop-name">Pozycja świata:</span><span class="prop-val">${data.pozycja}</span></div>
+          <div class="prop-row"><span class="prop-name">Wymiary:</span><span class="prop-val">${data.wymiary}</span></div>
+          <div class="prop-row"><span class="prop-name">Obrót (Yaw):</span><span class="prop-val">${data.obrot}</span></div>
+          <div class="prop-row"><span class="prop-name">Collider:</span><span class="prop-val">${data.kolizja}</span></div>
+          <div class="prop-row"><span class="prop-name">Model GLB:</span><span class="prop-val" style="font-size:11px; color:#3498db;">${data.model}</span></div>
+          <div class="prop-desc">${data.opis}</div>
+        </div>
+      `;
+      }
+
+      // Dodanie nasłuchu na elementy SVG
+      document
+        .querySelectorAll(
+          'g[id^="Tent_"], g[id^="NPC_"], #MadDogCanopy, #CampTable, #ToiletWcTron, #PlayerSpawn, #CampFlag, g[id^="S0"]',
+        )
+        .forEach((el) => {
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectObj(el.id);
+          });
+        });
+    </script>
+  </body>
+</html>

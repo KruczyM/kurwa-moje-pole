@@ -1,5 +1,6 @@
 import type { EffectId } from '../effects/EffectManager';
-export type InspectableItemId = 'joint' | 'cocaine' | 'mdma' | 'mushrooms' | 'lsd';
+export type InspectableItemId =
+  'cigarette' | 'joint' | 'cocaine' | 'mdma' | 'mushrooms' | 'lsd' | 'water' | 'sunglasses';
 export type InspectableItem = {
   id: InspectableItemId;
   label: string;
@@ -9,6 +10,13 @@ export type InspectableItem = {
   tableQuantity: number;
 };
 export const inspectableItems: InspectableItem[] = [
+  {
+    id: 'cigarette',
+    label: 'Papieros',
+    description: 'Pojedynczy papieros z filtrem, zostawiony na obozowym stole.',
+    effect: 'Papieros',
+    tableQuantity: 1,
+  },
   {
     id: 'joint',
     label: 'Blant',
@@ -43,6 +51,20 @@ export const inspectableItems: InspectableItem[] = [
     label: 'LSD',
     description: 'Jak chcesz zbliżyć się do boga purpury, to weź od razu dwa.',
     effect: 'LSD',
+    tableQuantity: 1,
+  },
+  {
+    id: 'water',
+    label: 'Woda mineralna',
+    description: 'Butelka chłodnej wody niegazowanej. Znakomicie nawadnia i skraca trwający trip o 40%.',
+    effect: 'Woda',
+    tableQuantity: 1,
+  },
+  {
+    id: 'sunglasses',
+    label: 'Okulary przeciwsłoneczne',
+    description: 'Stylowe ciemne okulary festiwalowe. Redukują oślepiający bloom i ekspozycję o 50%.',
+    effect: 'Okulary',
     tableQuantity: 1,
   },
 ];

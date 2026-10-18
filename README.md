@@ -1,6 +1,56 @@
 # Kurwa, moje pole!
 
-Przeglądarkowa gra 3D z festiwalowym obozem, animowanymi NPC, interakcjami i efektami wizualnymi. Projekt używa Three.js, TypeScriptu oraz Vite.
+Przeglądarkowa gra 3D dążąca do możliwie wiernego odwzorowania Pol’and’Rock: układu terenu, rozpoznawalnych miejsc, stoisk, obozowisk i atmosfery. Prywatny obóz pozostaje częścią większego festiwalu. Projekt używa Three.js, TypeScriptu oraz Vite. Stopień zgodności z referencjami i skróty skali muszą być jawne — prototyp nie jest rekonstrukcją 1:1.
+
+## Demo After: ostatnia noc
+
+Osobny grywalny pilot 2D: [otwórz demo](https://kruczym.github.io/kurwa-moje-pole/after-demo.html).
+Na telefonie użyj przycisków ekranowych; na komputerze WASD, Shift i E.
+Demo nie zastępuje festiwalu 3D. Opis, ograniczenia i pliki: [docs/after-demo.md](docs/after-demo.md).
+
+## After: Bongo Rush
+
+Osobna gra logiczno-zręcznościowa 2D inspirowana zasadami Boulder Dash: 12 plansz kampanii i 4 dodatkowe wyzwania,
+cztery biomy, spadające skały, patrole oraz 15 grywalnych postaci różniących się wyłącznie wyglądem.
+Kobra (Krzak) jest niegrywalną przeszkodą: po odkopaniu zarasta wolne sąsiednie pola co około 5 sekund.
+Plansze mają teraz 74×34–139×44 pól, sieci 9–16 komór, boczne złoża, skróty i cel
+18–32 przedmiotów. Przycisk Mapa lub M przełącza minimapę. Kamera przewija rozległą jaskinię.
+Przed każdym wyjściem jest obowiązkowa komora zagadki. Kampania ma 12 różnych kompozycji:
+wnęki, spusty, stosy skał i wybór kolejności kopania. Dodano łup pod podporami, zawały z obejściem
+i żyły zamykające odwrót. Przedmioty ze złotą obwódką trzeba zebrać niezależnie od zwykłego limitu.
+Biomy mają wygenerowane atlasy AI ścian i gruntu: ceglana piwnica, korzenie,
+neonowy bunkier i lodowo-szklana grota. Każdy materiał ma dwa warianty.
+Nie zastępuje After ani gry 3D. Nie uruchamia serwera multiplayer i nie pobiera modeli GLB.
+
+```powershell
+npm run dev:client
+# Otwórz adres wypisany przez Vite z końcówką /bongo-rush.html
+npm run test:unit -- src/games/bongo-rush
+```
+
+Na komputerze: WASD lub strzałki, Escape — pauza/wznowienie, R — restart poziomu.
+Na telefonie: gałka, przycisk pauzy u góry i restart ↻ na dole. Przedmioty zbiera się automatycznie.
+Każdy poziom ma limit czasu (minimum 3 minuty); pauza i pomoc „?” zatrzymują zegar.
+Prób jest dowolnie dużo. Odblokowane poziomy, postać i wyciszenie zapisują się lokalnie.
+Postacie mają osobne atlasy Idle/Walk bez T-pose i uciętych głów. Amareny odwzorowują trzy
+referencje smaków, a w tle gra tajemniczy autorski motyw w czterech aranżacjach.
+Menu prowadzi przez osobną galerię postaci i wybór poziomu. Cztery scenerie mają
+spokojną paralaksę, refleksy i tematyczne ramy; grunt ma niewielkie prześwity,
+a kopanie — krótkie odpryski. Na poziomach 3, 6, 9 i 12 trzeba
+aktywować Kobrę przed komorą wyjściową. Najnowsza oprawa jest na `feat/bongo-living-biomes`.
+Po kampanii odblokowują się rezerwuary, sześć wysp z ruchomymi pułapkami, spirala
+i napis KURWA MOJE POLE z prawdziwych spadających kamieni. Kwadrat z siatką obiega
+najbliższą krawędź. Spadająca skała eliminuje patrol i zostawia łup; w wyzwaniach
+trzeba zebrać także ten łup, a nie tylko osiągnąć licznik dostawy. Nie ma osobnego przycisku ataku.
+Po buildzie strona znajduje się w `dist/bongo-rush.html`; lokalny preview używa prefiksu
+`/kurwa-moje-pole/bongo-rush.html`. Publikacja wymaga osobnego wdrożenia gałęzi.
+
+Opis wszystkich modułów, zasad, formatu plansz i testów: [docs/bongo-rush.md](docs/bongo-rush.md).
+Raport przechodniości i opis nowych komór: [docs/bongo-avalanche.md](docs/bongo-avalanche.md).
+Opis czterech nowych wyzwań: [docs/bongo-challenges.md](docs/bongo-challenges.md).
+Audyt wszystkich 16 plansz i trudniejsze wersje spirali oraz napisu: [docs/bongo-difficulty.md](docs/bongo-difficulty.md).
+Atlasy AI, dokładne prompty i plan muzyki biomów: [docs/bongo-biome-art.md](docs/bongo-biome-art.md).
+Żywe scenerie, galeria, moduły, muzyka i weryfikacja: [docs/bongo-living-biomes.md](docs/bongo-living-biomes.md).
 
 ## Uruchomienie
 
@@ -30,17 +80,14 @@ npm run check:assets # modele, tekstury, dźwięki i klipy animacji
 npm run check:rigs   # zgodność rigów i bibliotek animacji postaci
 npm run format       # automatyczne formatowanie własnego kodu
 npm run format:check # sprawdzenie formatowania bez zmiany plików
-npm run ai:dry-run   # bezkosztowy plan kolejnego Issue, bez uruchamiania AI
-npm run ai:one       # autonomiczny przebieg jednego Issue oznaczonego ai-ready
-npm run ai:continue  # wznowienie zapisanego przebiegu
-npm run ai:status    # bieżąca faza, branch, worktree i ostatni wynik
+npm run test:tools   # niezależne testy narzędzi i audytora assetów
 npm run ci:code      # te same bramki kodu, które wykonuje GitHub Actions
 npm run ci:assets    # te same bramki assetów, które wykonuje GitHub Actions
 ```
 
-## Automatyczny pipeline AI bez dodatkowych opłat
+## Ręczne zadania i końcowy code review
 
-Kod w `.ai/` prowadzi po jednym GitHub Issue przez izolowany worktree, walidację projektu, uruchomienie gry, raport WebGL/gameplay i świeży review Codex. Nie wykonuje automatycznego merge i blokuje płatne API, kredyty oraz fallback pay-as-you-go. Szczegółowa konfiguracja, status aktualnego Antigravity i zasady wznawiania znajdują się w [`.ai/README.md`](.ai/README.md).
+Automatyczny orkiestrator ai-ready został wycofany. Każde Issue realizujemy na osobnej gałęzi/worktree, ręcznie wybierając wykonawcę. Po implementacji wykonawca przekazuje raport i nie scala zmian. Codex wykonuje końcowe code review w osobnym przebiegu, a publikacja/merge wymaga odrębnej decyzji użytkownika. Zwykłe CI, testy, walidatory i lokalny pipeline Hunyuan pozostają niezależne. Nie usuwamy istniejących worktrees ani źródeł modeli. Szczegóły: [ręczny workflow](docs/manual-task-workflow.md).
 
 Katalog `dist/` jest generowany i nie jest wersjonowany. Raporty walidacji trafiają do lokalnego `reports/`.
 
@@ -186,6 +233,8 @@ Granice gridu, margines kapsuły, sposób działania A* oraz metryki kosztu tras
 Predykcyjne sondy przeszkód, separację agentów i ograniczenie prędkości skrętu opisuje `docs/npc-steering.md`.
 
 Profile zachowania, sektory wędrówki, spotkania i cooldown powrotu od granicy opisuje `docs/npc-behavior.md`.
+
+Mobilny świat bez mgły i doczytywanie obozów za północnym pasażem opisuje [docs/mobile-open-world.md](docs/mobile-open-world.md).
 
 Detekcję utknięć, oscylacji waypointów, lawin decyzji i stopniowane odzyskiwanie opisuje `docs/npc-watchdog.md`.
 

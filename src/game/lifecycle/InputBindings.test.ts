@@ -18,10 +18,20 @@ describe('InputBindings', () => {
     expect(resolveGameInput('paused', 'Escape')).toBe('escape');
     expect(resolveGameInput('playing', 'Tab')).toBe('toggle-inventory');
     expect(resolveGameInput('inventory', 'Tab')).toBe('toggle-inventory');
+    expect(resolveGameInput('playing', 'i')).toBe('toggle-inventory');
+    expect(resolveGameInput('inventory', 'I')).toBe('toggle-inventory');
+    expect(resolveGameInput('playing', 'b')).toBe('toggle-inventory');
+    expect(resolveGameInput('inventory', 'B')).toBe('toggle-inventory');
     expect(resolveGameInput('playing', 'e')).toBe('primary-action');
     expect(resolveGameInput('inspecting', 'E')).toBe('primary-action');
     expect(resolveGameInput('seated', 'E')).toBe('primary-action');
+    expect(resolveGameInput('seated', ' ')).toBe('primary-action');
+    expect(resolveGameInput('seated', 'Space')).toBe('primary-action');
     expect(resolveGameInput('seated', 'Escape')).toBe('escape');
+    expect(resolveGameInput('playing', '1')).toBe('quick-slot-1');
+    expect(resolveGameInput('playing', '2')).toBe('quick-slot-2');
+    expect(resolveGameInput('playing', '3')).toBe('quick-slot-3');
+    expect(resolveGameInput('playing', '4')).toBe('quick-slot-4');
   });
 
   it('blocks repeated and contradictory modal actions', () => {

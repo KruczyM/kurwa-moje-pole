@@ -1,0 +1,25 @@
+{
+  "character": "antena",
+  "frameWidth": 96,
+  "frameHeight": 96,
+  "framesPerDirection": 5,
+  "rows": {
+    "down": 0,
+    "right": 1,
+    "up": 2,
+    "left": 3
+  },
+  "animationColumns": {
+    "idle": [
+      0
+    ],
+    "walk": [
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "source": "characters/antena/npc-animations.glb",
+  "cameraFit": "all-evaluated-frames-sphere"
+}

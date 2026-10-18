@@ -1,0 +1,13 @@
+{
+  "source": "patrol-textured.glb",
+  "bones": 19,
+  "vertices": 25654,
+  "fallbackVertices": 25654,
+  "actions": [
+    "Idle",
+    "Walk"
+  ],
+  "rootMotion": false,
+  "pose": "lowered-arms",
+  "quality": "requires-visual-deformation-review"
+}

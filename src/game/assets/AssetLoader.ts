@@ -2,12 +2,19 @@ import * as THREE from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {
   characterAssets,
+  festivalNpcAssets,
+  festivalMotionBankUrl,
   environmentAssets,
   interactiveAssets,
-  tentAssets,
+  authoredFestivalUrl,
+  fogWorldBaseUrl,
   textureAssets,
+  ecoPickupModelsUrl,
 } from './assetManifest';
-import type { TentModelId } from '../world/campLayout';
+import { FestivalMotionBank } from '../animation/FestivalMotionBank';
+import { SectorResources } from './SectorResources';
+import { repairSkinSeams } from '../animation/repairSkinSeams';
+import { disposeObjectTree } from '../lifecycle/disposeThree';
 import {
   applyPbrMaterialPolicy,
   interactivePbrProfile,
@@ -22,12 +29,13 @@ export type WorldTextures = {
 };
 
 export type LoadedAssets = {
+  fogTrial?: boolean;
+  skyboxEnabled?: boolean;
+  ecoPickups?: GLTF | null;
   characters: Map<string, GLTF>;
-  tents: Map<TentModelId, GLTF>;
-  flag: GLTF | null;
-  chair: GLTF | null;
+  authoredFestival: GLTF;
   speaker: GLTF | null;
-  toilet: GLTF | null;
+  beerCan: GLTF | null;
   interactables: Map<string, GLTF>;
   textures: WorldTextures;
   errors: string[];
@@ -37,10 +45,89 @@ export class AssetLoader {
   private textureLoader = new THREE.TextureLoader();
   private cache = new Map<string, Promise<GLTF | null>>();
   private textureCache = new Map<string, Promise<THREE.Texture | null>>();
+  private motionBank?: Promise<FestivalMotionBank | null>;
+  readonly sectorResources = new SectorResources();
+  private fogDisposed = false;
   constructor(
     private progress: (message: string) => void,
     private error: (message: string) => void,
+    private motionBankUrl: string | null = festivalMotionBankUrl,
+    private fogTrial = false,
+    private streamedSkybox = false,
   ) {}
+
+  async loadWorldSector(url: string): Promise<THREE.Object3D | null> {
+    const model = await this.load(url, 'Sektor festiwalu', 'mixed');
+    if (!model) this.cache.delete(url); // A transition retry must make a fresh request.
+    if (model) {
+      this.sectorResources.acquire(model.scene);
+      if (this.fogDisposed) {
+        this.releaseWorldSector(url, model.scene);
+        return null;
+      }
+    }
+    return model?.scene ?? null;
+  }
+  releaseWorldSector(url: string, root: THREE.Object3D): void {
+    this.cache.delete(url);
+    this.sectorResources.release(root);
+  }
+  disposeFogWorld(): void {
+    this.fogDisposed = true;
+    this.sectorResources.dispose();
+  }
+
+  private loadMotionBank() {
+    if (!this.motionBank)
+      this.motionBank = this.motionBankUrl
+        ? this.load(this.motionBankUrl, 'Animacje festiwalowe', 'character')
+            .then((source) => {
+              if (!source) return null;
+              return new FestivalMotionBank(source);
+            })
+            .catch((error) => {
+              this.error(`Nie udało się przygotować animacji: ${String(error)}`);
+              return null;
+            })
+        : Promise.resolve(null);
+    return this.motionBank;
+  }
+
+  /** Stream or preload the large crowd, using the same cache and bounded concurrency. */
+  async loadFestivalNpcs(
+    accept: (asset: (typeof festivalNpcAssets)[number], model: GLTF) => boolean,
+    cancelled: () => boolean,
+    onProgress?: (loaded: number, total: number, name: string) => void,
+    concurrency = 2,
+  ) {
+    const motionBank = await this.loadMotionBank();
+    let next = 0;
+    let loaded = 0;
+    let failed = 0;
+    const total = festivalNpcAssets.length;
+    const worker = async () => {
+      while (!cancelled() && next < festivalNpcAssets.length) {
+        const asset = festivalNpcAssets[next++];
+        const model = await this.load(asset.url, asset.name, 'character');
+        if (!model) {
+          failed++;
+          onProgress?.(loaded, total, asset.name);
+          continue;
+        }
+        if (!cancelled()) motionBank?.apply(model);
+        if (cancelled() || !accept(asset, model)) {
+          disposeObjectTree(model.scene);
+          this.cache.delete(asset.url);
+        } else {
+          loaded++;
+        }
+        onProgress?.(loaded, total, asset.name);
+      }
+    };
+    const workers = Array.from({ length: Math.max(1, concurrency) }, () => worker());
+    await Promise.all(workers);
+    return { loaded, failed, total };
+  }
   /** Ładuje pojedynczy GLB, buforuje Promise i zamienia błąd na kontrolowane `null`. */
   private load(url: string, label: string, profile: PbrSurfaceProfile) {
     if (!this.cache.has(url))
@@ -49,6 +136,7 @@ export class AssetLoader {
         this.loader
           .loadAsync(url)
           .then((value) => {
+            if (profile === 'character') repairSkinSeams(value.scene);
             applyPbrMaterialPolicy(value.scene, profile);
             this.progress(`Załadowano: ${label}`);
             return value;
@@ -98,45 +186,50 @@ export class AssetLoader {
       original(m);
     };
     const characters = new Map<string, GLTF>(),
-      interactables = new Map<string, GLTF>(),
-      tents = new Map<TentModelId, GLTF>();
-    await Promise.all(
-      characterAssets.map(async (asset) => {
-        const gltf = await this.load(asset.url, asset.name, 'character');
-        if (gltf) characters.set(asset.id, gltf);
-      }),
-    );
+      interactables = new Map<string, GLTF>();
+    const motionBank = await this.loadMotionBank();
+    const loadCharacter = async (asset: (typeof characterAssets)[number]) => {
+      const gltf = await this.load(asset.url, asset.name, 'character');
+      if (gltf) characters.set(asset.id, motionBank?.apply(gltf) ?? gltf);
+    };
+    if (this.fogTrial) for (const asset of characterAssets) await loadCharacter(asset);
+    else await Promise.all(characterAssets.map(loadCharacter));
     await Promise.all(
       Object.entries(interactiveAssets).map(async ([id, url]) => {
         const gltf = await this.load(url, id, interactivePbrProfile(id));
         if (gltf) interactables.set(id, gltf);
       }),
     );
-    await Promise.all(
-      Object.entries(tentAssets).map(async ([id, url]) => {
-        const gltf = await this.load(url, `namiot ${id}`, 'fabric');
-        if (gltf) tents.set(id as TentModelId, gltf);
-      }),
-    );
-    const [flag, chair, speaker, toilet] = await Promise.all([
-      this.load(environmentAssets.flag, 'maszt z flagą', 'fabric'),
-      this.load(environmentAssets.chair, 'krzesło campingowe', 'mixed'),
+    const [authoredFestival, speaker, beerCan, ecoPickups] = await Promise.all([
+      this.load(this.fogTrial ? fogWorldBaseUrl : authoredFestivalUrl, 'Świat festiwalu z Blendera', 'mixed'),
       this.load(environmentAssets.speaker, 'głośnik', 'plastic'),
-      this.load(environmentAssets.toilet, 'toi-toi wcTron', 'plastic'),
+      this.load(environmentAssets.beerCan, 'puszka piwa Woodstock', 'mixed'),
+      this.load(ecoPickupModelsUrl, 'Modele Eko i przekąsek', 'mixed'),
     ]);
+    if (!authoredFestival)
+      throw new Error(
+        'Nie udało się załadować świata z Blendera. Ponownie wyeksportuj authored-festival.glb.',
+      );
+    if (this.fogTrial) {
+      this.sectorResources.acquire(authoredFestival.scene);
+      if (this.fogDisposed) this.releaseWorldSector(fogWorldBaseUrl, authoredFestival.scene);
+    }
     const [grassColor, grassNormal, grassRoughness, horizon] = await Promise.all([
       this.loadTexture(textureAssets.grass.color, 'tekstura trawy (kolor)', THREE.SRGBColorSpace),
       this.loadTexture(textureAssets.grass.normal, 'tekstura trawy (normal)', THREE.NoColorSpace),
       this.loadTexture(textureAssets.grass.roughness, 'tekstura trawy (roughness)', THREE.NoColorSpace),
-      this.loadTexture(textureAssets.horizon, 'panorama horyzontu', THREE.SRGBColorSpace),
+      this.fogTrial
+        ? null
+        : this.loadTexture(textureAssets.horizon, 'panorama horyzontu', THREE.SRGBColorSpace),
     ]);
     return {
+      fogTrial: this.fogTrial,
+      skyboxEnabled: !this.fogTrial || this.streamedSkybox,
       characters,
-      tents,
-      flag,
-      chair,
+      authoredFestival,
       speaker,
-      toilet,
+      beerCan,
+      ecoPickups,
       interactables,
       textures: {
         grassColor,

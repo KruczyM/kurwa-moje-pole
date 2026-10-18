@@ -1,0 +1,15 @@
+{
+  "input": "E:\\kodowanie\\gra\\Hunyuan3D-2GP\\output\\characters_mv\\089_peace_hippie\\variant_8f268022db65688edb268bd68e23d53f64afa4772bb7be15bb13929c4271df17\\textured.glb",
+  "output": "E:\\kodowanie\\gra\\.ai\\worktrees\\festival-2026-tent-upgrades\\source-assets\\rigged-festival\\089_peace_hippie\\t-pose.glb",
+  "bones": 22,
+  "clips": [
+    "Idle",
+    "Run",
+    "Walk"
+  ],
+  "firstViewExtracted": false,
+  "quality": "automatic-draft-needs-visual-review",
+  "vertices": 29113,
+  "fallbackVertices": 29113,
+  "heatWarning": "Bone heat left unweighted vertices; geometric fallback used"
+}

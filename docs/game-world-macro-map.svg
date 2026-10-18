@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 1300" width="100%" height="100%" style="background:#0e1710; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+
+    <defs>
+      <filter id="m-shadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="3" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.5" />
+      </filter>
+      <filter id="m-glow" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="4" result="b"/>
+        <feComposite in="SourceGraphic" in2="b" operator="over"/>
+      </filter>
+      <radialGradient id="fogGrad" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#1e3818" stop-opacity="0.2" />
+        <stop offset="60%" stop-color="#1e3818" stop-opacity="0.6" />
+        <stop offset="90%" stop-color="#3d5a42" stop-opacity="0.85" />
+        <stop offset="100%" stop-color="#8da1b5" stop-opacity="0.95" />
+      </radialGradient>
+      <pattern id="m-grid10" width="92" height="92" patternUnits="userSpaceOnUse">
+        <path d="M 92 0 L 0 0 0 92" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+      </pattern>
+    </defs>
+    
+<rect width="1300" height="1300" fill="#101c12" />
+
+    <!-- PANORAMA HORYZONTU R = 85m -->
+    <circle cx="650" cy="650" r="782.0" fill="url(#fogGrad)" stroke="#8da1b5" stroke-width="2.5" stroke-dasharray="8,4">
+      <title>Cylinder Panoramy Horyzontu (R = 85m, wys. 34m, field.jpg + mgła od 45m)</title>
+    </circle>
+    <text x="650" y="-110.0" fill="#8da1b5" font-size="12" font-weight="bold" text-anchor="middle" letter-spacing="1">CYLINDER PANORAMY HORYZONTU (R = 85 m • 360° field.jpg • Mgła od 45 m do 120 m)</text>
+    
+
+    <!-- GRANICE ŚWIATA THREE.JS (117.6m x 117.6m) -->
+    <rect x="109.0" y="109.0" width="1081.9" height="1081.9" fill="#1a3118" stroke="#e74c3c" stroke-width="3" filter="url(#m-shadow)">
+      <title>Granica Świata Gry (WORLD_SIZE = 117.6m, WORLD_LIMIT = 58.8m, canMove() blokuje wyjście)</title>
+    </rect>
+    <rect x="109.0" y="109.0" width="1081.9" height="1081.9" fill="url(#m-grid10)" />
+    
+
+    <!-- STREFA OSTRZEGAWCZA NEAR-EDGE (|X|,|Z| > 56.5m) -->
+    <rect x="127.4" y="127.4" width="1045.1" height="1045.1" 
+          fill="none" stroke="rgba(231, 76, 60, 0.4)" stroke-width="1.5" stroke-dasharray="4,4">
+      <title>Strefa Near-Edge: NPC przy krawędzi włączają stan run-home i sprintują do obozu</title>
+    </rect>
+    
+<!-- 9 MAKRO-SEKTORÓW A* -->
+
+            <rect x="109.0" y="109.0" width="360.6" height="360.6" fill="none" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5"/>
+            <text x="121.0" y="131.0" fill="#7bed9f" font-size="11" font-weight="bold">SEKTOR 0 (NW)</text>
+            <text x="121.0" y="145.0" fill="#a4b0be" font-size="9">Otwarte łąki północno-zachodnie</text>
+            
+
+            <rect x="469.7" y="109.0" width="360.6" height="360.6" fill="none" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5"/>
+            <text x="481.7" y="131.0" fill="#7bed9f" font-size="11" font-weight="bold">SEKTOR 1 (N)</text>
+            <text x="481.7" y="145.0" fill="#a4b0be" font-size="9">Łąki północne • Korytarz A*</text>
+            
+
+            <rect x="830.3" y="109.0" width="360.6" height="360.6" fill="none" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5"/>
+            <text x="842.3" y="131.0" fill="#7bed9f" font-size="11" font-weight="bold">SEKTOR 2 (NE)</text>
+            <text x="842.3" y="145.0" fill="#a4b0be" font-size="9">Otwarte łąki północno-wschodnie</text>
+            
+
+            <rect x="109.0" y="469.7" width="360.6" height="360.6" fill="none" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5"/>
+            <text x="121.0" y="491.7" fill="#7bed9f" font-size="11" font-weight="bold">SEKTOR 3 (W)</text>
+            <text x="121.0" y="505.7" fill="#a4b0be" font-size="9">Łąki zachodnie • Dojście do wcTronu</text>
+            
+
+            <rect x="469.7" y="469.7" width="360.6" height="360.6" fill="rgba(46, 204, 113, 0.12)" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5"/>
+            <text x="481.7" y="491.7" fill="#7bed9f" font-size="11" font-weight="bold">SEKTOR 4 (CENTRUM)</text>
+            <text x="481.7" y="505.7" fill="#a4b0be" font-size="9">GŁÓWNY OBÓZ #KURWAMOJEPOLE (30×30m)</text>
+            
+
+            <rect x="830.3" y="469.7" width="360.6" height="360.6" fill="none" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5"/>
+            <text x="842.3" y="491.7" fill="#7bed9f" font-size="11" font-weight="bold">SEKTOR 5 (E)</text>
+            <text x="842.3" y="505.7" fill="#a4b0be" font-size="9">Łąki wschodnie • Patrol Pierścienia</text>
+            
+
+            <rect x="109.0" y="830.3" width="360.6" height="360.6" fill="none" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5"/>
+            <text x="121.0" y="852.3" fill="#7bed9f" font-size="11" font-weight="bold">SEKTOR 6 (SW)</text>
+            <text x="121.0" y="866.3" fill="#a4b0be" font-size="9">Łąki południowo-zachodnie</text>
+            
+
+            <rect x="469.7" y="830.3" width="360.6" height="360.6" fill="none" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5"/>
+            <text x="481.7" y="852.3" fill="#7bed9f" font-size="11" font-weight="bold">SEKTOR 7 (S)</text>
+            <text x="481.7" y="866.3" fill="#a4b0be" font-size="9">Łąki południowe • Szlak Pnia</text>
+            
+
+            <rect x="830.3" y="830.3" width="360.6" height="360.6" fill="none" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5"/>
+            <text x="842.3" y="852.3" fill="#7bed9f" font-size="11" font-weight="bold">SEKTOR 8 (SE)</text>
+            <text x="842.3" y="866.3" fill="#a4b0be" font-size="9">Łąki południowo-wschodnie • Wolna przestrzeń</text>
+            
+
+    <!-- SAFE ZONE (CAMP_RADIUS = 13m) -->
+    <rect x="530.4" y="530.4" width="239.2" height="239.2" 
+          fill="rgba(46, 204, 113, 0.25)" rx="8" stroke="#2ed573" stroke-width="2.5" stroke-dasharray="6,3" filter="url(#m-shadow)">
+      <title>Safe Zone obozu (CAMP_RADIUS = 13m): Cel ucieczki NPC w stanie run-home</title>
+    </rect>
+    <text x="650" y="522.4" fill="#2ed573" font-size="11" font-weight="900" text-anchor="middle">STREFA BEZPIECZNA OBOZU (CAMP_RADIUS = 13 m)</text>
+    
+
+    <!-- MAD DOG (CENTRUM) -->
+    <rect x="541.8" y="511.9" width="205.3" height="204.5" 
+          fill="rgba(15, 15, 20, 0.85)" rx="4" stroke="#ffffff" stroke-width="1.5">
+      <title>Mad Dog (22.3m x 22.2m) - Centrum życia obozu, stół, krzesła</title>
+    </rect>
+    <text x="644.5" y="618.1" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">MAD DOG</text>
+    
+<circle cx="534.1" cy="561.7" r="7" fill="#2980b9" stroke="#ffffff" stroke-width="1.5"><title>wcTron (Toi-Toi w rogu)</title></circle>
+<circle cx="655.5" cy="655.5" r="7" fill="#e74c3c" stroke="#ffffff" stroke-width="1.5"><title>Flaga #kurwamojepole (16.4m)</title></circle>
+<!-- STRZAŁKI POWROTU RUN-HOME -->
+
+        <line x1="208.4" y1="208.4" x2="236.7" y2="236.7" stroke="#e74c3c" stroke-width="2.5" stroke-dasharray="4,2"/>
+        <polygon points="236.7,236.7 227.5,234.6 234.6,227.5" fill="#e74c3c"/>
+        
+
+        <line x1="650.0" y1="190.0" x2="650.0" y2="230.0" stroke="#e74c3c" stroke-width="2.5" stroke-dasharray="4,2"/>
+        <polygon points="650.0,230.0 645.0,222.0 655.0,222.0" fill="#e74c3c"/>
+        
+
+        <line x1="1091.6" y1="208.4" x2="1063.3" y2="236.7" stroke="#e74c3c" stroke-width="2.5" stroke-dasharray="4,2"/>
+        <polygon points="1063.3,236.7 1065.4,227.5 1072.5,234.6" fill="#e74c3c"/>
+        
+
+        <line x1="190.0" y1="650.0" x2="230.0" y2="650.0" stroke="#e74c3c" stroke-width="2.5" stroke-dasharray="4,2"/>
+        <polygon points="230.0,650.0 222.0,655.0 222.0,645.0" fill="#e74c3c"/>
+        
+
+        <line x1="1110.0" y1="650.0" x2="1070.0" y2="650.0" stroke="#e74c3c" stroke-width="2.5" stroke-dasharray="4,2"/>
+        <polygon points="1070.0,650.0 1078.0,645.0 1078.0,655.0" fill="#e74c3c"/>
+        
+
+        <line x1="208.4" y1="1091.6" x2="236.7" y2="1063.3" stroke="#e74c3c" stroke-width="2.5" stroke-dasharray="4,2"/>
+        <polygon points="236.7,1063.3 234.6,1072.5 227.5,1065.4" fill="#e74c3c"/>
+        
+
+        <line x1="650.0" y1="1110.0" x2="650.0" y2="1070.0" stroke="#e74c3c" stroke-width="2.5" stroke-dasharray="4,2"/>
+        <polygon points="650.0,1070.0 655.0,1078.0 645.0,1078.0" fill="#e74c3c"/>
+        
+
+        <line x1="1091.6" y1="1091.6" x2="1063.3" y2="1063.3" stroke="#e74c3c" stroke-width="2.5" stroke-dasharray="4,2"/>
+        <polygon points="1063.3,1063.3 1072.5,1065.4 1065.4,1072.5" fill="#e74c3c"/>
+        
+
+    <!-- NAGŁÓWEK -->
+    <g transform="translate(60, 50)">
+      <rect x="0" y="0" width="540" height="90" rx="8" fill="rgba(15, 22, 15, 0.92)" stroke="#2ecc71" stroke-width="1.5" filter="url(#m-shadow)"/>
+      <text x="20" y="28" fill="#2ed573" font-size="18" font-weight="900" letter-spacing="1">#KURWAMOJEPOLE — CAŁY ŚWIAT 3D (MAKRO)</text>
+      <text x="20" y="48" fill="#f1f2f6" font-size="12">Pełna przestrzeń renderowana Three.js (117.6 m × 117.6 m • $R_{horyzont} = 85	ext{ m}$)</text>
+      <text x="20" y="68" fill="#a4b0be" font-size="11">9 Makro-sektorów A* • Promień Safe Zone = 13 m • Strefy paniki i biegu NPC</text>
+    </g>
+    
+
+    <!-- LEGENDA MAKRO -->
+    <g transform="translate(60, 1110)" filter="url(#m-shadow)">
+      <rect x="0" y="0" width="560" height="135" rx="8" fill="rgba(15, 22, 15, 0.92)" stroke="#2ecc71" stroke-width="1.5"/>
+      <text x="20" y="22" fill="#2ed573" font-size="12" font-weight="900">LEGENDA ŚWIATA MAKRO 3D</text>
+      
+      <g transform="translate(20, 36)">
+        <rect x="0" y="0" width="16" height="12" fill="rgba(46, 204, 113, 0.25)" stroke="#2ed573" stroke-width="1.5"/>
+        <text x="24" y="10" fill="#f1f2f6" font-size="11">Safe Zone obozu (CAMP_RADIUS = 13m) • Cel ucieczki NPC</text>
+
+        <rect x="0" y="20" width="16" height="12" fill="#1a3118" stroke="#e74c3c" stroke-width="1.5"/>
+        <text x="24" y="30" fill="#f1f2f6" font-size="11">Granica świata gry (117.6 × 117.6m) • Blokada canMove()</text>
+
+        <circle cx="8" cy="48" r="6" fill="#8da1b5" stroke="#fff" stroke-width="1"/>
+        <text x="24" y="52" fill="#f1f2f6" font-size="11">Cylinder horyzontu (R = 85m) • Płynny alpha fade do nieba</text>
+
+        <line x1="0" y1="70" x2="16" y2="70" stroke="#e74c3c" stroke-width="2.5"/>
+        <polygon points="18,70 12,67 12,73" fill="#e74c3c"/>
+        <text x="24" y="74" fill="#f1f2f6" font-size="11">Wektor ucieczki NPC (stan run-home z prędkością biegu 3.6 m/s)</text>
+      </g>
+    </g>
+    
+</svg>

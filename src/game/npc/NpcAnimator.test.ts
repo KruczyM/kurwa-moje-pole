@@ -49,9 +49,54 @@ describe('stabilizeLocomotionRoot', () => {
     hips.name = 'Hips';
     root.add(hips);
     const clip = new THREE.AnimationClip('Walk', 1, [
-      new THREE.VectorKeyframeTrack('Hips.position', [0, 1], [0, 1, 0, 0, 1.1, 0.1]),
+      new THREE.VectorKeyframeTrack('Hips.position', [0, 0.5, 1], [0, 1, 0, 0.1, 1.1, 0.1, 0, 1, 0]),
     ]);
     expect(stabilizeLocomotionRoot(root, clip)).toBe(clip);
+  });
+
+  it('removes small forward root motion while preserving bounce, sway and the source clip', () => {
+    const root = new THREE.Group();
+    const hips = new THREE.Bone();
+    hips.name = 'Hips';
+    hips.position.y = 1;
+    root.add(hips);
+    const values = [0, 1, 0, 0.1, 1.1, 0.8, 0, 1, 1.4];
+    const track = new THREE.VectorKeyframeTrack('Hips.position', [0, 0.5, 1], values);
+    const clip = new THREE.AnimationClip('Walking', 1, [track]);
+    const before = [...track.values];
+    const safe = stabilizeLocomotionRoot(root, clip);
+    expect(safe).not.toBe(clip);
+    expect([...safe.tracks[0].values]).toEqual([
+      0,
+      1,
+      0,
+      expect.closeTo(0.1, 5),
+      expect.closeTo(1.1, 5),
+      expect.closeTo(0.1, 5),
+      0,
+      1,
+      0,
+    ]);
+    expect([...track.values]).toEqual(before);
+    const gesture = new THREE.AnimationClip('HipHopDancing', 1, [track]);
+    expect(stabilizeLocomotionRoot(root, gesture)).toBe(gesture);
+  });
+
+  it('projects root drift in world space for rotated scaled armatures instead of deleting vertical bounce', () => {
+    const root = new THREE.Group();
+    root.rotation.x = -Math.PI / 2;
+    root.scale.setScalar(0.01);
+    const hips = new THREE.Bone();
+    hips.name = 'Hips';
+    hips.position.z = 1;
+    root.add(hips);
+    const clip = new THREE.AnimationClip('Run', 1, [
+      new THREE.VectorKeyframeTrack('Hips.position', [0, 0.5, 1], [0, 0, 1, 0, -0.7, 1.1, 0, -1.4, 1]),
+    ]);
+    const safe = stabilizeLocomotionRoot(root, clip);
+    expect(safe.tracks[0].values[4]).toBeCloseTo(0, 6);
+    expect(safe.tracks[0].values[5]).toBeCloseTo(1.1, 6);
+    expect(safe.tracks[0].values[7]).toBeCloseTo(0, 6);
   });
 
   it('also stabilizes an extreme Idle pose', () => {
@@ -76,6 +121,39 @@ describe('stabilizeLocomotionRoot', () => {
 });
 
 describe('NpcAnimator state machine', () => {
+  it('starts crowd members at different phases and preserves them through locomotion transitions', () => {
+    const clips = animationSet();
+    for (const phase of [0.12, 0.64]) {
+      const animator = new NpcAnimator(new THREE.Group(), clips, {
+        initialPhase: phase,
+        fadeSeconds: 0,
+        minimumStateSeconds: { Idle: 0, Walk: 0, Run: 0 },
+      });
+      animator.update(0);
+      expect(animator.getDiagnostics().normalizedTime).toBeCloseTo(phase);
+      expect(animator.getDiagnostics().stateElapsed).toBe(0);
+      animator.setMovementSpeed(1.3);
+      animator.play('Walk');
+      expect(animator.getDiagnostics().normalizedTime).toBeCloseTo(phase);
+      animator.play('Run');
+      expect(animator.getDiagnostics().normalizedTime).toBeCloseTo(phase);
+      animator.queueOneShot('Capoeira');
+      expect(animator.getDiagnostics().normalizedTime).toBe(0);
+      animator.dispose();
+    }
+  });
+
+  it.each([
+    [1.25, 0.25],
+    [-0.25, 0.75],
+    [NaN, 0],
+    [Infinity, 0],
+  ])('normalizes initial phase %s to %s', (initialPhase, expected) => {
+    const animator = new NpcAnimator(new THREE.Group(), animationSet(), { initialPhase });
+    expect(animator.getDiagnostics().normalizedTime).toBeCloseTo(expected);
+    animator.dispose();
+  });
+
   it('does not restart an action when the same state is requested every frame', () => {
     const clips = animationSet();
     const animator = new NpcAnimator(new THREE.Group(), clips);

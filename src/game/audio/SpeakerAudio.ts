@@ -1,4 +1,5 @@
 import type { AudioEffectState, EffectAudioTarget } from '../effects/EffectManager';
+import { AudioPerceptionGraph, type PerceptionParameters } from './AudioPerception';
 
 export type Vector3Like = {
   x: number;
@@ -39,6 +40,54 @@ export type SpeakerPlaybackState = 'off' | 'fading-in' | 'on' | 'fading-out';
  * płynne przejścia włączania/wyłączania (crossfade) oraz odporność na blokady autoplay.
  */
 export class SpeakerAudio implements EffectAudioTarget {
+  private context?: AudioContext;
+  private source?: MediaElementAudioSourceNode;
+  private perception?: AudioPerceptionGraph;
+  private perceptionParameters?: PerceptionParameters;
+  private tentMuffled = true;
+  private tentUnmuffleProgress = 0;
+
+  setTentMuffled(muffled: boolean): void {
+    if (this.tentMuffled === muffled) return;
+    this.tentMuffled = muffled;
+    if (muffled) {
+      this.tentUnmuffleProgress = 0;
+    }
+    this.applyPerception();
+  }
+
+  isTentMuffled(): boolean {
+    return this.tentMuffled;
+  }
+
+  setPerception(parameters: PerceptionParameters): void {
+    this.perceptionParameters = parameters;
+    this.applyPerception();
+  }
+
+  private applyPerception(): void {
+    if (!this.perceptionParameters) return;
+    const baseCutoff = this.perceptionParameters.cutoff;
+    const targetCutoff = this.tentMuffled ? 380 : 380 + (baseCutoff - 380) * this.tentUnmuffleProgress;
+    const effectiveCutoff = Math.min(baseCutoff, targetCutoff);
+    this.perception?.update({
+      ...this.perceptionParameters,
+      cutoff: effectiveCutoff,
+    });
+  }
+
+  private async ensurePerception(): Promise<void> {
+    if (typeof HTMLMediaElement === 'undefined' || !(this.audio instanceof HTMLMediaElement)) return;
+    if (!this.context && typeof AudioContext !== 'undefined') {
+      this.context = new AudioContext();
+      this.perception = new AudioPerceptionGraph(this.context);
+      this.source = this.context.createMediaElementSource(this.audio);
+      this.source.connect(this.perception.input);
+      this.perception.output.connect(this.context.destination);
+      if (this.perceptionParameters) this.applyPerception();
+    }
+    if (this.context?.state === 'suspended') await this.context.resume();
+  }
   private audio: AudioLike;
   private state: SpeakerPlaybackState = 'off';
   private fadeFactor = 0;
@@ -175,6 +224,11 @@ export class SpeakerAudio implements EffectAudioTarget {
       }
     }
 
+    if (!this.tentMuffled && this.tentUnmuffleProgress < 1) {
+      this.tentUnmuffleProgress = Math.min(1, this.tentUnmuffleProgress + dt / 1.2);
+      this.applyPerception();
+    }
+
     this.recalculateVolume();
   }
 
@@ -198,6 +252,8 @@ export class SpeakerAudio implements EffectAudioTarget {
     this.recalculateVolume();
 
     try {
+      await this.ensurePerception();
+      if (this.disposed) return false;
       const playPromise = this.audio.play();
       if (playPromise && typeof playPromise.then === 'function') {
         await playPromise;
@@ -243,7 +299,11 @@ export class SpeakerAudio implements EffectAudioTarget {
     const resume = () => {
       this.clearAutoplayListener();
       if (this.state === 'fading-in' || this.state === 'on') {
-        void this.audio.play();
+        void this.ensurePerception()
+          .then(() => {
+            if (!this.disposed && this.isPlaying) return this.audio.play();
+          })
+          .catch(() => {});
       }
     };
 
@@ -266,5 +326,8 @@ export class SpeakerAudio implements EffectAudioTarget {
     this.clearAutoplayListener();
     this.stopImmediate();
     this.audio.src = '';
+    this.source?.disconnect();
+    this.perception?.dispose();
+    void this.context?.close();
   }
 }

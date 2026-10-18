@@ -1,0 +1,15 @@
+{
+  "input": "E:\\kodowanie\\gra\\Hunyuan3D-2GP\\output\\characters_mv\\015_feather_headband_hippie\\variant_5469c79067c86b4825d0825cb5b8e84d5163de204af2b7ac6612ac2fe5d7e7e6\\textured.glb",
+  "output": "E:\\kodowanie\\gra\\.ai\\worktrees\\festival-2026-tent-upgrades\\source-assets\\rigged-festival\\015_feather_headband_hippie\\t-pose.glb",
+  "bones": 22,
+  "clips": [
+    "Idle",
+    "Run",
+    "Walk"
+  ],
+  "firstViewExtracted": false,
+  "quality": "automatic-draft-needs-visual-review",
+  "vertices": 27151,
+  "fallbackVertices": 27151,
+  "heatWarning": "Bone heat left unweighted vertices; geometric fallback used"
+}

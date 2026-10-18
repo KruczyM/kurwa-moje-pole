@@ -1,6 +1,11 @@
+import { FIGHTER_PROTOCOL } from '../src/games/fighter/network/fighterProtocol.js';
 import http from 'http';
 import { Server, Socket } from 'socket.io';
 import { Room } from './Room.js';
+import { FlankiSession } from './FlankiSession.js';
+import { EcoSession } from './EcoSession.js';
+import { FighterRooms } from './FighterRooms.js';
+import { RateLimiter } from './RateLimiter.js';
 import {
   type JoinRoomPayload,
   type ReserveCharacterPayload,
@@ -21,6 +26,12 @@ export class RoomServer {
   readonly server: http.Server;
   readonly io: Server;
   readonly rooms = new Map<string, Room>();
+  readonly fighterRooms: FighterRooms;
+  private readonly flankiSessions = new Map<string, FlankiSession>();
+  private readonly ecoSessions = new Map<string,EcoSession>();
+  private lastEcoBroadcast=0;
+  private readonly emptyRoomSince = new Map<string, number>();
+  private readonly rateLimiter = new RateLimiter();
   private readonly port: number;
   private readonly options: RoomServerOptions;
 
@@ -30,7 +41,7 @@ export class RoomServer {
     this.server = http.createServer((req, res) => {
       if (req.url === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok', protocol: PROTOCOL_VERSION, rooms: this.rooms.size }));
+        res.end(JSON.stringify({ status: 'ok', protocol: PROTOCOL_VERSION, rooms: this.rooms.size, fighterProtocol: FIGHTER_PROTOCOL }));
         return;
       }
       res.writeHead(404);
@@ -46,6 +57,7 @@ export class RoomServer {
       pingInterval: 5000,
     });
 
+    this.fighterRooms = new FighterRooms(this.io.of('/fighter'));
     this.setupSocketHandlers();
   }
 
@@ -55,7 +67,7 @@ export class RoomServer {
       room = new Room({
         roomId,
         reservationTimeoutMs: this.options.reservationTimeoutMs,
-        gracePeriodMs: this.options.gracePeriodMs,
+        gracePeriodMs: this.options.gracePeriodMs ?? 5000,
         onSlotChanged: () => {
           this.io.to(roomId).emit('room:state', room!.getPublicState());
         },
@@ -64,6 +76,8 @@ export class RoomServer {
         },
       });
       this.rooms.set(roomId, room);
+      this.flankiSessions.set(roomId, new FlankiSession());
+      this.ecoSessions.set(roomId,new EcoSession());
     }
     return room;
   }
@@ -105,7 +119,6 @@ export class RoomServer {
         }
         const roomId = requestedRoomId || 'glowny-oboz';
         const room = this.getOrCreateRoom(roomId);
-        
         let isReconnecting = false;
         if (typeof payload.sessionToken === 'string' && payload.sessionToken.length > 0) {
           const slot = room.findSlotBySessionToken(payload.sessionToken);
@@ -119,7 +132,7 @@ export class RoomServer {
           }
         }
 
-        if (room.isFull() && !isReconnecting) {
+        if (room.isFull && !isReconnecting) {
           emitError('ROOM_FULL', 'Pokój jest pełny.');
           return;
         }
@@ -132,6 +145,7 @@ export class RoomServer {
 
         if (currentRoomId && currentRoomId !== roomId) leaveCurrentRoom();
         currentRoomId = roomId;
+        socket.emit('eco:state',this.ecoSessions.get(roomId)?.getState() ?? null);
 
         room.addMember(socket.id);
         void socket.join(roomId);
@@ -139,9 +153,15 @@ export class RoomServer {
         // Obsługa reconnect z sessionToken:
         let reconnectedChar;
         if (typeof payload.sessionToken === 'string' && payload.sessionToken.length > 0) {
+          const previousSocketId = room.findSlotBySessionToken(payload.sessionToken)?.playerId;
           const reconnectRes = room.handleReconnect(payload.sessionToken, socket.id);
           if (reconnectRes.restored) {
             reconnectedChar = reconnectRes.character;
+            if (previousSocketId && previousSocketId !== socket.id) {
+              const previousSocket = this.io.sockets.sockets.get(previousSocketId);
+              previousSocket?.emit('error', { code: 'UNAUTHORIZED', message: 'Sesja została wznowiona w innym połączeniu. Stare połączenie zostało zamknięte.' });
+              previousSocket?.disconnect(true);
+            }
           }
         }
 
@@ -151,9 +171,11 @@ export class RoomServer {
           yourPlayerId: socket.id,
           reconnectedCharacter: reconnectedChar,
         });
+        socket.emit('flanki:lobby', this.flankiSessions.get(roomId)?.getState() ?? null);
 
-        // Poinformuj pozostałych o aktualnym stanie:
+        // Poinformuj pozostałych o aktualnym stanie oraz nowym peerze czatu głosowego:
         this.io.to(roomId).emit('room:state', room.getPublicState());
+        socket.to(roomId).emit('voice:peer-joined', { peerId: socket.id });
       });
 
       socket.on('character:reserve', (payload: ReserveCharacterPayload) => {
@@ -169,10 +191,20 @@ export class RoomServer {
 
         const room = this.getOrCreateRoom(currentRoomId);
         const sessionToken = typeof payload.sessionToken === 'string' ? payload.sessionToken : socket.id;
+
+        const existingSlot =
+          (typeof payload.sessionToken === 'string' ? room.findSlotBySessionToken(payload.sessionToken) : undefined) ??
+          room.findSlotByPlayerId(socket.id);
+        const hasValidSession = Boolean(existingSlot && existingSlot.status !== 'free');
+        if (room.isFull && !hasValidSession) {
+          emitError('ROOM_FULL', 'Pokój jest pełny.');
+          return;
+        }
+
         const result = room.reserve(socket.id, payload.character, payload.nickname, sessionToken);
 
         if (!result.success) {
-          emitError(result.code ?? 'UNAUTHORIZED', result.error ?? 'Rezerwacja nieudana.');
+          emitError(result.code ?? 'CHARACTER_OCCUPIED', result.error ?? 'Rezerwacja nieudana.');
           return;
         }
 
@@ -210,6 +242,99 @@ export class RoomServer {
         }
       });
 
+      socket.on('action:trigger', (payload: { action: string }) => {
+        if (!currentRoomId || !payload || !payload.action) return;
+        if (!this.rateLimiter.consume(socket.id, 'action')) return;
+        const room = this.rooms.get(currentRoomId);
+        if (!room) return;
+        const slot = room.findSlotByPlayerId(socket.id);
+        if (!slot) return;
+        this.io.to(currentRoomId).emit('action:trigger', {
+          playerId: socket.id,
+          character: slot.character,
+          action: payload.action,
+          timestamp: Date.now(),
+        });
+      });
+
+      socket.on('flanki:lobby_request', (request: { operation?: unknown; team?: unknown; runnerId?: unknown } = {}, acknowledge?: (accepted: boolean) => void) => {
+        const reject = (message: string) => {
+          socket.emit('flanki:rejected', { message });
+          acknowledge?.(false);
+        };
+        if (!currentRoomId) { reject('Nie dołączono do pokoju gry. Połącz się ponownie i wybierz postać.'); return; }
+        if (!this.rateLimiter.consume(socket.id, 'event')) { reject('Zbyt wiele żądań. Spróbuj ponownie za chwilę.'); return; }
+        const slot = this.rooms.get(currentRoomId)?.findSlotByPlayerId(socket.id);
+        const session = this.flankiSessions.get(currentRoomId);
+        if (!slot || slot.status !== 'occupied') {
+          reject('Twoja postać nie jest potwierdzona na tym serwerze. Wybierz wolną, inną postać i wejdź na pole; w drugiej karcie użyj osobnej sesji przeglądarki.'); return;
+        }
+        if (!session) { reject('Brak sesji Flanek dla tego pokoju. Uruchom ponownie serwer gry.'); return; }
+        let accepted = false;
+        if (request.operation === 'join')
+          accepted = session.join({
+            id: socket.id,
+            name: slot.nickname ?? slot.character,
+            character: slot.character,
+          });
+        else if (request.operation === 'start') accepted = session.start(socket.id);
+        else if (request.operation === 'leave') accepted = session.leave(socket.id);
+        else if (request.operation === 'runner') accepted = session.selectRunner(socket.id, request.team, request.runnerId);
+        if (!accepted) {
+          reject('Nie można wykonać tej operacji: mecz mógł już wystartować lub skład jest pełny. Biegaczy i start zatwierdza gospodarz przed rozpoczęciem.');
+          return;
+        }
+        this.io.to(currentRoomId).emit('flanki:lobby', session.getState());
+        acknowledge?.(true);
+      });
+
+      socket.on(
+        'flanki:action',
+        (request: { action?: unknown; sessionId?: unknown; payload?: unknown } = {}) => {
+          if (!currentRoomId || typeof request.action !== 'string') return;
+          const session = this.flankiSessions.get(currentRoomId);
+          const slot = this.rooms.get(currentRoomId)?.findSlotByPlayerId(socket.id);
+          const hostOnly = request.action === 'flanki:snapshot';
+          if (
+            !slot ||
+            slot.status !== 'occupied' ||
+            !session?.accepts(socket.id, request.sessionId, hostOnly)
+          )
+            return;
+          if (!['flanki:snapshot', 'flanki:throw', 'flanki:drink', 'flanki:runner_move', 'flanki:pickup'].includes(request.action)) return;
+          if (!this.rateLimiter.consume(socket.id, hostOnly || request.action === 'flanki:runner_move' || request.action === 'flanki:drink' ? 'movement' : 'action')) return;
+          if (!request.payload || typeof request.payload !== 'object' || Array.isArray(request.payload))
+            return;
+          if (JSON.stringify(request.payload).length > 6000) return;
+          if (hostOnly && (request.payload as Record<string, unknown>).phase === 'game_over')
+            session.markFinished(socket.id, request.sessionId);
+          socket.to(currentRoomId).emit('flanki:action', {
+            action: request.action,
+            sessionId: request.sessionId,
+            playerId: socket.id,
+            payload: request.payload,
+          });
+        },
+      );
+
+      socket.on('eco:request',(request={operation:'',roundId:undefined,canId:undefined,generation:undefined,pool:undefined},ack?: (accepted:boolean)=>void)=>{
+        if(typeof ack!=='function') ack=undefined;
+        if(!request||typeof request!=='object') { ack?.(false);return; }
+        const room=currentRoomId ? this.rooms.get(currentRoomId) : undefined;
+        const session=currentRoomId ? this.ecoSessions.get(currentRoomId) : undefined;
+        const slot=room?.findSlotByPlayerId(socket.id);
+        if (!room||!session||!slot||slot.status!=='occupied'||!this.rateLimiter.consume(socket.id,'action')) { ack?.(false);return; }
+        const name=slot.nickname ?? slot.character;
+        let accepted=false;
+        if(request.operation==='create') accepted=session.create(socket.id,name,request.pool);
+        else if(request.operation==='join') accepted=session.join(socket.id,name);
+        else if(request.operation==='start') accepted=session.start(socket.id);
+        else if(request.operation==='leave') { session.leave(socket.id);accepted=true; }
+        else if(request.operation==='collect') accepted=session.collect(socket.id,request,
+          room.getWorldSnapshot().players.find(p=>p.playerId===socket.id)?.transform.position);
+        if(accepted) this.io.to(currentRoomId!).emit('eco:state',session.getState());
+        ack?.(accepted);
+      });
       socket.on('character:release', (payload: ReleaseCharacterPayload) => {
         if (!currentRoomId) return;
 
@@ -223,13 +348,47 @@ export class RoomServer {
         const result = room.release(socket.id, payload.character, sessionToken);
 
         if (result.success) {
+          this.ecoSessions.get(currentRoomId)?.leave(socket.id);
+          this.io.to(currentRoomId).emit('eco:state',this.ecoSessions.get(currentRoomId)?.getState()??null);
+          if (this.flankiSessions.get(currentRoomId)?.leave(socket.id))
+            this.io
+              .to(currentRoomId)
+              .emit('flanki:lobby', this.flankiSessions.get(currentRoomId)?.getState() ?? null);
           this.io.to(currentRoomId).emit('room:state', room.getPublicState());
         } else {
           emitError(result.code ?? 'UNAUTHORIZED', result.error ?? 'Nie udało się zwolnić postaci.');
         }
       });
 
+      // Sygnalizacja WebRTC dla przestrzennego czatu głosowego:
+      socket.on('voice:signal', (payload: { targetPeerId: string; signal: unknown }) => {
+        if (!currentRoomId || !payload || !payload.targetPeerId || !payload.signal) return;
+        this.io.to(payload.targetPeerId).emit('voice:signal', {
+          senderPeerId: socket.id,
+          signal: payload.signal,
+        });
+      });
+
+      socket.on('voice:mute', (payload: { isMuted: boolean }) => {
+        if (!currentRoomId) return;
+        socket.to(currentRoomId).emit('voice:peer-mute', {
+          peerId: socket.id,
+          isMuted: Boolean(payload?.isMuted),
+        });
+      });
+
       socket.on('disconnect', () => {
+        if (currentRoomId) {
+          this.ecoSessions.get(currentRoomId)?.leave(socket.id);
+          this.io.to(currentRoomId).emit('eco:state', this.ecoSessions.get(currentRoomId)?.getState() ?? null);
+          if (this.flankiSessions.get(currentRoomId)?.leave(socket.id)) {
+            this.io
+              .to(currentRoomId)
+              .emit('flanki:lobby', this.flankiSessions.get(currentRoomId)?.getState() ?? null);
+          }
+          socket.to(currentRoomId).emit('voice:peer-left', { peerId: socket.id });
+        }
+        this.rateLimiter.remove(socket.id);
         leaveCurrentRoom(true);
       });
     });
@@ -240,15 +399,25 @@ export class RoomServer {
   private startTickLoop(): void {
     // 20 Hz (co 50 ms):
     this.tickTimer = setInterval(() => {
+      const broadcastEco=Date.now()-this.lastEcoBroadcast>=1000;
+      if(broadcastEco) this.lastEcoBroadcast=Date.now();
       for (const [roomId, room] of this.rooms) {
-        if (room.getPublicState().playerCount === 0) {
-          room.dispose();
-          this.rooms.delete(roomId);
-          continue;
-        }
-
+        if (!this.io.sockets.adapter.rooms.get(roomId)?.size && room.getPublicState().playerCount === 0) {
+          const since = this.emptyRoomSince.get(roomId) ?? Date.now();
+          this.emptyRoomSince.set(roomId, since);
+          // Let an in-flight connection join a newly-created room before retiring it.
+          if (Date.now() - since >= 5000) {
+            room.dispose();
+            this.rooms.delete(roomId);
+            this.flankiSessions.delete(roomId);
+            this.ecoSessions.delete(roomId);
+            this.emptyRoomSince.delete(roomId);
+            continue;
+          }
+        } else this.emptyRoomSince.delete(roomId);
         const snapshot = room.getWorldSnapshot();
-        if (snapshot.players.length > 0) {
+        if(broadcastEco) this.io.to(roomId).emit('eco:state',this.ecoSessions.get(roomId)?.getState()??null);
+        if (this.io.sockets.adapter.rooms.get(roomId)?.size) {
           this.io.to(roomId).emit('world:snapshot', snapshot);
         }
       }
@@ -256,16 +425,20 @@ export class RoomServer {
   }
 
   async start(): Promise<void> {
+    this.fighterRooms.start();
     this.startTickLoop();
     return new Promise((resolve) => {
       this.server.listen(this.port, () => {
-        console.log(`[RoomServer] Serwer pokojów uruchomiony na porcie ${this.port} (protokół ${PROTOCOL_VERSION})`);
+        console.log(
+          `[RoomServer] Serwer pokojów uruchomiony na porcie ${this.port} (protokół ${PROTOCOL_VERSION})`,
+        );
         resolve();
       });
     });
   }
 
   async stop(): Promise<void> {
+    this.fighterRooms.stop();
     if (this.tickTimer) {
       clearInterval(this.tickTimer);
       this.tickTimer = undefined;
@@ -273,6 +446,10 @@ export class RoomServer {
     return new Promise((resolve, reject) => {
       for (const room of this.rooms.values()) room.dispose();
       this.rooms.clear();
+      this.flankiSessions.clear();
+      this.ecoSessions.clear();
+      this.emptyRoomSince.clear();
+      this.rateLimiter.clear();
       this.io.close();
       this.server.close((err) => (err ? reject(err) : resolve()));
     });
@@ -280,12 +457,11 @@ export class RoomServer {
 }
 
 // Jeśli uruchamiany bezpośrednio przez CLI (np. tsx server/roomServer.ts):
-const isMainModule = typeof process !== 'undefined' && process.argv[1]?.replace(/\\/g, '/').endsWith('roomServer.ts');
+const isMainModule =
+  typeof process !== 'undefined' && process.argv[1]?.replace(/\\/g, '/').endsWith('roomServer.ts');
 if (isMainModule) {
   const port = Number(process.env.PORT) || 3001;
-  const corsOrigin = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
-    : '*';
+  const corsOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim()) : '*';
   const instance = new RoomServer({ port, corsOrigin });
   void instance.start();
 

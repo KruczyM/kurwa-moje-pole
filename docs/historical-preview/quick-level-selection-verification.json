@@ -1,0 +1,17 @@
+{
+  "url": "http://127.0.0.1:5198/kurwa-moje-pole/bongo-rush.html",
+  "method": "Actual UI interactions in the Codex in-app browser",
+  "checks": {
+    "mainMenuDirectLevelSelection": "PASS",
+    "beginLevelWithoutOpeningHeroGallery": "PASS",
+    "pauseReturnDirectlyToLevels": "PASS",
+    "selectedHeroPreserved": "Amper",
+    "currentLevelSelectionPreserved": 2,
+    "lockedLevelsRemainDisabled": 21,
+    "explicitChangeHeroButtonOpensGallery": "PASS",
+    "confirmExistingHeroReturnsToLevels": "PASS",
+    "bundleSyntaxNodeCheck": "PASS"
+  },
+  "scope": "Menu navigation only; no gameplay or level definitions changed.",
+  "limitations": "Physical phone verification remains pending. Results and victory return buttons share the checked return method; their end states were not replayed again."
+}

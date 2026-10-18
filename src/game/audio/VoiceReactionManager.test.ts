@@ -17,6 +17,35 @@ const fakeAudio = (): FakeAudio => ({
 });
 
 describe('VoiceReactionManager', () => {
+  it('plays a farewell only when leaving the world for the main menu, never for internal menus', () => {
+    const foreground = fakeAudio(),
+      distant = fakeAudio();
+    const channels = [foreground, distant];
+    const manager = new VoiceReactionManager(
+      () => 0,
+      () => channels.shift()!,
+    );
+    for (const [from, to] of [
+      ['playing', 'paused'],
+      ['paused', 'playing'],
+      ['playing', 'inventory'],
+      ['inventory', 'playing'],
+      ['playing', 'inspecting'],
+      ['inspecting', 'playing'],
+      ['start', 'start'],
+      ['loading', 'start'],
+      ['error', 'start'],
+    ] as const)
+      expect(manager.playMainMenuReturn(from, to)).toBeNull();
+    expect(foreground.play).not.toHaveBeenCalled();
+    expect(manager.playMainMenuReturn('paused', 'start')).toBe('dude_thisgenepoolis');
+    expect(foreground.play).toHaveBeenCalledTimes(1);
+    expect(manager.playMainMenuReturn('playing', 'start')).toBe('dude_vote_dimple');
+    expect(foreground.play).toHaveBeenCalledTimes(2);
+    manager.dispose();
+    expect(foreground.src).toBe('');
+    expect(distant.src).toBe('');
+  });
   it('covers every gameplay effect and keeps catalog entries unique', () => {
     expect(supportedVoiceEffects).toEqual(['Piwo', 'Papieros', 'Joint', 'Kreska', 'Grzyb', 'MDMA', 'LSD']);
     const names = allVoiceReactionNames();
@@ -66,5 +95,44 @@ describe('VoiceReactionManager', () => {
     manager.effectStarted('Kreska', 4_000);
     expect(distant.src).toContain('dude_buttsauce.wav');
     expect(distant.volume).toBe(0.24);
+  });
+
+  it('plays festival camp shouts and triggers registered callback', () => {
+    const manager = new VoiceReactionManager();
+    const shouts: string[] = [];
+    manager.setCampShoutCallback((event) => {
+      shouts.push(event.text);
+    });
+
+    const shout1 = manager.playCampShout(0);
+    expect(shout1.text).toBe('Zaraz będzie ciemno!');
+    expect(shout1.response).toBe('ZAMKNIJ SIĘ!');
+    expect(shouts).toContain('Zaraz będzie ciemno!');
+
+    const shout2 = manager.playCampShout(1);
+    expect(shout2.text).toBe('Pooole! Kurwa, moje pole!');
+
+    const shout3 = manager.playCampShout(2);
+    expect(shout3.text).toBe('Siemankooo!');
+  });
+
+  it('triggers camp shouts periodically during update', () => {
+    const manager = new VoiceReactionManager(() => 0.5);
+    const triggered: string[] = [];
+    manager.setCampShoutCallback((event) => {
+      triggered.push(event.text);
+    });
+
+    // Advance by 120 seconds to trigger periodic camp shout
+    manager.update(120, null, 'inactive');
+    expect(triggered.length).toBeGreaterThanOrEqual(1);
+    manager.dispose();
+  });
+
+  it('safely handles non-substance items like Woda and Okulary in effectStarted', () => {
+    const manager = new VoiceReactionManager();
+    expect(() => manager.effectStarted('Woda')).not.toThrow();
+    expect(() => manager.effectStarted('Okulary')).not.toThrow();
+    manager.dispose();
   });
 });

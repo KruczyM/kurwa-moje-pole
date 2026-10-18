@@ -1,16 +1,20 @@
 # Specyfikacja projektu gry 3D „#KURWAMOJEPOLE”
 
-Wersja dokumentu: 1.1
+Wersja dokumentu: 1.2 — kierunek festiwalowy, 23.09.2026
 Status: docelowa specyfikacja funkcjonalna i techniczna
 Platforma: przeglądarki desktopowe
 
 ## 1. Opis projektu
 
-„#KURWAMOJEPOLE” to przeglądarkowa gra 3D odtwarzająca niewielki, prywatny obóz festiwalowy inspirowany rzeczywistym obozem z Pol'and'Rock Festival w Polsce. Najważniejsza jest rozpoznawalność miejsca, jego uczestników i atmosfery: ciasno ustawione namioty, wąskie przejścia, duże centralne zadaszenie Mad Dog, wysoki maszt z flagą, toi-toi w rogu i ludzie poruszający się po całym polu.
+„#KURWAMOJEPOLE” to przeglądarkowa gra 3D, której celem jest możliwie dobre odwzorowanie festiwalu Pol’and’Rock: rozmieszczenia dróg i stref, rozpoznawalnych konstrukcji, autentycznych szyldów, obozowisk, ludzi i atmosfery. Prywatny obóz z Mad Dog, flagą i ośmioma głównymi postaciami pozostaje ważnym miejscem wewnątrz większego świata.
 
-Gra nie ma odtwarzać całego festiwalu. Nie należy dodawać sceny koncertowej, baru, stoisk handlowych, kuchni, grilla, ogniska, magazynu ani płotu. Świat ma być mały, gęsty i osobisty.
+Zakres obejmuje festiwal, w tym pasaż handlowy, SiemaShop, Red Bull, Lidl, sceny/ASP, punkty usługowe i pozostałe miejsca potwierdzone referencjami. Nie dodajemy przypadkowych atrakcji tylko dla zapełnienia mapy. Docelową edycję i wiarygodność źródła oznaczamy: mapa 2025 przekazana przez użytkownika jest odniesieniem przestrzennym, a nie dowodem układu 2026. Nie deklarujemy wierności 1:1 bez pomiarów. Skróty skali dla wydajności lub grywalności zapisujemy jawnie; brakujące referencje oznaczamy jako niepotwierdzone.
 
-Docelowo w jednej sesji może uczestniczyć do ośmiu graczy. Każdy wybiera jedną z ośmiu unikalnych postaci. Postacie niewybrane przez graczy funkcjonują jako NPC. Postać zajęta przez gracza znika z puli wyboru i nie może jednocześnie istnieć jako NPC.
+Priorytetem jest zgodność układu, sylwetek, proporcji i autentycznych frontów z fotografiami. Wygenerowana imitacja napisu nie zastępuje prawdziwej grafiki. Stylizowane postacie mogą pozostać stylizowane; nie oznacza to dowolności w architekturze festiwalu. Nowy model wymaga kontroli skali, kolizji, trawy, materiałów, wydajności i porównania z referencją.
+
+Stan lokalnych prac i zależności opisuje [plan festiwalu](festival-2026-plan.md). Rozmieszczenie 320 × 320 m z regularnymi parcelami jest przygotowane w osobnym worktree i wymaga odbioru; nie zakładać, że jest już na main.
+
+Docelowo w jednej sesji może uczestniczyć do ośmiu graczy. Każdy wybiera jedną z ośmiu unikalnych postaci. Postacie niewybrane przez graczy funkcjonują jako NPC. Postać zajęta przez gracza znika z puli wyboru i nie może jednocześnie istnieć jako NPC. Przyszli dodatkowi uczestnicy festiwalu są oddzielną populacją, nie dodatkowymi slotami tych ośmiu tożsamości. Ich liczba zależy od budżetu wydajności, dostępnego rigu i animacji; statyczny model Hunyuan nie jest gotowym chodzącym NPC.
 
 Główna pętla rozgrywki:
 
@@ -27,7 +31,8 @@ Główna pętla rozgrywki:
 
 ### 2.1. Teren
 
-- Namioty muszą być ustawione nieregularnie, podobnie do ręcznego szkicu, a nie w idealnych rzędach.
+- Zwykłe namioty festiwalowe znajdują się w równych, płaskich parcelach z regularnymi rzędami i przejściami, bez pojedynczych namiotów przypadkowo rozsianych po trawie. Prywatny obóz T01–T15 zachowuje własny rozpoznawalny układ wewnątrz swojej parceli.
+- Red Bulle, SiemaShop i sklepy stoją przy jednej prostej alei asfaltowej zgodnie z referencją. Pod drogą i podłogami hal, w tym Lidla, nie rośnie trawa.
 - Pomiędzy namiotami stojącymi blisko siebie mają pozostać wąskie, ale przechodnie ścieżki. Minimalne światło przejścia powinno wynosić około 1–1,2 m.
 
 ### 2.2. Centralne zadaszenie Mad Dog
@@ -98,7 +103,7 @@ type CampObjectConfig = {
 };
 ```
 
-Aktualny runtime korzysta z `src/game/world/campLayout.ts`. Obszar układu ma 30 × 30 m, a pozycje są deterministycznie przeliczane z tabeli procentowej. Wszystkie małe namioty mają 4,20 × 3,60 m i 2,80 m wysokości. Duże rodzinne T09 i T14 mają 4,20 × 6,44 × 2,80 m. Model `big2` występuje tylko jako T01 obok toi-toia, ma 7,56 × 11,592 × 5,04 m i jest obrócony o 270°. Jego collider 5,20 × 7,60 m pomija linki oraz odciągi, dlatego nie blokują ruchu. Białe namioty mają korektę pionową osadzającą właściwą bryłę na terenie. Model `namiot.glb` nie jest używany w układzie. Zadaszenie Mad Dog pozostaje osobnym obiektem świata i nie jest jednym z numerowanych namiotów.
+Prywatny obóz korzysta z `src/game/world/campLayout.ts`. Obszar historycznego układu T01–T15 ma 30 × 30 m, a pozycje są deterministycznie przeliczane z tabeli procentowej; nie są to wymiary całego festiwalu. Wszystkie małe namioty mają 4,20 × 3,60 m i 2,80 m wysokości. Duże rodzinne T09 i T14 mają 4,20 × 6,44 × 2,80 m. Model `big2` występuje tylko jako T01 obok toi-toia, ma 7,56 × 11,592 × 5,04 m i jest obrócony o 270°. Jego collider 5,20 × 7,60 m pomija linki oraz odciągi, dlatego nie blokują ruchu. Białe namioty mają korektę pionową osadzającą właściwą bryłę na terenie. Model `namiot.glb` nie jest używany w układzie. Zadaszenie Mad Dog pozostaje osobnym obiektem świata i nie jest jednym z numerowanych namiotów.
 
 ## 3. Styl wizualny, materiały i oświetlenie
 
@@ -380,7 +385,7 @@ Domyślnym rozwiązaniem jest przestrzenny czat głosowy WebRTC:
 - każdy ma przycisk wyciszenia i czytelny wskaźnik stanu mikrofonu;
 - głos jest pełny w bliskiej odległości, następnie stopniowo cichnie i przy 50 m staje się niesłyszalny;
 - dźwięk jest opcjonalnie panoramowany zgodnie z kierunkiem źródła;
-- ponieważ obóz jest mały, zasięg 50 m często będzie obejmował większość mapy, ale nadal zachowa właściwe różnice głośności;
+- zasięg 50 m dotyczy lokalnej rozmowy; na rozbudowanej mapie nie obejmuje całego festiwalu i nie powinien być zwiększany do rozmiaru świata;
 - serwer Socket.IO służy tylko do sygnalizacji WebRTC i wymiany pozycji, nie do przesyłania surowego audio;
 - dla maksymalnie ośmiu graczy połączenia P2P mesh są wystarczające;
 - produkcja przez internet wymaga HTTPS/WSS oraz konfiguracji STUN i TURN;
@@ -973,16 +978,15 @@ postać jest ukrywana, zanim kamera ponownie znajdzie się wewnątrz modelu.
 - Przed wydaniem testujemy co najmniej 1280×720, 1920×1080 i szeroki ekran;
   menu, preview, HUD i granice trawy muszą zachować działanie na każdym z nich.
 
-## 22. Plan dalszego rozwoju po stabilnym MVP
+## 22. Plan dalszego rozwoju i odbioru
 
-Kolejne pomysły wolno realizować dopiero po spełnieniu Definition of Done dla
-MVP. Preferowana kolejność:
+Rozbudowa festiwalu jest zatwierdzonym kierunkiem, ale nie zwalnia z napraw regresji i odbioru podstawowej rozgrywki. Zadania narzędziowe można wykonywać oddzielnie od modelowania. Preferowana kolejność:
 
 1. Dopracować obóz: zweryfikować docelowe przypisania właścicieli namiotów,
    materiały, fizyczne wymiary oraz oświetlenie pod Mad Dog.
 2. Dokończyć bibliotekę animacji na kanonicznych modelach, ze szczególnym
    testem pierścienia i jego modelu spoczynkowego.
-3. Wprowadzić profile jakości trawy, łagodny teren, horyzont i audyt wydajności.
+3. Odwzorować aleje, równe parcele i rozmieszczenie obiektów z referencji; utrzymać profile jakości, horyzont i audyt wydajności.
 4. Dodać bogatsze, lecz lekkie zachowania NPC: krótkie grupy rozmów, reakcję na
    gracza i różne strefy zainteresowania.
 5. Dopiero potem rozwijać multiplayer, głos, dodatkowe interakcje i wariant

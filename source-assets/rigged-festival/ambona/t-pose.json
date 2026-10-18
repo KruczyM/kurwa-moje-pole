@@ -1,0 +1,15 @@
+{
+  "input": "E:\\kodowanie\\gra\\Hunyuan3D-2GP\\output\\characters_mv\\ambona\\variant_bc2d1078c55e9a2d662431ef22dcd3b008f6970de106a12007c6e907326ec286\\textured.glb",
+  "output": "source-assets\\rigged-festival\\ambona\\t-pose.glb",
+  "bones": 22,
+  "clips": [
+    "Idle",
+    "Run",
+    "Walk"
+  ],
+  "firstViewExtracted": false,
+  "quality": "automatic-draft-needs-visual-review",
+  "vertices": 26877,
+  "fallbackVertices": 26877,
+  "heatWarning": "Bone heat left unweighted vertices; geometric fallback used"
+}

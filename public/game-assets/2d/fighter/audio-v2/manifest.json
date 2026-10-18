@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "sampleRate": 22050,
+  "provenance": "Original deterministic synthesis; no third-party samples, voices or paid services.",
+  "music": {
+    "menu": {
+      "bpm": 120,
+      "bars": 32,
+      "title": "Bloto, pot i combo",
+      "generator": "scripts/fighter/build_cabinet_menu.py"
+    },
+    "fight": {
+      "bpm": 136,
+      "bars": 16
+    }
+  },
+  "effects": [
+    "bell",
+    "charge",
+    "empty",
+    "guard",
+    "heavy",
+    "kick",
+    "ko",
+    "land",
+    "launch",
+    "punch",
+    "ready",
+    "select",
+    "swing",
+    "swing-heavy",
+    "ultimate-ambona",
+    "ultimate-amper",
+    "ultimate-antena",
+    "ultimate-chlebak",
+    "ultimate-dziaslo",
+    "ultimate-gruczol",
+    "ultimate-hemoroid",
+    "ultimate-jeczmien",
+    "ultimate-klatwa",
+    "ultimate-kobra",
+    "ultimate-korba",
+    "ultimate-krwiak",
+    "ultimate-pien",
+    "ultimate-pierscien",
+    "ultimate-szerszen",
+    "ultimate-zawor"
+  ]
+}

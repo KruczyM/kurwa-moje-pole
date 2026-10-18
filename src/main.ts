@@ -2,14 +2,21 @@ import './style.css';
 import './ui-additions.css';
 import './preview.css';
 import './lifecycle.css';
+import './mobile-responsive.css';
+import { preparePersistentAssetCache } from './game/assets/persistentAssetCache';
 import { Game } from './game/Game';
 import { CharacterPreview } from './game/ui/CharacterPreview';
+import { FestivalMap } from './game/ui/FestivalMap';
 import type { EffectId } from './game/effects/EffectManager';
 import { AppState, AppStateMachine } from './game/lifecycle/AppStateMachine';
 import { controlHintForState, inputBindings, startControlHint } from './game/lifecycle/InputBindings';
 import { isMobileInputDevice } from './game/player/MobileControls';
 import { isGrassQualityPreset } from './game/world/grassQuality';
+import { isAspectRatioPreset } from './game/rendering/viewportAspect';
 import { NetworkClient } from './game/network/NetworkClient';
+import { VoiceReactionManager } from './game/audio/VoiceReactionManager';
+import { TentMenuAudio } from './game/audio/TentMenuAudio';
+import { musicAsset } from './game/assets/assetManifest';
 import {
   CANONICAL_CHARACTERS,
   type CharacterName,
@@ -20,8 +27,21 @@ import {
 const qs = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
 const names: readonly CharacterName[] = CANONICAL_CHARACTERS;
 const state = new AppStateMachine();
+const assetCacheReady = preparePersistentAssetCache();
+void assetCacheReady.then((ready) => {
+  const status = document.querySelector('#asset-cache-status');
+  if (status)
+    status.textContent = ready
+      ? 'Cache dyskowy gotowy. Wczytane wcześniej pliki mogą być użyte lokalnie; modele nadal wymagają przygotowania.'
+      : 'Cache dyskowy niedostępny. Gra korzysta ze zwykłego pobierania plików.';
+});
 let game: Game | undefined;
+// The farewell belongs to the shell: disposing the world must not cut it off.
+let mainMenuVoice: VoiceReactionManager | undefined;
 let preview: CharacterPreview | undefined;
+const tentMenuAudio = new TentMenuAudio({ audioUrl: musicAsset });
+(window as unknown as { __camp_tent_audio?: TentMenuAudio }).__camp_tent_audio = tentMenuAudio;
+tentMenuAudio.startTentAudio();
 const savedSessionChar =
   typeof sessionStorage !== 'undefined'
     ? (sessionStorage.getItem('camp-player-character') as CharacterName | null)
@@ -69,17 +89,19 @@ if (nicknameInput) {
   };
 }
 
+let hasInitialReservation = false;
+
 // UI Statusu sieci:
 networkClient.onStatusChange((status) => {
   if (!networkBadge || !networkStatusText) return;
   networkBadge.className = `network-status-badge ${status}`;
   if (status === 'connected') {
-    networkStatusText.textContent = 'Online (Pokój: główny obóz)';
-    networkClient.reserveCharacter(selected, nicknameInput?.value);
+    networkStatusText.textContent = 'Online · Sektor główny';
   } else if (status === 'connecting') {
-    networkStatusText.textContent = 'Łączenie z serwerem...';
+    networkStatusText.textContent = 'Łączenie z obozem...';
   } else {
-    networkStatusText.textContent = 'Tryb lokalny (Offline)';
+    hasInitialReservation = false;
+    networkStatusText.textContent = 'Obóz festiwalowy';
   }
 });
 
@@ -91,11 +113,30 @@ names.forEach((name) => {
   const button = document.createElement('button');
   button.textContent = name;
   button.className = name === selected ? 'selected' : '';
+  button.classList.add('character-card');
+
+  // 3D Tilt & Glow
+  button.addEventListener('pointermove', (e: PointerEvent) => {
+    const rect = button.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -10;
+    const rotateY = ((x - centerX) / centerX) * 10;
+    button.style.transform = `perspective(600px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.04, 1.04, 1.04)`;
+    button.style.setProperty('--mx', `${((x / rect.width) * 100).toFixed(1)}%`);
+    button.style.setProperty('--my', `${((y / rect.height) * 100).toFixed(1)}%`);
+  });
+  button.addEventListener('pointerleave', () => {
+    button.style.transform = '';
+  });
+
   button.onclick = () => {
     if (button.disabled) return;
     selected = name;
     sessionStorage.setItem('camp-player-character', selected);
-    void preview?.show(name);
+    void assetCacheReady.then(() => preview?.show(name));
     selection
       .querySelectorAll('button')
       .forEach((item) => item.classList.toggle('selected', item.textContent === name));
@@ -110,6 +151,11 @@ names.forEach((name) => {
 
 // Synchronizacja stanu slotów z serwera:
 networkClient.onStateChange((roomState) => {
+  if (!hasInitialReservation && networkClient.isOnline()) {
+    hasInitialReservation = true;
+    networkClient.reserveCharacter(selected, nicknameInput?.value);
+  }
+
   const myId = networkClient.getMyPlayerId();
 
   for (const name of names) {
@@ -146,7 +192,7 @@ networkClient.onStateChange((roomState) => {
     if (freeName) {
       selected = freeName;
       sessionStorage.setItem('camp-player-character', selected);
-      void preview?.show(selected);
+      void assetCacheReady.then(() => preview?.show(selected));
       characterButtons.forEach((btn, name) => {
         btn.classList.toggle('selected', name === selected);
       });
@@ -158,7 +204,7 @@ networkClient.onStateChange((roomState) => {
 });
 
 networkClient.onError((err) => {
-  if (nicknameError) {
+  if (nicknameError && err.code !== 'UNAUTHORIZED') {
     nicknameError.textContent = err.message;
     nicknameError.hidden = false;
   }
@@ -178,7 +224,13 @@ function syncShell(next: AppState) {
   if (next === 'loading') {
     qs('#load-error').hidden = true;
     qs('#load-error').textContent = '';
-    qs('#load-text').textContent = 'Przygotowywanie sceny…';
+    qs('#load-text').textContent = '0%';
+    const percentEl = document.querySelector<HTMLElement>('#load-percent');
+    if (percentEl) percentEl.textContent = '0%';
+    const progressBar = document.querySelector<HTMLDivElement>('#load-progress-bar');
+    if (progressBar) progressBar.style.width = '0%';
+    const skipBtn = document.querySelector<HTMLButtonElement>('#skip-crowd-btn');
+    if (skipBtn) skipBtn.hidden = true;
   }
 }
 
@@ -191,7 +243,7 @@ function createPreview() {
       message.hidden = status.state !== 'error';
       message.textContent = status.message || '';
     });
-    void preview.show(selected);
+    void assetCacheReady.then(() => preview?.show(selected));
   } catch (error) {
     preview = undefined;
     const message = qs('#character-preview-status');
@@ -202,21 +254,32 @@ function createPreview() {
 }
 
 /** Zwalnia podgląd menu, zapisuje wybór postaci i uruchamia właściwą scenę gry. */
-async function startGame() {
+async function startGame(freeCamera = false) {
+  if (state.current !== 'start' && state.current !== 'error') return;
+  await assetCacheReady;
   if (state.current !== 'start' && state.current !== 'error') return;
 
-  // Walidacja pseudonimu:
-  const nickVal = validateAndSanitizeNickname(nicknameInput?.value ?? networkClient.getNickname());
-  if (!nickVal.valid) {
-    if (nicknameError) {
-      nicknameError.textContent = nickVal.error ?? 'Wpisz poprawny pseudonim.';
-      nicknameError.hidden = false;
-    }
-    nicknameInput?.focus();
-    return;
+  if (freeCamera) {
+    sessionStorage.setItem('camp-free-camera', '1');
   }
 
-  networkClient.setNickname(nickVal.sanitized);
+  // Walidacja pseudonimu:
+  const rawNick = nicknameInput?.value?.trim() || networkClient.getNickname() || (freeCamera ? 'Kamera' : '');
+  const nickVal = validateAndSanitizeNickname(rawNick);
+  if (!nickVal.valid) {
+    if (freeCamera) {
+      networkClient.setNickname('Kamera');
+    } else {
+      if (nicknameError) {
+        nicknameError.textContent = nickVal.error ?? 'Wpisz poprawny pseudonim.';
+        nicknameError.hidden = false;
+      }
+      nicknameInput?.focus();
+      return;
+    }
+  } else {
+    networkClient.setNickname(nickVal.sanitized);
+  }
 
   if (networkClient.isOnline()) {
     networkClient.confirmCharacter(selected);
@@ -224,14 +287,24 @@ async function startGame() {
 
   game?.dispose();
   game = undefined;
+  mainMenuVoice?.dispose();
+  mainMenuVoice = undefined;
   preview?.dispose();
   preview = undefined;
   sessionStorage.setItem('camp-player-character', selected);
   localStorage.setItem('camp-player-character', selected);
+  // Płynne otwarcie filtra dźwięku z namiotu (od 350 Hz do 20 000 Hz w 1.2s):
+  tentMenuAudio.unmuffleAndOpen(1.2);
+  setTimeout(() => {
+    if (state.current !== 'start') {
+      tentMenuAudio.stop(0.6);
+    }
+  }, 1300);
   state.transition('loading');
   try {
     const nextGame = new Game(state, networkClient);
     game = nextGame;
+    (window as unknown as { __camp_game?: Game }).__camp_game = nextGame;
     if (!isMobileInputDevice()) {
       nextGame.canvas.requestPointerLock().catch?.(() => undefined);
     }
@@ -243,12 +316,27 @@ async function startGame() {
   }
 }
 
+/** Uruchamia swobodną kamerę bezpośrednio z menu głównego (Ctrl+K lub przycisk). */
+async function startFreeCameraGame() {
+  if (state.current !== 'start' && state.current !== 'error') return;
+  await startGame(true);
+}
+
 /** Zamyka bieżącą grę i odtwarza ekran startowy wraz z podglądem postaci. */
 function backToStart() {
+  const from = state.current;
+  const hadGame = Boolean(game);
   game?.dispose();
   game = undefined;
   if (state.current !== 'start') state.transition('start');
   createPreview();
+  tentMenuAudio.muffleToTent(0.8);
+  tentMenuAudio.startTentAudio();
+  if (hadGame) {
+    mainMenuVoice?.dispose();
+    mainMenuVoice = new VoiceReactionManager();
+    mainMenuVoice.playMainMenuReturn(from, state.current);
+  }
 }
 
 state.subscribe(({ to }) => syncShell(to));
@@ -261,10 +349,26 @@ qs('#inspect-use').textContent = `${inputBindings.interact} — uruchom efekt`;
 qs('#inspect-close').textContent = `${inputBindings.escape} — wróć`;
 createPreview();
 
+window.addEventListener('keydown', (event) => {
+  if (event.ctrlKey && event.key.toLowerCase() === 'k') {
+    if (state.current === 'start' || state.current === 'error') {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      void startFreeCameraGame();
+    }
+  }
+});
+
 qs<HTMLButtonElement>('#play').onclick = () => void startGame();
+const playFreecamBtn = document.querySelector<HTMLButtonElement>('#play-freecam');
+if (playFreecamBtn) {
+  playFreecamBtn.onclick = () => void startFreeCameraGame();
+}
 qs<HTMLButtonElement>('#retry-load').onclick = () => void startGame();
 qs<HTMLButtonElement>('#back-to-start').onclick = backToStart;
 qs<HTMLButtonElement>('#resume').onclick = () => game?.setPause(false);
+qs<HTMLButtonElement>('#perform-motion').onclick = () =>
+  game?.performMotion(qs<HTMLSelectElement>('#player-motion').value);
 qs<HTMLButtonElement>('#exit-to-start').onclick = backToStart;
 qs<HTMLButtonElement>('#close-dialog').onclick = () => game?.closeDialog();
 qs<HTMLButtonElement>('#inspect-close').onclick = () => game?.closeInspect();
@@ -273,19 +377,40 @@ qs<HTMLButtonElement>('#inspect-use').onclick = () => game?.acceptInspect();
 qs<HTMLButtonElement>('#inspect-take').onclick = () => game?.takeInspectedItem();
 qs<HTMLButtonElement>('#cancel-effect').onclick = () => game?.cancelEffect();
 qs<HTMLButtonElement>('#cancel-use-sequence').onclick = () => game?.cancelUseSequence();
-qs<HTMLButtonElement>('#warning-proceed').onclick = () => game?.confirmWarning(false);
-qs<HTMLButtonElement>('#warning-safe-mode').onclick = () => game?.confirmWarning(true);
-qs<HTMLButtonElement>('#warning-cancel').onclick = () => game?.cancelWarning();
+const warningProceedBtn = document.querySelector<HTMLButtonElement>('#warning-proceed');
+if (warningProceedBtn) warningProceedBtn.onclick = () => game?.confirmWarning(false);
+const warningSafeBtn = document.querySelector<HTMLButtonElement>('#warning-safe-mode');
+if (warningSafeBtn) warningSafeBtn.onclick = () => game?.confirmWarning(true);
+const warningCancelBtn = document.querySelector<HTMLButtonElement>('#warning-cancel');
+if (warningCancelBtn) warningCancelBtn.onclick = () => game?.cancelWarning();
+const warningCloseBtn = document.querySelector<HTMLButtonElement>('#warning-close-btn');
+if (warningCloseBtn) warningCloseBtn.onclick = () => game?.cancelWarning();
 document.querySelectorAll<HTMLButtonElement>('[data-effect]').forEach((button) => {
   button.onclick = () => game?.useInventoryEffect(button.dataset.effect as EffectId);
 });
+const inventoryContainer = document.querySelector('#inventory .items');
+if (inventoryContainer) {
+  inventoryContainer.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement | null;
+    const button = target?.closest<HTMLButtonElement>('[data-effect]');
+    if (button && button.dataset.effect) {
+      game?.useInventoryEffect(button.dataset.effect as EffectId);
+    }
+  });
+}
+const inventoryCloseBtn = document.querySelector<HTMLButtonElement>('#inventory-close');
+if (inventoryCloseBtn) {
+  inventoryCloseBtn.onclick = () => game?.toggleInventory();
+}
 
 qs<HTMLInputElement>('#setting-intensity').oninput = (event) => {
   game?.updateSettings({ intensity: Number((event.target as HTMLInputElement).value) / 100 });
 };
 
 qs<HTMLInputElement>('#setting-speaker-volume').oninput = (event) => {
-  game?.updateAudioSettings({ speakerVolume: Number((event.target as HTMLInputElement).value) / 100 });
+  const vol = Number((event.target as HTMLInputElement).value) / 100;
+  game?.updateAudioSettings({ speakerVolume: vol });
+  tentMenuAudio.setVolume(vol * 0.6);
 };
 
 qs<HTMLInputElement>('#setting-ambient-volume').oninput = (event) => {
@@ -325,6 +450,16 @@ if (matrixQualitySelect) {
 type ToggleSetting =
   'reduceMotion' | 'limitSway' | 'disableShake' | 'disableBloom' | 'disableFlashes' | 'disableAberration';
 
+const aspectRatioSelect = document.querySelector<HTMLSelectElement>('#setting-aspect-ratio');
+if (aspectRatioSelect) {
+  aspectRatioSelect.onchange = (event) => {
+    const val = (event.target as HTMLSelectElement).value;
+    if (isAspectRatioPreset(val)) {
+      game?.updateSettings({ aspectRatio: val });
+    }
+  };
+}
+
 (
   [
     'reduce-motion',
@@ -346,6 +481,329 @@ window.addEventListener(
   () => {
     preview?.dispose();
     game?.dispose();
+    mainMenuVoice?.dispose();
+    networkClient.disconnect(true);
   },
   { once: true },
 );
+
+// Natychmiastowe wyłączanie muzyki z głównej gry przy przejściu na minigry
+let wasSpeakerPlayingBeforeHidden = false;
+
+function stopMainGameAudio(): void {
+  tentMenuAudio.stopImmediate();
+  if (game?.speakerAudio) {
+    wasSpeakerPlayingBeforeHidden = game.speakerAudio.isPlaying;
+    if (game.speakerAudio.isPlaying) {
+      game.speakerAudio.stopImmediate();
+    }
+  }
+}
+
+// Zatrzymanie muzyki przy kliknięciu w dowolny link prowadzący do minigier 2D
+const handleMinigameNav = (event: Event) => {
+  const target = (event.target as HTMLElement | null)?.closest<HTMLAnchorElement>(
+    'a.minigame-link, #play-fighter, #play-bongo-rush, a[href*="fighter-demo"], a[href*="bongo-rush"]',
+  );
+  if (target) {
+    stopMainGameAudio();
+  }
+};
+document.addEventListener('click', handleMinigameNav, { capture: true });
+document.addEventListener('auxclick', handleMinigameNav, { capture: true });
+
+// Zatrzymanie muzyki przy ukryciu karty (np. otwarcie minigry w nowej karcie)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopMainGameAudio();
+  } else {
+    if (state.current === 'start') {
+      tentMenuAudio.muffleToTent(0.6);
+      tentMenuAudio.startTentAudio();
+    } else if (state.current === 'playing' && wasSpeakerPlayingBeforeHidden && game?.speakerAudio) {
+      void game.speakerAudio.play();
+    }
+  }
+});
+
+// Wznowienie / rozpoczęcie muzyki w menu głównym przy dowolnej interakcji użytkownika
+const ensureMenuAudio = (event: Event) => {
+  if (state.current !== 'start') return;
+  const isMinigameClick = (event.target as HTMLElement | null)?.closest<HTMLAnchorElement>(
+    'a.minigame-link, #play-fighter, #play-bongo-rush, a[href*="fighter-demo"], a[href*="bongo-rush"]',
+  );
+  if (isMinigameClick) return;
+
+  if (!tentMenuAudio.active) {
+    tentMenuAudio.muffleToTent(0.4);
+    tentMenuAudio.startTentAudio();
+  }
+};
+for (const evt of ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'mouseup', 'click', 'keydown']) {
+  window.addEventListener(evt, ensureMenuAudio, { capture: true, passive: true });
+}
+
+// Przewodnik festiwalowy i Mapa
+const GUIDE_TABS = [
+  'controls',
+  'activities',
+  'interactions',
+  'items',
+  'dialogue',
+  'bingo',
+  'passport',
+  'bongo',
+] as const;
+
+function switchGuideTabGlobal(tabId: string): void {
+  const currentIndex = GUIDE_TABS.indexOf(tabId as any);
+  const validIndex = currentIndex >= 0 ? currentIndex : 0;
+  const activeTab = GUIDE_TABS[validIndex];
+
+  document.querySelectorAll<HTMLButtonElement>('.guide-tab-btn').forEach((btn) => {
+    const match = btn.dataset.tab === activeTab;
+    btn.classList.toggle('active', match);
+    btn.setAttribute('aria-selected', String(match));
+  });
+
+  document.querySelectorAll<HTMLElement>('.guide-panel').forEach((panel) => {
+    const match = panel.id === `guide-panel-${activeTab}`;
+    panel.hidden = !match;
+    panel.classList.toggle('active', match);
+  });
+
+  const stepIndicator = document.querySelector<HTMLElement>('#guide-step-indicator');
+  if (stepIndicator) {
+    stepIndicator.textContent = `Krok ${validIndex + 1} z ${GUIDE_TABS.length}`;
+  }
+
+  const prevBtn = document.querySelector<HTMLButtonElement>('#guide-prev-btn');
+  if (prevBtn) {
+    prevBtn.disabled = validIndex === 0;
+  }
+
+  const nextBtn = document.querySelector<HTMLButtonElement>('#guide-next-btn');
+  if (nextBtn) {
+    nextBtn.textContent = validIndex === GUIDE_TABS.length - 1 ? 'Gotowe ✓' : 'Dalej →';
+  }
+}
+
+function toggleGuideGlobal(open?: boolean): void {
+  if (game) {
+    game.toggleGuide(open);
+  } else {
+    const guideEl = document.querySelector<HTMLElement>('#festival-guide');
+    if (!guideEl) return;
+    const shouldOpen = open !== undefined ? open : guideEl.hidden;
+    guideEl.hidden = !shouldOpen;
+    if (shouldOpen) {
+      switchGuideTabGlobal('controls');
+    }
+  }
+}
+
+// Inicjalizacja zakładek i nawigacji przewodnika na poziomie dokumentu
+document.querySelectorAll<HTMLButtonElement>('.guide-tab-btn').forEach((btn) => {
+  btn.onclick = () => {
+    const tab = btn.dataset.tab;
+    if (tab) switchGuideTabGlobal(tab);
+  };
+});
+
+const guidePrevBtn = document.querySelector<HTMLButtonElement>('#guide-prev-btn');
+if (guidePrevBtn) {
+  guidePrevBtn.onclick = () => {
+    const activeBtn = document.querySelector<HTMLButtonElement>('.guide-tab-btn.active');
+    const currentTab = activeBtn?.dataset.tab;
+    const currentIndex = GUIDE_TABS.indexOf(currentTab as any);
+    if (currentIndex > 0) {
+      switchGuideTabGlobal(GUIDE_TABS[currentIndex - 1]);
+    }
+  };
+}
+
+const guideNextBtn = document.querySelector<HTMLButtonElement>('#guide-next-btn');
+if (guideNextBtn) {
+  guideNextBtn.onclick = () => {
+    const activeBtn = document.querySelector<HTMLButtonElement>('.guide-tab-btn.active');
+    const currentTab = activeBtn?.dataset.tab;
+    const currentIndex = GUIDE_TABS.indexOf(currentTab as any);
+    if (currentIndex >= 0 && currentIndex < GUIDE_TABS.length - 1) {
+      switchGuideTabGlobal(GUIDE_TABS[currentIndex + 1]);
+    } else {
+      toggleGuideGlobal(false);
+    }
+  };
+}
+
+let globalFestivalMap: FestivalMap | undefined;
+
+function toggleMapGlobal(open?: boolean): void {
+  if (game) {
+    game.toggleMap(open);
+  } else {
+    const mapEl = document.querySelector<HTMLElement>('#festival-map');
+    if (!mapEl) return;
+    const shouldOpen = open !== undefined ? open : mapEl.hidden;
+    mapEl.hidden = !shouldOpen;
+    if (shouldOpen) {
+      if (!globalFestivalMap) {
+        const mapCanvas = document.querySelector<HTMLCanvasElement>('#festival-map-canvas');
+        globalFestivalMap = new FestivalMap(mapCanvas);
+        void globalFestivalMap
+          .loadBlenderReference()
+          .catch(() => console.warn('Nie udało się załadować rzutu mapy z Blendera.'));
+      }
+      globalFestivalMap.render({ x: 0, z: 0, yaw: 0 }, [], performance.now(), []);
+    }
+  }
+}
+
+const startGuideBtn = document.querySelector<HTMLButtonElement>('#start-guide-btn');
+if (startGuideBtn) {
+  startGuideBtn.onclick = () => toggleGuideGlobal(true);
+}
+const startMapBtn = document.querySelector<HTMLButtonElement>('#start-map-btn');
+if (startMapBtn) {
+  startMapBtn.onclick = () => toggleMapGlobal(true);
+}
+const guideCloseBtn = document.querySelector<HTMLButtonElement>('#guide-close');
+if (guideCloseBtn) {
+  guideCloseBtn.onclick = () => toggleGuideGlobal(false);
+}
+const guideOkBtn = document.querySelector<HTMLButtonElement>('#guide-ok-btn');
+if (guideOkBtn) {
+  guideOkBtn.onclick = () => toggleGuideGlobal(false);
+}
+const mapCloseBtn = document.querySelector<HTMLButtonElement>('#map-close');
+if (mapCloseBtn) {
+  mapCloseBtn.onclick = () => toggleMapGlobal(false);
+}
+const openGuideBtn = document.querySelector<HTMLButtonElement>('#open-guide-btn');
+if (openGuideBtn) {
+  openGuideBtn.onclick = () => toggleGuideGlobal(true);
+}
+
+// Globalny nasłuch klawiszy Escape / H / M na ekranie startowym oraz w UI
+window.addEventListener('keydown', (event) => {
+  const guideEl = document.querySelector<HTMLElement>('#festival-guide');
+  const isGuideOpen = guideEl ? !guideEl.hidden : false;
+  const mapEl = document.querySelector<HTMLElement>('#festival-map');
+  const isMapOpen = mapEl ? !mapEl.hidden : false;
+  const isInputFocused =
+    document.activeElement instanceof HTMLInputElement ||
+    document.activeElement instanceof HTMLTextAreaElement;
+
+  if (event.key === 'Escape') {
+    if (isGuideOpen) {
+      toggleGuideGlobal(false);
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    if (isMapOpen) {
+      toggleMapGlobal(false);
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+  }
+
+  if ((event.key === 'h' || event.key === 'H' || event.key === 'F1') && !isInputFocused) {
+    if (!game) {
+      toggleGuideGlobal();
+      event.preventDefault();
+    }
+  }
+
+  if ((event.key === 'm' || event.key === 'M') && !isInputFocused) {
+    if (!game) {
+      toggleMapGlobal();
+      event.preventDefault();
+    }
+  }
+});
+
+const openMapBtn = document.querySelector<HTMLButtonElement>('#open-map-btn');
+if (openMapBtn) {
+  openMapBtn.onclick = () => toggleMapGlobal(true);
+}
+const openInventoryBtn = document.querySelector<HTMLButtonElement>('#open-inventory-btn');
+if (openInventoryBtn) {
+  openInventoryBtn.onclick = () => game?.toggleInventory();
+}
+const hudGuideBtn = document.querySelector<HTMLButtonElement>('#hud-guide-btn');
+if (hudGuideBtn) {
+  hudGuideBtn.onclick = () => game?.toggleGuide();
+}
+const hudMapBtn = document.querySelector<HTMLButtonElement>('#hud-map-btn');
+if (hudMapBtn) {
+  hudMapBtn.onclick = () => toggleMapGlobal();
+}
+const hudInventoryBtn = document.querySelector<HTMLButtonElement>('#hud-inventory-btn');
+if (hudInventoryBtn) {
+  hudInventoryBtn.onclick = () => game?.toggleInventory();
+}
+const hudMenuBtn = document.querySelector<HTMLButtonElement>('#hud-menu-btn');
+if (hudMenuBtn) {
+  hudMenuBtn.onclick = () => game?.setPause(true);
+}
+const mobileGuideBtn = document.querySelector<HTMLButtonElement>('#mobile-guide');
+if (mobileGuideBtn) {
+  mobileGuideBtn.onclick = () => game?.toggleGuide();
+}
+const mobileMapBtn = document.querySelector<HTMLButtonElement>('#mobile-map');
+if (mobileMapBtn) {
+  mobileMapBtn.onclick = () => toggleMapGlobal();
+}
+
+// Przyciski powiększania mapy (+, -, 100%, Ty)
+const mapZoomInBtn = document.querySelector<HTMLButtonElement>('#map-zoom-in');
+if (mapZoomInBtn) {
+  mapZoomInBtn.onclick = (e) => {
+    e.stopPropagation();
+    if (game?.festivalMap) game.festivalMap.zoomIn();
+    else globalFestivalMap?.zoomIn();
+  };
+}
+const mapZoomOutBtn = document.querySelector<HTMLButtonElement>('#map-zoom-out');
+if (mapZoomOutBtn) {
+  mapZoomOutBtn.onclick = (e) => {
+    e.stopPropagation();
+    if (game?.festivalMap) game.festivalMap.zoomOut();
+    else globalFestivalMap?.zoomOut();
+  };
+}
+const mapZoomResetBtn = document.querySelector<HTMLButtonElement>('#map-zoom-reset');
+if (mapZoomResetBtn) {
+  mapZoomResetBtn.onclick = (e) => {
+    e.stopPropagation();
+    if (game?.festivalMap) game.festivalMap.resetView();
+    else globalFestivalMap?.resetView();
+  };
+}
+const mapCenterMeBtn = document.querySelector<HTMLButtonElement>('#map-center-me');
+if (mapCenterMeBtn) {
+  mapCenterMeBtn.onclick = (e) => {
+    e.stopPropagation();
+    if (game && game.player && game.festivalMap) {
+      game.festivalMap.centerOnPlayer(game.player.camera.position.x, game.player.camera.position.z);
+    } else {
+      globalFestivalMap?.centerOnPlayer(0, 0);
+    }
+  };
+}
+
+// Zamykanie mapy po kliknięciu w tło modala oraz blokowanie kliknięć w głąb
+const festivalMapModal = document.querySelector<HTMLElement>('#festival-map');
+if (festivalMapModal) {
+  festivalMapModal.onclick = (e) => {
+    if (e.target === festivalMapModal) {
+      toggleMapGlobal(false);
+    }
+  };
+}
+const festivalMapContainer = document.querySelector<HTMLElement>('.festival-map-container');
+if (festivalMapContainer) {
+  festivalMapContainer.onclick = (e) => e.stopPropagation();
+}

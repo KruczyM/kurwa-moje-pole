@@ -4,6 +4,7 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { NpcManager } from './NpcManager';
 import { INTERACTION_LAYER } from '../interactions/InteractionManager';
 import { NpcNavigationGrid } from './NpcNavigationGrid';
+import { terrainHeight } from '../world/CampWorld';
 
 /** Buduje mały, całkowicie przechodni grid używany przez testy menedżera. */
 function openNavigation() {
@@ -23,6 +24,152 @@ function animatedScaleAsset(): GLTF {
 }
 
 describe('NpcManager', () => {
+  it('distributes the festival crowd between the stage and both passages', () => {
+    const navigation = new NpcNavigationGrid({ minX: -170, maxX: 260, minZ: -150, maxZ: 150 }, 2, () => true);
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, navigation);
+    const campCount = manager.npcs.length;
+    manager.setFestivalLayout([
+      { id: 'Road_0', category: 'Roads', x: -18, z: -35, width: 280, depth: 10 },
+      { id: 'Road_1', category: 'Roads', x: 0, z: 73, width: 280, depth: 10 },
+    ]);
+    const asset = animatedScaleAsset();
+    asset.animations.push(new THREE.AnimationClip('HipHopDancing', 20, []));
+    for (let i = 0; i < 91; i++) manager.addFestivalNpc({ id: `crowd-${i}`, name: `Crowd ${i}` }, asset);
+    const crowd = manager.npcs.filter((npc) => !npc.isCampMember);
+    const dancers = crowd.filter((npc) => npc.festivalRole === 'stage_dancer');
+    const lower = crowd.filter((npc) => npc.passageWalker && npc.passageLane === 'lower');
+    const upper = crowd.filter((npc) => npc.passageWalker && npc.passageLane === 'upper');
+    expect(dancers).toHaveLength(20);
+    expect(lower).toHaveLength(20);
+    expect(upper).toHaveLength(51);
+    expect(manager.npcs.filter((npc) => npc.isCampMember)).toHaveLength(campCount);
+    for (const npc of lower) expect(npc.root.position.z).toBeGreaterThanOrEqual(69.5);
+    for (const npc of upper) {
+      expect(npc.root.position.z).toBeLessThanOrEqual(-31.5);
+      expect(npc.root.position.x).toBeLessThanOrEqual(117);
+    }
+    const positions = dancers.map((npc) => npc.root.position.clone());
+    for (let step = 0; step < 40; step++) manager.update(0.05, step * 0.05);
+    dancers.forEach((npc, i) => {
+      expect(npc.root.position.distanceTo(positions[i])).toBeLessThan(0.001);
+      expect(npc.animator?.activityActive).toBe(true);
+    });
+    manager.dispose();
+  });
+  it('follows a verified Flanki corner instead of avoiding a wall beyond the waypoint', () => {
+    const navigation = new NpcNavigationGrid(
+      { minX: -5, maxX: 5, minZ: -5, maxZ: 5 },
+      0.5,
+      (x, z) => !(z >= 3 && x < 1),
+    );
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, navigation);
+    const npc = manager.npcs[0];
+    npc.root.position.set(0, 0, 2.2);
+    npc.root.userData.flankiTarget = new THREE.Vector3(2, 0, 4);
+    npc.root.userData.flankiRouted = true;
+    npc.waypoints = [new THREE.Vector3(0, 0, 2.5), new THREE.Vector3(2, 0, 2.5), new THREE.Vector3(2, 0, 4)];
+    for (let step = 0; step < 60; step++) manager.update(0.05, step * 0.05);
+    expect(npc.root.position.distanceTo(npc.root.userData.flankiTarget)).toBeLessThan(0.08);
+    manager.dispose();
+  });
+  it('arrives at a Flanki line and faces the can instead of keeping its walking bearing', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    const npc = manager.npcs[0];
+    npc.root.position.set(2, terrainHeight(2, 2), 2);
+    npc.root.userData.flankiTarget = npc.root.position.clone();
+    npc.root.userData.flankiFacing = new THREE.Vector3(0, 0, -4);
+    npc.root.rotation.y = 0;
+    manager.update(1 / 60, 0);
+    expect(npc.root.rotation.y).toBeCloseTo(Math.atan2(-2, -6));
+    expect(npc.velocity.length()).toBe(0);
+    manager.dispose();
+  });
+  it('keeps the speaker stationary and independently interactive while NPCs move', () => {
+    const scene = new THREE.Scene();
+    const speaker = { scene: new THREE.Group() } as GLTF;
+    speaker.scene.add(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.5, 0.3), new THREE.MeshBasicMaterial()));
+    const manager = new NpcManager(scene, new Map(), speaker, openNavigation());
+    const before = manager.getSpeakerWorldPosition()!.clone();
+    const anchor = manager.speakerAnchor!;
+    expect(anchor.parent).toBe(scene);
+    anchor.traverse((object) => {
+      expect(object.userData.interactionRoot).toBe(anchor);
+      expect(object.layers.isEnabled(INTERACTION_LAYER)).toBe(true);
+    });
+    expect(anchor.userData.interaction.kind).toBe('speaker');
+    manager.npcs[0].root.position.set(12, 0, 12);
+    manager.npcs[0].root.rotation.y = Math.PI;
+    for (let i = 0; i < 120; i++) manager.update(1 / 30, i / 30);
+    expect(manager.getSpeakerWorldPosition()!.toArray()).toEqual(before.toArray());
+    manager.dispose();
+  });
+  it('keeps resting feet grounded instead of bobbing the entire character', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    manager.update(0.05, 0.9);
+    const npc = manager.npcs[0];
+    expect(npc.root.position.y).toBe(terrainHeight(npc.root.position.x, npc.root.position.z));
+    manager.dispose();
+  });
+
+  it('feeds actual horizontal displacement to animation, not a stale requested speed', () => {
+    const models = new Map([['amper', animatedScaleAsset()]]);
+    const manager = new NpcManager(new THREE.Scene(), models, null, openNavigation());
+    const npc = manager.npcs[0];
+    npc.speed = 0.95;
+    npc.velocity.set(0, 0, 0.95);
+    manager.update(0.05, 0);
+    expect(npc.speed).toBeGreaterThan(0);
+    expect(npc.animator?.getDiagnostics().worldSpeed).toBe(0);
+    expect(npc.animator?.getDiagnostics().requestedLocomotion).toBe('Idle');
+    manager.dispose();
+  });
+
+  it('recognizes arrival on elevated terrain using the horizontal route', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    const npc = manager.npcs[0];
+    npc.root.position.set(5, 3, 0);
+    npc.target.set(5, 0, 0);
+    npc.waypoints = [npc.target.clone()];
+    npc.behavior.state = 'wander';
+    npc.behavior.travelling = true;
+    manager.update(0.05, 0);
+    expect(npc.behavior.state).toBe('idle');
+    expect(npc.stationary).toBe(true);
+    manager.dispose();
+  });
+
+  it('uses both bounds on an asymmetric map instead of treating negative coordinates as its edge', () => {
+    const navigation = new NpcNavigationGrid({ minX: -40, maxX: 10, minZ: -40, maxZ: 10 }, 1, () => true);
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, navigation);
+    const npc = manager.npcs[0];
+    npc.root.position.set(-20, 0, -20);
+    manager.update(0.05, 0);
+    expect(npc.returning).toBe(false);
+    npc.root.position.x = -39;
+    manager.update(0.05, 0.05);
+    expect(npc.returning).toBe(true);
+    manager.dispose();
+  });
+
+  it('brakes into a tight turn and keeps its angular speed bounded', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    const npc = manager.npcs[0];
+    manager.npcs.forEach((other, index) => other.root.position.set(100 + index * 3, 0, 100));
+    npc.root.position.set(0, 0, 0);
+    npc.target.set(0, 0, -10);
+    npc.waypoints = [npc.target.clone()];
+    npc.behavior.state = 'wander';
+    npc.behavior.travelling = true;
+    npc.steeringDirection.set(0, 0, 1);
+    npc.speed = 0.95;
+    manager.update(0.1, 0);
+    expect(npc.speed).toBeLessThan(0.95);
+    expect(npc.speed).toBeGreaterThan(0);
+    expect(Math.abs(npc.root.rotation.y)).toBeLessThan(0.43);
+    expect(npc.velocity.y).toBe(0);
+    manager.dispose();
+  });
+
   it('fits a character after applying its initial animated pose', () => {
     const scene = new THREE.Scene();
     const models = new Map([['amper', animatedScaleAsset()]]);
@@ -201,6 +348,205 @@ describe('NpcManager', () => {
     const diag = npc.animator?.getDiagnostics();
     expect(diag).toBeDefined();
     expect(diag?.currentClip).toBe('Idle'); // animatedScaleAsset ma tylko Idle
+    manager.dispose();
+  });
+
+  it('applies animation LOD throttling and accumulates dt for distant NPCs when playerPosition is given', () => {
+    const scene = new THREE.Scene();
+    const models = new Map([['amper', animatedScaleAsset()]]);
+    const manager = new NpcManager(scene, models, null, openNavigation());
+    const npc = manager.npcs[0];
+    npc.root.position.set(50, 0, 50); // distant from origin (>36m)
+    const playerPos = new THREE.Vector3(0, 0, 0);
+
+    // Initial update accumulates dt when not on the interleaved modulo frame
+    manager.update(0.016, 0.016, playerPos);
+    // Run several frames to ensure the frame skip cadence completes a cycle
+    for (let f = 2; f <= 8; f++) {
+      manager.update(0.016, f * 0.016, playerPos);
+    }
+    // Animator has received update and diagnostics remain healthy
+    expect(npc.animator?.getDiagnostics().currentClip).toBe('Idle');
+    manager.dispose();
+  });
+
+  it('handles camp NPC sitting geometry and vacating when vacateSeat is called', () => {
+    const scene = new THREE.Scene();
+    const charMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
+    charMesh.name = 'actor-mesh';
+    const charScene = new THREE.Group();
+    charScene.add(charMesh);
+    const idle = new THREE.AnimationClip('Idle', 1, []);
+    const sittingIdle = new THREE.AnimationClip('SittingIdle', 1, []);
+    const models = new Map([['amper', { scene: charScene, animations: [idle, sittingIdle] } as GLTF]]);
+
+    const manager = new NpcManager(scene, models, null, openNavigation());
+    const npc = manager.npcs[0];
+    const initialVisualY = npc.visualBaseY ?? 0;
+
+    // Trigger sitting action
+    npc.behavior.state = 'sit';
+    npc.behavior.travelling = true;
+    manager['applyBehaviorAction'](npc, 'sit');
+    expect(npc.assignedSeatId).toBeDefined();
+    const seatId = npc.assignedSeatId!;
+    expect(manager.isSeatOccupied(seatId)).toBe(true);
+
+    // Simulate arrival at seat
+    npc.root.position.copy(npc.target);
+    npc.waypoints = [npc.target.clone()];
+    manager.update(0.05, 0.05);
+
+    expect(npc.isSitting).toBe(true);
+    expect(npc.visual?.rotation.y).toBeCloseTo(Math.PI, 4);
+    expect(npc.visual?.position.y).toBeCloseTo(initialVisualY - 0.2, 4);
+    expect(npc.visual?.position.z).toBeCloseTo(-0.52, 4);
+
+    // Vacate seat
+    const vacated = manager.vacateSeat(seatId);
+    expect(vacated).toBe(true);
+    expect(manager.isSeatOccupied(seatId)).toBe(false);
+    expect(npc.isSitting).toBe(false);
+    expect(npc.assignedSeatId).toBeUndefined();
+    expect(npc.visual?.rotation.y).toBeCloseTo(0, 4);
+    expect(npc.visual?.position.y).toBeCloseTo(initialVisualY, 4);
+    expect(npc.visual?.position.z).toBeCloseTo(0, 4);
+
+    manager.dispose();
+  });
+
+  it('vacates occupied chair when player approaches closer than 2.5m', () => {
+    const scene = new THREE.Scene();
+    const charScene = new THREE.Group();
+    charScene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial()));
+    const idle = new THREE.AnimationClip('Idle', 1, []);
+    const sittingIdle = new THREE.AnimationClip('SittingIdle', 1, []);
+    const models = new Map([['amper', { scene: charScene, animations: [idle, sittingIdle] } as GLTF]]);
+
+    const manager = new NpcManager(scene, models, null, openNavigation());
+    const npc = manager.npcs[0];
+
+    npc.behavior.state = 'sit';
+    npc.behavior.travelling = true;
+    manager['applyBehaviorAction'](npc, 'sit');
+    const seatId = npc.assignedSeatId!;
+    expect(manager.isSeatOccupied(seatId)).toBe(true);
+
+    // Arrived and sitting
+    npc.root.position.copy(npc.target);
+    npc.waypoints = [npc.target.clone()];
+    manager.update(0.05, 0.05);
+    expect(npc.isSitting).toBe(true);
+
+    // Player far away - still sitting
+    manager.update(0.05, 0.1, new THREE.Vector3(100, 0, 100));
+    expect(npc.isSitting).toBe(true);
+
+    // Player walks up close (< 2.5m from seated NPC)
+    const closePlayerPos = npc.root.position.clone().add(new THREE.Vector3(1.2, 0, 0));
+    manager.update(0.05, 0.15, closePlayerPos);
+    expect(npc.isSitting).toBe(false);
+    expect(manager.isSeatOccupied(seatId)).toBe(false);
+
+    manager.dispose();
+  });
+
+  it('manages dancing near speaker when music is playing and stops when music ends', () => {
+    const scene = new THREE.Scene();
+    const charScene = new THREE.Group();
+    charScene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial()));
+    const idle = new THREE.AnimationClip('Idle', 1, []);
+    const headbanging = new THREE.AnimationClip('Headbanging', 1, []);
+    const models = new Map([['amper', { scene: charScene, animations: [idle, headbanging] } as GLTF]]);
+
+    const manager = new NpcManager(scene, models, null, openNavigation());
+    const npc = manager.npcs[0];
+
+    manager.setSpeakerPlaying(true);
+    npc.behavior.state = 'dance';
+    npc.behavior.travelling = true;
+    manager['applyBehaviorAction'](npc, 'dance');
+
+    expect(npc.target).toBeDefined();
+    // Distance from speaker anchor (-1.45, 0.65) should be between 1.0 and 3.5m
+    const distToSpeaker = Math.hypot(npc.target.x - -3.1, npc.target.z - 1.2);
+    expect(distToSpeaker).toBeGreaterThanOrEqual(1.0);
+    expect(distToSpeaker).toBeLessThanOrEqual(3.5);
+
+    // Arrived at dance spot
+    npc.root.position.copy(npc.target);
+    npc.waypoints = [npc.target.clone()];
+    manager.update(0.05, 0.05, undefined, true);
+    expect(npc.isDancingAtSpeaker).toBe(true);
+
+    // Speaker turns off -> dance ends
+    manager.update(0.05, 0.1, undefined, false);
+    expect(npc.isDancingAtSpeaker).toBe(false);
+
+    manager.dispose();
+  });
+
+  it('obsługuje dynamiczny swap bota: hideNpc ukrywa model i pozycję, showNpc przywraca go do życia', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    const npc = manager.npcs[0];
+    const characterName = npc.name;
+
+    expect(manager.isNpcHidden(characterName)).toBe(false);
+    expect(npc.root.visible).toBe(true);
+
+    // Człowiek wchodzi na ten slot -> ukryj bota
+    const hidden = manager.hideNpc(characterName);
+    expect(hidden).toBe(true);
+    expect(manager.isNpcHidden(characterName)).toBe(true);
+    expect(npc.root.visible).toBe(false);
+    expect(npc.root.position.y).toBeLessThan(-50);
+
+    // Klatka update pomija ukrytego bota
+    manager.update(0.05, 0.1);
+    expect(npc.root.position.y).toBeLessThan(-50);
+
+    // Człowiek wychodzi z pokoju -> przywróć bota
+    const restored = manager.showNpc(characterName);
+    expect(restored).toBe(true);
+    expect(manager.isNpcHidden(characterName)).toBe(false);
+    expect(npc.root.visible).toBe(true);
+    expect(npc.root.position.y).toBeGreaterThanOrEqual(0);
+
+    manager.dispose();
+  });
+
+  it('obsługuje poczęstowanie NPC piwem lub jointem i zwraca klimatyczną kwestię', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    const npc = manager.npcs[0];
+
+    const resultBeer = manager.shareItemWithNpc(npc.name, 'Piwo');
+    expect(resultBeer.success).toBe(true);
+    expect(typeof resultBeer.message).toBe('string');
+    expect(resultBeer.message!.length).toBeGreaterThan(5);
+    expect(npc.wait).toBeGreaterThan(0);
+
+    const resultJoint = manager.shareItemWithNpc(npc.name, 'Joint');
+    expect(resultJoint.success).toBe(true);
+    expect(typeof resultJoint.message).toBe('string');
+
+    // Nieistniejący NPC
+    const resultNone = manager.shareItemWithNpc('NieznanyBot', 'Piwo');
+    expect(resultNone.success).toBe(false);
+
+    manager.dispose();
+  });
+
+  it('gromadzi okolicznych NPC wokół boiska do flanków jako widzów', () => {
+    const manager = new NpcManager(new THREE.Scene(), new Map(), null, openNavigation());
+    const pitchCenter = new THREE.Vector3(0, 0, -26);
+
+    manager.gatherNpcsAtFlanki(pitchCenter, 4);
+
+    const nearbyNpcs = manager.npcs.filter(
+      (npc) => npc.root.position.distanceTo(pitchCenter) < 15 || npc.target.distanceTo(pitchCenter) < 15,
+    );
+    expect(nearbyNpcs.length).toBeGreaterThanOrEqual(4);
+
     manager.dispose();
   });
 });

@@ -16,7 +16,7 @@ import {
 import { GrassLayer } from './GrassLayer'
 import { TutorialTriangleGrass } from './TutorialTriangleGrass'
 import { DistantTriangleGrass } from './DistantTriangleGrass'
-import { DEFAULT_GRASS_PRESET, GRASS_PRESETS, type GrassQualityPreset } from '../../grassQuality'
+import { DEFAULT_GRASS_PRESET, GRASS_PRESETS, grassDensityForSurface, type GrassQualityPreset } from '../../grassQuality'
 import type {
   GrassCoverageMap,
   GrassOptions,
@@ -386,6 +386,7 @@ export class Grass extends THREE.Group {
     this.terrain = this.externalSurface ? undefined : createTerrain(this.normalized.terrain)
     this.activeSurface = this.externalSurface ?? this.terrain!.grassSurface
     this.blades = this.createBlades()
+    this.blades.visible = false
     // CampWorld already owns the visible ground; this facade supplies blades only.
     if (this.terrain) this.add(this.terrain.grassSurface)
     this.add(this.blades)
@@ -408,7 +409,9 @@ export class Grass extends THREE.Group {
     const config = GRASS_PRESETS[preset]
     this.tutorialGrass.setPreset(preset)
     this.distantGrass.setPreset(preset)
-    this.blades.setOptions({ density: config.grassLayerDensity })
+    const { width, depth } = surfaceSize(this.activeSurface)
+    this.blades.setOptions({ density: grassDensityForSurface(config.grassLayerDensity, width, depth) })
+    this.blades.visible = false
   }
 
   setOptions(patch: GrassOptions): void {
@@ -529,6 +532,7 @@ export class Grass extends THREE.Group {
     this.activeSurface = this.externalSurface ?? this.terrain!.grassSurface
     if (this.terrain) this.add(this.terrain.ground, this.terrain.grassSurface)
     this.blades = this.createBlades()
+    this.blades.visible = false
     this.add(this.blades)
     this.rebuildWildflowers()
   }

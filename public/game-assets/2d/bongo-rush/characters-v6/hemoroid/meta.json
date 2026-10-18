@@ -1,0 +1,36 @@
+{
+  "frameWidth": 128,
+  "frameHeight": 128,
+  "framesPerDirection": 12,
+  "rows": {
+    "down": 0,
+    "right": 1,
+    "up": 2,
+    "left": 3
+  },
+  "animationColumns": {
+    "idle": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "walk": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ]
+  },
+  "pivot": {
+    "x": 64,
+    "y": 116
+  },
+  "margin": 6,
+  "walkTilesPerCycle": 4,
+  "idleFps": 3
+}

@@ -7,6 +7,8 @@ export type MobileControlActions = {
   interact: () => void;
   menu: () => void;
   inventory: () => void;
+  press?: (key: 'e' | ' ') => void;
+  release?: (key: 'e' | ' ') => void;
 };
 
 export type JoystickInput = {
@@ -38,6 +40,14 @@ export function joystickInput(deltaX: number, deltaY: number, radius: number): J
 export function shouldUseMobileControls(coarsePointer: boolean, maxTouchPoints: number) {
   return coarsePointer || maxTouchPoints > 0;
 }
+export function mobileJumpAction(phase?: string) {
+  const flanki = Boolean(phase && !['idle', 'game_over'].includes(phase));
+  return {
+    label: flanki ? 'RZUT' : 'SKOK',
+    ariaLabel: flanki ? 'Rzut piłką we flankach' : 'Skok',
+    disabled: flanki && phase !== 'aiming',
+  };
+}
 
 /** Odczytuje możliwości dotykowe aktualnej przeglądarki. */
 export function isMobileInputDevice() {
@@ -60,7 +70,11 @@ export class MobileControls {
   private lookPointerId?: number;
   private lookX = 0;
   private lookY = 0;
+  private lookDistance = 0;
+  private hintDismissed = false;
   private playing = false;
+  private jumpContext?: string;
+  private jumpContextInitialized = false;
 
   constructor(
     private readonly root: HTMLElement,
@@ -84,8 +98,48 @@ export class MobileControls {
     this.events.listen(this.lookZone, 'pointercancel', (event) => this.finishLook(event as PointerEvent));
     this.events.listen(this.menuButton, 'click', () => this.actions.menu());
     this.events.listen(this.inventoryButton, 'click', () => this.actions.inventory());
-    this.events.listen(this.interactButton, 'click', () => this.actions.interact());
+    if (this.actions.press) this.bindHold(this.interactButton, 'e');
+    else this.events.listen(this.interactButton, 'click', () => this.actions.interact());
+    const jump = this.root.querySelector<HTMLButtonElement>('#mobile-jump');
+    if (jump) this.bindHold(jump, ' ');
+    const fullscreen = this.root.querySelector<HTMLButtonElement>('#mobile-fullscreen');
+    if (fullscreen) {
+      this.events.listen(fullscreen, 'click', () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen?.().catch?.(() => {});
+        } else {
+          document.exitFullscreen?.().catch?.(() => {});
+        }
+      });
+      this.events.listen(document, 'fullscreenchange', () => {
+        const isFs = Boolean(document.fullscreenElement);
+        fullscreen.classList.toggle('active', isFs);
+        fullscreen.setAttribute('aria-label', isFs ? 'Opuść pełny ekran' : 'Pełny ekran');
+      });
+    }
     document.body.classList.add('mobile-input');
+  }
+
+  private bindHold(button: HTMLButtonElement, key: 'e' | ' ') {
+    let pressed = false;
+    this.events.listen(button, 'pointerdown', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (pressed) return;
+      pressed = true;
+      button.setPointerCapture?.((event as PointerEvent).pointerId);
+      this.actions.press?.(key);
+    });
+    const release = (event: Event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!pressed) return;
+      pressed = false;
+      this.actions.release?.(key);
+    };
+    this.events.listen(button, 'pointerup', release);
+    this.events.listen(button, 'pointercancel', release);
+    this.events.listen(button, 'lostpointercapture', release);
   }
 
   /** Wymaga elementu należącego do warstwy mobilnej i zachowuje jego typ. */
@@ -96,8 +150,22 @@ export class MobileControls {
   }
 
   /** Pokazuje tylko te przyciski, które mają sens w aktualnym stanie aplikacji. */
+  setFlankiPhase(phase?: string) {
+    if (this.jumpContextInitialized && phase === this.jumpContext) return;
+    this.jumpContextInitialized = true;
+    this.jumpContext = phase;
+    const button = this.root.querySelector<HTMLButtonElement>('#mobile-jump');
+    if (!button) return;
+    const action = mobileJumpAction(phase);
+    if (button.textContent !== action.label) button.textContent = action.label;
+    button.setAttribute('aria-label', action.ariaLabel);
+    button.disabled = action.disabled;
+  }
+
   setState(state: AppState) {
     this.playing = state === 'playing';
+    const jump = this.root.querySelector<HTMLButtonElement>('#mobile-jump');
+    if (jump) jump.hidden = !this.playing;
     const seated = state === 'seated';
     const inventoryOpen = state === 'inventory';
     this.root.hidden = !this.playing && !seated && !inventoryOpen;
@@ -110,6 +178,7 @@ export class MobileControls {
     this.inventoryButton.textContent = inventoryOpen ? 'ZAMKNIJ' : 'EKWIPUNEK';
     this.inventoryButton.setAttribute('aria-pressed', String(inventoryOpen));
     if (!this.playing) {
+      this.actions.release?.('e');
       this.resetMove();
       this.resetLook();
     }
@@ -167,6 +236,14 @@ export class MobileControls {
     this.lookX = event.clientX;
     this.lookY = event.clientY;
     this.actions.look(deltaX, deltaY);
+    if (!this.hintDismissed) {
+      this.lookDistance += Math.hypot(deltaX, deltaY);
+      if (this.lookDistance > 30) {
+        this.hintDismissed = true;
+        const hint = this.root.querySelector<HTMLElement>('.mobile-look-hint');
+        if (hint) hint.classList.add('dismissed');
+      }
+    }
   }
 
   /** Kończy gest kamery przypisany do danego palca. */
@@ -192,6 +269,7 @@ export class MobileControls {
 
   /** Usuwa listenery i przywraca neutralny stan interfejsu. */
   dispose() {
+    this.actions.release?.('e');
     this.resetMove();
     this.resetLook();
     this.events.dispose();

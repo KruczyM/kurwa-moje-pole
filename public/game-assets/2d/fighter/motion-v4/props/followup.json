@@ -1,0 +1,18 @@
+{
+  "wc_tron_open": {
+    "columns": 4,
+    "frameWidth": 256,
+    "frameHeight": 352,
+    "sha256": "7fc613af9b441816f9927996594da6a8a337719b6eec936ef423b29bf35d97fe"
+  },
+  "wc_tron_open_right": {
+    "columns": 4,
+    "frameWidth": 256,
+    "frameHeight": 352,
+    "sha256": "c3ca1a2280c2b58241689d57de74c75bf6f7e08ef23282b95cc9fd60afaa039c"
+  },
+  "dj_operator_side": {
+    "columns": 1,
+    "sha256": "5e05d314a67a54d375e720d4f02a450ddd001a3c711754d645aa3bd98f8be4ad"
+  }
+}

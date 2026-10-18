@@ -44,4 +44,18 @@ describe('EffectTimeline', () => {
     expect(timeline.intensity).toBe(0);
     expect(timeline.remaining).toBe(2);
   });
+
+  it('shortens remaining duration by 40% when antidote is applied', () => {
+    const timeline = new EffectTimeline();
+    timeline.use('LSD', durations);
+    timeline.update(2, durations);
+    expect(timeline.phase).toBe('active');
+    expect(timeline.remaining).toBe(4);
+
+    expect(timeline.shorten(0.4)).toBe(true);
+    expect(timeline.remaining).toBeCloseTo(2.4);
+
+    timeline.update(2.4, durations);
+    expect(timeline.phase).toBe('fadeOut');
+  });
 });

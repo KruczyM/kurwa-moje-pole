@@ -1,0 +1,594 @@
+{
+  "clips": [
+    "Acknowledging",
+    "AngryGesture",
+    "AnnoyedHeadShake",
+    "ArmStretching",
+    "BackwardWalkingTurn",
+    "BeingCocky",
+    "Cheering",
+    "Clapping",
+    "DismissingGesture",
+    "Drinking",
+    "DrunkIdle",
+    "DrunkIdleLoose",
+    "DrunkIdleVariation",
+    "DrunkIdleVariationVariant2",
+    "DrunkRunBackward",
+    "DrunkRunForward",
+    "DrunkRunningLeftTurn",
+    "DrunkTurn",
+    "DrunkWalk",
+    "DrunkWalkBackwards",
+    "DrunkWalkingTurn",
+    "HappyHandGesture",
+    "HardHeadNod",
+    "HeadNodYes",
+    "Headbanging",
+    "HipHopDancing",
+    "HipHopDancingVariant1",
+    "Idle",
+    "Jump",
+    "Laughing",
+    "LayingIdle",
+    "LayingIdleFootCrossed",
+    "LeftStrafe",
+    "LeftStrafeWalking",
+    "LeftTurn",
+    "LeftTurn90",
+    "LengthyHeadNod",
+    "LookAround",
+    "LookAwayGesture",
+    "MaleSittingPose",
+    "MaleSittingPoseVariant1",
+    "NeckStretching",
+    "PickingUp",
+    "RelievedSigh",
+    "RightStrafe",
+    "RightStrafeWalking",
+    "RightTurn",
+    "RightTurn90",
+    "Run",
+    "RunBackwardArcRight",
+    "SarcasticHeadNod",
+    "ShakingHeadNo",
+    "SillyDancing",
+    "Sitting",
+    "SittingDrinking",
+    "SittingIdle",
+    "SittingTalking",
+    "SittingToStanding",
+    "SittingVariant1",
+    "SleepingIdle",
+    "StandUpFromLaying",
+    "Talking",
+    "TalkingVariant1",
+    "TextingWhileStanding",
+    "ThoughtfulHeadShake",
+    "Walk",
+    "Walking",
+    "WalkingBackwards",
+    "WalkingWhileTexting",
+    "Waving",
+    "WeightShift",
+    "Yelling"
+  ],
+  "files": [
+    {
+      "source": "Gestures Pack Basic/acknowledging.fbx",
+      "clip": "Acknowledging",
+      "status": "included",
+      "motionHash": "92fe0cfa6b7c8643270e73ca16839d0852c312eee1dc3165f4760e4668d34445",
+      "duration": 1.7666666666666666
+    },
+    {
+      "source": "Gestures Pack Basic/angry gesture.fbx",
+      "clip": "AngryGesture",
+      "status": "included",
+      "motionHash": "7a72db8877910d5fabb62fbc936b1662afa7b80def56ed430a7d8a112a9aa2e7",
+      "duration": 2.1333333333333333
+    },
+    {
+      "source": "Gestures Pack Basic/annoyed head shake.fbx",
+      "clip": "AnnoyedHeadShake",
+      "status": "included",
+      "motionHash": "38fdbff0106714b013a539ea68d624dcd030ecf65290981957a0fcf143472c64",
+      "duration": 2.433333333333333
+    },
+    {
+      "source": "Gestures Pack Basic/being cocky.fbx",
+      "clip": "BeingCocky",
+      "status": "included",
+      "motionHash": "f8768c96e83cfcadc6ccab99bae7a17ea43da885d68c85d772c3e7cbcceecc1b",
+      "duration": 2.1
+    },
+    {
+      "source": "Gestures Pack Basic/dismissing gesture.fbx",
+      "clip": "DismissingGesture",
+      "status": "included",
+      "motionHash": "c31304e364869c742f80631d0d67da038a669b8705e0e8beea5a3814476ff650",
+      "duration": 3.2666666666666666
+    },
+    {
+      "source": "Gestures Pack Basic/happy hand gesture.fbx",
+      "clip": "HappyHandGesture",
+      "status": "included",
+      "motionHash": "d91c7050b9d3b4d7e7cf886895f5a32947b32311f0500d4be78cb4f3c50236fa",
+      "duration": 2.9
+    },
+    {
+      "source": "Gestures Pack Basic/hard head nod.fbx",
+      "clip": "HardHeadNod",
+      "status": "included",
+      "motionHash": "f02c6342b3364e08a07543a3b8830b078c67330ee6ca274eddc89ba414e5515a",
+      "duration": 1.6333333333333333
+    },
+    {
+      "source": "Gestures Pack Basic/head nod yes.fbx",
+      "clip": "HeadNodYes",
+      "status": "included",
+      "motionHash": "49e96f7d7e4572ce12c77ff05b54577ee39e4a4ff4a9014d6af5582e2592c4c9",
+      "duration": 2.3
+    },
+    {
+      "source": "Gestures Pack Basic/lengthy head nod.fbx",
+      "clip": "LengthyHeadNod",
+      "status": "included",
+      "motionHash": "1b85f5e608af0299baf9ab7ec2463d53ecb0727da2aaf1d6009a24ae055518ec",
+      "duration": 1.7
+    },
+    {
+      "source": "Gestures Pack Basic/look away gesture.fbx",
+      "clip": "LookAwayGesture",
+      "status": "included",
+      "motionHash": "091e07428e7b71bdda2ebc02592cc16e23d4dc1fc55946a50974f338a13ce7c9",
+      "duration": 2.3
+    },
+    {
+      "source": "Gestures Pack Basic/pierscien-mixamo-upload.fbx",
+      "status": "base-character"
+    },
+    {
+      "source": "Gestures Pack Basic/relieved sigh.fbx",
+      "clip": "RelievedSigh",
+      "status": "included",
+      "motionHash": "0530c28cfdecf9a8406fbfe4506e5b362c21a7009a7a1afbbc37d13b1198623a",
+      "duration": 2.9
+    },
+    {
+      "source": "Gestures Pack Basic/sarcastic head nod.fbx",
+      "clip": "SarcasticHeadNod",
+      "status": "included",
+      "motionHash": "32662ff323a4033e781960fe7e3830600020999256ca6d64615a32cf3b4610de",
+      "duration": 2.2666666666666666
+    },
+    {
+      "source": "Gestures Pack Basic/shaking head no.fbx",
+      "clip": "ShakingHeadNo",
+      "status": "included",
+      "motionHash": "bc1e312c1430f205d5a49c2a8a2659c4534c2bc3c59c6a3d1ed44a28244fbfe1",
+      "duration": 1.6666666666666667
+    },
+    {
+      "source": "Gestures Pack Basic/thoughtful head shake.fbx",
+      "clip": "ThoughtfulHeadShake",
+      "status": "included",
+      "motionHash": "933531f201aa0c38f4aec66a0b1d7981e9029f9c9d132a8ae92fae6afedd22d1",
+      "duration": 3.0
+    },
+    {
+      "source": "Gestures Pack Basic/weight shift.fbx",
+      "clip": "WeightShift",
+      "status": "included",
+      "motionHash": "84bfae1e0c67568f00b7c167055578234472bacf34129b5c4a5e54d0dedb2588",
+      "duration": 9.333333333333334
+    },
+    {
+      "source": "Locomotion Pack/idle.fbx",
+      "clip": "Idle",
+      "status": "included",
+      "motionHash": "fff4518a98418d25e59c7fe84c2f174b5378b505b12ac5c90466958c90f0f046",
+      "duration": 8.1
+    },
+    {
+      "source": "Locomotion Pack/jump.fbx",
+      "clip": "Jump",
+      "status": "included",
+      "motionHash": "45f49b22ad7bd3cee4a703b7e3fbec73691ef0b1876fdfad1e4e7a31f967c964",
+      "duration": 1.8333333333333333
+    },
+    {
+      "source": "Locomotion Pack/left strafe walking.fbx",
+      "clip": "LeftStrafeWalking",
+      "status": "included",
+      "motionHash": "597c8d6a92065f87b437bf9b879f7dbd7972065e65bb771720816b6595bc263f",
+      "duration": 1.0333333333333334
+    },
+    {
+      "source": "Locomotion Pack/left strafe.fbx",
+      "clip": "LeftStrafe",
+      "status": "included",
+      "motionHash": "3736194a717f8c30b625da5a78d33e929c9948c8f775da07914fc59d05557f61",
+      "duration": 0.6666666666666666
+    },
+    {
+      "source": "Locomotion Pack/left turn 90.fbx",
+      "clip": "LeftTurn90",
+      "status": "included",
+      "motionHash": "c497789c1e868d9d59c8391a951c1151773e64b87838d9e895512f7b6f069106",
+      "duration": 0.9333333333333333
+    },
+    {
+      "source": "Locomotion Pack/left turn.fbx",
+      "clip": "LeftTurn",
+      "status": "included",
+      "motionHash": "70c790f3dcf8dd1108ba01dffa0efeb6db3cb52323986356fbbf4669753b3fc9",
+      "duration": 1.6
+    },
+    {
+      "source": "Locomotion Pack/pierscien-mixamo-upload.fbx",
+      "status": "base-character"
+    },
+    {
+      "source": "Locomotion Pack/right strafe walking.fbx",
+      "clip": "RightStrafeWalking",
+      "status": "included",
+      "motionHash": "44f6d6a9462d4d92cfdccbc78f1baddc38d75bde02583ec4f163cf9c5e28f4fa",
+      "duration": 1.0333333333333334
+    },
+    {
+      "source": "Locomotion Pack/right strafe.fbx",
+      "clip": "RightStrafe",
+      "status": "included",
+      "motionHash": "5a5d774f68ca3579bf4812120858c67c6ebf750ecfe1c00f76297f69b190b1fa",
+      "duration": 0.6666666666666666
+    },
+    {
+      "source": "Locomotion Pack/right turn 90.fbx",
+      "clip": "RightTurn90",
+      "status": "included",
+      "motionHash": "ef16458f9d943aaae598e155a90752013f449d45c8a54d6655eb4edc527c0bee",
+      "duration": 0.9333333333333333
+    },
+    {
+      "source": "Locomotion Pack/right turn.fbx",
+      "clip": "RightTurn",
+      "status": "included",
+      "motionHash": "b0907505d03cce5241f7d88d5c625ab6f3c366be23a0a5b175dfed430e958bbb",
+      "duration": 1.5
+    },
+    {
+      "source": "Locomotion Pack/running.fbx",
+      "clip": "Run",
+      "status": "included",
+      "motionHash": "1fb27ae1d09cdda302bbf27bf4fca3ba0fb91bac7d6b2b0a0043ece72e6433b4",
+      "duration": 0.7
+    },
+    {
+      "source": "Locomotion Pack/walking.fbx",
+      "clip": "Walk",
+      "status": "included",
+      "motionHash": "d7414a20f9c5c2175bdc2ba176fd66a8aec24074f06b094f1bee28bba9f7cda1",
+      "duration": 1.0333333333333334
+    },
+    {
+      "source": "Male Drunk Pack/backward walking turn.fbx",
+      "clip": "BackwardWalkingTurn",
+      "status": "included",
+      "motionHash": "57b7ec71a970d50d048067014b1fa707c89c85a156f966d62d4c64e382205649",
+      "duration": 1.9666666666666666
+    },
+    {
+      "source": "Male Drunk Pack/drunk idle variation (2).fbx",
+      "clip": "DrunkIdleVariationVariant2",
+      "status": "included",
+      "motionHash": "654262b3deddd686d31f4361acefc744710e304959be7d0763f463fdbbd47fa5",
+      "duration": 5.4
+    },
+    {
+      "source": "Male Drunk Pack/drunk idle variation.fbx",
+      "clip": "DrunkIdleVariation",
+      "status": "included",
+      "motionHash": "09359771f453b749a0acbd79929d09b0ed3f1b759f61dab8454447f3120575f9",
+      "duration": 3.9
+    },
+    {
+      "source": "Male Drunk Pack/drunk idle.fbx",
+      "clip": "DrunkIdle",
+      "status": "included",
+      "motionHash": "d0f022fa77b2e7ddf0c6c77ae6fa2e252f31a3ab9ea314a276b8c15e97254a3f",
+      "duration": 7.4
+    },
+    {
+      "source": "Male Drunk Pack/drunk run backward.fbx",
+      "clip": "DrunkRunBackward",
+      "status": "included",
+      "motionHash": "c05565f76228587a744837f268760e0a44a65581ae3d2605aa52b98fcb03e757",
+      "duration": 1.1
+    },
+    {
+      "source": "Male Drunk Pack/drunk run forward.fbx",
+      "clip": "DrunkRunForward",
+      "status": "included",
+      "motionHash": "1c9ae0203970515282c9fde83ae849346e3db78e4469b9b7040abab3bdfd386c",
+      "duration": 1.8333333333333333
+    },
+    {
+      "source": "Male Drunk Pack/drunk running left turn.fbx",
+      "clip": "DrunkRunningLeftTurn",
+      "status": "included",
+      "motionHash": "a8e01bfc9cce12c34eade3427d9414091b8f81eebcb292e355ee75bc93a789b6",
+      "duration": 1.5
+    },
+    {
+      "source": "Male Drunk Pack/drunk turn.fbx",
+      "clip": "DrunkTurn",
+      "status": "included",
+      "motionHash": "7e1443ff2e0af66b4e9a680a0c2ca3c3097e70da5ae7d090df343b7a61d8a9fa",
+      "duration": 1.5666666666666667
+    },
+    {
+      "source": "Male Drunk Pack/drunk walk backwards.fbx",
+      "clip": "DrunkWalkBackwards",
+      "status": "included",
+      "motionHash": "cf3ab1c893bd868e15b455c3fbfe357c5c0a7593ba1c07c9e796524e9841fa01",
+      "duration": 1.5666666666666667
+    },
+    {
+      "source": "Male Drunk Pack/drunk walk.fbx",
+      "clip": "DrunkWalk",
+      "status": "included",
+      "motionHash": "0bc835989bc099f2eccf618aa004bff73b69245b89171e15aa1819d0f0cf4ef7",
+      "duration": 3.0
+    },
+    {
+      "source": "Male Drunk Pack/drunk walking turn.fbx",
+      "clip": "DrunkWalkingTurn",
+      "status": "included",
+      "motionHash": "1c99c29e55ab06a9173d10c58e61f28ff3b2fc4156ab88655e2e8a46bbc1f004",
+      "duration": 2.533333333333333
+    },
+    {
+      "source": "Male Drunk Pack/pierscien-mixamo-upload.fbx",
+      "status": "base-character"
+    },
+    {
+      "source": "Male Drunk Pack/run backward arc right.fbx",
+      "clip": "RunBackwardArcRight",
+      "status": "included",
+      "motionHash": "fd32ab573daaae332f1f7510513b02ca253e181358824147dfdbbb3be1187fd6",
+      "duration": 1.2333333333333334
+    },
+    {
+      "source": "Arm Stretching.fbx",
+      "clip": "ArmStretching",
+      "status": "included",
+      "motionHash": "46e060d46d832943c5b2dacfbdc3f9ac4a7c1b84bbe39c960dd53d262d620dbb",
+      "duration": 8.866666666666667
+    },
+    {
+      "source": "Cheering.fbx",
+      "clip": "Cheering",
+      "status": "included",
+      "motionHash": "d75389d9b9e28d35570c2b9a828e92a739ec0bc632dfe1c91edd0d43ce73ede9",
+      "duration": 2.9
+    },
+    {
+      "source": "Clapping.fbx",
+      "clip": "Clapping",
+      "status": "included",
+      "motionHash": "f0603dfd1ec52d41efec4b2d09bb4b890fb7d8c0d06eb24711315e1ce632694b",
+      "duration": 1.1666666666666667
+    },
+    {
+      "source": "Drinking.fbx",
+      "clip": "Drinking",
+      "status": "included",
+      "motionHash": "49ba88dc979135e50a1007b46cdf86f3234c11fbbb6cfb721d09327cf47b0c90",
+      "duration": 8.866666666666667
+    },
+    {
+      "source": "Drunk Idle.fbx",
+      "clip": "DrunkIdleLoose",
+      "status": "included",
+      "motionHash": "b6eb3757c75ea8350ebd42ade893d7a6863fcc9a01801b65321382e1debd120b",
+      "duration": 7.4
+    },
+    {
+      "source": "Headbanging.fbx",
+      "clip": "Headbanging",
+      "status": "included",
+      "motionHash": "a2f9f1f308db404d24149e70bea4e85a16ef542195be30058ab325ade3f10aae",
+      "duration": 1.9
+    },
+    {
+      "source": "Hip Hop Dancing (1).fbx",
+      "clip": "HipHopDancingVariant1",
+      "status": "included",
+      "motionHash": "859a310066c57bb6011a8ebca2c8e675005eab72e1472bc97ed5541f9b1c92e8",
+      "duration": 18.566666666666666
+    },
+    {
+      "source": "Hip Hop Dancing.fbx",
+      "clip": "HipHopDancing",
+      "status": "included",
+      "motionHash": "6869f39c32628fdff788be3326746c64e607ad9cf0fe2e90984aac78ab209cd2",
+      "duration": 13.033333333333333
+    },
+    {
+      "source": "Laughing.fbx",
+      "clip": "Laughing",
+      "status": "included",
+      "motionHash": "826eaeb8de420aebfd391aabbc03c70302411c87cb5bfea40dce74db31f1a8cd",
+      "duration": 9.766666666666667
+    },
+    {
+      "source": "Laying Idle foot crossed.fbx",
+      "clip": "LayingIdleFootCrossed",
+      "status": "included",
+      "motionHash": "c3260e594ef8df38b32b61c472890feee2022a1b6b6de20e8ce1d6801b81725e",
+      "duration": 12.5
+    },
+    {
+      "source": "Laying Idle.fbx",
+      "clip": "LayingIdle",
+      "status": "included",
+      "motionHash": "662134ebabb225afdfd3480b7f655b6e0c847eebf244cf5fc9cc4dff5dcd0498",
+      "duration": 2.1333333333333333
+    },
+    {
+      "source": "Look Around.fbx",
+      "clip": "LookAround",
+      "status": "included",
+      "motionHash": "de9db9eb1d3cf6b6f2aabe184dfd6db700b8e28b60337bc31f4f6c8a3368d06c",
+      "duration": 4.466666666666667
+    },
+    {
+      "source": "Male Sitting Pose (1).fbx",
+      "clip": "MaleSittingPoseVariant1",
+      "status": "included",
+      "motionHash": "d801dce0fcfe68fdd9c402b2e504cfb596b001113b6902e4bef70527e82fd012",
+      "duration": 0.03333333333333333
+    },
+    {
+      "source": "Male Sitting Pose.fbx",
+      "clip": "MaleSittingPose",
+      "status": "included",
+      "motionHash": "7b34953bcd34a8f50f11372aa9d350b53cfdf1deefc46dfe5dbf6881b47aa4e1",
+      "duration": 0.03333333333333333
+    },
+    {
+      "source": "Neck Stretching.fbx",
+      "clip": "NeckStretching",
+      "status": "included",
+      "motionHash": "e520230b1d980c8f267c428c752a537e4fd1760badce6c63369bdca6410bb458",
+      "duration": 3.2
+    },
+    {
+      "source": "Picking Up.fbx",
+      "clip": "PickingUp",
+      "status": "included",
+      "motionHash": "86dbbd8b837343e5f2ae1bd230e808b0f2873429919fcd92afdf29e04ad0f67a",
+      "duration": 9.566666666666666
+    },
+    {
+      "source": "Silly Dancing.fbx",
+      "clip": "SillyDancing",
+      "status": "included",
+      "motionHash": "0c2590549dffb3582a4ee683c49a82cfca5ee264aa116535e1f7d797999847e5",
+      "duration": 5.433333333333334
+    },
+    {
+      "source": "Sitting (1).fbx",
+      "clip": "SittingVariant1",
+      "status": "included",
+      "motionHash": "cb894549beeb1ba383799813373835bb216688f3b3b39b8161ce348c53ffbbdb",
+      "duration": 7.0
+    },
+    {
+      "source": "Sitting Drinking.fbx",
+      "clip": "SittingDrinking",
+      "status": "included",
+      "motionHash": "bf26f9c2d702c6bdf04f34d88e2a894f92e787372227e119ef2c1eaade59b2c3",
+      "duration": 15.2
+    },
+    {
+      "source": "Sitting Idle.fbx",
+      "clip": "SittingIdle",
+      "status": "included",
+      "motionHash": "3188269fbc8f9c5324bc94812f2e6b98447a5fcb2cbc12c8e1e024603e5fba39",
+      "duration": 4.3
+    },
+    {
+      "source": "Sitting Talking.fbx",
+      "clip": "SittingTalking",
+      "status": "included",
+      "motionHash": "da9de371d144f687c9909816158d99a81e5cf3560af63df0435ce72ce531a4e1",
+      "duration": 44.06666666666667
+    },
+    {
+      "source": "Sitting To Standing.fbx",
+      "clip": "SittingToStanding",
+      "status": "included",
+      "motionHash": "33708c70ebc50fe129bee1308d8b3c049f5badcb88d49d3d8e2c25e396a854cf",
+      "duration": 4.833333333333333
+    },
+    {
+      "source": "Sitting.fbx",
+      "clip": "Sitting",
+      "status": "included",
+      "motionHash": "024a4c9be61afd4ddd2178cb05bb4dd66567cd3468b6bf7ffe998571cbc37fe4",
+      "duration": 4.433333333333334
+    },
+    {
+      "source": "Sleeping Idle.fbx",
+      "clip": "SleepingIdle",
+      "status": "included",
+      "motionHash": "63d7fffedf8d3dab16fbb9b012ed68a944af09b4b3dbe2414f67c47e06e4a03b",
+      "duration": 6.866666666666666
+    },
+    {
+      "source": "Stand Up from laying.fbx",
+      "clip": "StandUpFromLaying",
+      "status": "included",
+      "motionHash": "796b90075585b8a7a0a7c5725907c03876f96b907b56085ef3755acbb50d480c",
+      "duration": 8.266666666666667
+    },
+    {
+      "source": "Talking (1).fbx",
+      "clip": "TalkingVariant1",
+      "status": "included",
+      "motionHash": "fae062590c9012c19dfee17cfca475e028a71ce872eb710d3c000818d99e96f4",
+      "duration": 5.166666666666667
+    },
+    {
+      "source": "Talking.fbx",
+      "clip": "Talking",
+      "status": "included",
+      "motionHash": "93beaae3f0a8cdc82f664212481be09f29f98b2c0098f0b802eef31a756cd458",
+      "duration": 3.933333333333333
+    },
+    {
+      "source": "Texting While Standing.fbx",
+      "clip": "TextingWhileStanding",
+      "status": "included",
+      "motionHash": "e700d94a9badd83244d675e66a69b9ec87dc96e024269a0634df9827b4b90810",
+      "duration": 23.566666666666666
+    },
+    {
+      "source": "Walking Backwards.fbx",
+      "clip": "WalkingBackwards",
+      "status": "included",
+      "motionHash": "12549a0a250465ca06796569d44b2ef2b5365cd354e85035e7f9409c691602f7",
+      "duration": 1.2
+    },
+    {
+      "source": "Walking While Texting.fbx",
+      "clip": "WalkingWhileTexting",
+      "status": "included",
+      "motionHash": "8f8179d72c4577de89ee6364548983edde2d6a8eee046c14788b15e893e2539a",
+      "duration": 4.0
+    },
+    {
+      "source": "Walking.fbx",
+      "clip": "Walking",
+      "status": "included",
+      "motionHash": "edcac1c0ac64aff8dd009b9659ebf0dd4f677a9e6bb6297e5cce5dc6830290f1",
+      "duration": 2.5
+    },
+    {
+      "source": "Waving.fbx",
+      "clip": "Waving",
+      "status": "included",
+      "motionHash": "835a1ee71670b3bf8da6600d8ce1f71f98c9ce18f312a31fe6e87beb8fa766b0",
+      "duration": 0.5333333333333333
+    },
+    {
+      "source": "Yelling.fbx",
+      "clip": "Yelling",
+      "status": "included",
+      "motionHash": "24fc3a29edf7c77968c032f578b29d63896a3c64ec634d814b9b93e8f876ce69",
+      "duration": 7.833333333333333
+    }
+  ]
+}

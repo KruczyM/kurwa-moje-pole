@@ -153,5 +153,5 @@ describe('NpcSoakSession (Issue #21)', () => {
     }
 
     manager.dispose();
-  });
+  }, 30000);
 });

@@ -8,7 +8,18 @@ import {
 
 describe('character animation contract', () => {
   it('contains the complete runtime library', () => {
-    expect(canonicalAnimationClips).toHaveLength(13);
+    expect(canonicalAnimationClips).toEqual(
+      expect.arrayContaining([
+        'Walk',
+        'Run',
+        'LieDown',
+        'SleepingIdle',
+        'SittingToStanding',
+        'Waving',
+        'LeftStrafe',
+      ]),
+    );
+    expect(new Set(canonicalAnimationClips).size).toBe(canonicalAnimationClips.length);
     expect(locomotionClipNames).toEqual(['Idle', 'Walk', 'Run']);
   });
 

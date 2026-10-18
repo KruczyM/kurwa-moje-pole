@@ -61,6 +61,11 @@ export const GRASS_PRESETS: Record<GrassQualityPreset, GrassQualityConfig> = {
 
 export const DEFAULT_GRASS_PRESET: GrassQualityPreset = 'high';
 
+/** Keep the static grass budget bounded when the playable surface expands. */
+export function grassDensityForSurface(density: number, width: number, depth: number) {
+  return density * Math.min(1, 117.6 ** 2 / Math.max(1, width * depth));
+}
+
 /** Sprawdza, czy przekazany ciąg znaków jest poprawną nazwą presetu jakości trawy. */
 export function isGrassQualityPreset(value: unknown): value is GrassQualityPreset {
   return typeof value === 'string' && value in GRASS_PRESETS;

@@ -1,0 +1,9 @@
+Glasses by iPoly3D
+Source: https://poly.pizza/m/9xOJlCsQzX
+Original download: https://static.poly.pizza/403dfb59-d182-43cb-9a39-8d2850f27ce7.glb
+License: CC0 1.0 Universal (Public Domain Dedication)
+License text: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+Retrieved: 2026-10-10
+
+Adaptation for this game: dark frame and lenses. Geometry unchanged.
+Regenerate with: node scripts/import-sunglasses.mjs

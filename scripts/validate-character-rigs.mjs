@@ -71,7 +71,7 @@ function structuralHash(value) {
   return hash(JSON.stringify(value ?? []));
 }
 
-/** Zwraca największy wymiar surowej geometrii na podstawie min/max accessorów POSITION. */
+/** Raw POSITION span; compare only within the same exporter/bind-space family. */
 function geometrySpan(gltf) {
   let span = 0;
   for (const mesh of gltf.meshes ?? []) {
@@ -103,7 +103,11 @@ function animationDurations(gltf) {
 function validateCharacter(character) {
   const problems = [];
   const runtimePath = join(root, 'public', 'game-assets', 'characters', character.id, 'npc-animations.glb');
-  const sourcePath = join(root, 'source-assets', 'characters', character.id, 't-pose.glb');
+  const originalSource = join(root, 'source-assets', 'characters', character.id, 't-pose.glb');
+  const sharedMotionRig = !existsSync(originalSource);
+  const sourcePath = sharedMotionRig
+    ? join(root, 'source-assets', 'rigged-festival', character.id, 't-pose.glb')
+    : originalSource;
   if (!existsSync(runtimePath))
     problems.push({ level: 'error', code: 'missing-runtime', message: runtimePath });
   if (!existsSync(sourcePath)) problems.push({ level: 'error', code: 'missing-t-pose', message: sourcePath });
@@ -140,7 +144,8 @@ function validateCharacter(character) {
     });
   }
 
-  const expectedClips = Object.values(contract.clips).sort();
+  // Draft rigs contain base locomotion; AssetLoader adds the shared motion bank.
+  const expectedClips = (sharedMotionRig ? [...contract.locomotion] : Object.values(contract.clips)).sort();
   const actualClips = (runtime.json.animations ?? [])
     .map((animation) => animation.name)
     .filter(Boolean)
@@ -229,21 +234,25 @@ function validateCharacter(character) {
     materialHash: structuralHash(runtime.json.materials),
     textureHashes: runtimeImages,
     geometrySpan: geometrySpan(runtime.json),
+    geometryFamily: sharedMotionRig ? 'draft-rig' : 'mixamo-export',
     problems,
   };
 }
 
 const characters = catalog.characters.map(validateCharacter);
-const validSpans = characters
-  .map((character) => character.geometrySpan)
-  .filter((span) => Number.isFinite(span) && span > 0)
-  .sort((a, b) => a - b);
-const medianSpan = validSpans.length ? validSpans[Math.floor(validSpans.length / 2)] : 0;
 
 // Postacie mogą różnić się proporcjami, ale nie jednostkami o dwa rzędy wielkości.
 // Ten test wykrywa przypadek Pierścienia, którego mesh i rig były około 100× większe.
-if (medianSpan > 0) {
+for (const family of ['draft-rig', 'mixamo-export']) {
+  const validSpans = characters
+    .filter((character) => character.geometryFamily === family)
+    .map((character) => character.geometrySpan)
+    .filter((span) => Number.isFinite(span) && span > 0)
+    .sort((a, b) => a - b);
+  const medianSpan = validSpans.length ? validSpans[Math.floor(validSpans.length / 2)] : 0;
+  if (medianSpan <= 0) continue;
   for (const character of characters) {
+    if (character.geometryFamily !== family) continue;
     if (!character.geometrySpan) continue;
     const ratio = character.geometrySpan / medianSpan;
     if (ratio > 4 || ratio < 0.25) {

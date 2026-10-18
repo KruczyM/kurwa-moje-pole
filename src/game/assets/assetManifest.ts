@@ -14,19 +14,72 @@ const gameAsset = (path: string) => {
   return version ? `${url}?v=${encodeURIComponent(version)}` : url;
 };
 
+export const fogWorldBaseUrl = gameAsset('world/festival/fog-trial/base.glb');
+export const fogWorldManifestUrl = gameAsset('world/festival/fog-trial/manifest.json');
+export const mobileWorldManifestUrl = gameAsset('world/festival/fog-trial/mobile-manifest.json');
+export const fogWorldSectorUrl = (path: string) => gameAsset(`world/festival/fog-trial/${path}`);
+
 /** Jedyny rejestr adresów binarnych zasobów używanych przez klienta. */
+export const authoredFestivalUrl = gameAsset(catalog.environment.authoredFestival);
+
 export const characterAssets: CharacterAsset[] = catalog.characters.map(({ id, name }) => ({
   id,
   name,
   url: gameAsset(`characters/${id}/npc-animations.glb`),
-  previewUrl: gameAsset(`characters/${id}/preview.glb`),
+  previewUrl: gameAsset(
+    `characters/${id}/${id === 'klatwa' ? 'new-preview-animations.glb' : id === 'amper' || id === 'zawor' ? 'preview.glb' : 'npc-animations.glb'}`,
+  ),
 }));
+
+/** Background crowd assets are separate from selectable, animated player characters. */
+export const festivalNpcAssets = catalog.festivalNpcs.map(({ id, name, path }) => ({
+  id: `festival:${id}`,
+  name,
+  url: gameAsset(path),
+}));
+
+export const festivalMotionBankUrl = gameAsset('animations/festival-motion-bank.glb');
+export const ecoPickupModelsUrl = gameAsset('world/festival/eco-pickups.glb');
 
 export const environmentAssets = {
   flag: gameAsset(catalog.environment.flag),
   chair: gameAsset(catalog.environment.chair),
   speaker: gameAsset(catalog.environment.speaker),
   toilet: gameAsset(catalog.environment.toilet),
+  lidlRockShop: gameAsset(catalog.environment.lidlRockShop),
+  allegroWheel: gameAsset(catalog.environment.allegroWheel),
+  marketStalls: gameAsset(catalog.environment.marketStalls),
+  festivalZones: gameAsset(catalog.environment.festivalZones),
+  mainStage: gameAsset(catalog.environment.mainStage),
+  smallStage: gameAsset(catalog.environment.smallStage),
+  festivalGate: gameAsset(catalog.environment.festivalGate),
+  festivalSignpost: gameAsset(catalog.environment.festivalSignpost),
+  fohTower: gameAsset(catalog.environment.fohTower),
+  delayTower: gameAsset(catalog.environment.delayTower),
+  delayTowerHeavy: gameAsset(catalog.environment.delayTowerHeavy),
+  mudBath: gameAsset(catalog.environment.mudBath),
+  fireTruckOsp: gameAsset(catalog.environment.fireTruckOsp),
+  waterCurtain: gameAsset(catalog.environment.waterCurtain),
+  patrolTent: gameAsset(catalog.environment.patrolTent),
+  krishnaVillage: gameAsset(catalog.environment.krishnaVillage),
+  trashCorral: gameAsset(catalog.environment.trashCorral),
+  grzybek: gameAsset(catalog.environment.grzybek),
+  washTaps: gameAsset(catalog.environment.washTaps),
+  toitoiRow: gameAsset(catalog.environment.toitoiRow),
+  fieldShowers: gameAsset(catalog.environment.fieldShowers),
+  crowdBarrier: gameAsset(catalog.environment.crowdBarrier),
+  festivalFoodTent: gameAsset(catalog.environment.festivalFoodTent),
+  foodtruckFrytki: gameAsset(catalog.environment.foodtruckFrytki),
+  foodtruckChurros: gameAsset(catalog.environment.foodtruckChurros),
+  foodtruckBurger: gameAsset(catalog.environment.foodtruckBurger),
+  foodtruckMakarun: gameAsset(catalog.environment.foodtruckMakarun),
+  rollbarLech: gameAsset(catalog.environment.rollbarLech),
+  sunflower: gameAsset(catalog.environment.sunflower),
+  beerCan: gameAsset(catalog.environment.beerCan),
+  festivalChair: gameAsset(catalog.environment.festivalChair),
+  acousticGuitar: gameAsset(catalog.environment.acousticGuitar),
+  coolerBox: gameAsset(catalog.environment.coolerBox),
+  festivalBackpack: gameAsset(catalog.environment.festivalBackpack),
 };
 
 export const tentAssets = Object.fromEntries(
@@ -35,11 +88,14 @@ export const tentAssets = Object.fromEntries(
 
 export const interactiveAssets = {
   table: gameAsset(catalog.interactives.table),
+  cigarette: gameAsset(catalog.interactives.cigarette),
   joint: gameAsset(catalog.interactives.joint),
   cocaine: gameAsset(catalog.interactives.cocaine),
   mdma: gameAsset(catalog.interactives.mdma),
   mushrooms: gameAsset(catalog.interactives.mushrooms),
   lsd: gameAsset(catalog.interactives.lsd),
+  water: gameAsset(catalog.interactives.water),
+  sunglasses: gameAsset(catalog.interactives.sunglasses),
 };
 
 export const textureAssets = {

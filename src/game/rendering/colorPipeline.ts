@@ -3,7 +3,7 @@ import * as THREE from 'three';
 export type ColorPipeline = 'world' | 'characterPreview' | 'itemInspect';
 
 export const COLOR_PIPELINE_EXPOSURE: Record<ColorPipeline, number> = {
-  world: 1.1,
+  world: 1.0,
   characterPreview: 1.35,
   itemInspect: 1.2,
 };

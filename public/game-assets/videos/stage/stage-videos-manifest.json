@@ -1,0 +1,141 @@
+{
+  "profile": {
+    "target": "Three.js VideoTexture / Festival Stage Telebims",
+    "resolution": "960x540 (16:9)",
+    "framerate": 25,
+    "videoCodec": "h264 (CRF 26, preset fast)",
+    "audioCodec": "aac (128 kbps stereo)",
+    "flags": [
+      "yuv420p",
+      "+faststart"
+    ]
+  },
+  "summary": {
+    "totalClips": 10,
+    "originalSizeMB": 1888.63,
+    "compressedSizeMB": 648.97,
+    "reductionPercent": 65.6
+  },
+  "clips": [
+    {
+      "filename": "happysad-zanim-pojde.mp4",
+      "originalFilename": "Happysad - Zanim pójdę [PROMO 2CD + DVD].mp4",
+      "artist": "Happysad",
+      "title": "Zanim pójdę [PROMO 2CD + DVD]",
+      "resolution": "960x540",
+      "fps": 25,
+      "originalSizeMB": 184.56,
+      "compressedSizeMB": 72.58,
+      "compressionRatioPercent": 39.3,
+      "gameAssetPath": "/game-assets/videos/stage/happysad-zanim-pojde.mp4"
+    },
+    {
+      "filename": "kwiat-jabloni-plachta-nieba.mp4",
+      "originalFilename": "Kwiat Jabłoni - Płachta Nieba #polandrock2023.mp4",
+      "artist": "Kwiat Jabłoni",
+      "title": "Płachta Nieba #polandrock2023",
+      "resolution": "960x540",
+      "fps": 25,
+      "originalSizeMB": 230.3,
+      "compressedSizeMB": 55.52,
+      "compressionRatioPercent": 24.1,
+      "gameAssetPath": "/game-assets/videos/stage/kwiat-jabloni-plachta-nieba.mp4"
+    },
+    {
+      "filename": "lady-pank-kryzysowa-narzeczona.mp4",
+      "originalFilename": "Lady Pank - Kryzysowa Narzeczona #polandrock2023.mp4",
+      "artist": "Lady Pank",
+      "title": "Kryzysowa Narzeczona #polandrock2023",
+      "resolution": "960x540",
+      "fps": 25,
+      "originalSizeMB": 171.71,
+      "compressedSizeMB": 72.27,
+      "compressionRatioPercent": 42.1,
+      "gameAssetPath": "/game-assets/videos/stage/lady-pank-kryzysowa-narzeczona.mp4"
+    },
+    {
+      "filename": "mrzoob-moj-jest-ten-kawalek-podlogi.mp4",
+      "originalFilename": "Mr.Zoob – Mój jest ten kawałek podłogi #polandrock2024.mp4",
+      "artist": "Pol'and'Rock",
+      "title": "Mr.Zoob – Mój jest ten kawałek podłogi #polandrock2024",
+      "resolution": "960x540",
+      "fps": 25,
+      "originalSizeMB": 272.57,
+      "compressedSizeMB": 84.71,
+      "compressionRatioPercent": 31.1,
+      "gameAssetPath": "/game-assets/videos/stage/mrzoob-moj-jest-ten-kawalek-podlogi.mp4"
+    },
+    {
+      "filename": "pull-the-wire-morskie-opowiesci-pirat-drogowy.mp4",
+      "originalFilename": "Pull The Wire - Morskie Opowieści & Pirat Drogowy #polandrock2023.mp4",
+      "artist": "Pull The Wire",
+      "title": "Morskie Opowieści & Pirat Drogowy #polandrock2023",
+      "resolution": "960x540",
+      "fps": 25,
+      "originalSizeMB": 205.54,
+      "compressedSizeMB": 76.65,
+      "compressionRatioPercent": 37.3,
+      "gameAssetPath": "/game-assets/videos/stage/pull-the-wire-morskie-opowiesci-pirat-drogowy.mp4"
+    },
+    {
+      "filename": "pull-the-wire-zycie-to-western-ft-jurek-owsiak.mp4",
+      "originalFilename": "Pull The Wire - Życie to Western ft. Jurek Owsiak #polandrock2023.mp4",
+      "artist": "Pull The Wire",
+      "title": "Życie to Western ft. Jurek Owsiak #polandrock2023",
+      "resolution": "960x540",
+      "fps": 25,
+      "originalSizeMB": 214.39,
+      "compressedSizeMB": 91.83,
+      "compressionRatioPercent": 42.8,
+      "gameAssetPath": "/game-assets/videos/stage/pull-the-wire-zycie-to-western-ft-jurek-owsiak.mp4"
+    },
+    {
+      "filename": "sztywny-pal-azji-nieprzemakalni.mp4",
+      "originalFilename": "Sztywny Pal Azji - Nieprzemakalni #polandrock2022.mp4",
+      "artist": "Sztywny Pal Azji",
+      "title": "Nieprzemakalni #polandrock2022",
+      "resolution": "960x540",
+      "fps": 25,
+      "originalSizeMB": 117.19,
+      "compressedSizeMB": 38.81,
+      "compressionRatioPercent": 33.1,
+      "gameAssetPath": "/game-assets/videos/stage/sztywny-pal-azji-nieprzemakalni.mp4"
+    },
+    {
+      "filename": "wojtek-szumanski-tomek.mp4",
+      "originalFilename": "Wojtek Szumański - Tomek #polandrock2024.mp4",
+      "artist": "Wojtek Szumański",
+      "title": "Tomek #polandrock2024",
+      "resolution": "960x540",
+      "fps": 25,
+      "originalSizeMB": 165.75,
+      "compressedSizeMB": 41.38,
+      "compressionRatioPercent": 25.0,
+      "gameAssetPath": "/game-assets/videos/stage/wojtek-szumanski-tomek.mp4"
+    },
+    {
+      "filename": "lydka-grubasa-gender.mp4",
+      "originalFilename": "Łydka Grubasa - Gender #polandrock2018.mp4",
+      "artist": "Łydka Grubasa",
+      "title": "Gender #polandrock2018",
+      "resolution": "960x540",
+      "fps": 25,
+      "originalSizeMB": 158.11,
+      "compressedSizeMB": 57.23,
+      "compressionRatioPercent": 36.2,
+      "gameAssetPath": "/game-assets/videos/stage/lydka-grubasa-gender.mp4"
+    },
+    {
+      "filename": "lydka-grubasa-nie-jem-nic.mp4",
+      "originalFilename": "Łydka Grubasa - Nie jem nic #polandrock2019.mp4",
+      "artist": "Łydka Grubasa",
+      "title": "Nie jem nic #polandrock2019",
+      "resolution": "960x540",
+      "fps": 25,
+      "originalSizeMB": 168.5,
+      "compressedSizeMB": 57.98,
+      "compressionRatioPercent": 34.4,
+      "gameAssetPath": "/game-assets/videos/stage/lydka-grubasa-nie-jem-nic.mp4"
+    }
+  ]
+}

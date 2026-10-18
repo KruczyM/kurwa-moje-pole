@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <head>
+    <script
+      type="module"
+      src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"
+    ></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f0f0f0;
+      }
+      model-viewer {
+        width: 400px;
+        height: 400px;
+      }
+    </style>
+  </head>
+  <body>
+    <model-viewer id="viewer" src="" camera-controls auto-rotate></model-viewer>
+    <script>
+      window.loadModel = function (url) {
+        document.getElementById('viewer').src = url;
+        return new Promise((resolve) => {
+          document.getElementById('viewer').addEventListener('load', resolve, { once: true });
+        });
+      };
+    </script>
+  </body>
+</html>

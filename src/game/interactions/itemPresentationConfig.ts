@@ -30,9 +30,12 @@ const lying = (tableSize: number, tablePosition: readonly [number, number]): Ite
  * Aby zmniejszyć LSD lub grzyby, zmień wyłącznie ich `tableSize` poniżej.
  */
 export const itemPresentation: Record<InspectableItemId, ItemPresentation> = {
+  cigarette: lying(0.18, [0, 0.18]),
   joint: lying(0.23, [-0.82, -0.18]),
   cocaine: lying(0.22, [-0.41, 0.18]),
   mdma: lying(0.22, [0, -0.18]),
   mushrooms: lying(0.18, [0.41, 0.18]),
   lsd: lying(0.16, [0.68, 0.12]),
+  water: { ...lying(0.38, [-0.62, 0.14]), tableRotation: [0, 0, 0] },
+  sunglasses: { ...lying(0.18, [0.22, -0.14]), tableRotation: [-Math.PI / 2, 0, 0] },
 };

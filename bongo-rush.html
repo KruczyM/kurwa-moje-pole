@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#171b2b" />
+    <title>Bongo Rush — Walka o tasiorowe bongo</title>
+    <link
+      rel="preload"
+      href="./game-assets/audio/bongo-rush/soundtrack-v1/menu-jazz.mp3"
+      as="fetch"
+      crossorigin
+    />
+  </head>
+  <body>
+    <main id="bongo-app">
+      <header class="topbar">
+        <a class="brand" href="./bongo-rush.html"><span>BONGO RUSH</span></a>
+        <div class="toolbar">
+          <button id="help" aria-label="Pomoc — zasady gry">?</button>
+          <button id="map" aria-pressed="false" title="Pokaż lub ukryj mapę (M)">Mapa</button>
+          <button id="mute" aria-pressed="false">Dźwięk: wł.</button
+          ><button id="pause" disabled>Pauza</button>
+        </div>
+      </header>
+      <section id="board" aria-label="Plansza gry">
+        <canvas
+          id="cave"
+          tabindex="0"
+          aria-label="Kopalnia — poruszaj się klawiszami WASD lub strzałkami"
+        ></canvas>
+        <div class="hud">
+          <span id="level-title">24 poziomy · 4 biomy</span><span id="counter-icon" aria-hidden="true"></span
+          ><strong id="counter">Zbieraj. Kop. Nie daj się przygnieść.</strong><strong id="timer"></strong
+          ><span id="exit-status"></span>
+        </div>
+        <section id="menu" class="panel menu-panel title-menu" aria-label="Menu główne">
+          <div class="menu-scenery" aria-hidden="true"></div>
+          <div class="title-content">
+            <h1 class="title-logo">
+              <img id="menu-logo-image" alt="Bongo Rush" width="1821" height="864" decoding="async" /><span
+                class="standard-logo"
+                >WALKA O TASIOROWE <em>BONGO</em></span
+              >
+            </h1>
+            <p class="title-tagline">WALKA O TASIOROWE BONGO</p>
+            <button id="continue" class="painted-control continue-control" disabled>
+              <strong>KONTYNUUJ</strong><span id="continue-level">Przygotowuję wyprawę…</span>
+            </button>
+            <button id="choose-level" class="painted-control secondary-control">WYBIERZ POZIOM</button>
+            <button id="appearance-open" class="painted-control secondary-control">OPRAWA I MUZYKA</button>
+            <button id="play" class="hero-pick">
+              <canvas id="menu-hero-portrait" width="96" height="112" aria-hidden="true"></canvas
+              ><span>POSTAĆ<strong id="menu-hero-name">Amper</strong></span
+              ><small>Zmień →</small>
+            </button>
+            <div class="title-small-actions">
+              <button id="title-help">? Jak grać</button>
+            </div>
+            <p id="menu-art-status" role="status"></p>
+            <button id="menu-art-retry" hidden>Ponów wczytywanie oprawy</button>
+          </div>
+          <nav class="biome-cards" aria-label="Wybierz biom">
+            <button class="biome-card" data-biome="0">
+              <span class="biome-card-label">MAGAZYN AMARENA</span><small></small>
+            </button>
+            <button class="biome-card" data-biome="1">
+              <span class="biome-card-label">KORZENIE</span><small></small>
+            </button>
+            <button class="biome-card" data-biome="2">
+              <span class="biome-card-label">KRYSZTAŁOWY RAVE</span><small></small>
+            </button>
+            <button class="biome-card" data-biome="3">
+              <span class="biome-card-label">CYTADELA</span><small></small>
+            </button>
+          </nav>
+          <div class="title-footer">
+            <small class="menu-track">Fun Indie Game Type Jazz Music · idoberg</small>
+            <div class="links">
+              <a href="./">Festiwal 3D</a>
+            </div>
+            <small class="disclaimer">Fikcyjna, satyryczna gra dla dorosłych.</small>
+          </div>
+        </section>
+        <section id="hero-panel" class="panel gallery-panel" hidden aria-label="Wybór postaci">
+          <span class="eyebrow">01 / TWOJA EKIPA</span>
+          <h2>Wybierz postać</h2>
+          <p>Wygląd inny. Zasady te same. Kobra jest przeszkodą, nie bohaterem.</p>
+          <figure class="hero-preview">
+            <canvas id="hero-preview" width="192" height="224" aria-hidden="true"></canvas>
+            <figcaption id="hero-preview-name" aria-live="polite"></figcaption>
+          </figure>
+          <div id="hero-gallery" class="hero-grid" aria-label="Grywalne postacie"></div>
+          <p id="hero-status" role="status">Wczytywanie miniatur…</p>
+          <div class="menu-actions">
+            <button id="hero-back">← Wstecz</button
+            ><button id="hero-confirm" class="primary">Zatwierdź postać →</button>
+          </div>
+        </section>
+        <section id="level-panel" class="panel menu-panel" hidden aria-label="Wybór poziomu">
+          <span class="eyebrow">02 / WYBIERZ WYPRAWĘ</span>
+          <h2 id="level-biome-title">Wejście do podziemi</h2>
+          <p id="chosen-hero"></p>
+          <div id="levels" class="level-grid" aria-label="Wybierz odblokowany poziom"></div>
+          <p id="selected-level"></p>
+          <button id="begin" class="primary" disabled>Ładowanie…</button>
+          <p id="load-status" role="status">Przygotowuję lekką wersję 2D…</p>
+          <div class="level-navigation">
+            <button id="level-back">← Wybór postaci</button><button id="level-title-back">Menu główne</button>
+          </div>
+          <details>
+            <summary>Jak grać?</summary>
+            <p>
+              WASD / strzałki lub krzyżak dotykowy — ruch. Kop ziemię, zbierz wymagane przedmioty i znajdź
+              wyjście ↑. Skały pchasz poziomo, tylko na wolne pole. Spadające skały i przedmioty przygniatają.
+              Patrole nie potrafią kopać. Usunięcie sąsiedniej podpory odsłania Kobrę, która powiela się na
+              wolne pola. Przedmioty i ziemia blokują wzrost; zebranie podpory może go uwolnić. Nie zwlekaj,
+              bo krzaki mogą odciąć wyjście! Esc — pauza / powrót (zatrzymuje także wzrost). R — restart. Bez
+              limitu prób. Szukaj odnóg i skrótów; nie musisz zbierać wszystkich przedmiotów. M / Mapa —
+              minimapa.
+            </p>
+          </details>
+          <div class="links">
+            <a href="./">Festiwal 3D</a>
+          </div>
+          <small class="disclaimer"
+            >Fikcyjna, satyryczna gra dla dorosłych. Nie jest reklamą ani instrukcją używania
+            substancji.</small
+          >
+        </section>
+        <section id="help-panel" class="panel compact help-panel" hidden aria-label="Pomoc">
+          <button id="help-close" class="primary">Zamknij pomoc ×</button>
+          <h2>Jak przejść jaskinię?</h2>
+          <p id="context-hint"></p>
+          <p id="collectible-help"></p>
+          <p>
+            Spadający głaz eliminuje patrole i wózki. Łup pojawia się nad głazem: wróć po niego po uderzeniu.
+            Wózek obchodzi krawędzie przeszkód i nie kopie. W wyzwaniach obserwuj jego ruch przed
+            uruchomieniem pułapki; po odkopaniu podpory od razu cofnij się w bok.
+          </p>
+          <ol>
+            <li>Zbierz liczbę przedmiotów pokazaną u góry. Nie musisz zebrać wszystkich.</li>
+            <li>
+              Łup ze złotym znacznikiem w komorach skalnych jest obowiązkowy. Nadmiar zwykłych przedmiotów go
+              nie zastąpi.
+            </li>
+            <li>
+              Portale występują na dwóch planszach i łączą komory w pętle. Przygotuj złoże oraz drogę powrotu.
+              Łup i odkopane przejścia zostają zachowane, a grawitacja, patrole i Kobra działają także w
+              opuszczonych komorach.
+            </li>
+            <li>
+              Złoty kafelek z liczbą i literą K uwalnia tyle przedmiotów i może odsłonić miejsce dla Kobry.
+              Łup pojawia się w ujściu pojedynczo. Najpierw przygotuj drogę odwrotu.
+            </li>
+            <li>Kop ziemię WASD, strzałkami lub krzyżakiem dotykowym. M / Mapa pokazuje całą jaskinię.</li>
+            <li>Skały pchasz tylko poziomo na puste pole. Najpierw przygotuj wnękę i odwrót.</li>
+            <li>
+              Omijaj patrole i już spadające przedmioty. Stojąca skała nad Tobą ruszy po odejściu — przygotuj
+              boczny odwrót.
+            </li>
+            <li>
+              Każda twarz Kobry jest kolonią. Rozmnaża się co 5 sekund, a w szybkich wariantach co 2,4
+              sekundy, jeśli obok jest puste pole. Drganie zapowiada podział. Nie trzeba niszczyć jej kafelka;
+              przygotuj odwrót przed odsłonięciem przestrzeni.
+            </li>
+            <li>
+              Rozwiąż komorę przy wyjściu ↑. Zegar obowiązuje tylko w dodatkowych wyzwaniach. W finale zamknij
+              też zagrodę złotą skałą.
+            </li>
+          </ol>
+          <p>Esc — pauza. R / ↻ — restart bez limitu prób. Pauza i pomoc zatrzymują zegar oraz Kobrę.</p>
+        </section>
+        <section id="pause-panel" class="panel compact" hidden aria-label="Pauza">
+          <span class="eyebrow">CHWILA ODDECHU</span>
+          <h2>Pauza</h2>
+          <p>Jaskinia poczeka. Wzrost Krzaka jest zatrzymany.</p>
+          <button id="resume" class="primary">Wróć do gry</button
+          ><button id="pause-appearance">Oprawa i muzyka</button
+          ><button id="pause-restart">Restart poziomu</button><button id="to-menu">Wybór poziomu</button
+          ><button id="pause-title-back">Menu główne</button>
+        </section>
+        <section id="result" class="panel compact" hidden aria-label="Wynik poziomu">
+          <span id="result-label" class="eyebrow"></span>
+          <h2 id="result-title"></h2>
+          <p id="result-text"></p>
+          <button id="next" class="primary">Następny poziom</button><button id="retry">Zagraj ponownie</button
+          ><button id="result-menu">Wybór poziomu</button><button id="result-title-back">Menu główne</button>
+        </section>
+        <section id="victory" class="panel victory-panel" hidden aria-label="Koniec kampanii">
+          <span class="eyebrow">KAMPANIA UKOŃCZONA · ODBLOKOWANO 4 WYZWANIA</span>
+          <h2 id="victory-heading">Bongo Tasiora</h2>
+          <p id="victory-description">
+            Dostawa odebrana! Satyryczny Owsiak opala legendarne bongo — nagroda jest Twoja! W wyborze poziomu
+            czekają cztery dodatkowe wyzwania.
+          </p>
+          <button id="victory-menu" class="primary">Wróć do odblokowanych poziomów</button
+          ><button id="victory-title-back">Menu główne</button>
+        </section>
+        <dialog id="appearance-panel" aria-labelledby="appearance-title">
+          <span class="eyebrow">TWÓJ KLIMAT WYPRAWY</span>
+          <h2 id="appearance-title">Oprawa i muzyka</h2>
+          <fieldset class="music-pack-choices collectible-choices">
+            <legend>Ścieżka dźwiękowa</legend>
+            <label
+              ><input type="radio" name="music-pack" value="pack-1" checked /> Ścieżka 1 — Spokojna
+              wyprawa</label
+            >
+            <label
+              ><input type="radio" name="music-pack" value="pack-2" /> Ścieżka 2 — Przygoda i tajemnica</label
+            >
+          </fieldset>
+          <p class="menu-note">
+            Muzykę wybierasz niezależnie od znajdziek i grafiki. Każda ścieżka zawiera utwory dobrane do
+            plansz.
+          </p>
+          <button id="appearance-listen">Posłuchaj motywu</button>
+          <p id="soundtrack-title"></p>
+          <fieldset>
+            <legend>Szata graficzna</legend>
+            <div id="theme-choices"></div>
+          </fieldset>
+          <fieldset class="collectible-choices">
+            <legend>Zestaw znajdziek</legend>
+            <label
+              ><input type="radio" name="collectible-style" value="festival" checked />
+              <span>Standardowe</span></label
+            >
+            <label
+              ><input type="radio" name="collectible-style" value="fantasy" /> <span>Zestaw 2</span></label
+            >
+          </fieldset>
+          <div id="collectible-preview" aria-hidden="true"></div>
+          <p id="collectible-preview-label"></p>
+          <fieldset class="touch-settings">
+            <legend>Sterowanie mobilne</legend>
+            <label for="touch-position">Położenie krzyżaka</label>
+            <select id="touch-position">
+              <option value="left">Po lewej</option>
+              <option value="center">Na środku</option>
+              <option value="right">Po prawej</option>
+            </select>
+            <label for="touch-size">Rozmiar przycisków</label>
+            <select id="touch-size">
+              <option value="compact">Kompaktowe</option>
+              <option value="normal">Standardowe</option>
+              <option value="large">Duże</option>
+            </select>
+            <label for="touch-opacity"
+              >Widoczność przycisków <output id="touch-opacity-value" for="touch-opacity">90%</output></label
+            >
+            <input id="touch-opacity" type="range" min="60" max="100" step="5" value="90" />
+            <p class="menu-note">
+              Przytrzymaj strzałkę lub przesuń palec między kierunkami. Środek zatrzymuje ruch. Układ
+              zapiszesz przyciskiem Zastosuj.
+            </p>
+          </fieldset>
+          <p id="appearance-status" role="status"></p>
+          <div class="menu-actions">
+            <button id="appearance-close">Wróć</button
+            ><button id="appearance-apply" class="primary">Zastosuj</button>
+          </div>
+        </dialog>
+        <nav id="touch-controls" hidden aria-label="Sterowanie dotykowe">
+          <div id="joystick-zone">
+            <div
+              id="joystick"
+              role="group"
+              aria-label="Ruch — przytrzymaj strzałkę lub przesuń palec między strzałkami"
+            >
+              <button data-direction="up" aria-label="Idź w górę" aria-pressed="false">↑</button>
+              <button data-direction="left" aria-label="Idź w lewo" aria-pressed="false">←</button>
+              <span class="pad-centre" aria-hidden="true">•</span>
+              <button data-direction="right" aria-label="Idź w prawo" aria-pressed="false">→</button>
+              <button data-direction="down" aria-label="Idź w dół" aria-pressed="false">↓</button>
+            </div>
+          </div>
+          <button id="touch-restart" aria-label="Restart poziomu">↻</button>
+        </nav>
+      </section>
+      <footer>
+        <p id="hint">Zbieraj przedmioty, unikaj patroli i spadających skał.</p>
+        <span>WASD / ↑↓←→ · Esc pauza · R restart</span>
+      </footer>
+    </main>
+    <script type="module" src="/src/games/bongo-rush/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "input": "E:\\kodowanie\\gra\\Hunyuan3D-2GP\\output\\characters_mv\\008_grunge_flannel_rocker\\variant_5575cc5326c0ab9388bbff4bf3b1efc7493b857ddc6a636dcf4190ff1cdf83a4\\textured.glb",
+  "output": "E:\\kodowanie\\gra\\.ai\\worktrees\\festival-2026-tent-upgrades\\source-assets\\rigged-festival\\008_grunge_flannel_rocker\\t-pose.glb",
+  "bones": 22,
+  "clips": [
+    "Idle",
+    "Run",
+    "Walk"
+  ],
+  "firstViewExtracted": false,
+  "quality": "automatic-draft-needs-visual-review",
+  "vertices": 24345,
+  "fallbackVertices": 24345,
+  "heatWarning": "Bone heat left unweighted vertices; geometric fallback used"
+}

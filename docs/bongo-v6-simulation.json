@@ -1,0 +1,4142 @@
+[
+  {
+    "id": 1,
+    "status": "WON",
+    "ticks": 232,
+    "simulatedSeconds": 46.400000000000006,
+    "quota": 21,
+    "collected": 22,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 70,
+    "rockAccessChanges": [
+      {
+        "rockId": 47,
+        "chamber": "main",
+        "x": 9,
+        "y": 7,
+        "fallTick": 18,
+        "traversedTick": 114
+      },
+      {
+        "rockId": 48,
+        "chamber": "main",
+        "x": 11,
+        "y": 7,
+        "fallTick": 20,
+        "traversedTick": 116
+      },
+      {
+        "rockId": 18,
+        "chamber": "main",
+        "x": 11,
+        "y": 3,
+        "fallTick": 122,
+        "traversedTick": 124
+      },
+      {
+        "rockId": 102,
+        "chamber": "main",
+        "x": 27,
+        "y": 13,
+        "fallTick": 54,
+        "traversedTick": 152
+      },
+      {
+        "rockId": 53,
+        "chamber": "main",
+        "x": 34,
+        "y": 7,
+        "fallTick": 191,
+        "traversedTick": 211
+      },
+      {
+        "rockId": 53,
+        "chamber": "main",
+        "x": 34,
+        "y": 8,
+        "fallTick": 192,
+        "traversedTick": 212
+      },
+      {
+        "rockId": 53,
+        "chamber": "main",
+        "x": 34,
+        "y": 9,
+        "fallTick": 193,
+        "traversedTick": 213
+      },
+      {
+        "rockId": 53,
+        "chamber": "main",
+        "x": 34,
+        "y": 10,
+        "fallTick": 194,
+        "traversedTick": 214
+      },
+      {
+        "rockId": 53,
+        "chamber": "main",
+        "x": 34,
+        "y": 11,
+        "fallTick": 195,
+        "traversedTick": 215
+      },
+      {
+        "rockId": 53,
+        "chamber": "main",
+        "x": 34,
+        "y": 12,
+        "fallTick": 196,
+        "traversedTick": 216
+      },
+      {
+        "rockId": 53,
+        "chamber": "main",
+        "x": 34,
+        "y": 13,
+        "fallTick": 197,
+        "traversedTick": 217
+      }
+    ],
+    "pushes": 0,
+    "exposure": [],
+    "expectedColonies": 0,
+    "concreteDeath": true,
+    "exposureTiming": "NOT_APPLICABLE"
+  },
+  {
+    "id": 2,
+    "status": "WON",
+    "ticks": 92,
+    "simulatedSeconds": 18.400000000000002,
+    "quota": 17,
+    "collected": 19,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 35,
+    "rockAccessChanges": [
+      {
+        "rockId": 6,
+        "chamber": "main",
+        "x": 11,
+        "y": 4,
+        "fallTick": 18,
+        "traversedTick": 21
+      }
+    ],
+    "pushes": 1,
+    "exposure": [],
+    "expectedColonies": 0,
+    "concreteDeath": true,
+    "exposureTiming": "NOT_APPLICABLE"
+  },
+  {
+    "id": 3,
+    "status": "WON",
+    "ticks": 107,
+    "simulatedSeconds": 21.400000000000002,
+    "quota": 21,
+    "collected": 21,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 21,
+    "rockAccessChanges": [
+      {
+        "rockId": 5,
+        "chamber": "main",
+        "x": 9,
+        "y": 19,
+        "fallTick": 89,
+        "traversedTick": 99
+      }
+    ],
+    "pushes": 3,
+    "exposure": [],
+    "expectedColonies": 0,
+    "concreteDeath": true,
+    "exposureTiming": "NOT_APPLICABLE"
+  },
+  {
+    "id": 4,
+    "status": "WON",
+    "ticks": 213,
+    "simulatedSeconds": 42.6,
+    "quota": 24,
+    "collected": 27,
+    "kills": 4,
+    "requiredRemaining": 0,
+    "rockFallSteps": 63,
+    "rockAccessChanges": [
+      {
+        "rockId": 10,
+        "chamber": "main",
+        "x": 24,
+        "y": 6,
+        "fallTick": 50,
+        "traversedTick": 51
+      },
+      {
+        "rockId": 19,
+        "chamber": "main",
+        "x": 34,
+        "y": 9,
+        "fallTick": 88,
+        "traversedTick": 94
+      },
+      {
+        "rockId": 53,
+        "chamber": "main",
+        "x": 10,
+        "y": 13,
+        "fallTick": 152,
+        "traversedTick": 172
+      },
+      {
+        "rockId": 10,
+        "chamber": "main",
+        "x": 24,
+        "y": 11,
+        "fallTick": 132,
+        "traversedTick": 190
+      },
+      {
+        "rockId": 18,
+        "chamber": "main",
+        "x": 26,
+        "y": 11,
+        "fallTick": 124,
+        "traversedTick": 192
+      }
+    ],
+    "pushes": 1,
+    "exposure": [],
+    "expectedColonies": 0,
+    "concreteDeath": true,
+    "exposureTiming": "NOT_APPLICABLE"
+  },
+  {
+    "id": 5,
+    "status": "WON",
+    "ticks": 76,
+    "simulatedSeconds": 15.200000000000001,
+    "quota": 16,
+    "collected": 18,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 12,
+    "rockAccessChanges": [
+      {
+        "rockId": 9,
+        "chamber": "main",
+        "x": 9,
+        "y": 5,
+        "fallTick": 10,
+        "traversedTick": 11
+      },
+      {
+        "rockId": 2,
+        "chamber": "main",
+        "x": 10,
+        "y": 5,
+        "fallTick": 24,
+        "traversedTick": 28
+      },
+      {
+        "rockId": 22,
+        "chamber": "main",
+        "x": 11,
+        "y": 16,
+        "fallTick": 62,
+        "traversedTick": 64
+      },
+      {
+        "rockId": 21,
+        "chamber": "main",
+        "x": 7,
+        "y": 16,
+        "fallTick": 70,
+        "traversedTick": 72
+      }
+    ],
+    "pushes": 0,
+    "exposure": [],
+    "expectedColonies": 0,
+    "concreteDeath": true,
+    "exposureTiming": "NOT_APPLICABLE"
+  },
+  {
+    "id": 6,
+    "status": "WON",
+    "ticks": 88,
+    "simulatedSeconds": 17.6,
+    "quota": 9,
+    "collected": 10,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 21,
+    "rockAccessChanges": [
+      {
+        "rockId": 5,
+        "chamber": "main",
+        "x": 9,
+        "y": 4,
+        "fallTick": 19,
+        "traversedTick": 20
+      },
+      {
+        "rockId": 4,
+        "chamber": "main",
+        "x": 8,
+        "y": 4,
+        "fallTick": 16,
+        "traversedTick": 21
+      }
+    ],
+    "pushes": 1,
+    "exposure": [
+      {
+        "chamber": "main",
+        "x": 6,
+        "y": 3,
+        "tick": 12,
+        "collected": 5,
+        "fractionOfQuota": 0.5555555555555556
+      }
+    ],
+    "expectedColonies": 1,
+    "concreteDeath": true,
+    "exposureTiming": "PASS"
+  },
+  {
+    "id": 7,
+    "status": "WON",
+    "ticks": 140,
+    "simulatedSeconds": 28,
+    "quota": 22,
+    "collected": 22,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 24,
+    "rockAccessChanges": [
+      {
+        "rockId": 8,
+        "chamber": "main",
+        "x": 15,
+        "y": 23,
+        "fallTick": 99,
+        "traversedTick": 107
+      },
+      {
+        "rockId": 9,
+        "chamber": "main",
+        "x": 16,
+        "y": 21,
+        "fallTick": 110,
+        "traversedTick": 112
+      },
+      {
+        "rockId": 7,
+        "chamber": "main",
+        "x": 15,
+        "y": 21,
+        "fallTick": 109,
+        "traversedTick": 113
+      },
+      {
+        "rockId": 6,
+        "chamber": "main",
+        "x": 14,
+        "y": 21,
+        "fallTick": 108,
+        "traversedTick": 114
+      },
+      {
+        "rockId": 5,
+        "chamber": "main",
+        "x": 13,
+        "y": 22,
+        "fallTick": 106,
+        "traversedTick": 116
+      },
+      {
+        "rockId": 5,
+        "chamber": "main",
+        "x": 13,
+        "y": 23,
+        "fallTick": 107,
+        "traversedTick": 117
+      }
+    ],
+    "pushes": 2,
+    "exposure": [
+      {
+        "chamber": "main",
+        "x": 11,
+        "y": 23,
+        "tick": 102,
+        "collected": 12,
+        "fractionOfQuota": 0.5454545454545454
+      }
+    ],
+    "expectedColonies": 1,
+    "concreteDeath": true,
+    "exposureTiming": "PASS"
+  },
+  {
+    "id": 8,
+    "status": "WON",
+    "ticks": 99,
+    "simulatedSeconds": 19.8,
+    "quota": 32,
+    "collected": 33,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 34,
+    "rockAccessChanges": [
+      {
+        "rockId": 1,
+        "chamber": "main",
+        "x": 5,
+        "y": 4,
+        "fallTick": 6,
+        "traversedTick": 13
+      },
+      {
+        "rockId": 4,
+        "chamber": "main",
+        "x": 6,
+        "y": 4,
+        "fallTick": 14,
+        "traversedTick": 15
+      },
+      {
+        "rockId": 5,
+        "chamber": "main",
+        "x": 7,
+        "y": 3,
+        "fallTick": 14,
+        "traversedTick": 17
+      },
+      {
+        "rockId": 25,
+        "chamber": "main",
+        "x": 18,
+        "y": 10,
+        "fallTick": 37,
+        "traversedTick": 41
+      },
+      {
+        "rockId": 28,
+        "chamber": "main",
+        "x": 21,
+        "y": 10,
+        "fallTick": 50,
+        "traversedTick": 54
+      },
+      {
+        "rockId": 29,
+        "chamber": "main",
+        "x": 20,
+        "y": 10,
+        "fallTick": 49,
+        "traversedTick": 55
+      },
+      {
+        "rockId": 27,
+        "chamber": "main",
+        "x": 19,
+        "y": 9,
+        "fallTick": 43,
+        "traversedTick": 57
+      },
+      {
+        "rockId": 27,
+        "chamber": "main",
+        "x": 19,
+        "y": 8,
+        "fallTick": 38,
+        "traversedTick": 58
+      }
+    ],
+    "pushes": 1,
+    "exposure": [
+      {
+        "chamber": "main",
+        "x": 16,
+        "y": 9,
+        "tick": 34,
+        "collected": 16,
+        "fractionOfQuota": 0.5
+      }
+    ],
+    "expectedColonies": 1,
+    "concreteDeath": true,
+    "exposureTiming": "PASS"
+  },
+  {
+    "id": 9,
+    "status": "WON",
+    "ticks": 726,
+    "simulatedSeconds": 145.20000000000002,
+    "quota": 153,
+    "collected": 153,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 1356,
+    "rockAccessChanges": [
+      {
+        "rockId": 153,
+        "chamber": "main",
+        "x": 11,
+        "y": 18,
+        "fallTick": 23,
+        "traversedTick": 27
+      },
+      {
+        "rockId": 189,
+        "chamber": "main",
+        "x": 12,
+        "y": 18,
+        "fallTick": 21,
+        "traversedTick": 28
+      },
+      {
+        "rockId": 120,
+        "chamber": "main",
+        "x": 12,
+        "y": 17,
+        "fallTick": 22,
+        "traversedTick": 30
+      },
+      {
+        "rockId": 83,
+        "chamber": "main",
+        "x": 13,
+        "y": 17,
+        "fallTick": 30,
+        "traversedTick": 31
+      },
+      {
+        "rockId": 83,
+        "chamber": "main",
+        "x": 13,
+        "y": 16,
+        "fallTick": 29,
+        "traversedTick": 32
+      },
+      {
+        "rockId": 11,
+        "chamber": "main",
+        "x": 12,
+        "y": 17,
+        "fallTick": 32,
+        "traversedTick": 36
+      },
+      {
+        "rockId": 47,
+        "chamber": "main",
+        "x": 11,
+        "y": 17,
+        "fallTick": 31,
+        "traversedTick": 42
+      },
+      {
+        "rockId": 118,
+        "chamber": "main",
+        "x": 10,
+        "y": 17,
+        "fallTick": 38,
+        "traversedTick": 43
+      },
+      {
+        "rockId": 81,
+        "chamber": "main",
+        "x": 9,
+        "y": 17,
+        "fallTick": 44,
+        "traversedTick": 45
+      },
+      {
+        "rockId": 43,
+        "chamber": "main",
+        "x": 10,
+        "y": 16,
+        "fallTick": 52,
+        "traversedTick": 53
+      },
+      {
+        "rockId": 117,
+        "chamber": "main",
+        "x": 11,
+        "y": 16,
+        "fallTick": 43,
+        "traversedTick": 54
+      },
+      {
+        "rockId": 43,
+        "chamber": "main",
+        "x": 11,
+        "y": 15,
+        "fallTick": 50,
+        "traversedTick": 55
+      },
+      {
+        "rockId": 87,
+        "chamber": "main",
+        "x": 12,
+        "y": 9,
+        "fallTick": 62,
+        "traversedTick": 63
+      },
+      {
+        "rockId": 87,
+        "chamber": "main",
+        "x": 12,
+        "y": 8,
+        "fallTick": 61,
+        "traversedTick": 64
+      },
+      {
+        "rockId": 87,
+        "chamber": "main",
+        "x": 12,
+        "y": 7,
+        "fallTick": 60,
+        "traversedTick": 65
+      },
+      {
+        "rockId": 87,
+        "chamber": "main",
+        "x": 12,
+        "y": 6,
+        "fallTick": 59,
+        "traversedTick": 66
+      },
+      {
+        "rockId": 294,
+        "chamber": "main",
+        "x": 2,
+        "y": 12,
+        "fallTick": 89,
+        "traversedTick": 91
+      },
+      {
+        "rockId": 282,
+        "chamber": "main",
+        "x": 1,
+        "y": 12,
+        "fallTick": 92,
+        "traversedTick": 94
+      },
+      {
+        "rockId": 282,
+        "chamber": "main",
+        "x": 1,
+        "y": 11,
+        "fallTick": 91,
+        "traversedTick": 95
+      },
+      {
+        "rockId": 143,
+        "chamber": "main",
+        "x": 2,
+        "y": 9,
+        "fallTick": 97,
+        "traversedTick": 99
+      },
+      {
+        "rockId": 143,
+        "chamber": "main",
+        "x": 2,
+        "y": 8,
+        "fallTick": 96,
+        "traversedTick": 100
+      },
+      {
+        "rockId": 216,
+        "chamber": "main",
+        "x": 3,
+        "y": 8,
+        "fallTick": 82,
+        "traversedTick": 101
+      },
+      {
+        "rockId": 216,
+        "chamber": "main",
+        "x": 3,
+        "y": 7,
+        "fallTick": 81,
+        "traversedTick": 102
+      },
+      {
+        "rockId": 38,
+        "chamber": "main",
+        "x": 4,
+        "y": 7,
+        "fallTick": 86,
+        "traversedTick": 103
+      },
+      {
+        "rockId": 38,
+        "chamber": "main",
+        "x": 4,
+        "y": 8,
+        "fallTick": 87,
+        "traversedTick": 105
+      },
+      {
+        "rockId": 216,
+        "chamber": "main",
+        "x": 3,
+        "y": 9,
+        "fallTick": 88,
+        "traversedTick": 107
+      },
+      {
+        "rockId": 76,
+        "chamber": "main",
+        "x": 2,
+        "y": 6,
+        "fallTick": 102,
+        "traversedTick": 113
+      },
+      {
+        "rockId": 4,
+        "chamber": "main",
+        "x": 3,
+        "y": 6,
+        "fallTick": 112,
+        "traversedTick": 114
+      },
+      {
+        "rockId": 145,
+        "chamber": "main",
+        "x": 4,
+        "y": 6,
+        "fallTick": 107,
+        "traversedTick": 115
+      },
+      {
+        "rockId": 4,
+        "chamber": "main",
+        "x": 4,
+        "y": 5,
+        "fallTick": 110,
+        "traversedTick": 116
+      },
+      {
+        "rockId": 4,
+        "chamber": "main",
+        "x": 4,
+        "y": 4,
+        "fallTick": 109,
+        "traversedTick": 117
+      },
+      {
+        "rockId": 112,
+        "chamber": "main",
+        "x": 5,
+        "y": 4,
+        "fallTick": 78,
+        "traversedTick": 118
+      },
+      {
+        "rockId": 78,
+        "chamber": "main",
+        "x": 6,
+        "y": 4,
+        "fallTick": 107,
+        "traversedTick": 119
+      },
+      {
+        "rockId": 115,
+        "chamber": "main",
+        "x": 7,
+        "y": 4,
+        "fallTick": 73,
+        "traversedTick": 120
+      },
+      {
+        "rockId": 116,
+        "chamber": "main",
+        "x": 8,
+        "y": 4,
+        "fallTick": 72,
+        "traversedTick": 121
+      },
+      {
+        "rockId": 79,
+        "chamber": "main",
+        "x": 9,
+        "y": 4,
+        "fallTick": 75,
+        "traversedTick": 122
+      },
+      {
+        "rockId": 79,
+        "chamber": "main",
+        "x": 10,
+        "y": 5,
+        "fallTick": 77,
+        "traversedTick": 124
+      },
+      {
+        "rockId": 5,
+        "chamber": "main",
+        "x": 11,
+        "y": 5,
+        "fallTick": 82,
+        "traversedTick": 125
+      },
+      {
+        "rockId": 122,
+        "chamber": "main",
+        "x": 12,
+        "y": 5,
+        "fallTick": 54,
+        "traversedTick": 126
+      },
+      {
+        "rockId": 5,
+        "chamber": "main",
+        "x": 12,
+        "y": 6,
+        "fallTick": 84,
+        "traversedTick": 127
+      },
+      {
+        "rockId": 5,
+        "chamber": "main",
+        "x": 12,
+        "y": 7,
+        "fallTick": 85,
+        "traversedTick": 128
+      },
+      {
+        "rockId": 123,
+        "chamber": "main",
+        "x": 14,
+        "y": 6,
+        "fallTick": 133,
+        "traversedTick": 134
+      },
+      {
+        "rockId": 123,
+        "chamber": "main",
+        "x": 14,
+        "y": 5,
+        "fallTick": 132,
+        "traversedTick": 135
+      },
+      {
+        "rockId": 123,
+        "chamber": "main",
+        "x": 14,
+        "y": 4,
+        "fallTick": 131,
+        "traversedTick": 136
+      },
+      {
+        "rockId": 87,
+        "chamber": "main",
+        "x": 13,
+        "y": 4,
+        "fallTick": 53,
+        "traversedTick": 144
+      },
+      {
+        "rockId": 14,
+        "chamber": "main",
+        "x": 12,
+        "y": 4,
+        "fallTick": 41,
+        "traversedTick": 145
+      },
+      {
+        "rockId": 86,
+        "chamber": "main",
+        "x": 11,
+        "y": 4,
+        "fallTick": 45,
+        "traversedTick": 146
+      },
+      {
+        "rockId": 5,
+        "chamber": "main",
+        "x": 10,
+        "y": 4,
+        "fallTick": 80,
+        "traversedTick": 147
+      },
+      {
+        "rockId": 114,
+        "chamber": "main",
+        "x": 6,
+        "y": 5,
+        "fallTick": 75,
+        "traversedTick": 152
+      },
+      {
+        "rockId": 114,
+        "chamber": "main",
+        "x": 6,
+        "y": 6,
+        "fallTick": 76,
+        "traversedTick": 153
+      },
+      {
+        "rockId": 182,
+        "chamber": "main",
+        "x": 5,
+        "y": 6,
+        "fallTick": 77,
+        "traversedTick": 154
+      },
+      {
+        "rockId": 145,
+        "chamber": "main",
+        "x": 4,
+        "y": 7,
+        "fallTick": 108,
+        "traversedTick": 156
+      },
+      {
+        "rockId": 78,
+        "chamber": "main",
+        "x": 5,
+        "y": 5,
+        "fallTick": 109,
+        "traversedTick": 159
+      },
+      {
+        "rockId": 115,
+        "chamber": "main",
+        "x": 6,
+        "y": 5,
+        "fallTick": 155,
+        "traversedTick": 160
+      },
+      {
+        "rockId": 155,
+        "chamber": "main",
+        "x": 12,
+        "y": 6,
+        "fallTick": 133,
+        "traversedTick": 169
+      },
+      {
+        "rockId": 155,
+        "chamber": "main",
+        "x": 12,
+        "y": 7,
+        "fallTick": 134,
+        "traversedTick": 170
+      },
+      {
+        "rockId": 155,
+        "chamber": "main",
+        "x": 12,
+        "y": 8,
+        "fallTick": 135,
+        "traversedTick": 171
+      },
+      {
+        "rockId": 155,
+        "chamber": "main",
+        "x": 12,
+        "y": 9,
+        "fallTick": 136,
+        "traversedTick": 172
+      },
+      {
+        "rockId": 155,
+        "chamber": "main",
+        "x": 12,
+        "y": 10,
+        "fallTick": 137,
+        "traversedTick": 173
+      },
+      {
+        "rockId": 155,
+        "chamber": "main",
+        "x": 12,
+        "y": 11,
+        "fallTick": 138,
+        "traversedTick": 174
+      },
+      {
+        "rockId": 155,
+        "chamber": "main",
+        "x": 12,
+        "y": 12,
+        "fallTick": 139,
+        "traversedTick": 175
+      },
+      {
+        "rockId": 155,
+        "chamber": "main",
+        "x": 12,
+        "y": 13,
+        "fallTick": 140,
+        "traversedTick": 176
+      },
+      {
+        "rockId": 86,
+        "chamber": "main",
+        "x": 12,
+        "y": 14,
+        "fallTick": 57,
+        "traversedTick": 177
+      },
+      {
+        "rockId": 87,
+        "chamber": "main",
+        "x": 11,
+        "y": 14,
+        "fallTick": 68,
+        "traversedTick": 178
+      },
+      {
+        "rockId": 15,
+        "chamber": "main",
+        "x": 10,
+        "y": 15,
+        "fallTick": 68,
+        "traversedTick": 180
+      },
+      {
+        "rockId": 317,
+        "chamber": "main",
+        "x": 4,
+        "y": 15,
+        "fallTick": 188,
+        "traversedTick": 190
+      },
+      {
+        "rockId": 181,
+        "chamber": "main",
+        "x": 6,
+        "y": 18,
+        "fallTick": 197,
+        "traversedTick": 204
+      },
+      {
+        "rockId": 181,
+        "chamber": "main",
+        "x": 7,
+        "y": 17,
+        "fallTick": 195,
+        "traversedTick": 206
+      },
+      {
+        "rockId": 181,
+        "chamber": "main",
+        "x": 7,
+        "y": 16,
+        "fallTick": 194,
+        "traversedTick": 207
+      },
+      {
+        "rockId": 181,
+        "chamber": "main",
+        "x": 7,
+        "y": 15,
+        "fallTick": 193,
+        "traversedTick": 208
+      },
+      {
+        "rockId": 116,
+        "chamber": "main",
+        "x": 12,
+        "y": 9,
+        "fallTick": 175,
+        "traversedTick": 219
+      },
+      {
+        "rockId": 116,
+        "chamber": "main",
+        "x": 12,
+        "y": 8,
+        "fallTick": 174,
+        "traversedTick": 220
+      },
+      {
+        "rockId": 116,
+        "chamber": "main",
+        "x": 12,
+        "y": 7,
+        "fallTick": 173,
+        "traversedTick": 221
+      },
+      {
+        "rockId": 116,
+        "chamber": "main",
+        "x": 12,
+        "y": 6,
+        "fallTick": 172,
+        "traversedTick": 222
+      },
+      {
+        "rockId": 14,
+        "chamber": "main",
+        "x": 12,
+        "y": 3,
+        "fallTick": 40,
+        "traversedTick": 225
+      },
+      {
+        "rockId": 15,
+        "chamber": "main",
+        "x": 13,
+        "y": 3,
+        "fallTick": 46,
+        "traversedTick": 226
+      },
+      {
+        "rockId": 87,
+        "chamber": "main",
+        "x": 14,
+        "y": 3,
+        "fallTick": 50,
+        "traversedTick": 227
+      },
+      {
+        "rockId": 17,
+        "chamber": "main",
+        "x": 15,
+        "y": 3,
+        "fallTick": 147,
+        "traversedTick": 228
+      },
+      {
+        "rockId": 52,
+        "chamber": "main",
+        "x": 16,
+        "y": 3,
+        "fallTick": 142,
+        "traversedTick": 229
+      },
+      {
+        "rockId": 15,
+        "chamber": "main",
+        "x": 15,
+        "y": 1,
+        "fallTick": 38,
+        "traversedTick": 232
+      },
+      {
+        "rockId": 17,
+        "chamber": "main",
+        "x": 17,
+        "y": 1,
+        "fallTick": 143,
+        "traversedTick": 234
+      },
+      {
+        "rockId": 17,
+        "chamber": "main",
+        "x": 16,
+        "y": 2,
+        "fallTick": 145,
+        "traversedTick": 242
+      },
+      {
+        "rockId": 17,
+        "chamber": "main",
+        "x": 15,
+        "y": 4,
+        "fallTick": 148,
+        "traversedTick": 245
+      },
+      {
+        "rockId": 53,
+        "chamber": "main",
+        "x": 14,
+        "y": 5,
+        "fallTick": 148,
+        "traversedTick": 247
+      },
+      {
+        "rockId": 116,
+        "chamber": "main",
+        "x": 13,
+        "y": 5,
+        "fallTick": 169,
+        "traversedTick": 248
+      },
+      {
+        "rockId": 190,
+        "chamber": "main",
+        "x": 13,
+        "y": 6,
+        "fallTick": 130,
+        "traversedTick": 249
+      },
+      {
+        "rockId": 137,
+        "chamber": "main",
+        "x": 32,
+        "y": 4,
+        "fallTick": 293,
+        "traversedTick": 300
+      },
+      {
+        "rockId": 135,
+        "chamber": "main",
+        "x": 31,
+        "y": 4,
+        "fallTick": 297,
+        "traversedTick": 302
+      },
+      {
+        "rockId": 134,
+        "chamber": "main",
+        "x": 31,
+        "y": 5,
+        "fallTick": 303,
+        "traversedTick": 304
+      },
+      {
+        "rockId": 134,
+        "chamber": "main",
+        "x": 31,
+        "y": 6,
+        "fallTick": 304,
+        "traversedTick": 305
+      },
+      {
+        "rockId": 134,
+        "chamber": "main",
+        "x": 31,
+        "y": 7,
+        "fallTick": 305,
+        "traversedTick": 306
+      },
+      {
+        "rockId": 134,
+        "chamber": "main",
+        "x": 31,
+        "y": 8,
+        "fallTick": 306,
+        "traversedTick": 307
+      },
+      {
+        "rockId": 134,
+        "chamber": "main",
+        "x": 31,
+        "y": 9,
+        "fallTick": 307,
+        "traversedTick": 308
+      },
+      {
+        "rockId": 134,
+        "chamber": "main",
+        "x": 31,
+        "y": 10,
+        "fallTick": 308,
+        "traversedTick": 309
+      },
+      {
+        "rockId": 134,
+        "chamber": "main",
+        "x": 31,
+        "y": 11,
+        "fallTick": 309,
+        "traversedTick": 310
+      },
+      {
+        "rockId": 134,
+        "chamber": "main",
+        "x": 31,
+        "y": 12,
+        "fallTick": 310,
+        "traversedTick": 311
+      },
+      {
+        "rockId": 134,
+        "chamber": "main",
+        "x": 31,
+        "y": 13,
+        "fallTick": 311,
+        "traversedTick": 312
+      },
+      {
+        "rockId": 134,
+        "chamber": "main",
+        "x": 31,
+        "y": 14,
+        "fallTick": 312,
+        "traversedTick": 313
+      },
+      {
+        "rockId": 134,
+        "chamber": "main",
+        "x": 31,
+        "y": 15,
+        "fallTick": 313,
+        "traversedTick": 314
+      },
+      {
+        "rockId": 135,
+        "chamber": "main",
+        "x": 31,
+        "y": 16,
+        "fallTick": 309,
+        "traversedTick": 315
+      },
+      {
+        "rockId": 101,
+        "chamber": "main",
+        "x": 31,
+        "y": 17,
+        "fallTick": 305,
+        "traversedTick": 316
+      },
+      {
+        "rockId": 65,
+        "chamber": "main",
+        "x": 30,
+        "y": 17,
+        "fallTick": 307,
+        "traversedTick": 317
+      },
+      {
+        "rockId": 170,
+        "chamber": "main",
+        "x": 30,
+        "y": 18,
+        "fallTick": 305,
+        "traversedTick": 318
+      },
+      {
+        "rockId": 65,
+        "chamber": "main",
+        "x": 29,
+        "y": 18,
+        "fallTick": 309,
+        "traversedTick": 319
+      },
+      {
+        "rockId": 100,
+        "chamber": "main",
+        "x": 30,
+        "y": 17,
+        "fallTick": 320,
+        "traversedTick": 325
+      },
+      {
+        "rockId": 104,
+        "chamber": "main",
+        "x": 31,
+        "y": 9,
+        "fallTick": 339,
+        "traversedTick": 340
+      },
+      {
+        "rockId": 104,
+        "chamber": "main",
+        "x": 31,
+        "y": 10,
+        "fallTick": 340,
+        "traversedTick": 341
+      },
+      {
+        "rockId": 137,
+        "chamber": "main",
+        "x": 30,
+        "y": 15,
+        "fallTick": 342,
+        "traversedTick": 347
+      },
+      {
+        "rockId": 64,
+        "chamber": "main",
+        "x": 29,
+        "y": 16,
+        "fallTick": 342,
+        "traversedTick": 349
+      },
+      {
+        "rockId": 274,
+        "chamber": "main",
+        "x": 16,
+        "y": 13,
+        "fallTick": 377,
+        "traversedTick": 378
+      },
+      {
+        "rockId": 286,
+        "chamber": "main",
+        "x": 17,
+        "y": 13,
+        "fallTick": 376,
+        "traversedTick": 379
+      },
+      {
+        "rockId": 262,
+        "chamber": "main",
+        "x": 18,
+        "y": 12,
+        "fallTick": 375,
+        "traversedTick": 381
+      },
+      {
+        "rockId": 262,
+        "chamber": "main",
+        "x": 18,
+        "y": 11,
+        "fallTick": 374,
+        "traversedTick": 382
+      },
+      {
+        "rockId": 262,
+        "chamber": "main",
+        "x": 18,
+        "y": 10,
+        "fallTick": 371,
+        "traversedTick": 383
+      },
+      {
+        "rockId": 89,
+        "chamber": "main",
+        "x": 17,
+        "y": 12,
+        "fallTick": 390,
+        "traversedTick": 392
+      },
+      {
+        "rockId": 274,
+        "chamber": "main",
+        "x": 16,
+        "y": 12,
+        "fallTick": 376,
+        "traversedTick": 393
+      },
+      {
+        "rockId": 89,
+        "chamber": "main",
+        "x": 16,
+        "y": 13,
+        "fallTick": 392,
+        "traversedTick": 394
+      },
+      {
+        "rockId": 89,
+        "chamber": "main",
+        "x": 16,
+        "y": 14,
+        "fallTick": 393,
+        "traversedTick": 395
+      },
+      {
+        "rockId": 274,
+        "chamber": "main",
+        "x": 16,
+        "y": 15,
+        "fallTick": 379,
+        "traversedTick": 396
+      },
+      {
+        "rockId": 274,
+        "chamber": "main",
+        "x": 16,
+        "y": 16,
+        "fallTick": 380,
+        "traversedTick": 397
+      },
+      {
+        "rockId": 104,
+        "chamber": "main",
+        "x": 31,
+        "y": 8,
+        "fallTick": 338,
+        "traversedTick": 422
+      },
+      {
+        "rockId": 104,
+        "chamber": "main",
+        "x": 31,
+        "y": 7,
+        "fallTick": 337,
+        "traversedTick": 423
+      },
+      {
+        "rockId": 104,
+        "chamber": "main",
+        "x": 31,
+        "y": 6,
+        "fallTick": 336,
+        "traversedTick": 424
+      },
+      {
+        "rockId": 64,
+        "chamber": "main",
+        "x": 30,
+        "y": 5,
+        "fallTick": 328,
+        "traversedTick": 426
+      },
+      {
+        "rockId": 64,
+        "chamber": "main",
+        "x": 30,
+        "y": 3,
+        "fallTick": 303,
+        "traversedTick": 430
+      },
+      {
+        "rockId": 64,
+        "chamber": "main",
+        "x": 30,
+        "y": 2,
+        "fallTick": 298,
+        "traversedTick": 431
+      },
+      {
+        "rockId": 25,
+        "chamber": "main",
+        "x": 28,
+        "y": 1,
+        "fallTick": 431,
+        "traversedTick": 434
+      },
+      {
+        "rockId": 62,
+        "chamber": "main",
+        "x": 28,
+        "y": 2,
+        "fallTick": 429,
+        "traversedTick": 435
+      },
+      {
+        "rockId": 93,
+        "chamber": "main",
+        "x": 22,
+        "y": 3,
+        "fallTick": 398,
+        "traversedTick": 444
+      },
+      {
+        "rockId": 20,
+        "chamber": "main",
+        "x": 21,
+        "y": 5,
+        "fallTick": 396,
+        "traversedTick": 447
+      },
+      {
+        "rockId": 93,
+        "chamber": "main",
+        "x": 20,
+        "y": 5,
+        "fallTick": 402,
+        "traversedTick": 448
+      },
+      {
+        "rockId": 57,
+        "chamber": "main",
+        "x": 20,
+        "y": 6,
+        "fallTick": 393,
+        "traversedTick": 449
+      },
+      {
+        "rockId": 20,
+        "chamber": "main",
+        "x": 21,
+        "y": 3,
+        "fallTick": 393,
+        "traversedTick": 453
+      },
+      {
+        "rockId": 22,
+        "chamber": "main",
+        "x": 23,
+        "y": 3,
+        "fallTick": 448,
+        "traversedTick": 455
+      },
+      {
+        "rockId": 22,
+        "chamber": "main",
+        "x": 24,
+        "y": 2,
+        "fallTick": 441,
+        "traversedTick": 457
+      },
+      {
+        "rockId": 99,
+        "chamber": "main",
+        "x": 28,
+        "y": 3,
+        "fallTick": 429,
+        "traversedTick": 463
+      },
+      {
+        "rockId": 25,
+        "chamber": "main",
+        "x": 29,
+        "y": 3,
+        "fallTick": 434,
+        "traversedTick": 464
+      },
+      {
+        "rockId": 25,
+        "chamber": "main",
+        "x": 31,
+        "y": 6,
+        "fallTick": 440,
+        "traversedTick": 469
+      },
+      {
+        "rockId": 104,
+        "chamber": "main",
+        "x": 32,
+        "y": 5,
+        "fallTick": 334,
+        "traversedTick": 472
+      },
+      {
+        "rockId": 103,
+        "chamber": "main",
+        "x": 32,
+        "y": 4,
+        "fallTick": 317,
+        "traversedTick": 473
+      },
+      {
+        "rockId": 33,
+        "chamber": "main",
+        "x": 32,
+        "y": 3,
+        "fallTick": 313,
+        "traversedTick": 474
+      },
+      {
+        "rockId": 65,
+        "chamber": "main",
+        "x": 31,
+        "y": 3,
+        "fallTick": 292,
+        "traversedTick": 475
+      },
+      {
+        "rockId": 65,
+        "chamber": "main",
+        "x": 31,
+        "y": 2,
+        "fallTick": 291,
+        "traversedTick": 476
+      },
+      {
+        "rockId": 25,
+        "chamber": "main",
+        "x": 29,
+        "y": 2,
+        "fallTick": 433,
+        "traversedTick": 478
+      },
+      {
+        "rockId": 97,
+        "chamber": "main",
+        "x": 27,
+        "y": 3,
+        "fallTick": 469,
+        "traversedTick": 481
+      },
+      {
+        "rockId": 353,
+        "chamber": "main",
+        "x": 22,
+        "y": 18,
+        "fallTick": 516,
+        "traversedTick": 518
+      },
+      {
+        "rockId": 287,
+        "chamber": "main",
+        "x": 19,
+        "y": 17,
+        "fallTick": 523,
+        "traversedTick": 524
+      },
+      {
+        "rockId": 310,
+        "chamber": "main",
+        "x": 20,
+        "y": 17,
+        "fallTick": 521,
+        "traversedTick": 525
+      },
+      {
+        "rockId": 366,
+        "chamber": "main",
+        "x": 22,
+        "y": 19,
+        "fallTick": 515,
+        "traversedTick": 529
+      },
+      {
+        "rockId": 353,
+        "chamber": "main",
+        "x": 23,
+        "y": 19,
+        "fallTick": 518,
+        "traversedTick": 530
+      },
+      {
+        "rockId": 310,
+        "chamber": "main",
+        "x": 21,
+        "y": 18,
+        "fallTick": 530,
+        "traversedTick": 533
+      },
+      {
+        "rockId": 127,
+        "chamber": "main",
+        "x": 21,
+        "y": 17,
+        "fallTick": 535,
+        "traversedTick": 539
+      },
+      {
+        "rockId": 228,
+        "chamber": "main",
+        "x": 20,
+        "y": 17,
+        "fallTick": 529,
+        "traversedTick": 540
+      },
+      {
+        "rockId": 25,
+        "chamber": "main",
+        "x": 27,
+        "y": 17,
+        "fallTick": 455,
+        "traversedTick": 549
+      },
+      {
+        "rockId": 99,
+        "chamber": "main",
+        "x": 28,
+        "y": 16,
+        "fallTick": 485,
+        "traversedTick": 555
+      },
+      {
+        "rockId": 137,
+        "chamber": "main",
+        "x": 29,
+        "y": 16,
+        "fallTick": 555,
+        "traversedTick": 556
+      },
+      {
+        "rockId": 99,
+        "chamber": "main",
+        "x": 29,
+        "y": 15,
+        "fallTick": 483,
+        "traversedTick": 557
+      },
+      {
+        "rockId": 63,
+        "chamber": "main",
+        "x": 30,
+        "y": 15,
+        "fallTick": 555,
+        "traversedTick": 558
+      },
+      {
+        "rockId": 103,
+        "chamber": "main",
+        "x": 31,
+        "y": 15,
+        "fallTick": 331,
+        "traversedTick": 559
+      },
+      {
+        "rockId": 30,
+        "chamber": "main",
+        "x": 31,
+        "y": 16,
+        "fallTick": 320,
+        "traversedTick": 560
+      },
+      {
+        "rockId": 67,
+        "chamber": "main",
+        "x": 32,
+        "y": 16,
+        "fallTick": 327,
+        "traversedTick": 561
+      },
+      {
+        "rockId": 104,
+        "chamber": "main",
+        "x": 33,
+        "y": 16,
+        "fallTick": 348,
+        "traversedTick": 562
+      },
+      {
+        "rockId": 134,
+        "chamber": "main",
+        "x": 34,
+        "y": 18,
+        "fallTick": 319,
+        "traversedTick": 565
+      },
+      {
+        "rockId": 141,
+        "chamber": "main",
+        "x": 38,
+        "y": 5,
+        "fallTick": 588,
+        "traversedTick": 589
+      },
+      {
+        "rockId": 176,
+        "chamber": "main",
+        "x": 37,
+        "y": 5,
+        "fallTick": 586,
+        "traversedTick": 590
+      },
+      {
+        "rockId": 106,
+        "chamber": "main",
+        "x": 36,
+        "y": 5,
+        "fallTick": 585,
+        "traversedTick": 591
+      },
+      {
+        "rockId": 210,
+        "chamber": "main",
+        "x": 35,
+        "y": 6,
+        "fallTick": 582,
+        "traversedTick": 593
+      },
+      {
+        "rockId": 209,
+        "chamber": "main",
+        "x": 34,
+        "y": 6,
+        "fallTick": 581,
+        "traversedTick": 595
+      },
+      {
+        "rockId": 70,
+        "chamber": "main",
+        "x": 34,
+        "y": 5,
+        "fallTick": 593,
+        "traversedTick": 596
+      },
+      {
+        "rockId": 71,
+        "chamber": "main",
+        "x": 35,
+        "y": 5,
+        "fallTick": 596,
+        "traversedTick": 597
+      },
+      {
+        "rockId": 70,
+        "chamber": "main",
+        "x": 33,
+        "y": 6,
+        "fallTick": 595,
+        "traversedTick": 602
+      },
+      {
+        "rockId": 70,
+        "chamber": "main",
+        "x": 33,
+        "y": 7,
+        "fallTick": 596,
+        "traversedTick": 603
+      },
+      {
+        "rockId": 99,
+        "chamber": "main",
+        "x": 31,
+        "y": 7,
+        "fallTick": 473,
+        "traversedTick": 605
+      },
+      {
+        "rockId": 99,
+        "chamber": "main",
+        "x": 31,
+        "y": 6,
+        "fallTick": 472,
+        "traversedTick": 606
+      },
+      {
+        "rockId": 64,
+        "chamber": "main",
+        "x": 31,
+        "y": 4,
+        "fallTick": 326,
+        "traversedTick": 608
+      },
+      {
+        "rockId": 99,
+        "chamber": "main",
+        "x": 30,
+        "y": 4,
+        "fallTick": 469,
+        "traversedTick": 609
+      },
+      {
+        "rockId": 132,
+        "chamber": "main",
+        "x": 28,
+        "y": 4,
+        "fallTick": 469,
+        "traversedTick": 611
+      },
+      {
+        "rockId": 167,
+        "chamber": "main",
+        "x": 29,
+        "y": 5,
+        "fallTick": 469,
+        "traversedTick": 615
+      },
+      {
+        "rockId": 99,
+        "chamber": "main",
+        "x": 30,
+        "y": 5,
+        "fallTick": 470,
+        "traversedTick": 616
+      },
+      {
+        "rockId": 99,
+        "chamber": "main",
+        "x": 31,
+        "y": 8,
+        "fallTick": 474,
+        "traversedTick": 620
+      },
+      {
+        "rockId": 99,
+        "chamber": "main",
+        "x": 31,
+        "y": 9,
+        "fallTick": 475,
+        "traversedTick": 621
+      },
+      {
+        "rockId": 99,
+        "chamber": "main",
+        "x": 31,
+        "y": 10,
+        "fallTick": 476,
+        "traversedTick": 622
+      },
+      {
+        "rockId": 99,
+        "chamber": "main",
+        "x": 31,
+        "y": 11,
+        "fallTick": 477,
+        "traversedTick": 623
+      },
+      {
+        "rockId": 99,
+        "chamber": "main",
+        "x": 31,
+        "y": 12,
+        "fallTick": 478,
+        "traversedTick": 624
+      },
+      {
+        "rockId": 99,
+        "chamber": "main",
+        "x": 31,
+        "y": 13,
+        "fallTick": 479,
+        "traversedTick": 625
+      },
+      {
+        "rockId": 63,
+        "chamber": "main",
+        "x": 31,
+        "y": 14,
+        "fallTick": 446,
+        "traversedTick": 626
+      },
+      {
+        "rockId": 103,
+        "chamber": "main",
+        "x": 30,
+        "y": 16,
+        "fallTick": 333,
+        "traversedTick": 629
+      },
+      {
+        "rockId": 63,
+        "chamber": "main",
+        "x": 29,
+        "y": 16,
+        "fallTick": 558,
+        "traversedTick": 630
+      },
+      {
+        "rockId": 137,
+        "chamber": "main",
+        "x": 28,
+        "y": 17,
+        "fallTick": 557,
+        "traversedTick": 632
+      },
+      {
+        "rockId": 99,
+        "chamber": "main",
+        "x": 27,
+        "y": 17,
+        "fallTick": 552,
+        "traversedTick": 633
+      },
+      {
+        "rockId": 355,
+        "chamber": "main",
+        "x": 24,
+        "y": 18,
+        "fallTick": 511,
+        "traversedTick": 637
+      },
+      {
+        "rockId": 127,
+        "chamber": "main",
+        "x": 22,
+        "y": 18,
+        "fallTick": 538,
+        "traversedTick": 639
+      },
+      {
+        "rockId": 266,
+        "chamber": "main",
+        "x": 24,
+        "y": 17,
+        "fallTick": 654,
+        "traversedTick": 655
+      },
+      {
+        "rockId": 278,
+        "chamber": "main",
+        "x": 23,
+        "y": 17,
+        "fallTick": 652,
+        "traversedTick": 656
+      },
+      {
+        "rockId": 96,
+        "chamber": "main",
+        "x": 23,
+        "y": 16,
+        "fallTick": 657,
+        "traversedTick": 661
+      },
+      {
+        "rockId": 70,
+        "chamber": "main",
+        "x": 33,
+        "y": 13,
+        "fallTick": 602,
+        "traversedTick": 676
+      },
+      {
+        "rockId": 70,
+        "chamber": "main",
+        "x": 33,
+        "y": 10,
+        "fallTick": 599,
+        "traversedTick": 689
+      },
+      {
+        "rockId": 70,
+        "chamber": "main",
+        "x": 33,
+        "y": 9,
+        "fallTick": 598,
+        "traversedTick": 690
+      }
+    ],
+    "pushes": 35,
+    "exposure": [
+      {
+        "chamber": "main",
+        "x": 17,
+        "y": 5,
+        "tick": 376,
+        "collected": 71,
+        "fractionOfQuota": 0.46405228758169936
+      }
+    ],
+    "expectedColonies": 1,
+    "concreteDeath": true,
+    "exposureTiming": "PASS"
+  },
+  {
+    "id": 10,
+    "status": "WON",
+    "ticks": 58,
+    "simulatedSeconds": 11.600000000000001,
+    "quota": 23,
+    "collected": 24,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 15,
+    "rockAccessChanges": [
+      {
+        "rockId": 2,
+        "chamber": "main",
+        "x": 10,
+        "y": 4,
+        "fallTick": 1,
+        "traversedTick": 22
+      },
+      {
+        "rockId": 3,
+        "chamber": "main",
+        "x": 11,
+        "y": 7,
+        "fallTick": 29,
+        "traversedTick": 33
+      },
+      {
+        "rockId": 2,
+        "chamber": "main",
+        "x": 8,
+        "y": 7,
+        "fallTick": 18,
+        "traversedTick": 44
+      },
+      {
+        "rockId": 1,
+        "chamber": "main",
+        "x": 7,
+        "y": 7,
+        "fallTick": 6,
+        "traversedTick": 45
+      },
+      {
+        "rockId": 1,
+        "chamber": "main",
+        "x": 7,
+        "y": 8,
+        "fallTick": 15,
+        "traversedTick": 46
+      }
+    ],
+    "pushes": 1,
+    "exposure": [
+      {
+        "chamber": "main",
+        "x": 12,
+        "y": 6,
+        "tick": 28,
+        "collected": 11,
+        "fractionOfQuota": 0.4782608695652174
+      }
+    ],
+    "expectedColonies": 1,
+    "concreteDeath": true,
+    "exposureTiming": "PASS"
+  },
+  {
+    "id": 11,
+    "status": "WON",
+    "ticks": 146,
+    "simulatedSeconds": 29.200000000000003,
+    "quota": 15,
+    "collected": 17,
+    "kills": 2,
+    "requiredRemaining": 0,
+    "rockFallSteps": 20,
+    "rockAccessChanges": [
+      {
+        "rockId": 20,
+        "chamber": "main",
+        "x": 7,
+        "y": 7,
+        "fallTick": 17,
+        "traversedTick": 19
+      },
+      {
+        "rockId": 20,
+        "chamber": "main",
+        "x": 7,
+        "y": 6,
+        "fallTick": 16,
+        "traversedTick": 22
+      },
+      {
+        "rockId": 22,
+        "chamber": "main",
+        "x": 7,
+        "y": 17,
+        "fallTick": 81,
+        "traversedTick": 83
+      },
+      {
+        "rockId": 22,
+        "chamber": "main",
+        "x": 7,
+        "y": 16,
+        "fallTick": 80,
+        "traversedTick": 86
+      }
+    ],
+    "pushes": 1,
+    "exposure": [],
+    "expectedColonies": 0,
+    "concreteDeath": true,
+    "exposureTiming": "NOT_APPLICABLE"
+  },
+  {
+    "id": 12,
+    "status": "WON",
+    "ticks": 120,
+    "simulatedSeconds": 24,
+    "quota": 17,
+    "collected": 18,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 16,
+    "rockAccessChanges": [
+      {
+        "rockId": 2,
+        "chamber": "vault-1",
+        "x": 8,
+        "y": 3,
+        "fallTick": 84,
+        "traversedTick": 90
+      },
+      {
+        "rockId": 3,
+        "chamber": "vault-1",
+        "x": 10,
+        "y": 3,
+        "fallTick": 84,
+        "traversedTick": 92
+      },
+      {
+        "rockId": 4,
+        "chamber": "vault-1",
+        "x": 11,
+        "y": 3,
+        "fallTick": 78,
+        "traversedTick": 93
+      }
+    ],
+    "pushes": 2,
+    "exposure": [],
+    "expectedColonies": 0,
+    "concreteDeath": true,
+    "exposureTiming": "NOT_APPLICABLE"
+  },
+  {
+    "id": 13,
+    "status": "WON",
+    "ticks": 313,
+    "simulatedSeconds": 62.6,
+    "quota": 17,
+    "collected": 17,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 9,
+    "rockAccessChanges": [
+      {
+        "rockId": 7,
+        "chamber": "main",
+        "x": 6,
+        "y": 9,
+        "fallTick": 267,
+        "traversedTick": 268
+      },
+      {
+        "rockId": 7,
+        "chamber": "main",
+        "x": 6,
+        "y": 8,
+        "fallTick": 266,
+        "traversedTick": 269
+      }
+    ],
+    "pushes": 0,
+    "exposure": [],
+    "expectedColonies": 0,
+    "concreteDeath": true,
+    "exposureTiming": "NOT_APPLICABLE"
+  },
+  {
+    "id": 14,
+    "status": "WON",
+    "ticks": 543,
+    "simulatedSeconds": 108.60000000000001,
+    "quota": 70,
+    "collected": 71,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 429,
+    "rockAccessChanges": [
+      {
+        "rockId": 177,
+        "chamber": "main",
+        "x": 22,
+        "y": 17,
+        "fallTick": 39,
+        "traversedTick": 40
+      },
+      {
+        "rockId": 128,
+        "chamber": "main",
+        "x": 22,
+        "y": 18,
+        "fallTick": 38,
+        "traversedTick": 41
+      },
+      {
+        "rockId": 128,
+        "chamber": "main",
+        "x": 22,
+        "y": 16,
+        "fallTick": 35,
+        "traversedTick": 43
+      },
+      {
+        "rockId": 128,
+        "chamber": "main",
+        "x": 22,
+        "y": 15,
+        "fallTick": 34,
+        "traversedTick": 44
+      },
+      {
+        "rockId": 128,
+        "chamber": "main",
+        "x": 22,
+        "y": 14,
+        "fallTick": 33,
+        "traversedTick": 45
+      },
+      {
+        "rockId": 128,
+        "chamber": "main",
+        "x": 22,
+        "y": 13,
+        "fallTick": 32,
+        "traversedTick": 46
+      },
+      {
+        "rockId": 128,
+        "chamber": "main",
+        "x": 22,
+        "y": 12,
+        "fallTick": 31,
+        "traversedTick": 47
+      },
+      {
+        "rockId": 109,
+        "chamber": "main",
+        "x": 22,
+        "y": 10,
+        "fallTick": 49,
+        "traversedTick": 61
+      },
+      {
+        "rockId": 110,
+        "chamber": "main",
+        "x": 23,
+        "y": 10,
+        "fallTick": 52,
+        "traversedTick": 63
+      },
+      {
+        "rockId": 146,
+        "chamber": "main",
+        "x": 17,
+        "y": 14,
+        "fallTick": 26,
+        "traversedTick": 73
+      },
+      {
+        "rockId": 22,
+        "chamber": "main",
+        "x": 13,
+        "y": 14,
+        "fallTick": 83,
+        "traversedTick": 86
+      },
+      {
+        "rockId": 22,
+        "chamber": "main",
+        "x": 13,
+        "y": 13,
+        "fallTick": 34,
+        "traversedTick": 87
+      },
+      {
+        "rockId": 22,
+        "chamber": "main",
+        "x": 13,
+        "y": 12,
+        "fallTick": 32,
+        "traversedTick": 88
+      },
+      {
+        "rockId": 22,
+        "chamber": "main",
+        "x": 14,
+        "y": 10,
+        "fallTick": 22,
+        "traversedTick": 91
+      },
+      {
+        "rockId": 22,
+        "chamber": "main",
+        "x": 14,
+        "y": 11,
+        "fallTick": 28,
+        "traversedTick": 94
+      },
+      {
+        "rockId": 93,
+        "chamber": "main",
+        "x": 14,
+        "y": 12,
+        "fallTick": 19,
+        "traversedTick": 95
+      },
+      {
+        "rockId": 136,
+        "chamber": "main",
+        "x": 10,
+        "y": 14,
+        "fallTick": 103,
+        "traversedTick": 105
+      },
+      {
+        "rockId": 172,
+        "chamber": "main",
+        "x": 5,
+        "y": 19,
+        "fallTick": 139,
+        "traversedTick": 141
+      },
+      {
+        "rockId": 172,
+        "chamber": "main",
+        "x": 5,
+        "y": 18,
+        "fallTick": 138,
+        "traversedTick": 142
+      },
+      {
+        "rockId": 172,
+        "chamber": "main",
+        "x": 5,
+        "y": 17,
+        "fallTick": 129,
+        "traversedTick": 143
+      },
+      {
+        "rockId": 135,
+        "chamber": "main",
+        "x": 3,
+        "y": 13,
+        "fallTick": 150,
+        "traversedTick": 153
+      },
+      {
+        "rockId": 144,
+        "chamber": "main",
+        "x": 3,
+        "y": 14,
+        "fallTick": 150,
+        "traversedTick": 154
+      },
+      {
+        "rockId": 92,
+        "chamber": "main",
+        "x": 6,
+        "y": 10,
+        "fallTick": 177,
+        "traversedTick": 184
+      },
+      {
+        "rockId": 106,
+        "chamber": "main",
+        "x": 7,
+        "y": 10,
+        "fallTick": 174,
+        "traversedTick": 185
+      },
+      {
+        "rockId": 92,
+        "chamber": "main",
+        "x": 7,
+        "y": 9,
+        "fallTick": 174,
+        "traversedTick": 186
+      },
+      {
+        "rockId": 41,
+        "chamber": "main",
+        "x": 6,
+        "y": 9,
+        "fallTick": 185,
+        "traversedTick": 188
+      },
+      {
+        "rockId": 41,
+        "chamber": "main",
+        "x": 6,
+        "y": 8,
+        "fallTick": 184,
+        "traversedTick": 189
+      },
+      {
+        "rockId": 41,
+        "chamber": "main",
+        "x": 6,
+        "y": 7,
+        "fallTick": 183,
+        "traversedTick": 190
+      },
+      {
+        "rockId": 41,
+        "chamber": "main",
+        "x": 6,
+        "y": 6,
+        "fallTick": 182,
+        "traversedTick": 191
+      },
+      {
+        "rockId": 41,
+        "chamber": "main",
+        "x": 6,
+        "y": 5,
+        "fallTick": 181,
+        "traversedTick": 192
+      },
+      {
+        "rockId": 13,
+        "chamber": "main",
+        "x": 5,
+        "y": 2,
+        "fallTick": 199,
+        "traversedTick": 202
+      },
+      {
+        "rockId": 13,
+        "chamber": "main",
+        "x": 6,
+        "y": 3,
+        "fallTick": 202,
+        "traversedTick": 206
+      },
+      {
+        "rockId": 13,
+        "chamber": "main",
+        "x": 6,
+        "y": 4,
+        "fallTick": 203,
+        "traversedTick": 207
+      },
+      {
+        "rockId": 13,
+        "chamber": "main",
+        "x": 6,
+        "y": 5,
+        "fallTick": 204,
+        "traversedTick": 208
+      },
+      {
+        "rockId": 13,
+        "chamber": "main",
+        "x": 6,
+        "y": 6,
+        "fallTick": 205,
+        "traversedTick": 209
+      },
+      {
+        "rockId": 83,
+        "chamber": "main",
+        "x": 11,
+        "y": 8,
+        "fallTick": 228,
+        "traversedTick": 230
+      },
+      {
+        "rockId": 44,
+        "chamber": "main",
+        "x": 12,
+        "y": 6,
+        "fallTick": 225,
+        "traversedTick": 233
+      },
+      {
+        "rockId": 22,
+        "chamber": "main",
+        "x": 15,
+        "y": 6,
+        "fallTick": 15,
+        "traversedTick": 236
+      },
+      {
+        "rockId": 22,
+        "chamber": "main",
+        "x": 15,
+        "y": 8,
+        "fallTick": 19,
+        "traversedTick": 245
+      },
+      {
+        "rockId": 109,
+        "chamber": "main",
+        "x": 22,
+        "y": 16,
+        "fallTick": 55,
+        "traversedTick": 272
+      },
+      {
+        "rockId": 96,
+        "chamber": "main",
+        "x": 19,
+        "y": 16,
+        "fallTick": 271,
+        "traversedTick": 303
+      },
+      {
+        "rockId": 97,
+        "chamber": "main",
+        "x": 18,
+        "y": 16,
+        "fallTick": 268,
+        "traversedTick": 304
+      },
+      {
+        "rockId": 146,
+        "chamber": "main",
+        "x": 17,
+        "y": 16,
+        "fallTick": 79,
+        "traversedTick": 305
+      },
+      {
+        "rockId": 165,
+        "chamber": "main",
+        "x": 16,
+        "y": 16,
+        "fallTick": 258,
+        "traversedTick": 306
+      },
+      {
+        "rockId": 22,
+        "chamber": "main",
+        "x": 15,
+        "y": 15,
+        "fallTick": 258,
+        "traversedTick": 308
+      },
+      {
+        "rockId": 147,
+        "chamber": "main",
+        "x": 15,
+        "y": 16,
+        "fallTick": 307,
+        "traversedTick": 315
+      },
+      {
+        "rockId": 97,
+        "chamber": "main",
+        "x": 18,
+        "y": 15,
+        "fallTick": 78,
+        "traversedTick": 319
+      },
+      {
+        "rockId": 97,
+        "chamber": "main",
+        "x": 18,
+        "y": 14,
+        "fallTick": 77,
+        "traversedTick": 320
+      },
+      {
+        "rockId": 97,
+        "chamber": "main",
+        "x": 19,
+        "y": 13,
+        "fallTick": 74,
+        "traversedTick": 322
+      },
+      {
+        "rockId": 109,
+        "chamber": "main",
+        "x": 22,
+        "y": 13,
+        "fallTick": 52,
+        "traversedTick": 325
+      },
+      {
+        "rockId": 121,
+        "chamber": "main",
+        "x": 25,
+        "y": 12,
+        "fallTick": 330,
+        "traversedTick": 331
+      },
+      {
+        "rockId": 101,
+        "chamber": "main",
+        "x": 31,
+        "y": 10,
+        "fallTick": 346,
+        "traversedTick": 348
+      },
+      {
+        "rockId": 101,
+        "chamber": "main",
+        "x": 31,
+        "y": 9,
+        "fallTick": 345,
+        "traversedTick": 349
+      },
+      {
+        "rockId": 151,
+        "chamber": "main",
+        "x": 36,
+        "y": 17,
+        "fallTick": 402,
+        "traversedTick": 406
+      },
+      {
+        "rockId": 103,
+        "chamber": "main",
+        "x": 36,
+        "y": 16,
+        "fallTick": 402,
+        "traversedTick": 407
+      },
+      {
+        "rockId": 103,
+        "chamber": "main",
+        "x": 36,
+        "y": 15,
+        "fallTick": 401,
+        "traversedTick": 408
+      },
+      {
+        "rockId": 103,
+        "chamber": "main",
+        "x": 36,
+        "y": 14,
+        "fallTick": 400,
+        "traversedTick": 409
+      },
+      {
+        "rockId": 103,
+        "chamber": "main",
+        "x": 36,
+        "y": 13,
+        "fallTick": 370,
+        "traversedTick": 410
+      },
+      {
+        "rockId": 103,
+        "chamber": "main",
+        "x": 36,
+        "y": 12,
+        "fallTick": 369,
+        "traversedTick": 411
+      },
+      {
+        "rockId": 103,
+        "chamber": "main",
+        "x": 36,
+        "y": 11,
+        "fallTick": 365,
+        "traversedTick": 412
+      },
+      {
+        "rockId": 103,
+        "chamber": "main",
+        "x": 36,
+        "y": 10,
+        "fallTick": 361,
+        "traversedTick": 413
+      },
+      {
+        "rockId": 77,
+        "chamber": "main",
+        "x": 33,
+        "y": 8,
+        "fallTick": 422,
+        "traversedTick": 424
+      },
+      {
+        "rockId": 36,
+        "chamber": "main",
+        "x": 33,
+        "y": 7,
+        "fallTick": 426,
+        "traversedTick": 428
+      },
+      {
+        "rockId": 150,
+        "chamber": "main",
+        "x": 35,
+        "y": 14,
+        "fallTick": 371,
+        "traversedTick": 439
+      },
+      {
+        "rockId": 51,
+        "chamber": "main",
+        "x": 36,
+        "y": 16,
+        "fallTick": 430,
+        "traversedTick": 444
+      },
+      {
+        "rockId": 37,
+        "chamber": "main",
+        "x": 37,
+        "y": 13,
+        "fallTick": 437,
+        "traversedTick": 450
+      },
+      {
+        "rockId": 113,
+        "chamber": "main",
+        "x": 37,
+        "y": 11,
+        "fallTick": 363,
+        "traversedTick": 452
+      },
+      {
+        "rockId": 113,
+        "chamber": "main",
+        "x": 37,
+        "y": 10,
+        "fallTick": 358,
+        "traversedTick": 453
+      },
+      {
+        "rockId": 103,
+        "chamber": "main",
+        "x": 37,
+        "y": 9,
+        "fallTick": 359,
+        "traversedTick": 454
+      },
+      {
+        "rockId": 52,
+        "chamber": "main",
+        "x": 37,
+        "y": 5,
+        "fallTick": 460,
+        "traversedTick": 461
+      },
+      {
+        "rockId": 11,
+        "chamber": "main",
+        "x": 37,
+        "y": 5,
+        "fallTick": 465,
+        "traversedTick": 466
+      },
+      {
+        "rockId": 11,
+        "chamber": "main",
+        "x": 37,
+        "y": 6,
+        "fallTick": 466,
+        "traversedTick": 467
+      },
+      {
+        "rockId": 11,
+        "chamber": "main",
+        "x": 37,
+        "y": 7,
+        "fallTick": 467,
+        "traversedTick": 468
+      },
+      {
+        "rockId": 11,
+        "chamber": "main",
+        "x": 37,
+        "y": 8,
+        "fallTick": 468,
+        "traversedTick": 469
+      },
+      {
+        "rockId": 11,
+        "chamber": "main",
+        "x": 37,
+        "y": 9,
+        "fallTick": 469,
+        "traversedTick": 470
+      },
+      {
+        "rockId": 11,
+        "chamber": "main",
+        "x": 37,
+        "y": 10,
+        "fallTick": 470,
+        "traversedTick": 471
+      },
+      {
+        "rockId": 11,
+        "chamber": "main",
+        "x": 37,
+        "y": 11,
+        "fallTick": 471,
+        "traversedTick": 472
+      },
+      {
+        "rockId": 11,
+        "chamber": "main",
+        "x": 37,
+        "y": 12,
+        "fallTick": 472,
+        "traversedTick": 473
+      },
+      {
+        "rockId": 11,
+        "chamber": "main",
+        "x": 37,
+        "y": 13,
+        "fallTick": 473,
+        "traversedTick": 474
+      },
+      {
+        "rockId": 27,
+        "chamber": "main",
+        "x": 37,
+        "y": 14,
+        "fallTick": 472,
+        "traversedTick": 475
+      },
+      {
+        "rockId": 52,
+        "chamber": "main",
+        "x": 37,
+        "y": 15,
+        "fallTick": 470,
+        "traversedTick": 476
+      },
+      {
+        "rockId": 11,
+        "chamber": "main",
+        "x": 36,
+        "y": 14,
+        "fallTick": 475,
+        "traversedTick": 478
+      },
+      {
+        "rockId": 65,
+        "chamber": "main",
+        "x": 35,
+        "y": 14,
+        "fallTick": 444,
+        "traversedTick": 479
+      },
+      {
+        "rockId": 66,
+        "chamber": "main",
+        "x": 34,
+        "y": 14,
+        "fallTick": 443,
+        "traversedTick": 480
+      },
+      {
+        "rockId": 141,
+        "chamber": "main",
+        "x": 33,
+        "y": 14,
+        "fallTick": 376,
+        "traversedTick": 481
+      },
+      {
+        "rockId": 100,
+        "chamber": "main",
+        "x": 28,
+        "y": 9,
+        "fallTick": 495,
+        "traversedTick": 497
+      },
+      {
+        "rockId": 86,
+        "chamber": "main",
+        "x": 27,
+        "y": 9,
+        "fallTick": 498,
+        "traversedTick": 499
+      },
+      {
+        "rockId": 86,
+        "chamber": "main",
+        "x": 27,
+        "y": 10,
+        "fallTick": 499,
+        "traversedTick": 500
+      },
+      {
+        "rockId": 86,
+        "chamber": "main",
+        "x": 27,
+        "y": 11,
+        "fallTick": 500,
+        "traversedTick": 501
+      },
+      {
+        "rockId": 75,
+        "chamber": "main",
+        "x": 27,
+        "y": 12,
+        "fallTick": 498,
+        "traversedTick": 502
+      },
+      {
+        "rockId": 76,
+        "chamber": "main",
+        "x": 29,
+        "y": 9,
+        "fallTick": 501,
+        "traversedTick": 523
+      },
+      {
+        "rockId": 76,
+        "chamber": "main",
+        "x": 29,
+        "y": 10,
+        "fallTick": 502,
+        "traversedTick": 524
+      },
+      {
+        "rockId": 76,
+        "chamber": "main",
+        "x": 29,
+        "y": 11,
+        "fallTick": 503,
+        "traversedTick": 525
+      },
+      {
+        "rockId": 76,
+        "chamber": "main",
+        "x": 29,
+        "y": 12,
+        "fallTick": 504,
+        "traversedTick": 526
+      },
+      {
+        "rockId": 86,
+        "chamber": "main",
+        "x": 28,
+        "y": 12,
+        "fallTick": 502,
+        "traversedTick": 527
+      },
+      {
+        "rockId": 74,
+        "chamber": "main",
+        "x": 26,
+        "y": 12,
+        "fallTick": 516,
+        "traversedTick": 529
+      },
+      {
+        "rockId": 178,
+        "chamber": "main",
+        "x": 24,
+        "y": 17,
+        "fallTick": 279,
+        "traversedTick": 536
+      },
+      {
+        "rockId": 109,
+        "chamber": "main",
+        "x": 22,
+        "y": 17,
+        "fallTick": 56,
+        "traversedTick": 538
+      },
+      {
+        "rockId": 177,
+        "chamber": "main",
+        "x": 21,
+        "y": 18,
+        "fallTick": 41,
+        "traversedTick": 540
+      }
+    ],
+    "pushes": 18,
+    "exposure": [
+      {
+        "chamber": "main",
+        "x": 15,
+        "y": 13,
+        "tick": 312,
+        "collected": 42,
+        "fractionOfQuota": 0.6
+      }
+    ],
+    "expectedColonies": 1,
+    "concreteDeath": true,
+    "exposureTiming": "PASS"
+  },
+  {
+    "id": 15,
+    "status": "WON",
+    "ticks": 143,
+    "simulatedSeconds": 28.6,
+    "quota": 16,
+    "collected": 16,
+    "kills": 1,
+    "requiredRemaining": 0,
+    "rockFallSteps": 26,
+    "rockAccessChanges": [
+      {
+        "rockId": 21,
+        "chamber": "main",
+        "x": 7,
+        "y": 19,
+        "fallTick": 49,
+        "traversedTick": 51
+      },
+      {
+        "rockId": 21,
+        "chamber": "main",
+        "x": 7,
+        "y": 18,
+        "fallTick": 48,
+        "traversedTick": 52
+      },
+      {
+        "rockId": 6,
+        "chamber": "main",
+        "x": 8,
+        "y": 18,
+        "fallTick": 60,
+        "traversedTick": 63
+      }
+    ],
+    "pushes": 3,
+    "exposure": [
+      {
+        "chamber": "main",
+        "x": 10,
+        "y": 15,
+        "tick": 61,
+        "collected": 9,
+        "fractionOfQuota": 0.5625
+      }
+    ],
+    "expectedColonies": 1,
+    "concreteDeath": true,
+    "exposureTiming": "PASS"
+  },
+  {
+    "id": 16,
+    "status": "WON",
+    "ticks": 353,
+    "simulatedSeconds": 70.60000000000001,
+    "quota": 106,
+    "collected": 106,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 189,
+    "rockAccessChanges": [
+      {
+        "rockId": 155,
+        "chamber": "main",
+        "x": 5,
+        "y": 13,
+        "fallTick": 109,
+        "traversedTick": 112
+      },
+      {
+        "rockId": 155,
+        "chamber": "main",
+        "x": 5,
+        "y": 12,
+        "fallTick": 108,
+        "traversedTick": 117
+      },
+      {
+        "rockId": 139,
+        "chamber": "main",
+        "x": 4,
+        "y": 12,
+        "fallTick": 113,
+        "traversedTick": 118
+      },
+      {
+        "rockId": 139,
+        "chamber": "main",
+        "x": 4,
+        "y": 11,
+        "fallTick": 112,
+        "traversedTick": 119
+      },
+      {
+        "rockId": 116,
+        "chamber": "main",
+        "x": 5,
+        "y": 11,
+        "fallTick": 118,
+        "traversedTick": 120
+      },
+      {
+        "rockId": 116,
+        "chamber": "main",
+        "x": 5,
+        "y": 10,
+        "fallTick": 117,
+        "traversedTick": 121
+      },
+      {
+        "rockId": 31,
+        "chamber": "main",
+        "x": 7,
+        "y": 8,
+        "fallTick": 110,
+        "traversedTick": 125
+      },
+      {
+        "rockId": 31,
+        "chamber": "main",
+        "x": 8,
+        "y": 7,
+        "fallTick": 15,
+        "traversedTick": 127
+      },
+      {
+        "rockId": 31,
+        "chamber": "main",
+        "x": 8,
+        "y": 6,
+        "fallTick": 14,
+        "traversedTick": 128
+      },
+      {
+        "rockId": 124,
+        "chamber": "main",
+        "x": 17,
+        "y": 12,
+        "fallTick": 168,
+        "traversedTick": 170
+      },
+      {
+        "rockId": 124,
+        "chamber": "main",
+        "x": 17,
+        "y": 11,
+        "fallTick": 166,
+        "traversedTick": 171
+      },
+      {
+        "rockId": 124,
+        "chamber": "main",
+        "x": 17,
+        "y": 10,
+        "fallTick": 164,
+        "traversedTick": 172
+      },
+      {
+        "rockId": 81,
+        "chamber": "main",
+        "x": 19,
+        "y": 9,
+        "fallTick": 165,
+        "traversedTick": 175
+      },
+      {
+        "rockId": 103,
+        "chamber": "main",
+        "x": 20,
+        "y": 9,
+        "fallTick": 163,
+        "traversedTick": 176
+      },
+      {
+        "rockId": 61,
+        "chamber": "main",
+        "x": 21,
+        "y": 8,
+        "fallTick": 159,
+        "traversedTick": 178
+      },
+      {
+        "rockId": 41,
+        "chamber": "main",
+        "x": 22,
+        "y": 8,
+        "fallTick": 152,
+        "traversedTick": 179
+      },
+      {
+        "rockId": 86,
+        "chamber": "main",
+        "x": 23,
+        "y": 8,
+        "fallTick": 155,
+        "traversedTick": 180
+      },
+      {
+        "rockId": 86,
+        "chamber": "main",
+        "x": 23,
+        "y": 9,
+        "fallTick": 156,
+        "traversedTick": 181
+      },
+      {
+        "rockId": 41,
+        "chamber": "main",
+        "x": 22,
+        "y": 9,
+        "fallTick": 153,
+        "traversedTick": 182
+      },
+      {
+        "rockId": 41,
+        "chamber": "main",
+        "x": 22,
+        "y": 10,
+        "fallTick": 154,
+        "traversedTick": 183
+      },
+      {
+        "rockId": 126,
+        "chamber": "main",
+        "x": 19,
+        "y": 11,
+        "fallTick": 165,
+        "traversedTick": 193
+      },
+      {
+        "rockId": 81,
+        "chamber": "main",
+        "x": 19,
+        "y": 10,
+        "fallTick": 195,
+        "traversedTick": 197
+      },
+      {
+        "rockId": 41,
+        "chamber": "main",
+        "x": 22,
+        "y": 11,
+        "fallTick": 155,
+        "traversedTick": 203
+      },
+      {
+        "rockId": 41,
+        "chamber": "main",
+        "x": 22,
+        "y": 12,
+        "fallTick": 156,
+        "traversedTick": 206
+      },
+      {
+        "rockId": 41,
+        "chamber": "main",
+        "x": 22,
+        "y": 7,
+        "fallTick": 151,
+        "traversedTick": 211
+      },
+      {
+        "rockId": 41,
+        "chamber": "main",
+        "x": 22,
+        "y": 6,
+        "fallTick": 150,
+        "traversedTick": 212
+      },
+      {
+        "rockId": 66,
+        "chamber": "main",
+        "x": 29,
+        "y": 7,
+        "fallTick": 238,
+        "traversedTick": 241
+      },
+      {
+        "rockId": 68,
+        "chamber": "main",
+        "x": 30,
+        "y": 7,
+        "fallTick": 238,
+        "traversedTick": 242
+      },
+      {
+        "rockId": 114,
+        "chamber": "main",
+        "x": 35,
+        "y": 9,
+        "fallTick": 263,
+        "traversedTick": 265
+      },
+      {
+        "rockId": 92,
+        "chamber": "main",
+        "x": 34,
+        "y": 9,
+        "fallTick": 266,
+        "traversedTick": 268
+      },
+      {
+        "rockId": 48,
+        "chamber": "main",
+        "x": 31,
+        "y": 11,
+        "fallTick": 261,
+        "traversedTick": 273
+      },
+      {
+        "rockId": 48,
+        "chamber": "main",
+        "x": 31,
+        "y": 10,
+        "fallTick": 259,
+        "traversedTick": 274
+      },
+      {
+        "rockId": 48,
+        "chamber": "main",
+        "x": 31,
+        "y": 9,
+        "fallTick": 257,
+        "traversedTick": 275
+      },
+      {
+        "rockId": 68,
+        "chamber": "main",
+        "x": 31,
+        "y": 8,
+        "fallTick": 251,
+        "traversedTick": 276
+      },
+      {
+        "rockId": 11,
+        "chamber": "main",
+        "x": 26,
+        "y": 4,
+        "fallTick": 228,
+        "traversedTick": 285
+      },
+      {
+        "rockId": 23,
+        "chamber": "main",
+        "x": 25,
+        "y": 4,
+        "fallTick": 219,
+        "traversedTick": 286
+      },
+      {
+        "rockId": 39,
+        "chamber": "main",
+        "x": 20,
+        "y": 8,
+        "fallTick": 160,
+        "traversedTick": 306
+      },
+      {
+        "rockId": 98,
+        "chamber": "main",
+        "x": 11,
+        "y": 11,
+        "fallTick": 113,
+        "traversedTick": 336
+      },
+      {
+        "rockId": 121,
+        "chamber": "main",
+        "x": 10,
+        "y": 11,
+        "fallTick": 103,
+        "traversedTick": 337
+      },
+      {
+        "rockId": 159,
+        "chamber": "main",
+        "x": 9,
+        "y": 12,
+        "fallTick": 104,
+        "traversedTick": 339
+      }
+    ],
+    "pushes": 8,
+    "exposure": [
+      {
+        "chamber": "main",
+        "x": 24,
+        "y": 10,
+        "tick": 205,
+        "collected": 63,
+        "fractionOfQuota": 0.5943396226415094
+      }
+    ],
+    "expectedColonies": 1,
+    "concreteDeath": true,
+    "exposureTiming": "PASS"
+  },
+  {
+    "id": 17,
+    "status": "WON",
+    "ticks": 226,
+    "simulatedSeconds": 45.2,
+    "quota": 23,
+    "collected": 25,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 36,
+    "rockAccessChanges": [
+      {
+        "rockId": 4,
+        "chamber": "main",
+        "x": 9,
+        "y": 18,
+        "fallTick": 65,
+        "traversedTick": 215
+      },
+      {
+        "rockId": 6,
+        "chamber": "main",
+        "x": 10,
+        "y": 17,
+        "fallTick": 215,
+        "traversedTick": 217
+      },
+      {
+        "rockId": 5,
+        "chamber": "main",
+        "x": 9,
+        "y": 17,
+        "fallTick": 218,
+        "traversedTick": 219
+      },
+      {
+        "rockId": 3,
+        "chamber": "main",
+        "x": 8,
+        "y": 17,
+        "fallTick": 64,
+        "traversedTick": 220
+      }
+    ],
+    "pushes": 0,
+    "exposure": [
+      {
+        "chamber": "main",
+        "x": 6,
+        "y": 16,
+        "tick": 53,
+        "collected": 13,
+        "fractionOfQuota": 0.5652173913043478
+      },
+      {
+        "chamber": "main",
+        "x": 15,
+        "y": 16,
+        "tick": 203,
+        "collected": 13,
+        "fractionOfQuota": 0.5652173913043478
+      }
+    ],
+    "expectedColonies": 2,
+    "concreteDeath": true,
+    "exposureTiming": "PASS"
+  },
+  {
+    "id": 18,
+    "status": "WON",
+    "ticks": 154,
+    "simulatedSeconds": 30.8,
+    "quota": 47,
+    "collected": 49,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 71,
+    "rockAccessChanges": [
+      {
+        "rockId": 24,
+        "chamber": "vault-2",
+        "x": 12,
+        "y": 6,
+        "fallTick": 29,
+        "traversedTick": 30
+      },
+      {
+        "rockId": 5,
+        "chamber": "vault-2",
+        "x": 10,
+        "y": 8,
+        "fallTick": 52,
+        "traversedTick": 56
+      },
+      {
+        "rockId": 9,
+        "chamber": "vault-2",
+        "x": 13,
+        "y": 9,
+        "fallTick": 73,
+        "traversedTick": 75
+      },
+      {
+        "rockId": 24,
+        "chamber": "vault-2",
+        "x": 12,
+        "y": 9,
+        "fallTick": 61,
+        "traversedTick": 76
+      },
+      {
+        "rockId": 24,
+        "chamber": "vault-2",
+        "x": 12,
+        "y": 8,
+        "fallTick": 56,
+        "traversedTick": 77
+      },
+      {
+        "rockId": 9,
+        "chamber": "vault-2",
+        "x": 12,
+        "y": 7,
+        "fallTick": 65,
+        "traversedTick": 78
+      },
+      {
+        "rockId": 7,
+        "chamber": "vault-2",
+        "x": 11,
+        "y": 7,
+        "fallTick": 58,
+        "traversedTick": 79
+      },
+      {
+        "rockId": 8,
+        "chamber": "vault-2",
+        "x": 10,
+        "y": 7,
+        "fallTick": 61,
+        "traversedTick": 80
+      },
+      {
+        "rockId": 3,
+        "chamber": "vault-2",
+        "x": 9,
+        "y": 7,
+        "fallTick": 51,
+        "traversedTick": 81
+      },
+      {
+        "rockId": 2,
+        "chamber": "vault-2",
+        "x": 8,
+        "y": 7,
+        "fallTick": 52,
+        "traversedTick": 82
+      },
+      {
+        "rockId": 1,
+        "chamber": "vault-1",
+        "x": 7,
+        "y": 4,
+        "fallTick": 125,
+        "traversedTick": 129
+      },
+      {
+        "rockId": 1,
+        "chamber": "vault-1",
+        "x": 7,
+        "y": 3,
+        "fallTick": 124,
+        "traversedTick": 130
+      }
+    ],
+    "pushes": 0,
+    "exposure": [
+      {
+        "chamber": "vault-2",
+        "x": 15,
+        "y": 7,
+        "tick": 63,
+        "collected": 28,
+        "fractionOfQuota": 0.5957446808510638
+      }
+    ],
+    "expectedColonies": 1,
+    "concreteDeath": true,
+    "exposureTiming": "PASS"
+  },
+  {
+    "id": 19,
+    "status": "WON",
+    "ticks": 188,
+    "simulatedSeconds": 37.6,
+    "quota": 29,
+    "collected": 29,
+    "kills": 3,
+    "requiredRemaining": 0,
+    "rockFallSteps": 70,
+    "rockAccessChanges": [
+      {
+        "rockId": 51,
+        "chamber": "main",
+        "x": 23,
+        "y": 15,
+        "fallTick": 97,
+        "traversedTick": 99
+      },
+      {
+        "rockId": 51,
+        "chamber": "main",
+        "x": 23,
+        "y": 16,
+        "fallTick": 98,
+        "traversedTick": 104
+      },
+      {
+        "rockId": 51,
+        "chamber": "main",
+        "x": 23,
+        "y": 17,
+        "fallTick": 99,
+        "traversedTick": 105
+      },
+      {
+        "rockId": 51,
+        "chamber": "main",
+        "x": 23,
+        "y": 18,
+        "fallTick": 100,
+        "traversedTick": 106
+      },
+      {
+        "rockId": 69,
+        "chamber": "main",
+        "x": 22,
+        "y": 18,
+        "fallTick": 87,
+        "traversedTick": 107
+      },
+      {
+        "rockId": 73,
+        "chamber": "main",
+        "x": 19,
+        "y": 18,
+        "fallTick": 80,
+        "traversedTick": 110
+      },
+      {
+        "rockId": 55,
+        "chamber": "main",
+        "x": 18,
+        "y": 18,
+        "fallTick": 79,
+        "traversedTick": 111
+      },
+      {
+        "rockId": 55,
+        "chamber": "main",
+        "x": 18,
+        "y": 16,
+        "fallTick": 75,
+        "traversedTick": 125
+      },
+      {
+        "rockId": 56,
+        "chamber": "main",
+        "x": 21,
+        "y": 14,
+        "fallTick": 102,
+        "traversedTick": 130
+      },
+      {
+        "rockId": 27,
+        "chamber": "main",
+        "x": 25,
+        "y": 9,
+        "fallTick": 54,
+        "traversedTick": 139
+      },
+      {
+        "rockId": 27,
+        "chamber": "main",
+        "x": 25,
+        "y": 8,
+        "fallTick": 53,
+        "traversedTick": 140
+      },
+      {
+        "rockId": 27,
+        "chamber": "main",
+        "x": 25,
+        "y": 7,
+        "fallTick": 52,
+        "traversedTick": 141
+      },
+      {
+        "rockId": 45,
+        "chamber": "main",
+        "x": 15,
+        "y": 19,
+        "fallTick": 129,
+        "traversedTick": 179
+      },
+      {
+        "rockId": 71,
+        "chamber": "main",
+        "x": 16,
+        "y": 19,
+        "fallTick": 180,
+        "traversedTick": 184
+      }
+    ],
+    "pushes": 0,
+    "exposure": [
+      {
+        "chamber": "main",
+        "x": 20,
+        "y": 12,
+        "tick": 61,
+        "collected": 14,
+        "fractionOfQuota": 0.4827586206896552
+      }
+    ],
+    "expectedColonies": 1,
+    "concreteDeath": true,
+    "exposureTiming": "PASS"
+  },
+  {
+    "id": 20,
+    "status": "WON",
+    "ticks": 102,
+    "simulatedSeconds": 20.400000000000002,
+    "quota": 31,
+    "collected": 31,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 43,
+    "rockAccessChanges": [
+      {
+        "rockId": 27,
+        "chamber": "main",
+        "x": 19,
+        "y": 10,
+        "fallTick": 45,
+        "traversedTick": 49
+      },
+      {
+        "rockId": 30,
+        "chamber": "main",
+        "x": 20,
+        "y": 9,
+        "fallTick": 55,
+        "traversedTick": 65
+      },
+      {
+        "rockId": 29,
+        "chamber": "main",
+        "x": 19,
+        "y": 9,
+        "fallTick": 52,
+        "traversedTick": 66
+      },
+      {
+        "rockId": 28,
+        "chamber": "main",
+        "x": 18,
+        "y": 10,
+        "fallTick": 52,
+        "traversedTick": 68
+      }
+    ],
+    "pushes": 2,
+    "exposure": [
+      {
+        "chamber": "main",
+        "x": 18,
+        "y": 8,
+        "tick": 40,
+        "collected": 15,
+        "fractionOfQuota": 0.4838709677419355
+      }
+    ],
+    "expectedColonies": 1,
+    "concreteDeath": true,
+    "exposureTiming": "PASS"
+  },
+  {
+    "id": 21,
+    "status": "WON",
+    "ticks": 187,
+    "simulatedSeconds": 37.4,
+    "quota": 26,
+    "collected": 30,
+    "kills": 2,
+    "requiredRemaining": 0,
+    "rockFallSteps": 38,
+    "rockAccessChanges": [
+      {
+        "rockId": 38,
+        "chamber": "main",
+        "x": 5,
+        "y": 6,
+        "fallTick": 17,
+        "traversedTick": 19
+      },
+      {
+        "rockId": 38,
+        "chamber": "main",
+        "x": 5,
+        "y": 5,
+        "fallTick": 16,
+        "traversedTick": 22
+      },
+      {
+        "rockId": 40,
+        "chamber": "main",
+        "x": 18,
+        "y": 6,
+        "fallTick": 74,
+        "traversedTick": 76
+      },
+      {
+        "rockId": 40,
+        "chamber": "main",
+        "x": 18,
+        "y": 5,
+        "fallTick": 73,
+        "traversedTick": 79
+      },
+      {
+        "rockId": 41,
+        "chamber": "main",
+        "x": 31,
+        "y": 5,
+        "fallTick": 118,
+        "traversedTick": 120
+      },
+      {
+        "rockId": 42,
+        "chamber": "main",
+        "x": 35,
+        "y": 5,
+        "fallTick": 126,
+        "traversedTick": 128
+      }
+    ],
+    "pushes": 3,
+    "exposure": [],
+    "expectedColonies": 0,
+    "concreteDeath": true,
+    "exposureTiming": "NOT_APPLICABLE"
+  },
+  {
+    "id": 22,
+    "status": "WON",
+    "ticks": 162,
+    "simulatedSeconds": 32.4,
+    "quota": 11,
+    "collected": 12,
+    "kills": 6,
+    "requiredRemaining": 0,
+    "rockFallSteps": 26,
+    "rockAccessChanges": [
+      {
+        "rockId": 5,
+        "chamber": "main",
+        "x": 5,
+        "y": 6,
+        "fallTick": 9,
+        "traversedTick": 11
+      },
+      {
+        "rockId": 5,
+        "chamber": "main",
+        "x": 5,
+        "y": 5,
+        "fallTick": 8,
+        "traversedTick": 14
+      },
+      {
+        "rockId": 7,
+        "chamber": "main",
+        "x": 18,
+        "y": 6,
+        "fallTick": 34,
+        "traversedTick": 36
+      },
+      {
+        "rockId": 2,
+        "chamber": "main",
+        "x": 18,
+        "y": 5,
+        "fallTick": 37,
+        "traversedTick": 39
+      },
+      {
+        "rockId": 9,
+        "chamber": "main",
+        "x": 31,
+        "y": 6,
+        "fallTick": 57,
+        "traversedTick": 59
+      },
+      {
+        "rockId": 1,
+        "chamber": "main",
+        "x": 30,
+        "y": 5,
+        "fallTick": 63,
+        "traversedTick": 65
+      },
+      {
+        "rockId": 3,
+        "chamber": "main",
+        "x": 31,
+        "y": 5,
+        "fallTick": 60,
+        "traversedTick": 66
+      },
+      {
+        "rockId": 20,
+        "chamber": "main",
+        "x": 31,
+        "y": 17,
+        "fallTick": 97,
+        "traversedTick": 99
+      },
+      {
+        "rockId": 20,
+        "chamber": "main",
+        "x": 31,
+        "y": 16,
+        "fallTick": 96,
+        "traversedTick": 102
+      },
+      {
+        "rockId": 18,
+        "chamber": "main",
+        "x": 18,
+        "y": 17,
+        "fallTick": 122,
+        "traversedTick": 124
+      },
+      {
+        "rockId": 13,
+        "chamber": "main",
+        "x": 19,
+        "y": 16,
+        "fallTick": 128,
+        "traversedTick": 130
+      },
+      {
+        "rockId": 15,
+        "chamber": "main",
+        "x": 18,
+        "y": 16,
+        "fallTick": 125,
+        "traversedTick": 131
+      },
+      {
+        "rockId": 16,
+        "chamber": "main",
+        "x": 5,
+        "y": 17,
+        "fallTick": 153,
+        "traversedTick": 155
+      },
+      {
+        "rockId": 14,
+        "chamber": "main",
+        "x": 5,
+        "y": 16,
+        "fallTick": 156,
+        "traversedTick": 158
+      }
+    ],
+    "pushes": 0,
+    "exposure": [],
+    "expectedColonies": 0,
+    "concreteDeath": true,
+    "exposureTiming": "NOT_APPLICABLE"
+  },
+  {
+    "id": 23,
+    "status": "WON",
+    "ticks": 330,
+    "simulatedSeconds": 66,
+    "quota": 12,
+    "collected": 12,
+    "kills": 0,
+    "requiredRemaining": 0,
+    "rockFallSteps": 3,
+    "rockAccessChanges": [
+      {
+        "rockId": 8,
+        "chamber": "main",
+        "x": 13,
+        "y": 10,
+        "fallTick": 81,
+        "traversedTick": 91
+      }
+    ],
+    "pushes": 5,
+    "exposure": [],
+    "expectedColonies": 0,
+    "concreteDeath": true,
+    "exposureTiming": "NOT_APPLICABLE"
+  },
+  {
+    "id": 24,
+    "status": "WON",
+    "ticks": 345,
+    "simulatedSeconds": 69,
+    "quota": 46,
+    "collected": 52,
+    "kills": 1,
+    "requiredRemaining": 0,
+    "rockFallSteps": 124,
+    "rockAccessChanges": [
+      {
+        "rockId": 37,
+        "chamber": "main",
+        "x": 36,
+        "y": 6,
+        "fallTick": 281,
+        "traversedTick": 283
+      },
+      {
+        "rockId": 37,
+        "chamber": "main",
+        "x": 36,
+        "y": 5,
+        "fallTick": 280,
+        "traversedTick": 286
+      }
+    ],
+    "pushes": 3,
+    "exposure": [],
+    "expectedColonies": 0,
+    "concreteDeath": true,
+    "exposureTiming": "NOT_APPLICABLE"
+  }
+]

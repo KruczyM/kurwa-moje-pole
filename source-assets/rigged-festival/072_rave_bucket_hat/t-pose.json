@@ -1,0 +1,15 @@
+{
+  "input": "E:\\kodowanie\\gra\\Hunyuan3D-2GP\\output\\characters_mv\\072_rave_bucket_hat\\variant_2885d6ff1a4ce9406173046709476b7d2209e9b84c016c5f6f0c3aba014cb771\\textured.glb",
+  "output": "E:\\kodowanie\\gra\\.ai\\worktrees\\festival-2026-tent-upgrades\\source-assets\\rigged-festival\\072_rave_bucket_hat\\t-pose.glb",
+  "bones": 22,
+  "clips": [
+    "Idle",
+    "Run",
+    "Walk"
+  ],
+  "firstViewExtracted": false,
+  "quality": "automatic-draft-needs-visual-review",
+  "vertices": 24507,
+  "fallbackVertices": 24507,
+  "heatWarning": "Bone heat left unweighted vertices; geometric fallback used"
+}

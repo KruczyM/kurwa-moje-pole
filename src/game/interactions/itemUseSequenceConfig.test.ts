@@ -3,7 +3,7 @@ import { inspectableItems } from './itemConfig';
 import { itemUseSequenceConfig, validUseSequenceTiming } from './itemUseSequenceConfig';
 
 describe('itemUseSequenceConfig', () => {
-  it('assigns a prop and a valid effect marker to all five table items', () => {
+  it('assigns a prop and a valid effect marker to every table item', () => {
     for (const item of inspectableItems) {
       const config = itemUseSequenceConfig[item.effect];
       expect(config.propId).toBe(item.id);
@@ -12,10 +12,35 @@ describe('itemUseSequenceConfig', () => {
     }
   });
 
-  it('provides an explicit no-prop fallback for inventory-only effects', () => {
+  it('uses a local can for beer and distinct gesture profiles', () => {
     expect(itemUseSequenceConfig.Piwo.propId).toBeUndefined();
-    expect(itemUseSequenceConfig.Papieros.propId).toBeUndefined();
+    expect(itemUseSequenceConfig.Papieros.propId).toBe('cigarette');
     expect(validUseSequenceTiming(itemUseSequenceConfig.Piwo)).toBe(true);
     expect(validUseSequenceTiming(itemUseSequenceConfig.Papieros)).toBe(true);
+    expect(itemUseSequenceConfig.Papieros.gesture).toBe('smoke');
+    expect(itemUseSequenceConfig.Kreska.gesture).toBe('sniff');
+    expect(itemUseSequenceConfig.Grzyb.gesture).toBe('eat');
+    expect(itemUseSequenceConfig.Grzyb.consumeProp).toBe(true);
+  });
+
+  it('configures contextual SFX sounds for substances', () => {
+    expect(itemUseSequenceConfig.Piwo.sfx?.sound).toBe('beer_open');
+    expect(itemUseSequenceConfig.Piwo.sfx?.delay).toBeGreaterThan(0);
+    expect(itemUseSequenceConfig.Papieros.sfx?.sound).toBe('lighter_flick');
+    expect(itemUseSequenceConfig.Joint.sfx?.sound).toBe('lighter_flick');
+    expect(itemUseSequenceConfig.Kreska.sfx?.sound).toBe('sniff');
+    expect(itemUseSequenceConfig.MDMA.sfx?.sound).toBe('swallow');
+    expect(itemUseSequenceConfig.LSD.sfx?.sound).toBe('swallow');
+    expect(itemUseSequenceConfig.Woda.sfx?.sound).toBe('swallow');
+  });
+
+  it('configures utility items Woda and Okulary properly', () => {
+    expect(itemUseSequenceConfig.Woda.gesture).toBe('drink');
+    expect(itemUseSequenceConfig.Woda.propId).toBe('water');
+    expect(validUseSequenceTiming(itemUseSequenceConfig.Woda)).toBe(true);
+
+    expect(itemUseSequenceConfig.Okulary.gesture).toBe('wear');
+    expect(itemUseSequenceConfig.Okulary.propId).toBe('sunglasses');
+    expect(validUseSequenceTiming(itemUseSequenceConfig.Okulary)).toBe(true);
   });
 });

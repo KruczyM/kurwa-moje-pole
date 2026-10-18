@@ -25,10 +25,16 @@ export class TimeOfDaySkybox {
   private requestToken = 0;
   private disposed = false;
 
+  getPeriod(): SkyboxPeriod {
+    return this.period ?? skyboxPeriodForHour(this.now().getHours());
+  }
+
   constructor(
     private readonly scene: THREE.Scene,
     private readonly now: () => Date = () => new Date(),
     private readonly random: () => number = Math.random,
+    private readonly fixedPeriod?: SkyboxPeriod,
+    private readonly renderBackground = true,
   ) {
     this.update(true);
   }
@@ -39,10 +45,10 @@ export class TimeOfDaySkybox {
     const now = this.now();
     if (!force && now.getTime() < this.nextCheckAt) return;
     this.nextCheckAt = now.getTime() + 60_000;
-    const period = skyboxPeriodForHour(now.getHours());
+    const period = this.fixedPeriod ?? skyboxPeriodForHour(now.getHours());
     if (period === this.period) return;
     this.period = period;
-    this.load(period);
+    if (this.renderBackground) this.load(period);
   }
 
   /** Podmienia tło dopiero po pełnym wczytaniu cubemapy, aby uniknąć czarnej klatki. */
@@ -94,8 +100,8 @@ export class HorizonPanorama {
   private disposed = false;
 
   constructor(texture?: THREE.Texture | null) {
-    const radius = 85;
-    const height = 34;
+    const radius = 460;
+    const height = 184;
     const geometry = new THREE.CylinderGeometry(radius, radius, height, 64, 1, true);
 
     if (texture) {
@@ -145,12 +151,12 @@ export class HorizonPanorama {
       side: THREE.BackSide,
       transparent: true,
       depthWrite: false,
-      fog: true,
+      fog: false,
     });
 
     this.mesh = new THREE.Mesh(geometry, this.material);
     // Ustawienie wysokości środka cylindra tak, aby linia drzew wypadała na wysokości oczu/horyzontu
-    this.mesh.position.y = 7.5;
+    this.mesh.position.y = 7.5 * (radius / 85);
     this.mesh.renderOrder = -1;
   }
 

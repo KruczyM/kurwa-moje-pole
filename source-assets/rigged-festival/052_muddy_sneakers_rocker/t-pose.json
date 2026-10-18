@@ -1,0 +1,15 @@
+{
+  "input": "E:\\kodowanie\\gra\\Hunyuan3D-2GP\\output\\characters_mv\\052_muddy_sneakers_rocker\\variant_e916404b6f18380d2331e6b96e1b68eb4a0f9e24d5893e9c5dc1aa9cca255b9c\\textured.glb",
+  "output": "E:\\kodowanie\\gra\\.ai\\worktrees\\festival-2026-tent-upgrades\\source-assets\\rigged-festival\\052_muddy_sneakers_rocker\\t-pose.glb",
+  "bones": 22,
+  "clips": [
+    "Idle",
+    "Run",
+    "Walk"
+  ],
+  "firstViewExtracted": false,
+  "quality": "automatic-draft-needs-visual-review",
+  "vertices": 25640,
+  "fallbackVertices": 499,
+  "heatWarning": "Bone heat left unweighted vertices; geometric fallback used"
+}

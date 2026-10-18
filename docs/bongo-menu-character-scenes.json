@@ -1,0 +1,208 @@
+{
+  "generator": "built-in image_gen; no API keys",
+  "prompt": "Edit target IMAGE 1 is the original game menu background with Amper at the gramophone. IMAGE 2 is the authoritative Hunyuan character front reference, and IMAGE 3 is its left view. IDENTITY-PRESERVING character replacement. Replace ONLY Amper and his gray hoodie/backpack with exactly the SAME character from images 2 and 3, naturally seated on the wooden crate immediately LEFT of the gramophone. Faithfully preserve the exact recognizable face, face shape, eyes, age, hair color and hairstyle, facial hair, proportions, hat, glasses, jewelry, tattoos, clothing cut, precise colors, ALL printed garment graphics and markings, bag and footwear from these references. Do not simplify, redesign or substitute clothing. Repose the arms and legs naturally for sitting and listening to the music; head turned slightly toward gramophone but face still recognizable. Beautiful high-resolution painterly rendering matching original Amper, nuanced amber lantern lighting, warm reflected light on fabrics and skin, convincing contact shadows, weight on crate and natural feet placement. Fully embedded in the same environment, never a pasted sprite or sticker. Preserve the rest of image 1 exactly: autumn underground cave, gramophone, crates, lanterns, stone path, leaves, roots, doorway, blue bridge, original landscape camera and 1672x941 framing, and empty left wall for UI. ONE character only, no new props, no UI, no added captions or lettering beyond the reference garment prints. Match original character scale and scene balance.",
+  "originalAmper": {
+    "source": "source-assets/bongo-menu-v1/scene.png",
+    "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scene.webp",
+    "unchanged": true
+  },
+  "pendingReferences": [],
+  "scenes": [
+    {
+      "hero": "ambona",
+      "generatedFile": "exec-5989f072-4f87-433c-80bc-4417ebc90287.png",
+      "source": "source-assets/bongo-menu-v1/scenes/ambona.png",
+      "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scenes/ambona.webp",
+      "references": [
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/ambona/front.png",
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/ambona/left.png"
+      ],
+      "dimensions": [1672, 941],
+      "sourceSha256": "d3faa74b9993a8b1a092ac9deda089b3b9abbab29dfd9b81a34469b11467d3bd",
+      "runtimeSha256": "d0bb456c6580c6fbd731cef1f2ffffcf3000f94f63869801b863e43129dd6757",
+      "runtimeBytes": 408616
+    },
+    {
+      "hero": "chlebak",
+      "generatedFile": "exec-78b2b22b-42c9-45be-8923-351361f969d8.png",
+      "source": "source-assets/bongo-menu-v1/scenes/chlebak.png",
+      "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scenes/chlebak.webp",
+      "references": [
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/chlebak/front.png",
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/chlebak/left.png"
+      ],
+      "dimensions": [1672, 941],
+      "sourceSha256": "8a6dd11bb1ce4cfcf390b81fcb03e0e7ca1f87e47a58b0196fd92bf29e69cff0",
+      "runtimeSha256": "051b6bffe67ca0f8bdc2707a344de3f71cc5f2607f4b90b685377116475088a6",
+      "runtimeBytes": 391276
+    },
+    {
+      "hero": "dziaslo",
+      "generatedFile": "exec-61552f6c-51bf-4288-b82f-1154f4524e90.png",
+      "source": "source-assets/bongo-menu-v1/scenes/dziaslo.png",
+      "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scenes/dziaslo.webp",
+      "references": [
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/dziaslo/front.png",
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/dziaslo/left.png"
+      ],
+      "dimensions": [1672, 941],
+      "sourceSha256": "37d2449ec5ae324cc4cddf482159906ff6e5919385accddf714fd301109ff6e9",
+      "runtimeSha256": "4fd3bbc50d35ef73fc176ba3707b76dea52c1432d754d90ea215edcd78adeb1a",
+      "runtimeBytes": 410014
+    },
+    {
+      "hero": "hemoroid",
+      "generatedFile": "exec-c60826ef-829b-4238-bfbd-bb66b29b2c87.png",
+      "source": "source-assets/bongo-menu-v1/scenes/hemoroid.png",
+      "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scenes/hemoroid.webp",
+      "references": [
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/hemoroid/front.png",
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/hemoroid/left.png"
+      ],
+      "dimensions": [1672, 941],
+      "sourceSha256": "bf2038ccc0ddc28fbd42353cca7041f5d03332d6fb7aea50a17a1999cde6525e",
+      "runtimeSha256": "0cface435d601ec6a19c6376481e39f2b92060b70ce80fa428ca565236077590",
+      "runtimeBytes": 395174
+    },
+    {
+      "hero": "jeczmien",
+      "generatedFile": "exec-be04f966-d25c-4a05-9d39-db578faa8eec.png",
+      "source": "source-assets/bongo-menu-v1/scenes/jeczmien.png",
+      "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scenes/jeczmien.webp",
+      "references": [
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/jeczmien/front.png",
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/jeczmien/left.png"
+      ],
+      "dimensions": [1672, 941],
+      "sourceSha256": "9758ccc3a0498d6dbfeacdf257899ef66238f2c0393b4675d7ed4f4f8d2512bd",
+      "runtimeSha256": "2d6ba54fd9f9327868420087e62f20a8f3a24de359279b3773aa45e63da83680",
+      "runtimeBytes": 397602
+    },
+    {
+      "hero": "klatwa",
+      "generatedFile": "exec-88acf815-190b-4677-92da-af1442b78bbe.png",
+      "source": "source-assets/bongo-menu-v1/scenes/klatwa.png",
+      "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scenes/klatwa.webp",
+      "references": [
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/klatwa/front.png",
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/klatwa/left.png"
+      ],
+      "dimensions": [1672, 941],
+      "sourceSha256": "fe4771a559d1cd955fb74ab0f41c1b639fa744f24373f4ffcd68e72036ba6cb6",
+      "runtimeSha256": "45f0c5cb80f83c3accafc0212dafc661aeab59f9e250ac9c9b52540f158ce0a8",
+      "runtimeBytes": 381406
+    },
+    {
+      "hero": "korba",
+      "generatedFile": "exec-0f0ce880-1848-418b-819e-5b2ea3a7cfd9.png",
+      "source": "source-assets/bongo-menu-v1/scenes/korba.png",
+      "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scenes/korba.webp",
+      "references": [
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/korba/front.png",
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/korba/left.png"
+      ],
+      "dimensions": [1672, 941],
+      "sourceSha256": "0305a23ff7755d04f67c99800b718acc5ca7057de4e03dce2cd72b0c459e01b1",
+      "runtimeSha256": "4029da9558bf2c8c4266d6807a54bed38665bf5924a2dac8d7556c2211efefb1",
+      "runtimeBytes": 392168
+    },
+    {
+      "hero": "szerszen",
+      "generatedFile": "exec-6f0af1bb-0b50-44fd-9bf4-2b6531509b62.png",
+      "source": "source-assets/bongo-menu-v1/scenes/szerszen.png",
+      "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scenes/szerszen.webp",
+      "references": [
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/szerszen/front.png",
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/szerszen/left.png"
+      ],
+      "dimensions": [1672, 941],
+      "sourceSha256": "ce179519b5531d327b3a611abbf22635037bc6e115169597bc8fb709969f05b4",
+      "runtimeSha256": "da27c2cef8a0714b7f86700d1d0743f22b1c382be718714cd0052ec9a41ab6e4",
+      "runtimeBytes": 407418
+    },
+    {
+      "hero": "zawor",
+      "generatedFile": "exec-36a5a112-5364-4d4e-a625-cc771ae2178f.png",
+      "source": "source-assets/bongo-menu-v1/scenes/zawor.png",
+      "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scenes/zawor.webp",
+      "references": [
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/zawor/front.png",
+        "E:/kodowanie/gra/Hunyuan3D-2GP/input_characters/zawor/left.png"
+      ],
+      "dimensions": [1672, 941],
+      "sourceSha256": "f61476a6804688f8819d34922c9730463418b55e5d282006865dfdd7bb93af00",
+      "runtimeSha256": "8123a341e8681f8723b856846dbb179c859f8cc31bedf6f225afdbb514921976",
+      "runtimeBytes": 407352
+    },
+    {
+      "hero": "antena",
+      "generatedFile": "exec-2543edc3-bb47-41e8-b2c1-612f1cd84da3.png",
+      "source": "source-assets/bongo-menu-v1/scenes/antena.png",
+      "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scenes/antena.webp",
+      "references": ["source-assets/bongo-menu-v1/references/antena.jpg"],
+      "originalReferenceFilename": "1-1000022130.jpg",
+      "prompt": "IMAGE 1 is the original painterly Bongo Rush menu scene, the edit target. IMAGE 2 is the authoritative user-provided four-view character reference sheet (front top left, back top right, sides below). Replace ONLY Amper (gray hoodie man and his backpack) with ONE precisely faithful version of the character in image 2, seated naturally on the same crate immediately LEFT of the gramophone. Preserve the exact recognizable face, age, hair, facial hair or clean-shaven face, hat, eyewear, accessories, garment shapes, accurate colors, every distinctive printed graphic and word, trousers length and footwear of image 2. This is an identity-preserving repose, not a redesign. Use a relaxed sitting listening pose, head angled slightly toward the gramophone but keep the face recognizable. Same original character scale, high-resolution painterly detail, nuanced amber lantern lighting, warm fabric and skin bounce light, natural cast shadows and contact with the crate, feet grounded. Integrate the person fully into the painting like original Amper: never a pasted cutout or enlarged gameplay sprite. Preserve exactly the rest of image 1 including the gramophone, crates, lanterns, stone floor, roots, autumn leaves, doorway and blue bridge. Preserve original landscape 1672x941 framing and leave left wall empty for UI. ONE character only, no new props, no UI or added captions. Clothing text from reference must remain readable and accurate. Specific identity requirements: Clean-shaven smiling young man with short dark upswept hair and shaved sides, mirrored purple-blue rectangular sunglasses, red/teal/black woven triangular hooded poncho with fringe over beige rolled sleeves, loose patterned teal calf-length trousers with black knee patches, black open-toe strap sandals. NO beard, NO backpack. Seated with a broad smile, forearms on knees.",
+      "dimensions": [1672, 941],
+      "sourceSha256": "0bc4a2772c2b6d1e0e570c4db2b5e37e2ff19c91569f831f670895668ffec17a",
+      "runtimeSha256": "f24b3131c1848000ab0d1a9d076d8cdc600ae16f20b22e96d4290057d9087f63",
+      "runtimeBytes": 393178,
+      "referenceSha256": "c08295b42834653537204ebc3c3e46fe0da4794bb74e2abdc6ff82a2438f53c1"
+    },
+    {
+      "hero": "gruczol",
+      "generatedFile": "exec-0a3308a6-7978-4448-8413-e808923703d1.png",
+      "source": "source-assets/bongo-menu-v1/scenes/gruczol.png",
+      "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scenes/gruczol.webp",
+      "references": ["source-assets/bongo-menu-v1/references/gruczol.jpg"],
+      "originalReferenceFilename": "2-1000022131.jpg",
+      "prompt": "IMAGE 1 is the original painterly Bongo Rush menu scene, the edit target. IMAGE 2 is the authoritative user-provided four-view character reference sheet (front top left, back top right, sides below). Replace ONLY Amper (gray hoodie man and his backpack) with ONE precisely faithful version of the character in image 2, seated naturally on the same crate immediately LEFT of the gramophone. Preserve the exact recognizable face, age, hair, facial hair or clean-shaven face, hat, eyewear, accessories, garment shapes, accurate colors, every distinctive printed graphic and word, trousers length and footwear of image 2. This is an identity-preserving repose, not a redesign. Use a relaxed sitting listening pose, head angled slightly toward the gramophone but keep the face recognizable. Same original character scale, high-resolution painterly detail, nuanced amber lantern lighting, warm fabric and skin bounce light, natural cast shadows and contact with the crate, feet grounded. Integrate the person fully into the painting like original Amper: never a pasted cutout or enlarged gameplay sprite. Preserve exactly the rest of image 1 including the gramophone, crates, lanterns, stone floor, roots, autumn leaves, doorway and blue bridge. Preserve original landscape 1672x941 framing and leave left wall empty for UI. ONE character only, no new props, no UI or added captions. Clothing text from reference must remain readable and accurate. Specific identity requirements: Stocky man with huge long dense black beard, round black sunglasses, purple-pink-blue swirled bucket hat. His white costume is a long rectangular rigid TILED apron/vest armor, with visible square tile grid and the brown words WC TRON repeated twice down the front, over a black short-sleeved shirt and black trousers, heavy black boots. Preserve the white tiled construction and both WC TRON inscriptions, not a plain white shirt. Sitting solidly on crate with white front panel draping straight over lap, hands on either side.",
+      "dimensions": [1672, 941],
+      "sourceSha256": "1e06f54e54b7941d22605284b9ee2066cc38ef52eeee9f63d56120fac177d612",
+      "runtimeSha256": "3fcaf57523bd12627c29044ad4a63da7c579d21df42b8067a785d5edb430b2e9",
+      "runtimeBytes": 411404,
+      "referenceSha256": "f97c8dbb560a378f944043c2de266485949c4c22b525035a189864deedecddac"
+    },
+    {
+      "hero": "krwiak",
+      "generatedFile": "exec-83c2535d-8910-4f67-bcf5-f2a54ec60abd.png",
+      "source": "source-assets/bongo-menu-v1/scenes/krwiak.png",
+      "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scenes/krwiak.webp",
+      "references": ["source-assets/bongo-menu-v1/references/krwiak.jpg"],
+      "originalReferenceFilename": "3-1000022132.jpg",
+      "prompt": "IMAGE 1 is the original painterly Bongo Rush menu scene, the edit target. IMAGE 2 is the authoritative user-provided four-view character reference sheet (front top left, back top right, sides below). Replace ONLY Amper (gray hoodie man and his backpack) with ONE precisely faithful version of the character in image 2, seated naturally on the same crate immediately LEFT of the gramophone. Preserve the exact recognizable face, age, hair, facial hair or clean-shaven face, hat, eyewear, accessories, garment shapes, accurate colors, every distinctive printed graphic and word, trousers length and footwear of image 2. This is an identity-preserving repose, not a redesign. Use a relaxed sitting listening pose, head angled slightly toward the gramophone but keep the face recognizable. Same original character scale, high-resolution painterly detail, nuanced amber lantern lighting, warm fabric and skin bounce light, natural cast shadows and contact with the crate, feet grounded. Integrate the person fully into the painting like original Amper: never a pasted cutout or enlarged gameplay sprite. Preserve exactly the rest of image 1 including the gramophone, crates, lanterns, stone floor, roots, autumn leaves, doorway and blue bridge. Preserve original landscape 1672x941 framing and leave left wall empty for UI. ONE character only, no new props, no UI or added captions. Clothing text from reference must remain readable and accurate. Specific identity requirements: Man with bright blue eyes, brown hair swept back into a low bun, trimmed dark beard, blue mirrored sunglasses resting atop his head, black cord necklace, black tank top with small round white chest emblem, black leather wrist cuffs, black cargo shorts and black sneakers, black-white checked shirt tied around his waist. Not muscular caricature. Sitting leaning slightly back, hands resting on thighs.",
+      "dimensions": [1672, 941],
+      "sourceSha256": "1275264e495d4568803fda6852811011f5a02f1d1bb1a0983228f7590108f3dd",
+      "runtimeSha256": "f2fef259c1ef091bcac0080953eea01ef6f3aa0e2508f195992aa45db01bbf2a",
+      "runtimeBytes": 389856,
+      "referenceSha256": "6be9bf4dd5a061dc209b412178dd862802a85fb04afde64bd7dbe791d9776028"
+    },
+    {
+      "hero": "pierscien",
+      "generatedFile": "exec-e006badb-f288-4f64-8197-5b0c7d450c01.png",
+      "source": "source-assets/bongo-menu-v1/scenes/pierscien.png",
+      "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scenes/pierscien.webp",
+      "references": ["source-assets/bongo-menu-v1/references/pierscien.jpg"],
+      "originalReferenceFilename": "4-1000021525.jpg",
+      "prompt": "IMAGE 1 is the original painterly Bongo Rush menu scene, the edit target. IMAGE 2 is the authoritative user-provided four-view character reference sheet (front top left, back top right, sides below). Replace ONLY Amper (gray hoodie man and his backpack) with ONE precisely faithful version of the character in image 2, seated naturally on the same crate immediately LEFT of the gramophone. Preserve the exact recognizable face, age, hair, facial hair or clean-shaven face, hat, eyewear, accessories, garment shapes, accurate colors, every distinctive printed graphic and word, trousers length and footwear of image 2. This is an identity-preserving repose, not a redesign. Use a relaxed sitting listening pose, head angled slightly toward the gramophone but keep the face recognizable. Same original character scale, high-resolution painterly detail, nuanced amber lantern lighting, warm fabric and skin bounce light, natural cast shadows and contact with the crate, feet grounded. Integrate the person fully into the painting like original Amper: never a pasted cutout or enlarged gameplay sprite. Preserve exactly the rest of image 1 including the gramophone, crates, lanterns, stone floor, roots, autumn leaves, doorway and blue bridge. Preserve original landscape 1672x941 framing and leave left wall empty for UI. ONE character only, no new props, no UI or added captions. Clothing text from reference must remain readable and accurate. Specific identity requirements: Friendly adult man with brown beard, rectangular clear-lens black-framed eyeglasses, black bucket hat, black hoodie with large light blue-gray stacked words KURWA / MOJE / POLE exactly as reference, black shorts, black sneakers, colorful festival wristbands. Preserve all three stacked words. Seated facing three-quarter toward viewer, forearms relaxed so the chest lettering stays visible.",
+      "dimensions": [1672, 941],
+      "sourceSha256": "896521e0c6cffb27bb68c28b63c1e181bcd5bccb21300996a5061ca6f83d5750",
+      "runtimeSha256": "c2c40e40b7072f4f93dbb30edb7fffd995e67abc188374835e1c0109849b6e9b",
+      "runtimeBytes": 390842,
+      "referenceSha256": "ce2d9d5548419575a4a7506d5a6d6b5fd5ec6351fd471f34abef969ea7561a04"
+    },
+    {
+      "hero": "pien",
+      "generatedFile": "exec-11389e38-8e4e-4378-8363-a888d5088b78.png",
+      "source": "source-assets/bongo-menu-v1/scenes/pien.png",
+      "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scenes/pien.webp",
+      "references": ["source-assets/bongo-menu-v1/references/pien.jpg"],
+      "originalReferenceFilename": "5-1000021492.jpg",
+      "prompt": "IMAGE 1 is the original painterly Bongo Rush menu scene, the edit target. IMAGE 2 is the authoritative user-provided four-view character reference sheet (front top left, back top right, sides below). Replace ONLY Amper (gray hoodie man and his backpack) with ONE precisely faithful version of the character in image 2, seated naturally on the same crate immediately LEFT of the gramophone. Preserve the exact recognizable face, age, hair, facial hair or clean-shaven face, hat, eyewear, accessories, garment shapes, accurate colors, every distinctive printed graphic and word, trousers length and footwear of image 2. This is an identity-preserving repose, not a redesign. Use a relaxed sitting listening pose, head angled slightly toward the gramophone but keep the face recognizable. Same original character scale, high-resolution painterly detail, nuanced amber lantern lighting, warm fabric and skin bounce light, natural cast shadows and contact with the crate, feet grounded. Integrate the person fully into the painting like original Amper: never a pasted cutout or enlarged gameplay sprite. Preserve exactly the rest of image 1 including the gramophone, crates, lanterns, stone floor, roots, autumn leaves, doorway and blue bridge. Preserve original landscape 1672x941 framing and leave left wall empty for UI. ONE character only, no new props, no UI or added captions. Clothing text from reference must remain readable and accurate. Specific identity requirements: Brown bearded man with brown dreadlocks, dark Rasta cap with small brim and red-yellow-green stripes, round teal mirrored sunglasses, blue button-up shirt printed with cartoon dinosaurs, pizza slices and white clouds, bright multicolor psychedelic trousers, dark shoes with green details, yellow-green cape with green cannabis leaf pattern, festival wristbands. Preserve ALL distinctive clothing patterns, not generic floral. Seated with cape draped naturally over crate edge, relaxed knees and hands.",
+      "dimensions": [1672, 941],
+      "sourceSha256": "eeeaf2bf516da57adeb56c312d4e6f49af3ca3383659d441e952e1cdc5b85df4",
+      "runtimeSha256": "75bc490b148422dfd208da56d32df6b4f57acd7b3a1a832ca5a2e0ecb507e7c8",
+      "runtimeBytes": 409764,
+      "referenceSha256": "1420c1184e17ee28eee16b450cfa26b38e5ce2e83ff25d4f992483853587b873"
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "areas": [
+    {
+      "id": "north-camps",
+      "label": "Obozy za pasażem",
+      "regions": [[-290, 290, -290, -96]],
+      "bots": 1,
+      "spawns": [[-60, -103]]
+    },
+    {
+      "id": "north-passage",
+      "label": "Pierwszy pasaż",
+      "regions": [[-290, 96, -96, -25]],
+      "bots": 3,
+      "spawns": [
+        [-85, -35],
+        [0, -35],
+        [70, -35]
+      ]
+    },
+    {
+      "id": "wheel",
+      "label": "Karuzela",
+      "regions": [[96, 290, -96, -25]],
+      "bots": 1,
+      "spawns": [[101, -58]]
+    },
+    {
+      "id": "camp",
+      "label": "Kurwa Moje Pole i sąsiednie namioty",
+      "regions": [[-290, 110, -25, 64]],
+      "bots": 3,
+      "spawns": [
+        [-5, -3],
+        [4, -3],
+        [-5, 1],
+        [4, 1],
+        [0, 14]
+      ]
+    },
+    {
+      "id": "main-stage",
+      "label": "Duża scena, bariery i wieże",
+      "regions": [[110, 290, -25, 64]],
+      "bots": 3,
+      "spawns": [
+        [170, 18],
+        [175, 24],
+        [180, 12]
+      ]
+    },
+    {
+      "id": "lidl",
+      "label": "Lidl",
+      "regions": [[-290, -105, 64, 290]],
+      "bots": 1,
+      "spawns": [[-107, 80]]
+    },
+    {
+      "id": "south-passage",
+      "label": "Drugi pasaż i ASP",
+      "regions": [[-105, 290, 64, 290]],
+      "bots": 2,
+      "spawns": [
+        [-40, 73],
+        [50, 73]
+      ]
+    }
+  ],
+  "fallback": "camp",
+  "actorBudget": 6
+}
