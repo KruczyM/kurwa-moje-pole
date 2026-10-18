@@ -158,6 +158,18 @@ describe('level soundtrack positions', () => {
   });
 });
 
+function recordedBuffer(duration = 8): AudioBuffer {
+  const length = Math.round(duration * 48000);
+  const channels = [new Float32Array(length), new Float32Array(length)];
+  return {
+    duration,
+    length,
+    sampleRate: 48000,
+    numberOfChannels: 2,
+    getChannelData: (channel: number) => channels[channel],
+  } as AudioBuffer;
+}
+
 class RecordedContext extends FakeContext {
   buffers: {
     buffer: unknown;
@@ -169,7 +181,7 @@ class RecordedContext extends FakeContext {
     disconnect: ReturnType<typeof vi.fn>;
     onended?: () => void;
   }[] = [];
-  decodeAudioData = vi.fn(async () => ({ duration: 8, length: 384000, numberOfChannels: 2 }) as AudioBuffer);
+  decodeAudioData = vi.fn(async () => recordedBuffer());
   createBufferSource() {
     const source = {
       buffer: undefined as unknown,
@@ -230,11 +242,7 @@ describe('recorded soundtrack in the existing audio host', () => {
     const audio = new ArcadeAudio('/');
     audio.unlock();
     const context = FakeContext.latest as RecordedContext;
-    context.decodeAudioData.mockResolvedValueOnce({
-      duration: 67.056,
-      length: 3218688,
-      numberOfChannels: 2,
-    } as AudioBuffer);
+    context.decodeAudioData.mockResolvedValueOnce(recordedBuffer(67.056));
     audio.updateMusic(0, true, true, profile());
     await flushMusic();
     audio.updateMusic(0, true, true, profile());
@@ -351,6 +359,7 @@ describe('recorded soundtrack in the existing audio host', () => {
     expect(fetcher).toHaveBeenCalledOnce();
     expect(context.buffers).toHaveLength(1);
     expect(context.buffers[0].loop).toBe(true);
+    expect(context.buffers[0].loopStart).toBe(0.8);
     expect(audio.diagnostics()).toMatchObject({
       state: 'ready',
       playing: true,
@@ -399,6 +408,29 @@ describe('recorded soundtrack in the existing audio host', () => {
     expect(context.buffers.at(-1)!.start).toHaveBeenLastCalledWith(114, 0);
     expect(audio.diagnostics().buffers).toBe(1);
     audio.dispose();
+  });
+
+  it('resumes the overlapped loop at its audible position after multiple wraps', async () => {
+    vi.stubGlobal('AudioContext', RecordedContext);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => response()),
+    );
+    const audio = new ArcadeAudio('/');
+    audio.unlock();
+    audio.updateMusic(0, true, false, profile());
+    await flushMusic();
+    audio.updateMusic(0, true, false, profile());
+    const context = FakeContext.latest as RecordedContext;
+    context.currentTime += 8 + 7.2 + 0.5;
+    expect(audio.position().offset).toBeCloseTo(1.3);
+    audio.silence(false);
+    context.currentTime += 10;
+    audio.updateMusic(0, true, false, profile());
+    expect(context.buffers.at(-1)!.start.mock.calls[0][1]).toBeCloseTo(1.3);
+    expect(audio.diagnostics()).toMatchObject({ buffers: 1, voices: 1, loopOverlap: 0.8 });
+    audio.dispose();
+    expect(audio.diagnostics().voices).toBe(0);
   });
 
   it('does not autoplay after a paused load and never revives disposed or stale requests', async () => {

@@ -4,6 +4,7 @@ import type { SoundEvent } from './types';
 import { musicPhrase, MUSIC_BPM } from './Music';
 import { musicSoundtrack, soundtrackUrl } from './Soundtrack';
 import type { MusicPack } from './Soundtrack';
+import { prepareSoundtrackLoop, soundtrackLoopPosition } from './SoundtrackLoop';
 
 interface RecordedVoice {
   source: AudioBufferSourceNode;
@@ -30,7 +31,7 @@ export class ArcadeAudio {
   private musicPack: MusicPack = 'pack-1';
   private musicGains = new Map<OscillatorNode, GainNode>();
   private duckUntil = 0;
-  private recording?: { id: string; buffer: AudioBuffer };
+  private recording?: { id: string; buffer: AudioBuffer; loopStart: number };
   private requestedRecording?: string;
   private recordingRequest?: AbortController;
   private recordingToken = 0;
@@ -161,7 +162,7 @@ export class ArcadeAudio {
           if (this.disposed || token !== this.recordingToken) return;
           if (!buffer.length || !Number.isFinite(buffer.duration) || buffer.duration > (menu ? 75 : 50))
             throw new Error('Invalid soundtrack buffer');
-          this.recording = { id: track.id, buffer };
+          this.recording = { id: track.id, buffer, loopStart: prepareSoundtrackLoop(buffer) };
         })
         .catch(() => {
           if (!this.disposed && token === this.recordingToken) this.recordingFailed = true;
@@ -185,7 +186,7 @@ export class ArcadeAudio {
         gain = context.createGain();
       source.buffer = this.recording.buffer;
       source.loop = true;
-      source.loopStart = 0;
+      source.loopStart = this.recording.loopStart;
       source.loopEnd = source.buffer.duration;
       source.connect(gain);
       gain.connect(context.destination);
@@ -214,8 +215,11 @@ export class ArcadeAudio {
   private recordingPosition(): number {
     const voice = this.recordedVoice;
     return voice && this.recording
-      ? (voice.offset + Math.max(0, this.context!.currentTime - voice.started)) %
-          this.recording.buffer.duration
+      ? soundtrackLoopPosition(
+          voice.offset + Math.max(0, this.context!.currentTime - voice.started),
+          this.recording.buffer.duration,
+          this.recording.loopStart,
+        )
       : this.recordedOffset;
   }
 
@@ -263,6 +267,7 @@ export class ArcadeAudio {
       offset: this.recordingPosition(),
       voices: this.recordedVoices.size,
       buffers: this.recording ? 1 : 0,
+      loopOverlap: this.recording?.loopStart ?? 0,
       decodedBytes: this.recording
         ? this.recording.buffer.length * this.recording.buffer.numberOfChannels * 4
         : 0,
