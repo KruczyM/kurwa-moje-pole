@@ -34,6 +34,19 @@ export function levelSoundtrack(level: number) {
   return { id, ...tracks[id] };
 }
 
-export function soundtrackUrl(base: string, level: number): string {
-  return `${base}game-assets/audio/bongo-rush/soundtrack-v1/${levelSoundtrack(level).file}`;
+/** The supplied full-length jazz theme stays continuous across all menu pages. */
+export const MENU_SOUNDTRACK = {
+  id: 'menu-jazz',
+  title: 'Fun Indie Game Type Jazz Music',
+  artist: 'idoberg',
+  file: 'menu-jazz.mp3',
+  seconds: 67.056313,
+} as const;
+
+export function musicSoundtrack(level: number, menu = false) {
+  return menu ? MENU_SOUNDTRACK : levelSoundtrack(level);
+}
+
+export function soundtrackUrl(base: string, level: number, menu = false): string {
+  return `${base}game-assets/audio/bongo-rush/soundtrack-v1/${musicSoundtrack(level, menu).file}`;
 }
