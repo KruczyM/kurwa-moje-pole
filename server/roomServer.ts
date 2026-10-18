@@ -168,6 +168,13 @@ export class RoomServer {
         });
         socket.emit('flanki:lobby', this.flankiSessions.get(roomId)?.getState() ?? null);
 
+        // Poinformuj nowo dołączonego gracza o wszystkich obecnych już peerach w pokoju:
+        for (const peerId of room.getMembers()) {
+          if (peerId !== socket.id) {
+            socket.emit('voice:peer-joined', { peerId });
+          }
+        }
+
         // Poinformuj pozostałych o aktualnym stanie oraz nowym peerze czatu głosowego:
         this.io.to(roomId).emit('room:state', room.getPublicState());
         socket.to(roomId).emit('voice:peer-joined', { peerId: socket.id });
@@ -227,6 +234,7 @@ export class RoomServer {
         }
 
         this.io.to(currentRoomId).emit('room:state', room.getPublicState());
+        socket.to(currentRoomId).emit('voice:peer-joined', { peerId: socket.id });
       });
 
       socket.on('player:update', (payload: { transform: unknown }) => {

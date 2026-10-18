@@ -4,6 +4,7 @@ import type {
   VoiceRelayPayload,
   VoicePeerMutePayload,
   VoicePeerNotificationPayload,
+  RoomState,
 } from '../network/networkProtocol';
 
 export const VOICE_INNER_RADIUS = 2.0;
@@ -13,6 +14,20 @@ export interface Vector3Like {
   x: number;
   y: number;
   z: number;
+}
+
+/**
+ * Wyciąga aktywne identyfikatory peerów ze stanu pokoju.
+ */
+export function extractPeerIdsFromRoomState(state?: RoomState): string[] {
+  if (!state?.slots) return [];
+  const ids: string[] = [];
+  for (const slot of Object.values(state.slots)) {
+    if (slot && typeof slot.playerId === 'string' && slot.playerId.length > 0 && slot.status !== 'free') {
+      ids.push(slot.playerId);
+    }
+  }
+  return ids;
 }
 
 /**
@@ -82,6 +97,8 @@ interface RemotePeerAudio {
   pannerNode?: StereoPannerNode;
   analyserNode?: AnalyserNode;
   audioElement?: HTMLAudioElement;
+  pendingIceCandidates: RTCIceCandidateInit[];
+  isMakingOffer: boolean;
   isMuted: boolean;
   isSpeaking: boolean;
   distance: number;
@@ -127,6 +144,12 @@ export class SpatialVoiceManager {
 
     if (this.networkClient) {
       this.setupNetworkHandlers(this.networkClient);
+      if (typeof this.networkClient.getState === 'function') {
+        const initialState = this.networkClient.getState();
+        if (initialState) {
+          this.syncPeers(extractPeerIdsFromRoomState(initialState));
+        }
+      }
     }
 
     if (options.autoRequestMic) {
@@ -150,21 +173,61 @@ export class SpatialVoiceManager {
     return this.audioContext;
   }
 
+  /** Wznawia AudioContext, np. po interakcji użytkownika (kliknięcie, pointer lock). */
+  async resumeAudioContext(): Promise<void> {
+    if (this.disposed) return;
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume();
+      } catch {
+        // ignore
+      }
+    }
+  }
+
   private setupNetworkHandlers(client: NetworkClient): void {
-    this.unsubscribers.push(
-      client.onVoiceSignal((payload: VoiceRelayPayload) => {
-        void this.handleIncomingSignal(payload);
-      }),
-      client.onVoicePeerMute((payload: VoicePeerMutePayload) => {
-        this.handlePeerMute(payload);
-      }),
-      client.onVoicePeerJoined((payload: VoicePeerNotificationPayload) => {
-        this.handlePeerJoined(payload.peerId);
-      }),
-      client.onVoicePeerLeft((payload: VoicePeerNotificationPayload) => {
-        this.handlePeerLeft(payload.peerId);
-      }),
-    );
+    if (typeof client.onVoiceSignal === 'function') {
+      this.unsubscribers.push(
+        client.onVoiceSignal((payload: VoiceRelayPayload) => {
+          void this.handleIncomingSignal(payload);
+        }),
+      );
+    }
+    if (typeof client.onVoicePeerMute === 'function') {
+      this.unsubscribers.push(
+        client.onVoicePeerMute((payload: VoicePeerMutePayload) => {
+          this.handlePeerMute(payload);
+        }),
+      );
+    }
+    if (typeof client.onVoicePeerJoined === 'function') {
+      this.unsubscribers.push(
+        client.onVoicePeerJoined((payload: VoicePeerNotificationPayload) => {
+          this.handlePeerJoined(payload.peerId);
+        }),
+      );
+    }
+    if (typeof client.onVoicePeerLeft === 'function') {
+      this.unsubscribers.push(
+        client.onVoicePeerLeft((payload: VoicePeerNotificationPayload) => {
+          this.handlePeerLeft(payload.peerId);
+        }),
+      );
+    }
+    if (typeof client.onStateChange === 'function') {
+      this.unsubscribers.push(
+        client.onStateChange((state) => {
+          this.syncPeers(extractPeerIdsFromRoomState(state));
+        }),
+      );
+    }
+    if (typeof client.onWorldSnapshot === 'function') {
+      this.unsubscribers.push(
+        client.onWorldSnapshot((snapshot) => {
+          this.syncPeers(snapshot.players.map((p) => p.playerId));
+        }),
+      );
+    }
   }
 
   /**
@@ -191,12 +254,24 @@ export class SpatialVoiceManager {
 
       this.getOrCreateAudioContext();
 
-      // Dodanie ścieżek audio do istniejących połączeń peer:
+      // Dodanie lub podmiana ścieżek audio w istniejących połączeniach peer:
       const audioTracks = this.localStream.getAudioTracks();
       for (const peer of this.peers.values()) {
         for (const track of audioTracks) {
-          peer.connection.addTrack(track, this.localStream);
+          let replaced = false;
+          if (typeof peer.connection.getSenders === 'function') {
+            const senders = peer.connection.getSenders();
+            const audioSender = senders.find((s) => !s.track || s.track === track);
+            if (audioSender && typeof audioSender.replaceTrack === 'function') {
+              void audioSender.replaceTrack(track);
+              replaced = true;
+            }
+          }
+          if (!replaced && typeof peer.connection.addTrack === 'function') {
+            peer.connection.addTrack(track, this.localStream);
+          }
         }
+        void this.renegotiatePeer(peer);
       }
 
       this.userMuted = false;
@@ -252,6 +327,15 @@ export class SpatialVoiceManager {
 
   setUserVolume(volume: number): void {
     this.userVolume = THREE.MathUtils.clamp(volume, 0, 1);
+    for (const peer of this.peers.values()) {
+      const gain = computeVoiceSpatialGain(peer.distance, peer.isMuted, this.userVolume);
+      if (peer.gainNode) {
+        peer.gainNode.gain.value = gain;
+      }
+      if (peer.audioElement) {
+        peer.audioElement.volume = peer.gainNode ? 0 : gain;
+      }
+    }
   }
 
   private setMicState(next: MicState): void {
@@ -259,13 +343,32 @@ export class SpatialVoiceManager {
     this.onMicStateChange?.(next);
   }
 
+  /**
+   * Synchronizuje peery WebRTC na podstawie listy identyfikatorów graczy (np. ze snapshotu świata).
+   */
+  syncPeers(remotePeerIds: Iterable<string>): void {
+    if (this.disposed || !this.networkClient) return;
+    const myId = this.networkClient.getMyPlayerId();
+    if (!myId) return;
+
+    for (const peerId of remotePeerIds) {
+      if (!peerId || peerId === myId) continue;
+      if (!this.peers.has(peerId)) {
+        // Deterministyczny inicjator oferty: mniejsze ID leksykograficznie inicjuje ofertę
+        const shouldCreateOffer = myId < peerId;
+        this.getOrCreatePeer(peerId, shouldCreateOffer);
+      }
+    }
+  }
+
   private handlePeerJoined(peerId: string): void {
     if (this.disposed || !this.networkClient) return;
     const myId = this.networkClient.getMyPlayerId();
     if (!myId || peerId === myId) return;
 
-    // Tworzymy połączenie z nowym graczem (jako inicjator oferty):
-    this.getOrCreatePeer(peerId, true);
+    // Deterministyczny inicjator oferty:
+    const shouldCreateOffer = myId < peerId;
+    this.getOrCreatePeer(peerId, shouldCreateOffer);
   }
 
   private handlePeerLeft(peerId: string): void {
@@ -276,8 +379,12 @@ export class SpatialVoiceManager {
     const peer = this.peers.get(payload.peerId);
     if (peer) {
       peer.isMuted = payload.isMuted;
+      const gain = computeVoiceSpatialGain(peer.distance, peer.isMuted, this.userVolume);
       if (peer.gainNode) {
-        peer.gainNode.gain.value = computeVoiceSpatialGain(peer.distance, peer.isMuted, this.userVolume);
+        peer.gainNode.gain.value = gain;
+      }
+      if (peer.audioElement) {
+        peer.audioElement.volume = peer.gainNode ? 0 : gain;
       }
       if (peer.isMuted && peer.isSpeaking) {
         peer.isSpeaking = false;
@@ -287,14 +394,46 @@ export class SpatialVoiceManager {
     }
   }
 
+  private async renegotiatePeer(peer: RemotePeerAudio): Promise<void> {
+    if (this.disposed || !this.networkClient) return;
+    try {
+      peer.isMakingOffer = true;
+      const offer = await peer.connection.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: false,
+      });
+      if (peer.connection.signalingState && peer.connection.signalingState !== 'stable') {
+        return;
+      }
+      await peer.connection.setLocalDescription(offer);
+      this.networkClient.sendVoiceSignal(
+        peer.peerId,
+        peer.connection.localDescription?.toJSON() ?? offer,
+      );
+    } catch {
+      // Ignorujemy błędy negocjacji oferty
+    } finally {
+      peer.isMakingOffer = false;
+    }
+  }
+
   private getOrCreatePeer(peerId: string, shouldCreateOffer = false): RemotePeerAudio {
     let peer = this.peers.get(peerId);
-    if (peer) return peer;
+    if (peer) {
+      if (shouldCreateOffer && (!peer.connection.signalingState || peer.connection.signalingState === 'stable')) {
+        void this.renegotiatePeer(peer);
+      }
+      return peer;
+    }
 
     let connection: RTCPeerConnection;
     if (typeof RTCPeerConnection !== 'undefined') {
       connection = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }],
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+        ],
       });
     } else {
       connection = {
@@ -305,17 +444,38 @@ export class SpatialVoiceManager {
         setRemoteDescription: async () => {},
         createAnswer: async () => ({}),
         addIceCandidate: async () => {},
+        getSenders: () => [],
+        signalingState: 'stable',
       } as unknown as RTCPeerConnection;
     }
 
     peer = {
       peerId,
       connection,
+      pendingIceCandidates: [],
+      isMakingOffer: false,
       isMuted: false,
       isSpeaking: false,
       distance: 100,
     };
     this.peers.set(peerId, peer);
+
+    // Jeśli lokalny mikrofon jest już aktywny, dodaj ścieżki bezpośrednio z powiązanym localStream:
+    if (this.localStream) {
+      for (const track of this.localStream.getAudioTracks()) {
+        try {
+          connection.addTrack(track, this.localStream);
+        } catch {
+          // ignore
+        }
+      }
+    } else if (typeof connection.addTransceiver === 'function') {
+      try {
+        connection.addTransceiver('audio', { direction: 'sendrecv' });
+      } catch {
+        // Fallback w środowiskach bez addTransceiver
+      }
+    }
 
     // Wysyłanie kandydatów ICE do drugiego peera:
     connection.onicecandidate = (event) => {
@@ -326,56 +486,89 @@ export class SpatialVoiceManager {
 
     // Obsługa przychodzącego strumienia audio:
     connection.ontrack = (event) => {
-      const stream = event.streams[0] || new MediaStream([event.track]);
+      const stream = (event.streams && event.streams[0]) || new MediaStream([event.track]);
       this.attachRemoteAudioStream(peer!, stream);
     };
 
-    // Dodanie lokalnego strumienia, jeśli jest dostępny:
-    if (this.localStream) {
-      for (const track of this.localStream.getAudioTracks()) {
-        connection.addTrack(track, this.localStream);
-      }
-    }
-
     if (shouldCreateOffer) {
-      void (async () => {
-        try {
-          const offer = await connection.createOffer({
-            offerToReceiveAudio: true,
-            offerToReceiveVideo: false,
-          });
-          await connection.setLocalDescription(offer);
-          this.networkClient?.sendVoiceSignal(peerId, connection.localDescription?.toJSON());
-        } catch {
-          // Błąd negocjacji oferty
-        }
-      })();
+      void this.renegotiatePeer(peer);
     }
 
     return peer;
+  }
+
+  private async drainPendingCandidates(peer: RemotePeerAudio): Promise<void> {
+    if (!peer.pendingIceCandidates.length) return;
+    const candidates = peer.pendingIceCandidates.splice(0);
+    for (const cand of candidates) {
+      try {
+        const iceCandidate =
+          typeof RTCIceCandidate !== 'undefined'
+            ? new RTCIceCandidate(cand)
+            : (cand as unknown as RTCIceCandidate);
+        await peer.connection.addIceCandidate(iceCandidate);
+      } catch {
+        // Ignorujemy błędy pojedynczego kandydata
+      }
+    }
   }
 
   private async handleIncomingSignal(payload: VoiceRelayPayload): Promise<void> {
     const { senderPeerId, signal } = payload;
     if (!signal || !senderPeerId || this.disposed) return;
 
-    const sig = signal as { type?: string; candidate?: string };
+    const sig = signal as { type?: string; candidate?: string; sdp?: string };
     const peer = this.getOrCreatePeer(senderPeerId, false);
 
     try {
       if (sig.type === 'offer') {
-        await peer.connection.setRemoteDescription(
-          new RTCSessionDescription(sig as RTCSessionDescriptionInit),
-        );
+        const myId = this.networkClient?.getMyPlayerId();
+        const offerCollision = peer.isMakingOffer || (peer.connection.signalingState && peer.connection.signalingState !== 'stable');
+        const isPolite = myId ? myId > senderPeerId : false;
+
+        if (offerCollision) {
+          if (!isPolite) {
+            // Niegrzeczny peer ignoruje kolidującą ofertę
+            return;
+          }
+          if (typeof peer.connection.setLocalDescription === 'function') {
+            try {
+              await peer.connection.setLocalDescription({ type: 'rollback' } as unknown as RTCLocalSessionDescriptionInit);
+            } catch {
+              // Rollback fallback
+            }
+          }
+        }
+
+        const desc =
+          typeof RTCSessionDescription !== 'undefined'
+            ? new RTCSessionDescription(sig as RTCSessionDescriptionInit)
+            : (sig as unknown as RTCSessionDescription);
+        await peer.connection.setRemoteDescription(desc);
+        await this.drainPendingCandidates(peer);
+        this.checkAndAttachReceivers(peer);
+
         const answer = await peer.connection.createAnswer();
         await peer.connection.setLocalDescription(answer);
-        this.networkClient?.sendVoiceSignal(senderPeerId, peer.connection.localDescription?.toJSON());
+        this.networkClient?.sendVoiceSignal(senderPeerId, peer.connection.localDescription?.toJSON() ?? answer);
       } else if (sig.type === 'answer') {
-        await peer.connection.setRemoteDescription(
-          new RTCSessionDescription(sig as RTCSessionDescriptionInit),
-        );
-      } else if ('candidate' in sig && sig.candidate) {
-        await peer.connection.addIceCandidate(new RTCIceCandidate(sig as RTCIceCandidateInit));
+        const desc =
+          typeof RTCSessionDescription !== 'undefined'
+            ? new RTCSessionDescription(sig as RTCSessionDescriptionInit)
+            : (sig as unknown as RTCSessionDescription);
+        await peer.connection.setRemoteDescription(desc);
+        await this.drainPendingCandidates(peer);
+        this.checkAndAttachReceivers(peer);
+      } else if ('candidate' in sig || (sig as unknown as { sdpMid?: string }).sdpMid !== undefined) {
+        if (!peer.connection.remoteDescription) {
+          peer.pendingIceCandidates.push(sig as RTCIceCandidateInit);
+        } else {
+          const iceCandidate =
+            typeof RTCIceCandidate !== 'undefined'
+              ? new RTCIceCandidate(sig as RTCIceCandidateInit)
+              : (sig as unknown as RTCIceCandidate);
+          await peer.connection.addIceCandidate(iceCandidate);
+        }
       }
     } catch {
       // Ignorujemy błędy sygnału SDP/ICE
@@ -420,15 +613,20 @@ export class SpatialVoiceManager {
       }
     }
 
-    // Element HTMLAudioElement w tle jako fallback gwarantujący utrzymanie aktywnego odtwarzania przez silnik przeglądarki:
+    // Element HTMLAudioElement w tle jako fallback gwarantujący utrzymanie aktywnego dekodera WebRTC w przeglądarce:
     if (typeof document !== 'undefined') {
       const audio = document.createElement('audio');
       audio.autoplay = true;
       audio.setAttribute('playsinline', 'true');
-      audio.muted = Boolean(ctx); // Jeśli mamy Web Audio, wyciszamy element DOM, aby dźwięk nie dublował się
+      // UWAGA: w Chromium audio.muted = true wycisza źródło MediaStream na poziomie dekodera WebRTC,
+      // co powoduje całkowitą ciszę w AudioContext createMediaStreamSource!
+      // Dlatego ustawiamy muted = false, a głośność audio.volume = ctx ? 0 : this.userVolume.
+      audio.muted = false;
+      audio.volume = ctx ? 0 : this.userVolume;
       audio.srcObject = stream;
       audio.style.display = 'none';
       document.body.appendChild(audio);
+      audio.play().catch(() => {});
       peer.audioElement = audio;
     }
   }
@@ -506,15 +704,38 @@ export class SpatialVoiceManager {
     }
   }
 
+  private checkAndAttachReceivers(peer: RemotePeerAudio): void {
+    if (typeof peer.connection.getReceivers === 'function') {
+      for (const receiver of peer.connection.getReceivers()) {
+        if (receiver.track && receiver.track.kind === 'audio' && !peer.stream) {
+          this.attachRemoteAudioStream(peer, new MediaStream([receiver.track]));
+        }
+      }
+    }
+  }
+
   /**
    * Aktualizuje pozycje przestrzenne, głośność oraz stan mówienia zdalnych graczy w pętli renderowania gry.
    */
   update(listenerPos: Vector3Like, listenerYaw: number, remotePositions: Map<string, Vector3Like>): void {
     if (this.disposed) return;
 
+    // Automatyczna synchronizacja peerów na podstawie widocznych w świecie graczy:
+    this.syncPeers(remotePositions.keys());
+
+    // Wznowienie zawieszonego AudioContext:
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      void this.audioContext.resume();
+    }
+
     let speakingPeersChanged = false;
 
     for (const [peerId, peer] of this.peers.entries()) {
+      // Jeśli strumień nie został jeszcze podłączony przez ontrack, sprawdź odbiorniki połączenia:
+      if (!peer.stream) {
+        this.checkAndAttachReceivers(peer);
+      }
+
       // Detekcja mówienia RMS ze strumienia mikrofonowego:
       if (peer.analyserNode && !peer.isMuted) {
         if (!this.rmsBuffer || this.rmsBuffer.length !== peer.analyserNode.fftSize) {
@@ -540,6 +761,7 @@ export class SpatialVoiceManager {
       if (!pos) {
         // Gracz poza zasięgiem snapshotu lub brak danych o pozycji:
         if (peer.gainNode) peer.gainNode.gain.value = 0;
+        if (peer.audioElement) peer.audioElement.volume = 0;
         continue;
       }
 
@@ -553,6 +775,9 @@ export class SpatialVoiceManager {
       if (peer.gainNode) {
         peer.gainNode.gain.value = gain;
       }
+      if (peer.audioElement) {
+        peer.audioElement.volume = peer.gainNode ? 0 : gain;
+      }
 
       if (peer.pannerNode) {
         const pan = computeVoiceStereoPan(listenerPos, listenerYaw, pos);
@@ -563,6 +788,42 @@ export class SpatialVoiceManager {
     if (speakingPeersChanged) {
       this.notifySpeakingPeers();
     }
+  }
+
+  /**
+   * Zwraca diagnostyczny stan połączonych peerów audio.
+   */
+  getPeers(): ReadonlyMap<string, {
+    isMuted: boolean;
+    isSpeaking: boolean;
+    distance: number;
+    connectionState?: string;
+    hasStream: boolean;
+  }> {
+    const map = new Map<string, {
+      isMuted: boolean;
+      isSpeaking: boolean;
+      distance: number;
+      connectionState?: string;
+      hasStream: boolean;
+    }>();
+    for (const [id, peer] of this.peers) {
+      map.set(id, {
+        isMuted: peer.isMuted,
+        isSpeaking: peer.isSpeaking,
+        distance: peer.distance,
+        connectionState: peer.connection.connectionState || (peer.connection as unknown as { iceConnectionState?: string }).iceConnectionState,
+        hasStream: Boolean(peer.stream),
+      });
+    }
+    return map;
+  }
+
+  /**
+   * Zwraca lokalny strumień mikrofonu MediaStream (jeśli przyznano uprawnienia).
+   */
+  getLocalStream(): MediaStream | undefined {
+    return this.localStream;
   }
 
   private removePeer(peerId: string): void {

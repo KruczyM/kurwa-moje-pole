@@ -163,3 +163,126 @@ describe('SpatialVoiceManager - Speaking Detection', () => {
     manager.dispose();
   });
 });
+
+describe('SpatialVoiceManager - WebRTC Synchronization and ICE Handling', () => {
+  it('synchronizes peers deterministically based on player ID ordering', () => {
+    const mockClient: any = {
+      getMyPlayerId: () => 'player-2',
+      onVoiceSignal: vi.fn(() => () => {}),
+      onVoicePeerMute: vi.fn(() => () => {}),
+      onVoicePeerJoined: vi.fn(() => () => {}),
+      onVoicePeerLeft: vi.fn(() => () => {}),
+      onWorldSnapshot: vi.fn(() => () => {}),
+      sendVoiceSignal: vi.fn(),
+      sendVoiceMute: vi.fn(),
+    };
+
+    const manager = new SpatialVoiceManager(mockClient);
+
+    // Sync with players 'player-1' (smaller) and 'player-3' (greater):
+    manager.syncPeers(['player-1', 'player-3']);
+
+    const peers = manager.getPeers();
+    expect(peers.has('player-1')).toBe(true);
+    expect(peers.has('player-3')).toBe(true);
+    expect(peers.has('player-2')).toBe(false); // Does not peer with self
+
+    manager.dispose();
+  });
+
+  it('buffers ICE candidates when received before remote description and drains after offer', async () => {
+    const mockClient: any = {
+      getMyPlayerId: () => 'player-2',
+      onVoiceSignal: vi.fn(() => () => {}),
+      onVoicePeerMute: vi.fn(() => () => {}),
+      onVoicePeerJoined: vi.fn(() => () => {}),
+      onVoicePeerLeft: vi.fn(() => () => {}),
+      onWorldSnapshot: vi.fn(() => () => {}),
+      sendVoiceSignal: vi.fn(),
+    };
+
+    const manager = new SpatialVoiceManager(mockClient);
+
+    const addedCandidates: any[] = [];
+    const mockConnection: any = {
+      signalingState: 'stable',
+      remoteDescription: null,
+      addIceCandidate: vi.fn(async (cand) => {
+        addedCandidates.push(cand);
+      }),
+      setRemoteDescription: vi.fn(async function (this: any, desc) {
+        this.remoteDescription = desc;
+      }),
+      createAnswer: vi.fn(async () => ({ type: 'answer', sdp: 'mock-answer' })),
+      setLocalDescription: vi.fn(async () => {}),
+      close: vi.fn(),
+    };
+
+    // Podmiana metody fabryki peer:
+    const peer = (manager as any).getOrCreatePeer('player-1', false);
+    peer.connection = mockConnection;
+
+    // 1. Otrzymanie kandydata ICE zanim pojawi się oferta:
+    await (manager as any).handleIncomingSignal({
+      senderPeerId: 'player-1',
+      signal: { candidate: 'candidate:1 1 UDP ...', sdpMid: '0', sdpMLineIndex: 0 },
+    });
+
+    // Kandydat powinien trafić do bufora pendingIceCandidates, a nie bezpośrednio do addIceCandidate:
+    expect(peer.pendingIceCandidates.length).toBe(1);
+    expect(addedCandidates.length).toBe(0);
+
+    // 2. Otrzymanie oferty SDP:
+    await (manager as any).handleIncomingSignal({
+      senderPeerId: 'player-1',
+      signal: { type: 'offer', sdp: 'mock-offer' },
+    });
+
+    // Po obsłużeniu oferty bufor kandydatów powinien zostać opróżniony do addIceCandidate:
+    expect(peer.pendingIceCandidates.length).toBe(0);
+    expect(mockConnection.setRemoteDescription).toHaveBeenCalled();
+    expect(mockConnection.addIceCandidate).toHaveBeenCalledWith(
+      expect.objectContaining({ candidate: 'candidate:1 1 UDP ...' }),
+    );
+
+    manager.dispose();
+  });
+
+  it('attaches audio stream without muting audio element to prevent Chromium decoder mute bug', () => {
+    const manager = new SpatialVoiceManager();
+    const peer: any = (manager as any).getOrCreatePeer('peer-audio', false);
+
+    const mockTrack: any = { kind: 'audio', stop: vi.fn() };
+    const mockStream: any = { getAudioTracks: () => [mockTrack], getTracks: () => [mockTrack] };
+
+    // Symulacja attachRemoteAudioStream w środowisku DOM:
+    (manager as any).attachRemoteAudioStream(peer, mockStream);
+
+    if (peer.audioElement) {
+      // audio.muted NIE może być true w Chromium:
+      expect(peer.audioElement.muted).toBe(false);
+      // jeśli Web Audio jest aktywne, głośność elementu audio powinna być 0, by uniknąć dublowania:
+      expect(peer.audioElement.volume).toBe(0);
+    }
+
+    manager.dispose();
+  });
+
+  it('resumes suspended audioContext on resumeAudioContext call', async () => {
+    const manager = new SpatialVoiceManager();
+    const mockCtx: any = {
+      state: 'suspended',
+      resume: vi.fn(async function (this: any) {
+        this.state = 'running';
+      }),
+      close: vi.fn(async () => {}),
+    };
+    (manager as any).audioContext = mockCtx;
+
+    await manager.resumeAudioContext();
+    expect(mockCtx.resume).toHaveBeenCalled();
+
+    manager.dispose();
+  });
+});
+
