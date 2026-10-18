@@ -41,13 +41,13 @@ zwalniane przy zamknięciu gry. Protokół multiplayer nie zmienia się.
 
 ## Weryfikacja i przekazanie
 
-- `ci:code`: PASS — 210 plików / 1977 testów oraz 6 testów narzędzi,
+- `ci:code`: PASS — 211 plików / 1982 testów oraz 6 testów narzędzi,
   lint, typy, formatowanie i kodowanie. Build produkcyjny: PASS.
 - Testy deterministyczne: rozłączność i pokrycie, punkty na krawędziach,
   narożniki, rzeczywiste sąsiedztwo, odległości, obrys ASP, mapa,
   widoczność pobliskich linii i sprzątanie zasobów.
 - Walidacja eksportu: 221 komórek desktopowych, 7 mobilnych miejsc /
-  15 plików, 14 995 statycznych siatek; oryginalne tekstury, geometria
+  15 plików, 14 993 statycznych siatek; oryginalne tekstury, geometria
   i transformacje zachowane. Dodatkowa kontrola obecności geometrii ASP
   i zgodności jego rzeczywistego obrysu mapy z sektorem.
 - Raport i zrzuty przeglądarki: `reports/mobile-sector-boundaries/`.
@@ -67,3 +67,38 @@ telefonu. Pamięć, płynność i wygoda sterowania na fizycznym urządzeniu:
 
 Nie wykonano push, PR ani merge. Niezależny review i publikacja należą
 do orkiestratora; praca jest przygotowana do lokalnego przeglądu.
+
+## Telebimy na telefonach
+
+Eksporter sprawdza teraz zarówno `runtimeNode`, jak i `runtimePlacement`.
+Wcześniej powierzchnie ekranów były zastępowane niewidocznymi proxy, do których
+odtwarzacz przypisywał film. Oba prawdziwe ekrany pozostają teraz w bazowym
+świecie, a walidator sprawdza, że nie są proxy ani statyczną kopią w sektorze.
+
+Obraz startuje wyciszony i inline, niezależnie od odblokowania Web Audio.
+Gest dotykowy lub klawiatura uruchamiają istniejący przestrzenny tor audio.
+Wywołanie `video.play()` nie czeka na `AudioContext.resume()`, aby zachować gest
+użytkownika. Odrzucona próba z dźwiękiem ponawia odtwarzanie wyciszonego obrazu.
+Zasady przeglądarki opisuje [WebKit](https://webkit.org/blog/6784/new-video-policies-for-ios/).
+
+Wideo jest dołączane do DOM przed pierwszym odtwarzaniem, z niewidoczną,
+wyciętą powierzchnią 960 × 540 bez obsługi dotyku. WebKit z odłączonym wideo
+przesuwał zegar, ale zwracał czarne klatki. Powierzchnia nie może mieć rozmiaru
+1 × 1, ponieważ ten silnik potrafi wtedy zwracać jednokolorową miniaturę.
+Przy zamknięciu gry element jest usuwany razem z pozostałymi zasobami.
+
+Pięć testów odtwarzacza sprawdza niezależność obrazu od audio, nierozwiązane
+resume, ponowienie oraz sprzątanie zasobów. Scenariusz przeglądarkowy
+`scripts/verify-mobile-stage-video.py` sprawdza rzeczywiste dekodowane klatki,
+postęp czasu, współdzieloną teksturę i aktywność obu ekranów. Wyniki oraz zrzuty
+trafiają do `reports/mobile-stage-video/`.
+
+Na testowym WebKit dla Windows nie jest dostępne Web Audio API. Obraz jest
+sprawdzany również w takim środowisku; odblokowanie audio jest dodatkowo
+sprawdzane w Chromium. Dźwięk i wydajność fizycznego telefonu wymagają
+potwierdzenia na urządzeniu.
+
+Wynik końcowy: Chromium i WebKit PASS — rzeczywiste klatki filmu, postęp czasu,
+dwie aktywne powierzchnie i jedna współdzielona tekstura, bez błędów JavaScript.
+Chromium potwierdził również odblokowanie przestrzennego audio po dotknięciu.
+`ci:code`: 211 plików / 1982 testów PASS; build i walidacja eksportu PASS.

@@ -78,7 +78,7 @@ def build():
         while True:
             node = src['nodes'][i]
             extras = node.get('extras', {})
-            name = str(extras.get('runtimeNode', node.get('name', '')))
+            name = str(extras.get('runtimeNode', extras.get('runtimePlacement', node.get('name', ''))))
             if extras.get('runtimePlacement') == 'AllegroWheel' or extras.get('wheelPart'):
                 return True
             if name.startswith('ToiToi_Door_') or name in ['Wing_Single_Telebim_Left', 'Wing_Single_Telebim_Right']:

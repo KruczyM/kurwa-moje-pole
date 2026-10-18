@@ -148,3 +148,17 @@ for (const x of [aspMap.x - aspMap.width / 2, aspMap.x + aspMap.width / 2]) {
     );
   }
 }
+
+const screenIds = new Set(['Wing_Single_Telebim_Left', 'Wing_Single_Telebim_Right']);
+const residentScreens = base.doc.nodes.filter((node) =>
+  screenIds.has(node.extras?.runtimeNode ?? node.extras?.runtimePlacement ?? node.name),
+);
+assert.equal(residentScreens.length, 2, 'Both mobile telebim screens must be resident');
+for (const screen of residentScreens) {
+  assert(
+    screen.mesh !== undefined && !screen.extras.fogProxy,
+    'Live screen was replaced by an invisible collision proxy',
+  );
+  assert(!expected.has(screen.extras.fogSourceNode), 'Live screen must not be unloaded as static scenery');
+}
+console.log('Mobile telebims validated: 2 real resident screens, no static proxy replacement.');
