@@ -137,6 +137,16 @@ export class HeroGallery {
     return this.active && this.selected === hero;
   }
 
+  /** Reuses retained thumbnail pixels in the title without retaining another full atlas. */
+  copyThumbnail(hero: string, target: HTMLCanvasElement): boolean {
+    const entry = this.entries.get(hero);
+    if (!entry?.ready) return false;
+    const context = target.getContext('2d')!;
+    context.clearRect(0, 0, target.width, target.height);
+    context.drawImage(entry.canvas, 0, 0, target.width, target.height);
+    return true;
+  }
+
   diagnostics() {
     return {
       fullAtlases: [...this.entries.values()].filter((entry) => entry.atlas).length,

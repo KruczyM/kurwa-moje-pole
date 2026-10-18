@@ -29,25 +29,54 @@
           ><strong id="counter">Zbieraj. Kop. Nie daj się przygnieść.</strong><strong id="timer"></strong
           ><span id="exit-status"></span>
         </div>
-        <section id="menu" class="panel menu-panel" aria-label="Menu główne">
-          <span class="eyebrow">ZRĘCZNOŚĆ × ZAGADKI × AFTER</span>
-          <h1>WALKA O<br />TASIOROWE<br /><em>BONGO</em><span class="dot">.</span></h1>
-          <p class="intro">
-            Dwadzieścia wypraw i cztery wyzwania. Komory, szyby i lawiny.<br />Jedno legendarne Bongo Tasiora.
-          </p>
-          <button id="play" class="primary">Graj →</button>
-          <button id="choose-level">Wybierz poziom →</button>
-          <small class="menu-track">Muzyka menu: Fun Indie Game Type Jazz Music · idoberg</small>
-          <button id="appearance-open">Oprawa i muzyka</button>
-          <button id="title-help">Jak grać?</button>
-          <p class="menu-note">Wybierz bohatera. Przygotuj drogę ucieczki.</p>
-          <div class="links">
-            <a href="./after-demo.html">After: ostatnia noc</a><a href="./">Festiwal 3D</a>
+        <section id="menu" class="panel menu-panel title-menu" aria-label="Menu główne">
+          <div class="menu-scenery" aria-hidden="true"></div>
+          <div class="title-content">
+            <h1 class="title-logo">
+              <img id="menu-logo-image" alt="Bongo Rush" width="1821" height="864" decoding="async" /><span
+                class="standard-logo"
+                >WALKA O TASIOROWE <em>BONGO</em></span
+              >
+            </h1>
+            <p class="title-tagline">WALKA O TASIOROWE BONGO</p>
+            <button id="continue" class="painted-control continue-control" disabled>
+              <strong>KONTYNUUJ</strong><span id="continue-level">Przygotowuję wyprawę…</span>
+            </button>
+            <button id="choose-level" class="painted-control secondary-control">WYBIERZ POZIOM</button>
+            <button id="appearance-open" class="painted-control secondary-control">OPRAWA I MUZYKA</button>
+            <button id="play" class="hero-pick">
+              <canvas id="menu-hero-portrait" width="96" height="112" aria-hidden="true"></canvas
+              ><span>POSTAĆ<strong id="menu-hero-name">Amper</strong></span
+              ><small>Zmień →</small>
+            </button>
+            <div class="title-small-actions">
+              <button id="title-help">? Jak grać</button>
+            </div>
+            <small class="menu-track">Fun Indie Game Type Jazz Music · idoberg</small>
+            <p id="menu-art-status" role="status"></p>
+            <button id="menu-art-retry" hidden>Ponów wczytywanie oprawy</button>
+            <p class="menu-note">Wybierz wyprawę. Przygotuj drogę ucieczki.</p>
           </div>
-          <small class="disclaimer"
-            >Fikcyjna, satyryczna gra dla dorosłych. Nie jest reklamą ani instrukcją używania
-            substancji.</small
-          >
+          <nav class="biome-cards" aria-label="Wybierz biom">
+            <button class="biome-card" data-biome="0">
+              <span class="biome-card-label">MAGAZYN AMARENA</span><small></small>
+            </button>
+            <button class="biome-card" data-biome="1">
+              <span class="biome-card-label">KORZENIE</span><small></small>
+            </button>
+            <button class="biome-card" data-biome="2">
+              <span class="biome-card-label">KRYSZTAŁOWY RAVE</span><small></small>
+            </button>
+            <button class="biome-card" data-biome="3">
+              <span class="biome-card-label">CYTADELA</span><small></small>
+            </button>
+          </nav>
+          <div class="title-footer">
+            <div class="links">
+              <a href="./after-demo.html">After: ostatnia noc</a><a href="./">Festiwal 3D</a>
+            </div>
+            <small class="disclaimer">Fikcyjna, satyryczna gra dla dorosłych.</small>
+          </div>
         </section>
         <section id="hero-panel" class="panel gallery-panel" hidden aria-label="Wybór postaci">
           <span class="eyebrow">01 / TWOJA EKIPA</span>
@@ -66,13 +95,15 @@
         </section>
         <section id="level-panel" class="panel menu-panel" hidden aria-label="Wybór poziomu">
           <span class="eyebrow">02 / WYBIERZ WYPRAWĘ</span>
-          <h2>Wejście do podziemi</h2>
+          <h2 id="level-biome-title">Wejście do podziemi</h2>
           <p id="chosen-hero"></p>
           <div id="levels" class="level-grid" aria-label="Wybierz odblokowany poziom"></div>
           <p id="selected-level"></p>
           <button id="begin" class="primary" disabled>Ładowanie…</button>
           <p id="load-status" role="status">Przygotowuję lekką wersję 2D…</p>
-          <button id="level-back">← Wybór postaci</button>
+          <div class="level-navigation">
+            <button id="level-back">← Wybór postaci</button><button id="level-title-back">Menu główne</button>
+          </div>
           <details>
             <summary>Jak grać?</summary>
             <p>

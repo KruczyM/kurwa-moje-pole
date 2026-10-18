@@ -1,3 +1,4 @@
+import { continueLevel, biomeMenu, MENU_BIOMES } from './TitleMenu';
 import { hudOverlapsPlayer } from './HudVisibility';
 import type { ScreenRect } from './HudVisibility';
 import {
@@ -99,6 +100,7 @@ class BongoRush {
     () => {
       if (!this.disposed && this.menu.screen === 'heroes')
         element<HTMLButtonElement>('hero-confirm').disabled = !this.gallery.ready(this.menu.hero);
+      this.gallery.copyThumbnail(this.menu.hero, element<HTMLCanvasElement>('menu-hero-portrait'));
     },
   );
   private readonly atlases = new Map<string, Promise<HeroAtlas>>();
@@ -107,7 +109,10 @@ class BongoRush {
   private readonly loop = new AnimationLoop((time) => this.frame(time));
   private game = new Simulation(LEVELS[0]);
   private mode: Mode = 'menu';
-  private selected = this.artPreview ? 5 : this.progress.unlocked - 1;
+  private selected = this.artPreview ? 5 : continueLevel(this.progress) - 1;
+  private menuBiome?: number;
+  private titleSignature = '';
+  private menuArtState: 'idle' | 'loading' | 'ready' | 'failed' = 'idle';
   private accumulator = 0;
   private lastTime = 0;
   private width = 1;
@@ -245,6 +250,7 @@ class BongoRush {
     const token = ++this.loadToken;
     this.loading = true;
     element<HTMLButtonElement>('begin').disabled = true;
+    element<HTMLButtonElement>('continue').disabled = true;
     element('load-status').textContent = 'Wczytywanie postaci i biomu…';
     const hero = this.menu.hero;
     let loaded = false;
@@ -363,6 +369,7 @@ class BongoRush {
       this.backgrounds.clear();
       this.backgrounds.set(level.biome, background);
       this.renderer!.hero(atlas);
+      this.paintMenuPortrait(atlas);
       this.renderer!.bushFace(bushAtlas);
       this.renderer!.enemyHeroes(patrolAtlas, blueAtlas, undercoverAtlas, bossAtlas);
       this.renderer!.sceneryArtwork(
@@ -406,6 +413,7 @@ class BongoRush {
       if (!this.disposed && token === this.loadToken) {
         this.loading = false;
         element<HTMLButtonElement>('begin').disabled = false;
+        element<HTMLButtonElement>('continue').disabled = false;
         element('begin').textContent = loaded ? 'Wejdź do jaskini →' : 'Ponów wczytywanie →';
       }
       this.pruneAssets();
@@ -423,6 +431,7 @@ class BongoRush {
   }
 
   private updateAppearanceText(): void {
+    this.updateTitleMenu();
     const fantasy = this.progress.collectibleStyle === 'fantasy';
     element('collectible-help').textContent =
       `Zbierasz: ${collectibleName(this.progress, this.game.level.biome)}. Złoty romb oznacza cel obowiązkowy.`;
@@ -620,6 +629,92 @@ class BongoRush {
     }
   }
 
+  private get resumeIndex(): number {
+    return this.artPreview ? this.selected : continueLevel(this.progress) - 1;
+  }
+
+  /** UI rasters are browser-owned images; the game renderer and its asset ownership stay unchanged. */
+  private updateTitleMenu(): void {
+    const signature = `${this.progress.visualTheme}:${this.menu.hero}:${this.availableLevels}:${this.resumeIndex}:${this.menuArtState}`;
+    if (signature === this.titleSignature) return;
+    this.titleSignature = signature;
+    const menu = element('menu'),
+      artistic = this.progress.visualTheme !== 'standard';
+    menu.dataset.artistic = String(artistic && this.menuArtState === 'ready');
+    const root = `${BASE}game-assets/2d/bongo-rush/menu-v1/`;
+    const logo = element<HTMLImageElement>('menu-logo-image');
+    if (artistic && this.menuArtState === 'idle') {
+      this.menuArtState = 'loading';
+      void settleImageBatch(
+        ['scene.webp', 'logo.webp', 'interface.webp'].map((file) => loadCachedImage(`${root}${file}`)),
+      )
+        .then(() => {
+          this.menuArtState = 'ready';
+        })
+        .catch(() => {
+          this.menuArtState = 'failed';
+        })
+        .finally(() => {
+          if (!this.disposed) {
+            this.titleSignature = '';
+            this.updateTitleMenu();
+          }
+        });
+    }
+    element('menu-art-retry').hidden = !artistic || this.menuArtState !== 'failed';
+    element('menu-art-status').textContent =
+      !artistic || this.menuArtState === 'ready'
+        ? ''
+        : this.menuArtState === 'failed'
+          ? 'Nie udało się wczytać oprawy menu. Możesz grać lub spróbować ponownie.'
+          : 'Przygotowuję malarską scenę…';
+    if (artistic && this.menuArtState === 'ready') {
+      menu.style.setProperty('--menu-scene', `url("${root}scene.webp")`);
+      menu.style.setProperty('--menu-atlas', `url("${root}interface.webp")`);
+      logo.src = `${root}logo.webp`;
+    } else {
+      menu.style.removeProperty('--menu-scene');
+      menu.style.removeProperty('--menu-atlas');
+      logo.removeAttribute('src');
+    }
+    const level = LEVELS[this.resumeIndex];
+    element('continue-level').textContent = `Poziom ${level.id} · ${level.title}`;
+    element('menu-hero-name').textContent =
+      HERO_LABELS[HEROES.indexOf(this.menu.hero as (typeof HEROES)[number])];
+    for (const card of Array.from(document.querySelectorAll<HTMLButtonElement>('.biome-card'))) {
+      const biome = Number(card.dataset.biome),
+        status = biomeMenu(biome, this.availableLevels, level.id);
+      card.disabled = status.available === 0;
+      card.setAttribute(
+        'aria-label',
+        `${MENU_BIOMES[biome]} · dostępne ${status.available} z ${status.total} poziomów`,
+      );
+      card.setAttribute('aria-pressed', String(level.biome === biome));
+      card.querySelector('small')!.textContent = `Dostępne ${status.available}/${status.total}`;
+    }
+    this.gallery.copyThumbnail(this.menu.hero, element<HTMLCanvasElement>('menu-hero-portrait'));
+  }
+
+  private paintMenuPortrait(atlas: HeroAtlas): void {
+    const canvas = element<HTMLCanvasElement>('menu-hero-portrait'),
+      ctx = canvas.getContext('2d')!;
+    const { crop, image } = atlas;
+    const height = canvas.height - 8,
+      width = (height * crop.width) / crop.height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(
+      image,
+      crop.x,
+      crop.y,
+      crop.width,
+      crop.height,
+      (canvas.width - width) / 2,
+      4,
+      width,
+      height,
+    );
+  }
+
   /** Starts a selected unlocked cave from a real user gesture so mobile audio is immediately available. */
   private async begin(index = this.selected): Promise<void> {
     if (this.loading || index < 0 || index >= this.availableLevels) return;
@@ -636,6 +731,7 @@ class BongoRush {
     this.setMode('playing');
     this.updateHud();
     this.progress.hero = this.menu.hero;
+    if (!this.artPreview) this.progress.lastLevel = this.game.level.id;
     saveProgress(storage(), this.progress);
     this.resize();
   }
@@ -675,7 +771,10 @@ class BongoRush {
       this.audio.unlock();
       this.canvas.focus({ preventScroll: true });
     } else if (mode !== 'menu' || previousMode !== 'menu') this.audio.silence(mode !== 'paused');
-    if (mode === 'menu') this.renderLevels();
+    if (mode === 'menu') {
+      this.renderLevels();
+      this.updateTitleMenu();
+    }
     const focusTarget =
       mode === 'paused'
         ? 'resume'
@@ -713,6 +812,7 @@ class BongoRush {
 
   /** Reopens level selection with the current hero, matching the quick-level entry on main. */
   private returnToMenu(): void {
+    this.menuBiome = undefined;
     this.menu.openLevels();
     this.selected = this.game.level.id - 1;
     this.showMenu();
@@ -730,7 +830,10 @@ class BongoRush {
   private renderLevels(): void {
     const container = element('levels');
     container.replaceChildren();
+    element('level-biome-title').textContent =
+      this.menuBiome === undefined ? 'Wejście do podziemi' : MENU_BIOMES[this.menuBiome];
     LEVELS.forEach((level, index) => {
+      if (this.menuBiome !== undefined && level.biome !== this.menuBiome) return;
       const button = document.createElement('button');
       button.textContent = String(level.id).padStart(2, '0');
       button.dataset.style = level.style ?? 'challenge';
@@ -854,6 +957,34 @@ class BongoRush {
     });
     this.events.listen(element('appearance-panel'), 'change', () => {
       this.readAppearance();
+    });
+    click('menu-art-retry', () => {
+      this.menuArtState = 'idle';
+      this.titleSignature = '';
+      this.updateTitleMenu();
+    });
+    click('continue', () => {
+      if (this.loading) return;
+      this.menuBiome = undefined;
+      this.menu.openLevels();
+      void this.begin(this.resumeIndex);
+    });
+    click('level-title-back', () => {
+      this.menu.title();
+      this.showMenu();
+    });
+    this.events.listen(document.querySelector('.biome-cards')!, 'click', (event) => {
+      const card = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-biome]');
+      if (!card || card.disabled || this.loading) return;
+      const biome = Number(card.dataset.biome),
+        status = biomeMenu(biome, this.availableLevels, this.resumeIndex + 1);
+      if (status.level === undefined) return;
+      this.audio.unlock();
+      this.menuBiome = biome;
+      this.selected = status.level - 1;
+      this.menu.openLevels();
+      this.showMenu();
+      void this.loadRun(this.selected);
     });
     click('begin', () => {
       void this.begin();
