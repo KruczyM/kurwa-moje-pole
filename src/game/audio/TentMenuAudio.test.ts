@@ -196,4 +196,57 @@ describe('TentMenuAudio', () => {
     expect(biquadFilters[1].disconnect).toHaveBeenCalled();
     expect(gainNode.disconnect).toHaveBeenCalled();
   });
+
+  it('resumes playback on gesture when audio playback was deferred', async () => {
+    const listeners: Record<string, Function[]> = {};
+    const fakeWindow = {
+      addEventListener: vi.fn((event: string, cb: Function) => {
+        (listeners[event] ??= []).push(cb);
+      }),
+      removeEventListener: vi.fn(),
+    };
+    vi.stubGlobal('window', fakeWindow);
+
+    const { ctx, gainNode } = createMockAudioContext();
+    const mockAudio = createMockAudioElement();
+    (mockAudio as any).paused = true;
+    (ctx as any).state = 'suspended';
+
+    const tentAudio = new TentMenuAudio({
+      audioContext: ctx,
+      audioFactory: () => mockAudio,
+    });
+
+    tentAudio.startTentAudio();
+    expect(tentAudio.active).toBe(true);
+
+    expect(fakeWindow.addEventListener).toHaveBeenCalledWith(
+      'pointerdown',
+      expect.any(Function),
+      expect.any(Object),
+    );
+
+    listeners['pointerdown']?.[0]?.();
+    expect(ctx.resume).toHaveBeenCalled();
+    expect(mockAudio.play).toHaveBeenCalled();
+    expect(gainNode.gain.setValueAtTime).toHaveBeenCalledWith(DEFAULT_TENT_VOLUME, ctx.currentTime);
+    vi.unstubAllGlobals();
+  });
+
+  it('provides diagnostics describing playback parameters', () => {
+    const { ctx } = createMockAudioContext();
+    const mockAudio = createMockAudioElement();
+
+    const tentAudio = new TentMenuAudio({
+      audioContext: ctx,
+      audioFactory: () => mockAudio,
+    });
+
+    tentAudio.startTentAudio();
+    const diag = tentAudio.diagnostics();
+    expect(diag.isPlaying).toBe(true);
+    expect(diag.isMuffled).toBe(true);
+    expect(diag.tentCutoff).toBe(DEFAULT_TENT_CUTOFF);
+    expect(diag.userVolume).toBe(DEFAULT_TENT_VOLUME);
+  });
 });
