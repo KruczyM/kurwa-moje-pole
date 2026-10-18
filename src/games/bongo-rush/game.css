@@ -840,3 +840,11 @@ footer {
 .hud.over-player {
   opacity: 0.16;
 }
+
+.menu-track {
+  display: block;
+  margin: 6px 0 12px;
+  color: #c9bea7;
+  font-size: 11px;
+  line-height: 1.4;
+}

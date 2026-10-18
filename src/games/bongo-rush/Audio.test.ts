@@ -194,6 +194,68 @@ const flushMusic = async () => {
 };
 
 describe('recorded soundtrack in the existing audio host', () => {
+  it('loops the full menu song continuously through selections, then restores level music', async () => {
+    vi.stubGlobal('AudioContext', RecordedContext);
+    const fetcher = vi.fn<(url: string, init?: RequestInit) => Promise<ReturnType<typeof response>>>(
+      async () => response(),
+    );
+    vi.stubGlobal('fetch', fetcher);
+    const audio = new ArcadeAudio('/');
+    audio.unlock();
+    const context = FakeContext.latest as RecordedContext;
+    context.decodeAudioData.mockResolvedValueOnce({
+      duration: 67.056,
+      length: 3218688,
+      numberOfChannels: 2,
+    } as AudioBuffer);
+    audio.updateMusic(0, true, true, profile());
+    await flushMusic();
+    audio.updateMusic(0, true, true, profile());
+    const voice = context.buffers[0];
+    context.currentTime += 3;
+    audio.updateMusic(1, true, true, { ...profile(6), biome: 1 });
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(context.buffers).toHaveLength(1);
+    expect(voice.stop).not.toHaveBeenCalled();
+    expect(audio.diagnostics()).toMatchObject({
+      track: 'menu-jazz',
+      playing: true,
+      state: 'ready',
+      offset: 3,
+    });
+    audio.updateMusic(1, true, false, { ...profile(6), biome: 1 });
+    await flushMusic();
+    audio.updateMusic(1, true, false, { ...profile(6), biome: 1 });
+    expect(audio.diagnostics()).toMatchObject({ track: 'android-forest', playing: true });
+    expect(fetcher.mock.calls[0][0]).toContain('/menu-jazz.mp3');
+    audio.dispose();
+  });
+  it('resumes the menu position after a level-track preview evicts its decoded buffer', async () => {
+    vi.stubGlobal('AudioContext', RecordedContext);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => response()),
+    );
+    const audio = new ArcadeAudio('/');
+    audio.unlock();
+    audio.updateMusic(0, true, true, profile());
+    await flushMusic();
+    audio.updateMusic(0, true, true, profile());
+    const context = FakeContext.latest as RecordedContext;
+    context.currentTime += 3;
+    const saved = audio.position();
+    audio.silence(false);
+    audio.updateMusic(0, true, false, profile());
+    await flushMusic();
+    audio.updateMusic(0, true, false, profile());
+    audio.restorePosition(saved);
+    audio.updateMusic(0, true, true, profile());
+    await flushMusic();
+    audio.updateMusic(0, true, true, profile());
+    expect(audio.diagnostics()).toMatchObject({ track: 'menu-jazz', playing: true, offset: 3 });
+    expect(context.buffers.at(-1)!.start).toHaveBeenLastCalledWith(context.currentTime, 3);
+    audio.dispose();
+  });
   it('reuses a returning motif across levels, restarts its phrase and ignores the retired voice ending', async () => {
     vi.stubGlobal('AudioContext', RecordedContext);
     const fetcher = vi.fn(async () => response());

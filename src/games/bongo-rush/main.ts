@@ -651,6 +651,7 @@ class BongoRush {
 
   /** Switches overlays without changing the RAF, duplicating input listeners or triggering nested pause menus. */
   private setMode(mode: Mode): void {
+    const previousMode = this.mode;
     this.mode = mode;
     if (mode !== 'menu' || this.menu.screen !== 'heroes') this.gallery.setActive(false);
     element('help-panel').hidden = true;
@@ -671,7 +672,7 @@ class BongoRush {
     if (mode === 'playing') {
       this.audio.unlock();
       this.canvas.focus({ preventScroll: true });
-    } else this.audio.silence(mode !== 'paused');
+    } else if (mode !== 'menu' || previousMode !== 'menu') this.audio.silence(mode !== 'paused');
     if (mode === 'menu') this.renderLevels();
     const focusTarget =
       mode === 'paused'
@@ -817,6 +818,12 @@ class BongoRush {
   /** Binds controls once through EventScope, including pointer capture and automatic blur/visibility pause. */
   private bind(): void {
     const click = (id: string, callback: () => void) => this.events.listen(element(id), 'click', callback);
+    click('menu-listen', () => {
+      this.audio.unlock();
+      this.progress.muted = this.audio.muted = false;
+      saveProgress(storage(), this.progress);
+      this.updateMute();
+    });
     click('appearance-open', () => this.openAppearance());
     click('pause-appearance', () => this.openAppearance());
     click('appearance-close', () => this.closeAppearance());
@@ -1061,7 +1068,7 @@ class BongoRush {
     this.audio.updateMusic(
       this.game.level.biome,
       (appearanceOpen ? this.appearancePreview : this.mode === 'playing' || this.mode === 'menu') &&
-        !this.loading &&
+        (this.mode === 'menu' || !this.loading) &&
         !document.hidden,
       this.mode === 'menu' && !appearanceOpen,
       {

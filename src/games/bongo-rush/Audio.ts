@@ -2,7 +2,7 @@ import { levelMusicPhrase, levelMusicRoot } from './LevelMusic';
 import type { LevelMusicProfile } from './LevelMusic';
 import type { SoundEvent } from './types';
 import { musicPhrase, MUSIC_BPM } from './Music';
-import { levelSoundtrack, soundtrackUrl } from './Soundtrack';
+import { musicSoundtrack, soundtrackUrl } from './Soundtrack';
 
 interface RecordedVoice {
   source: AudioBufferSourceNode;
@@ -25,6 +25,7 @@ export class ArcadeAudio {
   private musicBiome = -1;
   private musicLevel = -1;
   private musicTheme = 'storybook';
+  private musicMenu = false;
   private musicGains = new Map<OscillatorNode, GainNode>();
   private duckUntil = 0;
   private recording?: { id: string; buffer: AudioBuffer };
@@ -36,6 +37,7 @@ export class ArcadeAudio {
   private recordedVoice?: RecordedVoice;
   private readonly recordedVoices = new Set<RecordedVoice>();
   private recordedOffset = 0;
+  private restoredRecording?: { id: string; offset: number };
   private recordedVolume = -1;
   private disposed = false;
   muted = false;
@@ -121,25 +123,28 @@ export class ArcadeAudio {
   /** One decoded active track; async completion never starts playback on its own. */
   private updateRecording(profile: LevelMusicProfile, menu: boolean): boolean {
     const context = this.context!,
-      track = levelSoundtrack(profile.level),
+      track = musicSoundtrack(profile.level, menu),
       now = context.currentTime;
-    if (this.musicLevel !== profile.level) {
+    if (this.requestedRecording !== track.id || (!menu && this.musicLevel !== profile.level)) {
       this.stopRecording(true, 0.25);
       this.beat = 0;
     }
     this.musicBiome = profile.biome;
     this.musicLevel = profile.level;
     this.musicTheme = profile.theme;
+    this.musicMenu = menu;
+    const restored = this.restoredRecording;
+    this.restoredRecording = undefined;
     if (this.requestedRecording !== track.id) {
       this.recordingRequest?.abort();
       const token = ++this.recordingToken;
       this.requestedRecording = track.id;
       this.recording = undefined;
-      this.recordedOffset = 0;
+      this.recordedOffset = restored?.id === track.id ? restored.offset : 0;
       this.recordingLoading = true;
       this.recordingFailed = false;
       const controller = (this.recordingRequest = new AbortController());
-      void fetch(soundtrackUrl(this.soundtrackBase!, profile.level), { signal: controller.signal })
+      void fetch(soundtrackUrl(this.soundtrackBase!, profile.level, menu), { signal: controller.signal })
         .then(async (response) => {
           if (!response.ok) throw new Error(`Music HTTP ${response.status}`);
           const data = await response.arrayBuffer();
@@ -148,7 +153,7 @@ export class ArcadeAudio {
         })
         .then((buffer) => {
           if (this.disposed || token !== this.recordingToken) return;
-          if (!buffer.length || !Number.isFinite(buffer.duration) || buffer.duration > 50)
+          if (!buffer.length || !Number.isFinite(buffer.duration) || buffer.duration > (menu ? 75 : 50))
             throw new Error('Invalid soundtrack buffer');
           this.recording = { id: track.id, buffer };
         })
@@ -236,7 +241,7 @@ export class ArcadeAudio {
   diagnostics() {
     return {
       track: this.requestedRecording,
-      title: this.musicLevel > 0 ? levelSoundtrack(this.musicLevel).title : undefined,
+      title: this.musicLevel > 0 ? musicSoundtrack(this.musicLevel, this.musicMenu).title : undefined,
       state: this.recordingFailed
         ? 'synth-fallback'
         : this.recordingLoading
@@ -366,6 +371,7 @@ export class ArcadeAudio {
     this.musicLevel = position.level;
     this.musicTheme = position.theme;
     if (position.recording === this.requestedRecording) this.recordedOffset = position.offset;
+    else if (position.recording) this.restoredRecording = { id: position.recording, offset: position.offset };
   }
 
   /** Releases the sole audio context when the game host is removed. */
