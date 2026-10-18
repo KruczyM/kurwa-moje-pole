@@ -188,6 +188,7 @@ export class FlankiGame {
   private lockedAim?: THREE.Vector3;
   private suggestedPower = 0.3;
   private inputTimer = 0;
+  private runnerPickupHeld = false;
   private readonly drinkingPlayers = new Map<string, number>();
 
   // Projectile state (piłeczka tenisowa)
@@ -620,9 +621,12 @@ export class FlankiGame {
     position.z = THREE.MathUtils.clamp(position.z, this.botLineZ - 0.7, this.playerLineZ + 0.7);
     position.y = terrainHeight(position.x, position.z);
     camera.set(position.x, position.y + 1.9, position.z);
-    if (this.isHost) this.runnerFor(this.localTeam).updateHumanPosition(position);
-    else if (this.inputTimer <= 0) {
+    if (this.isHost) {
+      this.runnerFor(this.localTeam).updateHumanPosition(position);
+      if (this.runnerPickupHeld) this.standUpCanByPlayer();
+    } else if (this.inputTimer <= 0) {
       this.callbacks?.onSendMultiplayerAction?.('flanki:runner_move', { position: position.toArray() });
+      if (this.runnerPickupHeld) this.standUpCanByPlayer();
       this.inputTimer = 0.1;
     }
   }
@@ -908,6 +912,7 @@ export class FlankiGame {
 
   /** Rozpoczyna nowy mecz we flanki */
   startMatch(options?: { multiplayer?: boolean; opponentName?: string; isHost?: boolean }): void {
+    this.runnerPickupHeld = false;
     this.throwSequence = this.receivedThrowSequence = 0;
     this.lastThrower = '';
     this.syncRunnerRoles();
@@ -995,6 +1000,7 @@ export class FlankiGame {
   }
 
   stopMatch(): void {
+    this.runnerPickupHeld = false;
     this.phase = 'idle';
     this.isCharging = false;
     this.isChugging = false;
@@ -1043,7 +1049,14 @@ export class FlankiGame {
     }
   }
 
+  isPlayerActionHeld(): boolean {
+    return this.isChugging || this.runnerPickupHeld;
+  }
+
   setPlayerDrinking(isDrinking: boolean): void {
+    // E / mobile USE is also a held pickup action for the defending runner.
+    this.runnerPickupHeld = isDrinking && this.canLocalRunnerMove();
+    if (this.runnerPickupHeld) this.standUpCanByPlayer();
     const wasDrinking = this.isChugging;
     this.isChugging =
       isDrinking &&
@@ -1183,6 +1196,7 @@ export class FlankiGame {
   }
 
   private handleStopCalled(runnerName: string): void {
+    this.runnerPickupHeld = false;
     this.isChugging = false;
     this.drinkingPlayers.clear();
     this.isStopActive = true;
@@ -1459,7 +1473,7 @@ export class FlankiGame {
     if (this.canLocalRunnerMove())
       prompt = this.isCanUpright()
         ? 'Puszka postawiona! Wróć za swoją linię — wtedy STOP.'
-        : 'Jesteś biegaczem! Podbiegnij do puszki i naciśnij [E], aby ją postawić.';
+        : 'Jesteś biegaczem! Podbiegnij do puszki i przytrzymaj [E] / UŻYJ, aby ją postawić.';
 
     return {
       active: this.phase !== 'idle',
