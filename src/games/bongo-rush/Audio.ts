@@ -3,6 +3,8 @@ import type { LevelMusicProfile } from './LevelMusic';
 import type { SoundEvent } from './types';
 import { musicPhrase, MUSIC_BPM } from './Music';
 import { musicSoundtrack, soundtrackUrl } from './Soundtrack';
+import type { MusicPack } from './Soundtrack';
+import { prepareSoundtrackLoop, soundtrackLoopPosition } from './SoundtrackLoop';
 
 interface RecordedVoice {
   source: AudioBufferSourceNode;
@@ -26,9 +28,10 @@ export class ArcadeAudio {
   private musicLevel = -1;
   private musicTheme = 'storybook';
   private musicMenu = false;
+  private musicPack: MusicPack = 'pack-1';
   private musicGains = new Map<OscillatorNode, GainNode>();
   private duckUntil = 0;
-  private recording?: { id: string; buffer: AudioBuffer };
+  private recording?: { id: string; buffer: AudioBuffer; loopStart: number };
   private requestedRecording?: string;
   private recordingRequest?: AbortController;
   private recordingToken = 0;
@@ -124,7 +127,7 @@ export class ArcadeAudio {
   /** One decoded active track; async completion never starts playback on its own. */
   private updateRecording(profile: LevelMusicProfile, menu: boolean): boolean {
     const context = this.context!,
-      track = musicSoundtrack(profile.level, menu),
+      track = musicSoundtrack(profile.level, menu, profile.musicPack),
       now = context.currentTime;
     if (this.requestedRecording !== track.id || (!menu && this.musicLevel !== profile.level)) {
       this.stopRecording(true, 0.25);
@@ -134,6 +137,7 @@ export class ArcadeAudio {
     this.musicLevel = profile.level;
     this.musicTheme = profile.theme;
     this.musicMenu = menu;
+    this.musicPack = profile.musicPack ?? 'pack-1';
     const restored = this.restoredRecording;
     this.restoredRecording = undefined;
     if (this.requestedRecording !== track.id) {
@@ -145,7 +149,9 @@ export class ArcadeAudio {
       this.recordingLoading = true;
       this.recordingFailed = false;
       const controller = (this.recordingRequest = new AbortController());
-      void fetch(soundtrackUrl(this.soundtrackBase!, profile.level, menu), { signal: controller.signal })
+      void fetch(soundtrackUrl(this.soundtrackBase!, profile.level, menu, profile.musicPack), {
+        signal: controller.signal,
+      })
         .then(async (response) => {
           if (!response.ok) throw new Error(`Music HTTP ${response.status}`);
           const data = await response.arrayBuffer();
@@ -156,7 +162,7 @@ export class ArcadeAudio {
           if (this.disposed || token !== this.recordingToken) return;
           if (!buffer.length || !Number.isFinite(buffer.duration) || buffer.duration > (menu ? 75 : 50))
             throw new Error('Invalid soundtrack buffer');
-          this.recording = { id: track.id, buffer };
+          this.recording = { id: track.id, buffer, loopStart: prepareSoundtrackLoop(buffer) };
         })
         .catch(() => {
           if (!this.disposed && token === this.recordingToken) this.recordingFailed = true;
@@ -180,7 +186,7 @@ export class ArcadeAudio {
         gain = context.createGain();
       source.buffer = this.recording.buffer;
       source.loop = true;
-      source.loopStart = 0;
+      source.loopStart = this.recording.loopStart;
       source.loopEnd = source.buffer.duration;
       source.connect(gain);
       gain.connect(context.destination);
@@ -209,8 +215,11 @@ export class ArcadeAudio {
   private recordingPosition(): number {
     const voice = this.recordedVoice;
     return voice && this.recording
-      ? (voice.offset + Math.max(0, this.context!.currentTime - voice.started)) %
-          this.recording.buffer.duration
+      ? soundtrackLoopPosition(
+          voice.offset + Math.max(0, this.context!.currentTime - voice.started),
+          this.recording.buffer.duration,
+          this.recording.loopStart,
+        )
       : this.recordedOffset;
   }
 
@@ -243,7 +252,10 @@ export class ArcadeAudio {
   diagnostics() {
     return {
       track: this.requestedRecording,
-      title: this.musicLevel > 0 ? musicSoundtrack(this.musicLevel, this.musicMenu).title : undefined,
+      title:
+        this.musicLevel > 0
+          ? musicSoundtrack(this.musicLevel, this.musicMenu, this.musicPack).title
+          : undefined,
       state: this.recordingFailed
         ? 'synth-fallback'
         : this.recordingLoading
@@ -255,6 +267,7 @@ export class ArcadeAudio {
       offset: this.recordingPosition(),
       voices: this.recordedVoices.size,
       buffers: this.recording ? 1 : 0,
+      loopOverlap: this.recording?.loopStart ?? 0,
       decodedBytes: this.recording
         ? this.recording.buffer.length * this.recording.buffer.numberOfChannels * 4
         : 0,

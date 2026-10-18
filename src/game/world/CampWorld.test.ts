@@ -30,7 +30,7 @@ describe('CampWorld terrain placement', () => {
     world.setMobileArea('camp');
     expect(camp.layers.isEnabled(0)).toBe(true);
     expect(wheel.layers.isEnabled(0)).toBe(false);
-    world.setMobileArea('lidl-wheel');
+    world.setMobileArea('wheel');
     expect(wheel.layers.isEnabled(0)).toBe(true);
     expect(camp.layers.isEnabled(0)).toBe(false);
     expect(camp.layers.isEnabled(2)).toBe(true);

@@ -7,11 +7,22 @@ export interface PresentationPreferences {
   collectibleStyle: CollectibleStyle;
 }
 export const THEME_LABELS: Record<VisualTheme, string> = {
-  standard: 'Standardowy',
-  storybook: 'Artystyczny',
+  standard: 'Standardowa',
+  storybook: 'Artystyczna',
   luminous: 'Świetlista fantazja · podgląd',
   mysterious: 'Tajemnicze podziemia · podgląd',
 };
+/** Display names are independent of persisted festival/fantasy keys. */
+export function collectibleChoices(
+  theme: VisualTheme,
+): readonly { value: CollectibleStyle; label: string }[] {
+  return theme === 'standard'
+    ? [{ value: 'festival', label: 'Standardowe' }]
+    : [
+        { value: 'festival', label: 'Zestaw 1' },
+        { value: 'fantasy', label: 'Zestaw 2' },
+      ];
+}
 export const THEME_ACCENTS: Record<VisualTheme, string> = {
   standard: '#8bdbab',
   storybook: '#edc087',

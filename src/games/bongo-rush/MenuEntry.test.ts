@@ -11,8 +11,10 @@ describe('Bongo Rush main menu entry', () => {
     expect(menu.match(/href="\.\/bongo-rush\.html"/g)).toHaveLength(2);
     expect(menu).toContain('Walka o tasiorowe bongo');
     const game = readFileSync('bongo-rush.html', 'utf8');
-    expect(game).toContain('<title>After: Walka o tasiorowe bongo</title>');
-    expect(game).not.toContain('BONGO RUSH');
+    expect(game).toContain('<title>Bongo Rush — Walka o tasiorowe bongo</title>');
+    expect(game).toContain('<span>BONGO RUSH</span>');
+    expect(game).not.toContain('after-demo.html');
+    expect(game).not.toContain('AFTER');
     expect(game).not.toContain('id="menu-listen"');
     expect(game).toMatch(
       /rel="preload"\s+href="\.\/game-assets\/audio\/bongo-rush\/soundtrack-v1\/menu-jazz\.mp3"/,

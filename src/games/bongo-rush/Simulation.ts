@@ -447,7 +447,8 @@ export class Simulation {
       moved.add(object.id);
       this.sounds.push('push');
     } else if (object) {
-      if (object.falling) {
+      // A falling pickup can be intercepted from the side, before it falls onto the player.
+      if (object.falling && target.y !== w.player.y) {
         this.lose('Spadający przedmiot Cię przygniótł.');
         return;
       }

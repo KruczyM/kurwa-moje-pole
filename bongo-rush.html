@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#171b2b" />
-    <title>After: Walka o tasiorowe bongo</title>
+    <title>Bongo Rush — Walka o tasiorowe bongo</title>
     <link
       rel="preload"
       href="./game-assets/audio/bongo-rush/soundtrack-v1/menu-jazz.mp3"
@@ -15,7 +15,7 @@
   <body>
     <main id="bongo-app">
       <header class="topbar">
-        <a class="brand" href="./bongo-rush.html"><span>AFTER</span> WALKA O TASIOROWE BONGO</a>
+        <a class="brand" href="./bongo-rush.html"><span>BONGO RUSH</span></a>
         <div class="toolbar">
           <button id="help" aria-label="Pomoc — zasady gry">?</button>
           <button id="map" aria-pressed="false" title="Pokaż lub ukryj mapę (M)">Mapa</button>
@@ -57,10 +57,8 @@
             <div class="title-small-actions">
               <button id="title-help">? Jak grać</button>
             </div>
-            <small class="menu-track">Fun Indie Game Type Jazz Music · idoberg</small>
             <p id="menu-art-status" role="status"></p>
             <button id="menu-art-retry" hidden>Ponów wczytywanie oprawy</button>
-            <p class="menu-note">Wybierz wyprawę. Przygotuj drogę ucieczki.</p>
           </div>
           <nav class="biome-cards" aria-label="Wybierz biom">
             <button class="biome-card" data-biome="0">
@@ -77,8 +75,9 @@
             </button>
           </nav>
           <div class="title-footer">
+            <small class="menu-track">Fun Indie Game Type Jazz Music · idoberg</small>
             <div class="links">
-              <a href="./after-demo.html">After: ostatnia noc</a><a href="./">Festiwal 3D</a>
+              <a href="./">Festiwal 3D</a>
             </div>
             <small class="disclaimer">Fikcyjna, satyryczna gra dla dorosłych.</small>
           </div>
@@ -112,17 +111,17 @@
           <details>
             <summary>Jak grać?</summary>
             <p>
-              WASD / strzałki lub gałka — ruch. Kop ziemię, zbierz wymagane przedmioty i znajdź wyjście ↑.
-              Skały pchasz poziomo, tylko na wolne pole. Spadające skały i przedmioty przygniatają. Patrole
-              nie potrafią kopać. Usunięcie sąsiedniej podpory odsłania Kobrę, która powiela się na wolne
-              pola. Przedmioty i ziemia blokują wzrost; zebranie podpory może go uwolnić. Nie zwlekaj, bo
-              krzaki mogą odciąć wyjście! Esc — pauza / powrót (zatrzymuje także wzrost). R — restart. Bez
+              WASD / strzałki lub krzyżak dotykowy — ruch. Kop ziemię, zbierz wymagane przedmioty i znajdź
+              wyjście ↑. Skały pchasz poziomo, tylko na wolne pole. Spadające skały i przedmioty przygniatają.
+              Patrole nie potrafią kopać. Usunięcie sąsiedniej podpory odsłania Kobrę, która powiela się na
+              wolne pola. Przedmioty i ziemia blokują wzrost; zebranie podpory może go uwolnić. Nie zwlekaj,
+              bo krzaki mogą odciąć wyjście! Esc — pauza / powrót (zatrzymuje także wzrost). R — restart. Bez
               limitu prób. Szukaj odnóg i skrótów; nie musisz zbierać wszystkich przedmiotów. M / Mapa —
               minimapa.
             </p>
           </details>
           <div class="links">
-            <a href="./after-demo.html">After: ostatnia noc</a><a href="./">Festiwal 3D</a>
+            <a href="./">Festiwal 3D</a>
           </div>
           <small class="disclaimer"
             >Fikcyjna, satyryczna gra dla dorosłych. Nie jest reklamą ani instrukcją używania
@@ -154,7 +153,7 @@
               Złoty kafelek z liczbą i literą K uwalnia tyle przedmiotów i może odsłonić miejsce dla Kobry.
               Łup pojawia się w ujściu pojedynczo. Najpierw przygotuj drogę odwrotu.
             </li>
-            <li>Kop ziemię WASD, strzałkami lub gałką. M / Mapa pokazuje całą jaskinię.</li>
+            <li>Kop ziemię WASD, strzałkami lub krzyżakiem dotykowym. M / Mapa pokazuje całą jaskinię.</li>
             <li>Skały pchasz tylko poziomo na puste pole. Najpierw przygotuj wnękę i odwrót.</li>
             <li>
               Omijaj patrole i już spadające przedmioty. Stojąca skała nad Tobą ruszy po odejściu — przygotuj
@@ -178,14 +177,15 @@
           <p>Jaskinia poczeka. Wzrost Krzaka jest zatrzymany.</p>
           <button id="resume" class="primary">Wróć do gry</button
           ><button id="pause-appearance">Oprawa i muzyka</button
-          ><button id="pause-restart">Restart poziomu</button><button id="to-menu">Wybór poziomu</button>
+          ><button id="pause-restart">Restart poziomu</button><button id="to-menu">Wybór poziomu</button
+          ><button id="pause-title-back">Menu główne</button>
         </section>
         <section id="result" class="panel compact" hidden aria-label="Wynik poziomu">
           <span id="result-label" class="eyebrow"></span>
           <h2 id="result-title"></h2>
           <p id="result-text"></p>
           <button id="next" class="primary">Następny poziom</button><button id="retry">Zagraj ponownie</button
-          ><button id="result-menu">Wybór poziomu</button>
+          ><button id="result-menu">Wybór poziomu</button><button id="result-title-back">Menu główne</button>
         </section>
         <section id="victory" class="panel victory-panel" hidden aria-label="Koniec kampanii">
           <span class="eyebrow">KAMPANIA UKOŃCZONA · ODBLOKOWANO 4 WYZWANIA</span>
@@ -194,26 +194,67 @@
             Dostawa odebrana! Satyryczny Owsiak opala legendarne bongo — nagroda jest Twoja! W wyborze poziomu
             czekają cztery dodatkowe wyzwania.
           </p>
-          <button id="victory-menu" class="primary">Wróć do odblokowanych poziomów</button>
+          <button id="victory-menu" class="primary">Wróć do odblokowanych poziomów</button
+          ><button id="victory-title-back">Menu główne</button>
         </section>
         <dialog id="appearance-panel" aria-labelledby="appearance-title">
           <span class="eyebrow">TWÓJ KLIMAT WYPRAWY</span>
           <h2 id="appearance-title">Oprawa i muzyka</h2>
+          <fieldset class="music-pack-choices collectible-choices">
+            <legend>Ścieżka dźwiękowa</legend>
+            <label
+              ><input type="radio" name="music-pack" value="pack-1" checked /> Ścieżka 1 — Spokojna
+              wyprawa</label
+            >
+            <label
+              ><input type="radio" name="music-pack" value="pack-2" /> Ścieżka 2 — Przygoda i tajemnica</label
+            >
+          </fieldset>
+          <p class="menu-note">
+            Muzykę wybierasz niezależnie od znajdziek i grafiki. Każda ścieżka zawiera utwory dobrane do
+            plansz.
+          </p>
+          <button id="appearance-listen">Posłuchaj motywu</button>
+          <p id="soundtrack-title"></p>
           <fieldset>
-            <legend>Styl grafiki</legend>
+            <legend>Szata graficzna</legend>
             <div id="theme-choices"></div>
           </fieldset>
           <fieldset class="collectible-choices">
-            <legend>Znajdźki</legend>
+            <legend>Zestaw znajdziek</legend>
             <label
-              ><input type="radio" name="collectible-style" value="festival" checked /> Festiwalowe</label
+              ><input type="radio" name="collectible-style" value="festival" checked />
+              <span>Standardowe</span></label
             >
-            <label><input type="radio" name="collectible-style" value="fantasy" /> Skarby fantasy</label>
+            <label
+              ><input type="radio" name="collectible-style" value="fantasy" /> <span>Zestaw 2</span></label
+            >
           </fieldset>
           <div id="collectible-preview" aria-hidden="true"></div>
           <p id="collectible-preview-label"></p>
-          <button id="appearance-listen">Posłuchaj motywu</button>
-          <p id="soundtrack-title"></p>
+          <fieldset class="touch-settings">
+            <legend>Sterowanie mobilne</legend>
+            <label for="touch-position">Położenie krzyżaka</label>
+            <select id="touch-position">
+              <option value="left">Po lewej</option>
+              <option value="center">Na środku</option>
+              <option value="right">Po prawej</option>
+            </select>
+            <label for="touch-size">Rozmiar przycisków</label>
+            <select id="touch-size">
+              <option value="compact">Kompaktowe</option>
+              <option value="normal">Standardowe</option>
+              <option value="large">Duże</option>
+            </select>
+            <label for="touch-opacity"
+              >Widoczność przycisków <output id="touch-opacity-value" for="touch-opacity">90%</output></label
+            >
+            <input id="touch-opacity" type="range" min="60" max="100" step="5" value="90" />
+            <p class="menu-note">
+              Przytrzymaj strzałkę lub przesuń palec między kierunkami. Środek zatrzymuje ruch. Układ
+              zapiszesz przyciskiem Zastosuj.
+            </p>
+          </fieldset>
           <p id="appearance-status" role="status"></p>
           <div class="menu-actions">
             <button id="appearance-close">Wróć</button
@@ -222,8 +263,16 @@
         </dialog>
         <nav id="touch-controls" hidden aria-label="Sterowanie dotykowe">
           <div id="joystick-zone">
-            <div id="joystick" role="group" aria-label="Gałka ruchu — przeciągnij palcem">
-              <span id="knob"></span>
+            <div
+              id="joystick"
+              role="group"
+              aria-label="Ruch — przytrzymaj strzałkę lub przesuń palec między strzałkami"
+            >
+              <button data-direction="up" aria-label="Idź w górę" aria-pressed="false">↑</button>
+              <button data-direction="left" aria-label="Idź w lewo" aria-pressed="false">←</button>
+              <span class="pad-centre" aria-hidden="true">•</span>
+              <button data-direction="right" aria-label="Idź w prawo" aria-pressed="false">→</button>
+              <button data-direction="down" aria-label="Idź w dół" aria-pressed="false">↓</button>
             </div>
           </div>
           <button id="touch-restart" aria-label="Restart poziomu">↻</button>

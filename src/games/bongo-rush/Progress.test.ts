@@ -55,6 +55,7 @@ describe('versioned local campaign progress', () => {
   it('clamps levels and validates hero and mute values', () => {
     const data = { version: 1, unlocked: 99, hero: '<script>', muted: 'yes', completed: false };
     expect(loadProgress({ getItem: () => JSON.stringify(data) })).toEqual({
+      musicPack: 'pack-1',
       version: 1,
       campaignRevision: 3,
       visualTheme: 'storybook',
@@ -75,6 +76,7 @@ describe('versioned local campaign progress', () => {
   it('round-trips valid preferences and does not block play on failed writes', () => {
     let value = '';
     const progress = {
+      musicPack: 'pack-2' as const,
       visualTheme: 'storybook' as const,
       collectibleStyle: 'festival' as const,
       version: 1 as const,
@@ -103,5 +105,14 @@ describe('versioned local campaign progress', () => {
         progress,
       ),
     ).not.toThrow();
+  });
+  it('defaults old and invalid music preferences without changing campaign progress', () => {
+    for (const musicPack of [undefined, null, '<script>', 'pack-99']) {
+      const result = loadProgress({
+        getItem: () =>
+          JSON.stringify({ version: 1, campaignRevision: 3, unlocked: 17, hero: 'korba', musicPack }),
+      });
+      expect(result).toMatchObject({ musicPack: 'pack-1', unlocked: 17, hero: 'korba' });
+    }
   });
 });

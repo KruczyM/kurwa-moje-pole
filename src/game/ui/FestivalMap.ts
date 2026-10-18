@@ -1,3 +1,4 @@
+import { MOBILE_FESTIVAL_AREAS } from '../world/mobileFestivalAreas';
 /**
  * FestivalMap — Interaktywny 2D HUD mapy festiwalu Pol'and'Rock (Czaplinek-Broczyno)
  * Wyświetla cały teren: Obóz #KurwaMojePole, Pasaże Gastro, Dużą Scenę z barierkami,
@@ -159,7 +160,7 @@ export const FESTIVAL_MAP_LANDMARKS: readonly MapLandmark[] = [
   },
   {
     id: 'asp',
-    label: 'ASP (Akademia Sztuk Przepięknych)',
+    label: 'Namiot ASP',
     x: -65,
     z: 97,
     type: 'asp',
@@ -359,6 +360,11 @@ export class FestivalMap {
     timestamp: number;
     canMarkers: CanMapMarker[];
   };
+
+  private mobileArea?: string;
+  setMobileArea(area: string | undefined): void {
+    this.mobileArea = area;
+  }
 
   constructor(canvas?: HTMLCanvasElement | null) {
     this.loadTentMarker();
@@ -716,6 +722,8 @@ export class FestivalMap {
     // 3. Rysowanie głównych stref i dróg
     this.drawFestivalZones(ctx, w, h);
 
+    this.drawMobileSectors(ctx, w, h);
+
     // 4. Punkty orientacyjne i etykiety
     this.drawLandmarks(ctx, w, h);
 
@@ -730,6 +738,47 @@ export class FestivalMap {
 
     // 7. Mini skala i współrzędne w narożniku
     this.drawHudOverlay(ctx, player, w, h, canMarkers);
+  }
+
+  private drawMobileSectors(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    if (!this.mobileArea) return;
+    const scale = w / (this.canvas?.clientWidth || w);
+    const names: Record<string, string> = {
+      'north-camps': 'Obozy',
+      'north-passage': 'Pierwszy pasaż',
+      wheel: 'Karuzela',
+      camp: 'Obóz',
+      'main-stage': 'Duża scena',
+      lidl: 'Lidl',
+      'south-passage': 'Drugi pasaż i ASP',
+    };
+    ctx.save();
+    for (const area of MOBILE_FESTIVAL_AREAS) {
+      const [minX, maxX, minZ, maxZ] = area.regions[0];
+      const a = this.worldToCanvas(minX, minZ, w, h);
+      const b = this.worldToCanvas(maxX, maxZ, w, h);
+      const active = area.id === this.mobileArea;
+      ctx.fillStyle = active ? 'rgba(178,255,69,.13)' : 'rgba(0,0,0,.08)';
+      ctx.fillRect(a.x, a.y, b.x - a.x, b.y - a.y);
+      ctx.strokeStyle = active ? '#b2ff45' : '#ffdd83';
+      ctx.lineWidth = active ? 3 : 1.5;
+      ctx.setLineDash(active ? [] : [6, 4]);
+      ctx.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y);
+      const x = Math.max(8 * scale, a.x + 8 * scale),
+        y = Math.max(14 * scale, a.y + 13 * scale);
+      if (x < w - 8 && y < Math.min(h - 24, b.y - 5)) {
+        ctx.font = `bold ${10 * scale}px system-ui`;
+        ctx.textAlign = 'left';
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#10221f';
+        const label = (active ? '● ' : '') + names[area.id];
+        const maxWidth = Math.max(40, Math.min(w - x - 8, b.x - x - 6));
+        ctx.strokeText(label, x, y, maxWidth);
+        ctx.fillStyle = active ? '#b2ff45' : '#ffdd83';
+        ctx.fillText(label, x, y, maxWidth);
+      }
+    }
+    ctx.restore();
   }
 
   private drawGridAndRunway(ctx: CanvasRenderingContext2D, w: number, h: number): void {
@@ -854,7 +903,79 @@ export class FestivalMap {
 
   private drawLandmarks(ctx: CanvasRenderingContext2D, w: number, h: number): void {
     const occupied: { x: number; y: number; width: number; height: number }[] = [];
+    const mobileScale = this.mobileArea ? w / (this.canvas?.clientWidth || w) : 1;
     for (const lm of this.landmarks) {
+      if (this.mobileArea) {
+        if (
+          ![
+            'camp',
+            'main_stage',
+            'asp',
+            'lidl',
+            'allegro_wheel',
+            'sunflowers',
+            'flanki',
+            'guitar_campfire',
+            'recycling_corral',
+          ].includes(lm.id)
+        )
+          continue;
+        const p = this.worldToCanvas(lm.x, lm.z, w, h);
+        if (p.x < 0 || p.x > w || p.y < 0 || p.y > h) continue;
+        ctx.fillStyle = lm.id === 'asp' ? '#e7b0ff' : '#ffdd83';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3 * mobileScale, 0, Math.PI * 2);
+        ctx.fill();
+        if (['main_stage', 'lidl', 'allegro_wheel'].includes(lm.id)) continue;
+        const label =
+          lm.id === 'asp'
+            ? 'Namiot ASP'
+            : lm.id === 'camp'
+              ? 'Obóz KMP'
+              : lm.id === 'main_stage'
+                ? 'Scena'
+                : lm.id === 'allegro_wheel'
+                  ? 'Karuzela'
+                  : lm.id === 'lidl'
+                    ? 'Lidl'
+                    : lm.id === 'sunflowers'
+                      ? 'Słoneczniki'
+                      : lm.id === 'flanki'
+                        ? 'Flanki'
+                        : lm.id === 'guitar_campfire'
+                          ? 'Gitara'
+                          : 'Eko';
+        ctx.font = `bold ${9 * mobileScale}px system-ui`;
+        const width = ctx.measureText(label).width;
+        const x = Math.max(2 * mobileScale, Math.min(w - width - 4 * mobileScale, p.x - width / 2));
+        let y = p.y + (lm.id === 'asp' ? 15 : -7) * mobileScale;
+        for (
+          let tries = 0;
+          tries < 12 &&
+          occupied.some(
+            (r) =>
+              x < r.x + r.width &&
+              x + width + 4 * mobileScale > r.x &&
+              y - 10 * mobileScale < r.y + r.height &&
+              y + 3 * mobileScale > r.y,
+          );
+          tries++
+        )
+          y += 13 * mobileScale;
+        y = Math.max(12 * mobileScale, Math.min(h - 16 * mobileScale, y));
+        occupied.push({
+          x,
+          y: y - 10 * mobileScale,
+          width: width + 4 * mobileScale,
+          height: 13 * mobileScale,
+        });
+        ctx.fillStyle = '#10221f';
+        ctx.fillRect(x - 2 * mobileScale, y - 10 * mobileScale, width + 4 * mobileScale, 13 * mobileScale);
+        ctx.fillStyle = lm.id === 'asp' ? '#e7b0ff' : '#fff1bc';
+        ctx.textAlign = 'left';
+        ctx.fillText(label, x, y);
+        continue;
+      }
       const p = this.worldToCanvas(lm.x, lm.z, w, h);
 
       // Kolor akcentu w zależności od typu

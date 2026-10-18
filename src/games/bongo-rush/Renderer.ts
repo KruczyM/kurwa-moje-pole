@@ -3,6 +3,7 @@ import { composeScene, paintedSoilCrop } from './SceneComposition';
 import type { SceneComposition } from './SceneComposition';
 import { macroRect, macroVariant, paintedWallRect, paintedWallVariant } from './Presentation';
 import { CameraRig } from '../after/presentation/CameraRig';
+import type { Viewport } from '../after/presentation/CameraRig';
 import { SpriteAnimator } from '../after/presentation/SpriteAnimator';
 import { PatrolAnimator } from './PatrolAnimator';
 import { PatrolMotion } from './PatrolMotion';
@@ -76,6 +77,7 @@ export class CaveRenderer {
   private height = 1;
   private touch = false;
   private minimapTop = 58;
+  private cameraInsets: Viewport['insets'];
   private playerBox: ScreenRect = { x: 0, y: 0, width: 0, height: 0 };
   private minimapBox?: MinimapBox;
   private tile = 40;
@@ -123,6 +125,12 @@ export class CaveRenderer {
   diagnostics() {
     return {
       viewport: { x: 0, y: this.topInset, width: this.width, height: this.playHeight },
+      safeViewport: {
+        x: this.cameraInsets?.left ?? 0,
+        y: this.cameraInsets?.top ?? 0,
+        width: this.width - (this.cameraInsets?.left ?? 0) - (this.cameraInsets?.right ?? 0),
+        height: this.playHeight - (this.cameraInsets?.top ?? 0) - (this.cameraInsets?.bottom ?? 0),
+      },
       tileSize: this.tile,
       player: { ...this.playerBox },
       mapBounds: this.world
@@ -329,14 +337,15 @@ export class CaveRenderer {
   }
 
   /** Fits desktop caves and keeps mobile tiles large enough to read while the camera follows. */
-  resize(width: number, height: number, touch = false, minimapTop = 58): void {
+  resize(width: number, height: number, touch = false, minimapTop = 58, insets?: Viewport['insets']): void {
     this.touch = touch;
     this.minimapTop = minimapTop;
+    this.cameraInsets = insets;
     this.width = width;
     this.height = height;
     this.playHeight = Math.max(1, height);
-    this.tile = caveTileSize(width, this.playHeight, this.world?.width, this.world?.height);
-    this.camera.resize({ width, height: this.playHeight, pixelsPerMeter: this.tile });
+    this.tile = caveTileSize(width, this.playHeight);
+    this.camera.resize({ width, height: this.playHeight, pixelsPerMeter: this.tile, insets });
   }
 
   /** Clears only renderer-owned canvases and animation state; shared images remain cached. */
@@ -524,9 +533,14 @@ export class CaveRenderer {
       this.enemyAnimationTick = -1;
       this.debris.clear();
       // One active instance of the existing camera, with this cave's real bounds rather than 24x18.
-      this.tile = caveTileSize(this.width, this.playHeight, world.width, world.height);
+      this.tile = caveTileSize(this.width, this.playHeight);
       this.camera = new CameraRig({ width: world.width, height: world.height });
-      this.camera.resize({ width: this.width, height: this.playHeight, pixelsPerMeter: this.tile });
+      this.camera.resize({
+        width: this.width,
+        height: this.playHeight,
+        pixelsPerMeter: this.tile,
+        insets: this.cameraInsets,
+      });
       this.mapTick = -1;
       this.camera.snap({ x: playerPoint.x + 0.5, y: playerPoint.y + 0.5 });
       const origin = this.camera.project({ x: 0, y: 0 });
@@ -548,6 +562,12 @@ export class CaveRenderer {
     }
     const anchor = this.camera.project(this.depthAnchor);
     const displacement = { x: this.width / 2 - anchor.x, y: this.playHeight / 2 - anchor.y };
+    if (scene && background) {
+      // Small maps retain readable scale; painted, shaded surroundings fill the full canvas.
+      this.depthLayer(background, game.level.biome, 0, displacement);
+      ctx.fillStyle = '#071018b8';
+      ctx.fillRect(0, 0, this.width, this.height);
+    }
     if (background && !scene) this.depthLayer(background, game.level.biome, 0, displacement);
     if (!this.sceneryAssets)
       paintSceneMotion(ctx, this.width, this.height, game.level.biome, this.clock, false, reduced);
@@ -1066,8 +1086,8 @@ export class CaveRenderer {
       this.mapTick = world.tick;
     }
     const box = minimapLayout(
-      this.width,
-      this.height,
+      this.width - Math.max(0, (this.cameraInsets?.right ?? 8) - 8),
+      this.height - (this.cameraInsets?.bottom ?? 0),
       this.minimapTop,
       world.width,
       world.height,

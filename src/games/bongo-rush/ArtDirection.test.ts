@@ -19,16 +19,9 @@ describe('closer cave artwork', () => {
       [568, 272],
       [3840, 2000],
     ]) {
-      for (const [columns, rows] of [
-        [15, 24],
-        [21, 39],
-        [35, 15],
-      ]) {
-        const tile = caveTileSize(width, height, columns, rows);
-        expect(tile * columns).toBeGreaterThanOrEqual(width);
-        expect(tile * rows).toBeGreaterThanOrEqual(height);
-        expect(tile).toBeGreaterThanOrEqual(40);
-      }
+      const tile = caveTileSize(width, height);
+      expect(tile).toBeGreaterThanOrEqual(40);
+      expect(tile).toBeLessThanOrEqual(80);
     }
   });
   it('uses separate bottle, leaf, candy and glass cells for all variants', () => {
