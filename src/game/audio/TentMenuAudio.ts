@@ -95,7 +95,9 @@ export class TentMenuAudio {
       audioPaused: this.audio?.paused,
       audioCurrentTime: this.audio?.currentTime,
       audioReadyState: this.audio?.readyState,
-      audioError: this.audio?.error ? { code: this.audio.error.code, message: this.audio.error.message } : null,
+      audioError: this.audio?.error
+        ? { code: this.audio.error.code, message: this.audio.error.message }
+        : null,
       contextState: this.ctx?.state,
       gainValue: this.gainNode?.gain.value,
       filter1Freq: this.filterNode1?.frequency.value,
@@ -375,7 +377,15 @@ export class TentMenuAudio {
 
   private clearGestureResume(): void {
     if (typeof window !== 'undefined' && this.pendingGestureResume) {
-      for (const evt of ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'mouseup', 'click', 'keydown']) {
+      for (const evt of [
+        'pointerdown',
+        'touchstart',
+        'touchend',
+        'mousedown',
+        'mouseup',
+        'click',
+        'keydown',
+      ]) {
         window.removeEventListener(evt, this.pendingGestureResume, { capture: true });
       }
     }

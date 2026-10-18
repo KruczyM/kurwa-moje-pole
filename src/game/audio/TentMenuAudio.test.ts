@@ -198,9 +198,9 @@ describe('TentMenuAudio', () => {
   });
 
   it('resumes playback on gesture when audio playback was deferred', async () => {
-    const listeners: Record<string, Function[]> = {};
+    const listeners: Record<string, (() => void)[]> = {};
     const fakeWindow = {
-      addEventListener: vi.fn((event: string, cb: Function) => {
+      addEventListener: vi.fn((event: string, cb: () => void) => {
         (listeners[event] ??= []).push(cb);
       }),
       removeEventListener: vi.fn(),
