@@ -45,6 +45,11 @@ button {
   cursor: pointer;
   font-weight: 700;
 }
+/* Native select popups do not inherit the closed control's gradient. */
+select option {
+  background-color: #2c2118;
+  color: #f8efd9;
+}
 button:hover:not(:disabled),
 button:focus-visible {
   border-color: #f1cc80;
