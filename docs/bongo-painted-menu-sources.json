@@ -1,0 +1,26 @@
+{
+  "scene": {
+    "generatedFile": "exec-695fda0c-b0a3-472c-899a-79d055c035b3.png",
+    "sha256": "3a1016590d8aba2d8d5e0a3a4e180cc8f1a347576db81c06b6a0c104936376d5",
+    "source": "source-assets/bongo-menu-v1/scene.png",
+    "runtime": "public/game-assets/2d/bongo-rush/menu-v1/scene.webp",
+    "dimensions": [1672, 941],
+    "runtimeBytes": 544260
+  },
+  "logo": {
+    "generatedFile": "exec-b4994f7d-3305-4d43-a9d7-71275c65622a.png",
+    "sha256": "6f34cf96d0de82352ea81828cb20a9b8beebad52a23b73bb38ada723c0ef6e31",
+    "source": "source-assets/bongo-menu-v1/logo.png",
+    "runtime": "public/game-assets/2d/bongo-rush/menu-v1/logo.webp",
+    "dimensions": [1821, 864],
+    "runtimeBytes": 631562
+  },
+  "interface": {
+    "generatedFile": "exec-63468e76-ee54-47d5-87fd-cbe08bafa4f3.png",
+    "sha256": "af27adc1eea794c06c79116d1abef91ff23c4dd7c83bacd8b93d16c35c83b436",
+    "source": "source-assets/bongo-menu-v1/interface.png",
+    "runtime": "public/game-assets/2d/bongo-rush/menu-v1/interface.webp",
+    "dimensions": [1536, 1024],
+    "runtimeBytes": 761626
+  }
+}

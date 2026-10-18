@@ -40,6 +40,7 @@ export interface Progress extends PresentationPreferences {
   version: 1;
   unlocked: number;
   hero: string;
+  lastLevel?: number;
   muted: boolean;
   completed: boolean;
   campaignRevision: 3;
@@ -67,14 +68,18 @@ export function loadProgress(storage: Pick<Storage, 'getItem'>): Progress {
       oldCampaign && (unlocked >= 13 || data.completed === true)
         ? Math.max(21, Math.min(24, unlocked + 8))
         : unlocked;
+    const available = Math.max(
+      !oldCampaign && data.completed === true ? CAMPAIGN_LEVEL_COUNT + 1 : 1,
+      Math.min(LEVEL_COUNT, migrated),
+    );
     return {
       ...presentationPreferences(data),
       version: 1,
       campaignRevision: 3,
-      unlocked: Math.max(
-        !oldCampaign && data.completed === true ? CAMPAIGN_LEVEL_COUNT + 1 : 1,
-        Math.min(LEVEL_COUNT, migrated),
-      ),
+      unlocked: available,
+      ...(Number.isInteger(data.lastLevel) && data.lastLevel >= 1 && data.lastLevel <= LEVEL_COUNT
+        ? { lastLevel: Math.min(data.lastLevel, available) }
+        : {}),
       hero: HEROES.includes(data.hero) ? data.hero : 'amper',
       muted: data.muted === true,
       completed: currentCampaign && data.completed === true,
