@@ -15,7 +15,7 @@ describe('cabinet menu content', () => {
       expect(host.innerHTML).not.toMatch(
         /\bms\b|zamach|powrót ciosu|recovery|startup|hitstop|okno trafienia/i,
       );
-      for (const text of ['Podbródkowy', 'Podcięcie', 'Garda', '30%', '100%', 'online trwa']) {
+      for (const text of ['Podbródkowy', 'Podcięcie', 'Garda', '100%', 'online trwa']) {
         expect(host.innerHTML).toContain(text);
       }
       expect(appended[0]?.textContent).toContain(entry.definition.moves.ultimate!.name);

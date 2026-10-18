@@ -223,12 +223,21 @@ export function checkHit(
   defender.hp = Math.max(0, defender.hp - damage);
 
   // Meter build
-  if (!blocked) {
-    attacker.meter = Math.min(100, attacker.meter + move.meterGain * 1.6);
-    defender.meter = Math.min(100, defender.meter + 6);
+  if (move.id !== 'ultimate') {
+    if (!blocked) {
+      attacker.meter = Math.min(100, attacker.meter + move.meterGain * 1.6);
+      defender.meter = Math.min(100, defender.meter + 6);
+    } else {
+      attacker.meter = Math.min(100, attacker.meter + move.meterGain * 0.65);
+      defender.meter = Math.min(100, defender.meter + 3);
+    }
   } else {
-    attacker.meter = Math.min(100, attacker.meter + move.meterGain * 0.65);
-    defender.meter = Math.min(100, defender.meter + 3);
+    // Ultimate strike never builds energy back for attacker
+    if (!blocked) {
+      defender.meter = Math.min(100, defender.meter + 6);
+    } else {
+      defender.meter = Math.min(100, defender.meter + 3);
+    }
   }
 
   return {

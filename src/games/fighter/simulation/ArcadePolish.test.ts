@@ -16,7 +16,6 @@ const moves: [string, number, string][] = [
   ['sweep', INPUT.DOWN | INPUT.RK, 'sweep'],
   ['jump_punch', INPUT.LP, 'jump_punch'],
   ['jump_kick', INPUT.LK, 'air_kick'],
-  ['special', INPUT.TECHNIQUE, 'special'],
   ['ultimate', INPUT.SPECIAL, 'ultimate'],
 ];
 
@@ -45,7 +44,7 @@ describe('complete arcade moves and authoritative super freeze', () => {
     expect(both.superFreezeTicks).toBe(48);
   });
   it.each(Object.values(ROSTER).map((entry) => [entry.definition.id, entry.definition] as const))(
-    '%s exposes all twelve moves and the corresponding animation',
+    '%s exposes all eleven combat moves and the corresponding animation',
     (_id, definition) => {
       for (const [id, input, clip] of moves) {
         const sim = new FighterSimulation(definition, definition);
@@ -58,7 +57,6 @@ describe('complete arcade moves and authoritative super freeze', () => {
         const fighter = sim.getState().p1;
         expect(fighter.currentMove?.id, `${definition.id}/${id}`).toBe(id);
         expect(combatClip(fighter)).toBe(clip);
-        if (id === 'special') expect(fighter.meter).toBe(70);
         if (id === 'ultimate') expect(fighter.meter).toBe(0);
       }
     },
@@ -106,5 +104,36 @@ describe('complete arcade moves and authoritative super freeze', () => {
     expect(whiff.getState().p1.meter).toBe(0);
     whiff.update(INPUT.TECHNIQUE, 0);
     expect(whiff.getState().p1.currentMove).toBeNull();
+  });
+  it('disallows special moves for 30% energy and guarantees ultimate hit does not build energy back', () => {
+    const def = ROSTER.amper.definition;
+    const sim = new FighterSimulation(def, def);
+    const state = sim.getState();
+    state.p1.meter = 50;
+    sim.update(INPUT.TECHNIQUE, 0);
+    expect(state.p1.currentMove).toBeNull();
+    expect(state.p1.meter).toBe(50);
+
+    // Ultimate requires full 100% meter
+    state.p1.meter = 99;
+    sim.update(INPUT.SPECIAL, 0);
+    expect(state.p1.currentMove).toBeNull();
+    expect(sim.getEvents().some((e) => e.type === 'meter_empty')).toBe(true);
+
+    // Release button so next press registers as justPressed
+    sim.update(0, 0);
+
+    // With 100% meter, ultimate executes and resets meter to 0
+    state.p1.meter = 100;
+    state.p1.x = -25;
+    state.p2.x = 25;
+    sim.update(INPUT.SPECIAL, 0);
+    expect(state.p1.currentMove?.id).toBe('ultimate');
+    expect(state.p1.meter).toBe(0);
+
+    // Fast-forward until the hit connects
+    for (let i = 0; i < 100; i++) sim.update(0, 0);
+    // Ultimate strike must not build meter back
+    expect(state.p1.meter).toBe(0);
   });
 });
