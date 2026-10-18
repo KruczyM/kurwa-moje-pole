@@ -103,6 +103,10 @@ export class Room {
     this.members.delete(playerId);
   }
 
+  getMembers(): ReadonlySet<string> {
+    return this.members;
+  }
+
   getMemberCount(): number {
     return this.members.size;
   }

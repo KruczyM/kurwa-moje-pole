@@ -722,10 +722,15 @@ export class Game {
         userVolume: 1.0,
         onMicStateChange: (micState) => this.syncMicUi(micState),
       });
+      this.remotePlayersManager?.setSpatialVoice(this.spatialVoice);
+      if (typeof window !== 'undefined') {
+        (window as unknown as { __spatialVoice?: SpatialVoiceManager }).__spatialVoice = this.spatialVoice;
+      }
       this.syncMicUi(this.spatialVoice.getMicState());
       const micBtn = document.querySelector<HTMLButtonElement>('#voice-mic-toggle');
       if (micBtn) {
         micBtn.onclick = () => {
+          void this.spatialVoice?.resumeAudioContext();
           this.spatialVoice?.toggleMute();
         };
       }
@@ -1103,6 +1108,7 @@ export class Game {
 
   private pointerDown(event: PointerEvent) {
     if (this.disposed || event.button !== 0) return;
+    void this.spatialVoice?.resumeAudioContext();
     if (this.ui.isGuideOpen() || this.ui.isMapOpen()) return;
     if (this.state.current !== 'playing') return;
     const flanki = this.world?.flankiGame;
