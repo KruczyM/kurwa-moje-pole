@@ -35,7 +35,6 @@ export interface CharacterSlot {
   character: CharacterName;
   status: SlotStatus;
   playerId?: string;
-  sessionToken?: string;
   nickname?: string;
   expiresAt?: number;
 }

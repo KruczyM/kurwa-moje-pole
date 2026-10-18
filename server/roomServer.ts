@@ -12,11 +12,14 @@ import {
   type ConfirmCharacterPayload,
   type ReleaseCharacterPayload,
   PROTOCOL_VERSION,
+  type NetworkErrorPayload,
 } from '../src/game/network/networkProtocol.js';
 
 export interface RoomServerOptions {
   port?: number;
   corsOrigin?: string | string[] | boolean;
+  reservationTimeoutMs?: number;
+  gracePeriodMs?: number;
 }
 
 export class RoomServer {
@@ -30,8 +33,10 @@ export class RoomServer {
   private readonly emptyRoomSince = new Map<string, number>();
   private readonly rateLimiter = new RateLimiter();
   private readonly port: number;
+  private readonly options: RoomServerOptions;
 
   constructor(options: RoomServerOptions = {}) {
+    this.options = options;
     this.port = options.port ?? 3001;
     this.server = http.createServer((req, res) => {
       if (req.url === '/health') {
@@ -61,9 +66,13 @@ export class RoomServer {
     if (!room) {
       room = new Room({
         roomId,
-        gracePeriodMs: 5000,
+        reservationTimeoutMs: this.options.reservationTimeoutMs,
+        gracePeriodMs: this.options.gracePeriodMs ?? 5000,
         onSlotChanged: () => {
           this.io.to(roomId).emit('room:state', room!.getPublicState());
+        },
+        onReservationTimeout: (character, playerId) => {
+          this.io.to(playerId).emit('error', { code: 'TIMEOUT', message: 'Rezerwacja wygasła.' });
         },
       });
       this.rooms.set(roomId, room);
@@ -77,28 +86,68 @@ export class RoomServer {
     this.io.on('connection', (socket: Socket) => {
       let currentRoomId: string | undefined;
 
-      socket.on('room:join', (payload: JoinRoomPayload = {}) => {
-        const roomId = payload.roomId?.trim() || 'glowny-oboz';
-        const room = this.getOrCreateRoom(roomId);
+      const emitError = (code: NetworkErrorPayload['code'], message: string) => {
+        socket.emit('error', { code, message } satisfies NetworkErrorPayload);
+      };
 
-        // Jeśli pokój jest pełny i gracz nie ma ważnego sessionToken (reconnect), emituj błąd z kodem 'ROOM_FULL':
-        const existingSlot = payload.sessionToken
-          ? room.findSlotBySessionToken(payload.sessionToken)
-          : undefined;
-        const hasValidSession = Boolean(existingSlot && existingSlot.status !== 'free');
-        if (room.isFull && !hasValidSession) {
-          socket.emit('error', { code: 'ROOM_FULL', message: 'Pokój jest pełny.' });
+      const leaveCurrentRoom = (isDisconnect: boolean = false) => {
+        if (!currentRoomId) return;
+        const previousRoomId = currentRoomId;
+        const previousRoom = this.rooms.get(previousRoomId);
+        if (previousRoom) {
+          previousRoom.removeMember(socket.id);
+          if (isDisconnect) {
+            previousRoom.handleDisconnect(socket.id);
+          } else {
+            previousRoom.handleLeave(socket.id);
+          }
+          this.io.to(previousRoomId).emit('room:state', previousRoom.getPublicState());
+        }
+        void socket.leave(previousRoomId);
+        currentRoomId = undefined;
+      };
+
+      socket.on('room:join', (payload: JoinRoomPayload = {}) => {
+        if (!payload || typeof payload !== 'object') {
+          emitError('UNAUTHORIZED', 'Nieprawidłowe dane dołączenia do pokoju.');
+          return;
+        }
+        const requestedRoomId = typeof payload.roomId === 'string' ? payload.roomId.trim() : '';
+        if (requestedRoomId.length > 64) {
+          emitError('UNAUTHORIZED', 'Identyfikator pokoju jest za długi.');
+          return;
+        }
+        const roomId = requestedRoomId || 'glowny-oboz';
+        const room = this.getOrCreateRoom(roomId);
+        let isReconnecting = false;
+        if (typeof payload.sessionToken === 'string' && payload.sessionToken.length > 0) {
+          const slot = room.findSlotBySessionToken(payload.sessionToken);
+          if (slot && slot.status !== 'free') {
+            isReconnecting = true;
+          }
+        }
+
+        if (room.isFull && !isReconnecting) {
+          emitError('ROOM_FULL', 'Pokój jest pełny.');
           return;
         }
 
+        const existingSlot = room.findSlotByPlayerId(socket.id);
+        if (existingSlot && typeof payload.sessionToken === 'string' && payload.sessionToken !== existingSlot.sessionToken) {
+          emitError('UNAUTHORIZED', 'Posiadasz już inny slot w tym pokoju.');
+          return;
+        }
+
+        if (currentRoomId && currentRoomId !== roomId) leaveCurrentRoom();
         currentRoomId = roomId;
         socket.emit('eco:state',this.ecoSessions.get(roomId)?.getState() ?? null);
 
+        room.addMember(socket.id);
         void socket.join(roomId);
 
         // Obsługa reconnect z sessionToken:
         let reconnectedChar;
-        if (payload.sessionToken) {
+        if (typeof payload.sessionToken === 'string' && payload.sessionToken.length > 0) {
           const previousSocketId = room.findSlotBySessionToken(payload.sessionToken)?.playerId;
           const reconnectRes = room.handleReconnect(payload.sessionToken, socket.id);
           if (reconnectRes.restored) {
@@ -126,29 +175,31 @@ export class RoomServer {
 
       socket.on('character:reserve', (payload: ReserveCharacterPayload) => {
         if (!currentRoomId) {
-          currentRoomId = 'glowny-oboz';
-          void socket.join(currentRoomId);
+          emitError('UNAUTHORIZED', 'Nie dołączono do pokoju.');
+          return;
+        }
+
+        if (!payload || typeof payload !== 'object') {
+          emitError('CHARACTER_NOT_FOUND', 'Nieprawidłowe dane rezerwacji.');
+          return;
         }
 
         const room = this.getOrCreateRoom(currentRoomId);
-        const sessionToken = payload.sessionToken || socket.id;
+        const sessionToken = typeof payload.sessionToken === 'string' ? payload.sessionToken : socket.id;
 
         const existingSlot =
-          (payload.sessionToken ? room.findSlotBySessionToken(payload.sessionToken) : undefined) ??
+          (typeof payload.sessionToken === 'string' ? room.findSlotBySessionToken(payload.sessionToken) : undefined) ??
           room.findSlotByPlayerId(socket.id);
         const hasValidSession = Boolean(existingSlot && existingSlot.status !== 'free');
         if (room.isFull && !hasValidSession) {
-          socket.emit('error', { code: 'ROOM_FULL', message: 'Pokój jest pełny.' });
+          emitError('ROOM_FULL', 'Pokój jest pełny.');
           return;
         }
 
         const result = room.reserve(socket.id, payload.character, payload.nickname, sessionToken);
 
         if (!result.success) {
-          socket.emit('error', {
-            code: 'CHARACTER_OCCUPIED',
-            message: result.error ?? 'Rezerwacja nieudana.',
-          });
+          emitError(result.code ?? 'CHARACTER_OCCUPIED', result.error ?? 'Rezerwacja nieudana.');
           return;
         }
 
@@ -157,16 +208,21 @@ export class RoomServer {
 
       socket.on('character:confirm', (payload: ConfirmCharacterPayload) => {
         if (!currentRoomId) {
-          currentRoomId = 'glowny-oboz';
-          void socket.join(currentRoomId);
+          emitError('UNAUTHORIZED', 'Nie dołączono do pokoju.');
+          return;
+        }
+
+        if (!payload || typeof payload !== 'object') {
+          emitError('CHARACTER_NOT_FOUND', 'Nieprawidłowe dane potwierdzenia.');
+          return;
         }
 
         const room = this.getOrCreateRoom(currentRoomId);
-        const sessionToken = payload.sessionToken || socket.id;
+        const sessionToken = typeof payload.sessionToken === 'string' ? payload.sessionToken : socket.id;
         const result = room.confirm(socket.id, payload.character, sessionToken);
 
         if (!result.success) {
-          socket.emit('error', { code: 'UNAUTHORIZED', message: result.error ?? 'Potwierdzenie nieudane.' });
+          emitError(result.code ?? 'UNAUTHORIZED', result.error ?? 'Potwierdzenie nieudane.');
           return;
         }
 
@@ -277,8 +333,13 @@ export class RoomServer {
       socket.on('character:release', (payload: ReleaseCharacterPayload) => {
         if (!currentRoomId) return;
 
+        if (!payload || typeof payload !== 'object') {
+          emitError('CHARACTER_NOT_FOUND', 'Nieprawidłowe dane zwolnienia postaci.');
+          return;
+        }
+
         const room = this.getOrCreateRoom(currentRoomId);
-        const sessionToken = payload.sessionToken || socket.id;
+        const sessionToken = typeof payload.sessionToken === 'string' ? payload.sessionToken : socket.id;
         const result = room.release(socket.id, payload.character, sessionToken);
 
         if (result.success) {
@@ -289,6 +350,8 @@ export class RoomServer {
               .to(currentRoomId)
               .emit('flanki:lobby', this.flankiSessions.get(currentRoomId)?.getState() ?? null);
           this.io.to(currentRoomId).emit('room:state', room.getPublicState());
+        } else {
+          emitError(result.code ?? 'UNAUTHORIZED', result.error ?? 'Nie udało się zwolnić postaci.');
         }
       });
 
@@ -310,24 +373,18 @@ export class RoomServer {
       });
 
       socket.on('disconnect', () => {
-        if(currentRoomId) {
-          this.ecoSessions.get(currentRoomId)?.leave(socket.id);
-          this.io.to(currentRoomId).emit('eco:state',this.ecoSessions.get(currentRoomId)?.getState()??null);
-        }
-        this.rateLimiter.remove(socket.id);
         if (currentRoomId) {
-          if (this.flankiSessions.get(currentRoomId)?.leave(socket.id))
+          this.ecoSessions.get(currentRoomId)?.leave(socket.id);
+          this.io.to(currentRoomId).emit('eco:state', this.ecoSessions.get(currentRoomId)?.getState() ?? null);
+          if (this.flankiSessions.get(currentRoomId)?.leave(socket.id)) {
             this.io
               .to(currentRoomId)
               .emit('flanki:lobby', this.flankiSessions.get(currentRoomId)?.getState() ?? null);
-          socket.to(currentRoomId).emit('voice:peer-left', { peerId: socket.id });
-          const room = this.rooms.get(currentRoomId);
-          if (room) {
-            room.handleDisconnect(socket.id);
-            this.io.to(currentRoomId).emit('room:state', room.getPublicState());
-            this.io.to(currentRoomId).emit('world:snapshot', room.getWorldSnapshot());
           }
+          socket.to(currentRoomId).emit('voice:peer-left', { peerId: socket.id });
         }
+        this.rateLimiter.remove(socket.id);
+        leaveCurrentRoom(true);
       });
     });
   }

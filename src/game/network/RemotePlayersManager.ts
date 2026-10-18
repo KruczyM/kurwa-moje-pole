@@ -15,6 +15,9 @@ import { characterAssets } from '../assets/assetManifest';
 import { terrainHeight } from '../world/CampWorld';
 import type { SpatialVoiceManager } from '../audio/SpatialVoiceManager';
 
+const fallbackGeometry = new THREE.CapsuleGeometry(0.34, 0.75, 4, 10);
+const fallbackMaterial = new THREE.MeshStandardMaterial({ color: 0x4fc3f7 });
+
 export interface RemotePlayerEntity {
   playerId: string;
   characterName: CharacterName;
@@ -130,10 +133,7 @@ export class RemotePlayersManager {
       root.add(visual);
     } else {
       // Fallbackowa bryła kapsuły, jeśli model nie jest jeszcze dostępny:
-      const fallback = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.34, 0.75, 4, 10),
-        new THREE.MeshStandardMaterial({ color: 0x4fc3f7 }),
-      );
+      const fallback = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
       fallback.position.y = 1;
       visual = fallback;
       root.add(fallback);

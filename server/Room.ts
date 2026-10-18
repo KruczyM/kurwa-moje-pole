@@ -19,6 +19,18 @@ export interface RoomOptions {
   reservationTimeoutMs?: number;
   gracePeriodMs?: number;
   onSlotChanged?: (character: CharacterName, slot: CharacterSlot) => void;
+  onReservationTimeout?: (character: CharacterName, playerId: string) => void;
+}
+
+export interface RoomOperationResult {
+  success: boolean;
+  code?: 'CHARACTER_NOT_FOUND' | 'CHARACTER_OCCUPIED' | 'CHARACTER_RESERVING' | 'INVALID_NICKNAME' | 'UNAUTHORIZED' | 'TIMEOUT' | 'ROOM_FULL';
+  error?: string;
+  slot?: CharacterSlot;
+}
+
+export interface InternalCharacterSlot extends CharacterSlot {
+  sessionToken?: string;
 }
 
 export class Room {
@@ -26,35 +38,40 @@ export class Room {
   private readonly reservationTimeoutMs: number;
   private readonly gracePeriodMs: number;
   private readonly onSlotChanged?: (character: CharacterName, slot: CharacterSlot) => void;
+  private readonly onReservationTimeout?: (character: CharacterName, playerId: string) => void;
 
-  private slots: Record<CharacterName, CharacterSlot>;
+  private slots: Record<CharacterName, InternalCharacterSlot>;
   private playerTransforms = new Map<CharacterName, PlayerTransform>();
   private disconnectTimers = new Map<CharacterName, NodeJS.Timeout>();
   private reservationTimers = new Map<CharacterName, NodeJS.Timeout>();
+  private members = new Set<string>();
 
   constructor(options: RoomOptions) {
     this.roomId = options.roomId;
     this.reservationTimeoutMs = options.reservationTimeoutMs ?? RESERVATION_TIMEOUT_MS;
     this.gracePeriodMs = options.gracePeriodMs ?? RECONNECT_GRACE_PERIOD_MS;
     this.onSlotChanged = options.onSlotChanged;
+    this.onReservationTimeout = options.onReservationTimeout;
 
     this.slots = CANONICAL_CHARACTERS.reduce(
       (acc, name) => {
         acc[name] = { character: name, status: 'free' };
         return acc;
       },
-      {} as Record<CharacterName, CharacterSlot>,
+      {} as Record<CharacterName, InternalCharacterSlot>,
     );
   }
 
   get isFull(): boolean {
     const nonFreeCount = Object.values(this.slots).filter((slot) => slot.status !== 'free').length;
-    return nonFreeCount >= CANONICAL_CHARACTERS.length;
+    return (
+      nonFreeCount >= CANONICAL_CHARACTERS.length ||
+      this.members.size + this.disconnectTimers.size >= CANONICAL_CHARACTERS.length
+    );
   }
 
   getPublicState(): RoomState {
     const publicSlots = {} as Record<CharacterName, CharacterSlot>;
-    let count = 0;
     for (const name of CANONICAL_CHARACTERS) {
       const slot = this.slots[name];
       publicSlots[name] = {
@@ -64,27 +81,43 @@ export class Room {
         nickname: slot.nickname,
         expiresAt: slot.expiresAt,
       };
-      if (slot.status !== 'free') count++;
     }
 
     return {
       roomId: this.roomId,
       protocolVersion: PROTOCOL_VERSION,
       slots: publicSlots,
-      playerCount: count,
+      playerCount: this.members.size + this.disconnectTimers.size,
     };
   }
 
-  getSlot(character: CharacterName): CharacterSlot | undefined {
+  getSlot(character: CharacterName): InternalCharacterSlot | undefined {
     return this.slots[character];
   }
 
-  findSlotByPlayerId(playerId: string): CharacterSlot | undefined {
+  addMember(playerId: string): void {
+    this.members.add(playerId);
+  }
+
+  removeMember(playerId: string): void {
+    this.members.delete(playerId);
+  }
+
+  getMemberCount(): number {
+    return this.members.size;
+  }
+
+  findSlotByPlayerId(playerId: string): InternalCharacterSlot | undefined {
     return Object.values(this.slots).find((slot) => slot.playerId === playerId);
   }
 
-  findSlotBySessionToken(sessionToken: string): CharacterSlot | undefined {
+  findSlotBySessionToken(sessionToken: string): InternalCharacterSlot | undefined {
     return Object.values(this.slots).find((slot) => slot.sessionToken === sessionToken);
+  }
+
+  canReconnect(sessionToken: string): boolean {
+    const slot = this.findSlotBySessionToken(sessionToken);
+    return Boolean(slot && slot.status === 'occupied' && !slot.playerId && this.disconnectTimers.has(slot.character));
   }
 
   reserve(
@@ -92,39 +125,45 @@ export class Room {
     character: unknown,
     nickname: unknown,
     sessionToken: string,
-  ): { success: boolean; error?: string; slot?: CharacterSlot } {
+  ): RoomOperationResult {
     if (!isCharacterName(character)) {
-      return { success: false, error: 'Nieprawidłowa nazwa postaci.' };
+      return { success: false, code: 'CHARACTER_NOT_FOUND', error: 'Nieprawidłowa nazwa postaci.' };
     }
 
     const validation = validateAndSanitizeNickname(nickname);
     if (!validation.valid) {
-      return { success: false, error: validation.error };
+      return { success: false, code: 'INVALID_NICKNAME', error: validation.error };
     }
-
     const currentSlot = this.slots[character];
 
-    // Sprawdzenie, czy ten gracz posiada już inny slot w tym pokoju:
-    const existingPlayerSlot = this.findSlotByPlayerId(playerId);
-    if (existingPlayerSlot && existingPlayerSlot.character !== character) {
-      this.freeSlot(existingPlayerSlot.character);
+    const slotByToken = this.findSlotBySessionToken(sessionToken);
+    if (slotByToken && slotByToken.character !== character && slotByToken.playerId !== playerId) {
+      return { success: false, code: 'UNAUTHORIZED', error: 'Ten token sesji jest już powiązany z inną postacią.' };
     }
 
     // Sprawdzenie dostępności żądanego slotu:
     if (currentSlot.status !== 'free') {
       // Jeśli to ten sam gracz, pozwalamy na ponowną rezerwację/odświeżenie
-      if (currentSlot.playerId === playerId || currentSlot.sessionToken === sessionToken) {
+      if (currentSlot.playerId === playerId) {
         currentSlot.nickname = validation.sanitized;
-        currentSlot.playerId = playerId;
-        currentSlot.sessionToken = sessionToken;
-        this.scheduleReservationTimeout(character);
+        if (currentSlot.status === 'reserving') {
+          currentSlot.expiresAt = Date.now() + this.reservationTimeoutMs;
+          this.scheduleReservationTimeout(character);
+        }
         this.onSlotChanged?.(character, currentSlot);
         return { success: true, slot: currentSlot };
       }
       return {
         success: false,
+        code: currentSlot.status === 'occupied' ? 'CHARACTER_OCCUPIED' : 'CHARACTER_RESERVING',
         error: currentSlot.status === 'occupied' ? 'Postać jest już zajęta.' : 'Postać jest właśnie rezerwowana.',
       };
+    }
+
+    // Sprawdzenie, czy ten gracz posiada już inny slot w tym pokoju:
+    const existingPlayerSlot = this.findSlotByPlayerId(playerId);
+    if (existingPlayerSlot && existingPlayerSlot.character !== character) {
+      this.freeSlot(existingPlayerSlot.character);
     }
 
     // Atomowa rezerwacja slotu:
@@ -144,18 +183,18 @@ export class Room {
     playerId: string,
     character: unknown,
     sessionToken: string,
-  ): { success: boolean; error?: string; slot?: CharacterSlot } {
+  ): RoomOperationResult {
     if (!isCharacterName(character)) {
-      return { success: false, error: 'Nieprawidłowa nazwa postaci.' };
+      return { success: false, code: 'CHARACTER_NOT_FOUND', error: 'Nieprawidłowa nazwa postaci.' };
     }
 
     const currentSlot = this.slots[character];
     if (!currentSlot || currentSlot.status === 'free') {
-      return { success: false, error: 'Postać nie została wcześniej zarezerwowana.' };
+      return { success: false, code: 'UNAUTHORIZED', error: 'Postać nie została wcześniej zarezerwowana.' };
     }
 
-    if (currentSlot.playerId !== playerId && currentSlot.sessionToken !== sessionToken) {
-      return { success: false, error: 'Brak uprawnień do potwierdzenia tej postaci.' };
+    if (currentSlot.playerId !== playerId || currentSlot.sessionToken !== sessionToken) {
+      return { success: false, code: 'UNAUTHORIZED', error: 'Brak uprawnień do potwierdzenia tej postaci.' };
     }
 
     this.clearReservationTimeout(character);
@@ -174,21 +213,22 @@ export class Room {
     playerId: string,
     character: unknown,
     sessionToken?: string,
-  ): { success: boolean; error?: string } {
+  ): RoomOperationResult {
     if (!isCharacterName(character)) {
-      return { success: false, error: 'Nieprawidłowa nazwa postaci.' };
+      return { success: false, code: 'CHARACTER_NOT_FOUND', error: 'Nieprawidłowa nazwa postaci.' };
     }
 
     const currentSlot = this.slots[character];
     if (
       currentSlot &&
-      (currentSlot.playerId === playerId || (sessionToken && currentSlot.sessionToken === sessionToken))
+      currentSlot.playerId === playerId &&
+      currentSlot.sessionToken === sessionToken
     ) {
       this.freeSlot(character);
       return { success: true };
     }
 
-    return { success: false, error: 'Nie jesteś właścicielem tej postaci.' };
+    return { success: false, code: 'UNAUTHORIZED', error: 'Nie jesteś właścicielem tej postaci.' };
   }
 
   handleDisconnect(playerId: string): CharacterName | undefined {
@@ -218,6 +258,15 @@ export class Room {
     }
 
     return undefined;
+  }
+
+  handleLeave(playerId: string): CharacterName | undefined {
+    const slot = this.findSlotByPlayerId(playerId);
+    if (!slot) return undefined;
+
+    const charName = slot.character;
+    this.freeSlot(charName);
+    return charName;
   }
 
   updatePlayerTransform(playerId: string, transformData: unknown): boolean {
@@ -255,6 +304,11 @@ export class Room {
   }
 
   handleReconnect(sessionToken: string, newPlayerId: string): { restored: boolean; character?: CharacterName; nickname?: string } {
+    const existingSlot = this.findSlotByPlayerId(newPlayerId);
+    if (existingSlot && existingSlot.sessionToken !== sessionToken) {
+      return { restored: false };
+    }
+
     const slot = this.findSlotBySessionToken(sessionToken);
     if (!slot || slot.status !== 'occupied') {
       return { restored: false };
@@ -286,7 +340,11 @@ export class Room {
     const timer = setTimeout(() => {
       const slot = this.slots[character];
       if (slot && slot.status === 'reserving') {
+        const playerId = slot.playerId;
         this.freeSlot(character);
+        if (playerId) {
+          this.onReservationTimeout?.(character, playerId);
+        }
       }
     }, this.reservationTimeoutMs);
 
@@ -316,4 +374,3 @@ export class Room {
     this.disconnectTimers.clear();
   }
 }
-
