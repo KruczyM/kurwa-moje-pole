@@ -3,16 +3,38 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import tracks from './data/soundtrack-v1.json';
+import extraTracks from './data/soundtrack-v2.json';
 import {
   LEVEL_SOUNDTRACKS,
   levelSoundtrack,
   soundtrackUrl,
   MENU_SOUNDTRACK,
   musicSoundtrack,
+  EXTRA_LEVEL_SOUNDTRACKS,
 } from './Soundtrack';
 import { LEVELS } from './Levels';
 
 describe('curated soundtrack delivery', () => {
+  it('uses all 21 supplied second-pack loops on 24 maps and preserves the menu theme', () => {
+    expect(EXTRA_LEVEL_SOUNDTRACKS).toHaveLength(LEVELS.length);
+    expect(new Set(EXTRA_LEVEL_SOUNDTRACKS).size).toBe(21);
+    expect(Object.keys(extraTracks)).toHaveLength(21);
+    for (const level of LEVELS) {
+      const track = levelSoundtrack(level.id, 'pack-2');
+      expect(track.id).toMatch(/^pack-2\//);
+      if (level.id > 1) expect(track.id).not.toBe(levelSoundtrack(level.id - 1, 'pack-2').id);
+      expect(soundtrackUrl('/', level.id, false, 'pack-2')).toContain('/soundtrack-v2/');
+    }
+    for (const track of Object.values(extraTracks)) {
+      const data = readFileSync(`public/game-assets/audio/bongo-rush/soundtrack-v2/${track.file}`);
+      expect(createHash('sha256').update(data).digest('hex')).toBe(track.sha256);
+      expect(track.seconds).toBeGreaterThan(13);
+      expect(track.seconds).toBeLessThan(32);
+      expect(Number(track.analysis.output_tp)).toBeLessThan(0);
+    }
+    expect(musicSoundtrack(12, true, 'pack-2')).toEqual(MENU_SOUNDTRACK);
+    expect(soundtrackUrl('/', 12, true, 'pack-2')).toContain('/soundtrack-v1/menu-jazz.mp3');
+  });
   it('delivers the full supplied menu jazz independently of the 24 level assignments', () => {
     expect(MENU_SOUNDTRACK.seconds).toBeGreaterThan(66);
     expect(MENU_SOUNDTRACK.seconds).toBeLessThan(75);

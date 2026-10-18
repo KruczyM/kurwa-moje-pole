@@ -1,6 +1,8 @@
 import type { VisualTheme } from './Presentation';
+import type { MusicPack } from './Soundtrack';
 import { MUSIC_BPM, type MusicNote } from './Music';
 export interface LevelMusicProfile {
+  musicPack?: MusicPack;
   level: number;
   biome: number;
   theme: VisualTheme;

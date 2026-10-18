@@ -194,6 +194,33 @@ const flushMusic = async () => {
 };
 
 describe('recorded soundtrack in the existing audio host', () => {
+  it('switches music packs on the same map with one current buffer and keeps menu jazz independent', async () => {
+    vi.stubGlobal('AudioContext', RecordedContext);
+    const fetcher = vi.fn(async () => response());
+    vi.stubGlobal('fetch', fetcher);
+    const audio = new ArcadeAudio('/');
+    audio.unlock();
+    audio.updateMusic(0, true, false, profile());
+    await flushMusic();
+    audio.updateMusic(0, true, false, profile());
+    const extra = { ...profile(), musicPack: 'pack-2' as const };
+    audio.updateMusic(0, true, false, extra);
+    await flushMusic();
+    audio.updateMusic(0, true, false, extra);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(audio.diagnostics()).toMatchObject({
+      track: 'pack-2/adventure-boy',
+      title: 'Adventure Boy',
+      buffers: 1,
+      playing: true,
+    });
+    audio.updateMusic(0, true, true, extra);
+    await flushMusic();
+    audio.updateMusic(0, true, true, extra);
+    expect(audio.diagnostics()).toMatchObject({ track: 'menu-jazz', buffers: 1, playing: true });
+    audio.dispose();
+    expect(audio.diagnostics()).toMatchObject({ buffers: 0, voices: 0, playing: false });
+  });
   it('loops the full menu song continuously through selections, then restores level music', async () => {
     vi.stubGlobal('AudioContext', RecordedContext);
     const fetcher = vi.fn<(url: string, init?: RequestInit) => Promise<ReturnType<typeof response>>>(

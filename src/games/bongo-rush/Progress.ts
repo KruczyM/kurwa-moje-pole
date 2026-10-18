@@ -1,4 +1,6 @@
 import { presentationPreferences } from './Presentation';
+import { musicPack } from './Soundtrack';
+import type { MusicPack } from './Soundtrack';
 import type { PresentationPreferences } from './Presentation';
 import { CAMPAIGN_LEVEL_COUNT, LEVEL_COUNT } from './Campaign';
 
@@ -37,6 +39,7 @@ export const HERO_LABELS = [
   'Szerszeń',
 ];
 export interface Progress extends PresentationPreferences {
+  musicPack: MusicPack;
   version: 1;
   unlocked: number;
   hero: string;
@@ -50,6 +53,7 @@ const KEY = 'after-bongo-rush:v1';
 /** Validates untrusted browser storage and tolerates private-mode/security failures. */
 export function loadProgress(storage: Pick<Storage, 'getItem'>): Progress {
   const defaults: Progress = {
+    musicPack: 'pack-1',
     ...presentationPreferences({}),
     version: 1,
     campaignRevision: 3,
@@ -73,6 +77,7 @@ export function loadProgress(storage: Pick<Storage, 'getItem'>): Progress {
       Math.min(LEVEL_COUNT, migrated),
     );
     return {
+      musicPack: musicPack(data.musicPack),
       ...presentationPreferences(data),
       version: 1,
       campaignRevision: 3,

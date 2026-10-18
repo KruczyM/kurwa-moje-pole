@@ -3,6 +3,7 @@ import type { LevelMusicProfile } from './LevelMusic';
 import type { SoundEvent } from './types';
 import { musicPhrase, MUSIC_BPM } from './Music';
 import { musicSoundtrack, soundtrackUrl } from './Soundtrack';
+import type { MusicPack } from './Soundtrack';
 
 interface RecordedVoice {
   source: AudioBufferSourceNode;
@@ -26,6 +27,7 @@ export class ArcadeAudio {
   private musicLevel = -1;
   private musicTheme = 'storybook';
   private musicMenu = false;
+  private musicPack: MusicPack = 'pack-1';
   private musicGains = new Map<OscillatorNode, GainNode>();
   private duckUntil = 0;
   private recording?: { id: string; buffer: AudioBuffer };
@@ -124,7 +126,7 @@ export class ArcadeAudio {
   /** One decoded active track; async completion never starts playback on its own. */
   private updateRecording(profile: LevelMusicProfile, menu: boolean): boolean {
     const context = this.context!,
-      track = musicSoundtrack(profile.level, menu),
+      track = musicSoundtrack(profile.level, menu, profile.musicPack),
       now = context.currentTime;
     if (this.requestedRecording !== track.id || (!menu && this.musicLevel !== profile.level)) {
       this.stopRecording(true, 0.25);
@@ -134,6 +136,7 @@ export class ArcadeAudio {
     this.musicLevel = profile.level;
     this.musicTheme = profile.theme;
     this.musicMenu = menu;
+    this.musicPack = profile.musicPack ?? 'pack-1';
     const restored = this.restoredRecording;
     this.restoredRecording = undefined;
     if (this.requestedRecording !== track.id) {
@@ -145,7 +148,9 @@ export class ArcadeAudio {
       this.recordingLoading = true;
       this.recordingFailed = false;
       const controller = (this.recordingRequest = new AbortController());
-      void fetch(soundtrackUrl(this.soundtrackBase!, profile.level, menu), { signal: controller.signal })
+      void fetch(soundtrackUrl(this.soundtrackBase!, profile.level, menu, profile.musicPack), {
+        signal: controller.signal,
+      })
         .then(async (response) => {
           if (!response.ok) throw new Error(`Music HTTP ${response.status}`);
           const data = await response.arrayBuffer();
@@ -243,7 +248,10 @@ export class ArcadeAudio {
   diagnostics() {
     return {
       track: this.requestedRecording,
-      title: this.musicLevel > 0 ? musicSoundtrack(this.musicLevel, this.musicMenu).title : undefined,
+      title:
+        this.musicLevel > 0
+          ? musicSoundtrack(this.musicLevel, this.musicMenu, this.musicPack).title
+          : undefined,
       state: this.recordingFailed
         ? 'synth-fallback'
         : this.recordingLoading

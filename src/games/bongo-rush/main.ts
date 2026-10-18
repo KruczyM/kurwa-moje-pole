@@ -25,7 +25,7 @@ import {
 import { SpriteAnimator } from '../after/presentation/SpriteAnimator';
 import type { SpriteMetadata } from '../after/presentation/SpriteAnimator';
 import { ArcadeAudio } from './Audio';
-import { levelSoundtrack } from './Soundtrack';
+import { levelSoundtrack, musicPack } from './Soundtrack';
 import { GridInput } from './Input';
 import type { Direction } from './types';
 import { BIOMES, LEVELS } from './Levels';
@@ -134,6 +134,7 @@ class BongoRush {
   private musicPosition?: ReturnType<ArcadeAudio['position']>;
   private appearanceReturnFocus?: HTMLElement;
   private draftAppearance: PresentationPreferences = presentationPreferences(this.progress);
+  private draftMusicPack = this.progress.musicPack;
 
   /** Loads the chosen hero, Krzak and first backdrop; later selections and biomes reuse the cache. */
   async start(): Promise<void> {
@@ -234,7 +235,7 @@ class BongoRush {
   private pruneAssets(): void {
     if (this.pendingLoads) return;
     const keep = new Set(this.activeAssetUrls);
-    if (!this.disposed && this.progress.visualTheme !== 'standard') {
+    if (!this.disposed) {
       const root = `${BASE}game-assets/2d/bongo-rush/menu-v1/`;
       for (const file of ['logo.webp', 'interface.webp', menuSceneFile(this.menu.hero)])
         keep.add(new URL(`${root}${file}`, location.href).href);
@@ -459,6 +460,9 @@ class BongoRush {
     if (this.loading || !['menu', 'paused'].includes(this.mode)) return;
     this.appearanceReturnFocus = document.activeElement as HTMLElement;
     this.draftAppearance = presentationPreferences(this.progress);
+    this.draftMusicPack = this.progress.musicPack;
+    for (const input of Array.from(document.querySelectorAll<HTMLInputElement>('input[name="music-pack"]')))
+      input.checked = input.value === this.draftMusicPack;
     this.musicPosition = this.audio.position();
     this.audio.silence(false);
     const choices = element('theme-choices');
@@ -497,6 +501,9 @@ class BongoRush {
   }
 
   private readAppearance(): void {
+    this.draftMusicPack = musicPack(
+      document.querySelector<HTMLInputElement>('input[name="music-pack"]:checked')?.value,
+    );
     this.draftAppearance = presentationPreferences({
       visualTheme: document.querySelector<HTMLInputElement>('input[name="visual-theme"]:checked')
         ?.value as PresentationPreferences['visualTheme'],
@@ -522,7 +529,7 @@ class BongoRush {
       this.draftAppearance,
       this.game.level.biome,
     );
-    const track = levelSoundtrack(this.game.level.id);
+    const track = levelSoundtrack(this.game.level.id, this.draftMusicPack);
     element('soundtrack-title').textContent = `Motyw planszy: ${track.title} · ${track.artist}`;
     if (this.audio.muted)
       element('appearance-status').textContent =
@@ -541,7 +548,7 @@ class BongoRush {
   /** Swaps only presentation; never constructs or steps a simulation. */
   private async applyAppearance(): Promise<void> {
     if (this.loading) return;
-    const preferences = { ...this.draftAppearance };
+    const preferences = { ...this.draftAppearance, musicPack: this.draftMusicPack };
     const path = presentationPath(BASE, preferences, this.game.level.biome);
     const token = ++this.loadToken;
     this.loading = true;
@@ -655,15 +662,14 @@ class BongoRush {
       this.menuArtState = 'idle';
       this.menuArtToken++;
     }
-    const signature = `${this.progress.visualTheme}:${this.menu.hero}:${this.availableLevels}:${this.resumeIndex}:${this.menuArtState}`;
+    const signature = `${this.menu.hero}:${this.availableLevels}:${this.resumeIndex}:${this.menuArtState}`;
     if (signature === this.titleSignature) return;
     this.titleSignature = signature;
-    const menu = element('menu'),
-      artistic = this.progress.visualTheme !== 'standard';
-    menu.dataset.artistic = String(artistic && this.menuArtState === 'ready');
+    const menu = element('menu');
+    menu.dataset.artistic = String(this.menuArtState === 'ready');
     const root = `${BASE}game-assets/2d/bongo-rush/menu-v1/`;
     const logo = element<HTMLImageElement>('menu-logo-image');
-    if (artistic && this.menuArtState === 'idle') {
+    if (this.menuArtState === 'idle') {
       this.menuArtState = 'loading';
       const token = ++this.menuArtToken;
       void settleImageBatch(
@@ -684,14 +690,14 @@ class BongoRush {
           this.pruneAssets();
         });
     }
-    element('menu-art-retry').hidden = !artistic || this.menuArtState !== 'failed';
+    element('menu-art-retry').hidden = this.menuArtState !== 'failed';
     element('menu-art-status').textContent =
-      !artistic || this.menuArtState === 'ready'
+      this.menuArtState === 'ready'
         ? ''
         : this.menuArtState === 'failed'
           ? 'Nie udało się wczytać oprawy menu. Możesz grać lub spróbować ponownie.'
           : 'Przygotowuję malarską scenę…';
-    if (artistic && this.menuArtState === 'ready') {
+    if (this.menuArtState === 'ready') {
       menu.style.setProperty('--menu-scene', `url("${root}${scene}")`);
       menu.dataset.sceneHero = this.menu.hero;
       menu.style.setProperty('--menu-atlas', `url("${root}interface.webp")`);
@@ -1258,6 +1264,7 @@ class BongoRush {
         level: this.game.level.id,
         biome: this.game.level.biome,
         theme: appearanceOpen ? this.draftAppearance.visualTheme : this.progress.visualTheme,
+        musicPack: appearanceOpen ? this.draftMusicPack : this.progress.musicPack,
       },
     );
     const reduced = this.motionPreference.matches;
