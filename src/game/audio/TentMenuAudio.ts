@@ -19,9 +19,9 @@ export interface TentMenuAudioOptions {
   audioFactory?: (url: string) => HTMLAudioElement;
 }
 
-export const DEFAULT_TENT_CUTOFF = 185;
+export const DEFAULT_TENT_CUTOFF = 380;
 export const DEFAULT_OPEN_CUTOFF = 20000;
-export const DEFAULT_TENT_VOLUME = 0.28;
+export const DEFAULT_TENT_VOLUME = 0.65;
 
 export class TentMenuAudio {
   private ctx: AudioContext | null = null;
@@ -83,6 +83,28 @@ export class TentMenuAudio {
     }
   }
 
+  public diagnostics() {
+    return {
+      isPlaying: this.isPlaying,
+      isMuffled: this.isMuffled,
+      userVolume: this.userVolume,
+      tentCutoff: this.tentCutoff,
+      currentCutoff: this.currentCutoff,
+      audioUrl: this.audioUrl,
+      audioSrc: this.audio?.src,
+      audioPaused: this.audio?.paused,
+      audioCurrentTime: this.audio?.currentTime,
+      audioReadyState: this.audio?.readyState,
+      audioError: this.audio?.error
+        ? { code: this.audio.error.code, message: this.audio.error.message }
+        : null,
+      contextState: this.ctx?.state,
+      gainValue: this.gainNode?.gain.value,
+      filter1Freq: this.filterNode1?.frequency.value,
+      filter2Freq: this.filterNode2?.frequency.value,
+    };
+  }
+
   /**
    * Uruchamia muzykę z namiotu w menu głównym (podwójny kaskadowy filtr 185 Hz).
    * Jeśli przeglądarka blokuje autoplay, rejestruje jednorazowy nasłuch gestu (klik/klawisz).
@@ -97,15 +119,19 @@ export class TentMenuAudio {
     this.isMuffled = true;
     this.isPlaying = true;
 
+    const now = this.ctx?.currentTime ?? 0;
     if (this.filterNode1 && this.ctx) {
-      this.filterNode1.frequency.setValueAtTime(this.tentCutoff, this.ctx.currentTime);
+      this.filterNode1.frequency.cancelScheduledValues(now);
+      this.filterNode1.frequency.setValueAtTime(this.tentCutoff, now);
     }
     if (this.filterNode2 && this.ctx) {
-      this.filterNode2.frequency.setValueAtTime(this.tentCutoff, this.ctx.currentTime);
+      this.filterNode2.frequency.cancelScheduledValues(now);
+      this.filterNode2.frequency.setValueAtTime(this.tentCutoff, now);
     }
 
     if (this.gainNode && this.ctx) {
-      this.gainNode.gain.setValueAtTime(this.userVolume, this.ctx.currentTime);
+      this.gainNode.gain.cancelScheduledValues(now);
+      this.gainNode.gain.setValueAtTime(this.userVolume, now);
     }
 
     if (this.audio) {
@@ -326,26 +352,42 @@ export class TentMenuAudio {
     this.clearGestureResume();
 
     const resume = () => {
-      this.clearGestureResume();
-      if (this.disposed || !this.isPlaying) return;
-
+      if (this.disposed) return;
       if (this.ctx && this.ctx.state === 'suspended') {
-        void this.ctx.resume();
+        void this.ctx.resume().catch(() => {});
+      }
+      if (this.gainNode && this.ctx) {
+        const now = this.ctx.currentTime;
+        this.gainNode.gain.cancelScheduledValues(now);
+        this.gainNode.gain.setValueAtTime(this.userVolume, now);
       }
       if (this.audio && this.audio.paused) {
         void this.audio.play().catch(() => {});
       }
+      if (this.audio && !this.audio.paused && (!this.ctx || this.ctx.state === 'running')) {
+        this.clearGestureResume();
+      }
     };
 
     this.pendingGestureResume = resume;
-    window.addEventListener('pointerdown', resume, { once: true, capture: true });
-    window.addEventListener('keydown', resume, { once: true, capture: true });
+    for (const evt of ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'mouseup', 'click', 'keydown']) {
+      window.addEventListener(evt, resume, { capture: true, passive: true });
+    }
   }
 
   private clearGestureResume(): void {
     if (typeof window !== 'undefined' && this.pendingGestureResume) {
-      window.removeEventListener('pointerdown', this.pendingGestureResume, { capture: true });
-      window.removeEventListener('keydown', this.pendingGestureResume, { capture: true });
+      for (const evt of [
+        'pointerdown',
+        'touchstart',
+        'touchend',
+        'mousedown',
+        'mouseup',
+        'click',
+        'keydown',
+      ]) {
+        window.removeEventListener(evt, this.pendingGestureResume, { capture: true });
+      }
     }
     this.pendingGestureResume = null;
   }

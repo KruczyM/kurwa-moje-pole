@@ -40,6 +40,7 @@ let game: Game | undefined;
 let mainMenuVoice: VoiceReactionManager | undefined;
 let preview: CharacterPreview | undefined;
 const tentMenuAudio = new TentMenuAudio({ audioUrl: musicAsset });
+(window as unknown as { __camp_tent_audio?: TentMenuAudio }).__camp_tent_audio = tentMenuAudio;
 tentMenuAudio.startTentAudio();
 const savedSessionChar =
   typeof sessionStorage !== 'undefined'
@@ -518,6 +519,23 @@ document.addEventListener('visibilitychange', () => {
     }
   }
 });
+
+// Wznowienie / rozpoczęcie muzyki w menu głównym przy dowolnej interakcji użytkownika
+const ensureMenuAudio = (event: Event) => {
+  if (state.current !== 'start') return;
+  const isMinigameClick = (event.target as HTMLElement | null)?.closest<HTMLAnchorElement>(
+    'a.minigame-link, #play-fighter, #play-bongo-rush, a[href*="fighter-demo"], a[href*="bongo-rush"]',
+  );
+  if (isMinigameClick) return;
+
+  if (!tentMenuAudio.active) {
+    tentMenuAudio.muffleToTent(0.4);
+    tentMenuAudio.startTentAudio();
+  }
+};
+for (const evt of ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'mouseup', 'click', 'keydown']) {
+  window.addEventListener(evt, ensureMenuAudio, { capture: true, passive: true });
+}
 
 // Przewodnik festiwalowy i Mapa
 const GUIDE_TABS = [
