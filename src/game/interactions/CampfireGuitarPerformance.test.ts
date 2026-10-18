@@ -28,7 +28,11 @@ describe('Campfire Guitar Audio Muting and Performance', () => {
         stop: vi.fn(),
       })),
       createGain: vi.fn(() => ({
-        gain: { setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+        gain: {
+          setValueAtTime: vi.fn(),
+          linearRampToValueAtTime: vi.fn(),
+          exponentialRampToValueAtTime: vi.fn(),
+        },
         connect: vi.fn(),
       })),
       createBiquadFilter: vi.fn(() => ({
@@ -75,10 +79,7 @@ describe('Campfire Guitar Audio Muting and Performance', () => {
       dispose: vi.fn(),
     };
 
-    const game = new CampfireGuitarGame(
-      {},
-      mockSynth as any,
-    );
+    const game = new CampfireGuitarGame({}, mockSynth as any);
 
     game.startSong('czerwony-cegla-midi');
     const song = (game as any).currentSong;

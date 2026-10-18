@@ -170,7 +170,7 @@ export class CampfireGuitarSynth {
       this.masterGain.connect(this.ctx.destination);
 
       this.backingGain = this.ctx.createGain();
-      this.backingGain.gain.value = 0.70;
+      this.backingGain.gain.value = 0.7;
       this.backingGain.connect(this.masterGain);
 
       this.guitarGain = this.ctx.createGain();
@@ -563,7 +563,7 @@ export class CampfireGuitarSynth {
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
 
       osc.connect(gain);
-       gain.connect(this.guitarGain ?? this.masterGain);
+      gain.connect(this.guitarGain ?? this.masterGain);
       osc.start(now);
       osc.stop(now + 0.2);
     } catch {

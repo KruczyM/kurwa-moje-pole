@@ -19,12 +19,7 @@ export const inventoryEffects: readonly EffectId[] = [
   'Okulary',
 ];
 
-export const HOTBAR_EFFECTS: readonly EffectId[] = [
-  'Piwo',
-  'Papieros',
-  'Joint',
-  'Woda',
-];
+export const HOTBAR_EFFECTS: readonly EffectId[] = ['Piwo', 'Papieros', 'Joint', 'Woda'];
 
 export const DEFAULT_STARTER_INVENTORY: Partial<Record<EffectId, number>> = {
   Piwo: 2,

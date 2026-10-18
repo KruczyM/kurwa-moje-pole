@@ -14,6 +14,24 @@ export interface LootSource {
   required?: boolean;
   roots: readonly Point[];
 }
+/** Authored presentation only. View masks never change the underlying wall collision. */
+export interface Scenery {
+  materials: readonly { bounds: Point & { width: number; height: number }; material: number }[];
+  views: readonly {
+    id: string;
+    bounds: Point & { width: number; height: number };
+    mask: readonly Point[];
+  }[];
+  props: readonly {
+    at: Point;
+    width: number;
+    height: number;
+    asset: string;
+    layer: 'depth' | 'frame';
+  }[];
+  rays: readonly { at: Point; direction: Point; length: number; width: number }[];
+  floorDetails: readonly { at: Point; asset: string }[];
+}
 export interface ChamberDefinition {
   id: string;
   name: string;
@@ -23,6 +41,7 @@ export interface ChamberDefinition {
   lootSources?: readonly LootSource[];
   decorations?: readonly TerrainMotif[];
   colonies?: readonly Point[];
+  scenery?: Scenery;
 }
 export interface PortalEndpoint extends Point {
   chamber: string;
@@ -90,6 +109,7 @@ export interface LevelDefinition {
   colonies?: readonly Point[];
   bushGrowthSeconds?: number;
   failureReplays?: readonly { name: string; inputs: readonly ReplayInput[] }[];
+  scenery?: Scenery;
 }
 export interface World {
   width: number;

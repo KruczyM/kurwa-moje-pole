@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { buildTerrainLayout } from './TerrainLayout';
-import { LEVELS } from './Levels';
+import { buildCampaignV5 } from './CampaignV5';
 import { Simulation } from './Simulation';
 import { biomeTileRect } from './BiomeTiles';
+const LEVELS = buildCampaignV5();
 
 describe('world-anchored biome decoration', () => {
   it('preserves authored visible landmarks and ignores a strip crossing an open tunnel', () => {

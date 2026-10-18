@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS } from './Levels';
+import { buildCampaignV5 } from './CampaignV5';
 import { Simulation } from './Simulation';
 import { bottleTower, cobraCache } from './CampaignV4';
 import { neighbour } from './types';
 import type { LevelDefinition, ReplayInput } from './types';
+const LEVELS = buildCampaignV5();
 
 function replay(level: LevelDefinition, inputs: readonly ReplayInput[]) {
   const game = new Simulation(level);

@@ -578,7 +578,7 @@ footer span {
   }
 }
 
-/* Map extends beneath controls; only local surfaces provide contrast. */
+/* Mobile camera and minimap use separate areas above and within the control strip. */
 #bongo-app {
   position: relative;
   grid-template-rows: auto minmax(0, 1fr);
@@ -675,4 +675,166 @@ footer p {
 }
 footer {
   align-items: flex-start;
+}
+
+#appearance-panel {
+  color: #f6e9d2;
+  background: linear-gradient(145deg, #202b30, #121521);
+  border: 1px solid #ae9471;
+  border-radius: 18px;
+  box-shadow: 0 24px 100px #000a;
+  padding: 24px;
+  width: min(780px, calc(100vw - 24px));
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+#appearance-panel::backdrop {
+  background: #050913b8;
+}
+#appearance-panel h2 {
+  margin: 10px 0 20px;
+}
+#appearance-panel fieldset {
+  border: 0;
+  padding: 0;
+  margin: 14px 0;
+}
+#appearance-panel legend {
+  margin-bottom: 12px;
+  color: #e8c891;
+}
+#theme-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.theme-card {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  background: #0c101a;
+  border: 2px solid #38404d;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.theme-card:has(input:checked) {
+  border-color: #efcc8e;
+  background: #30332e;
+}
+.theme-card:focus-within {
+  outline: 2px solid #b7e9f1;
+  outline-offset: 3px;
+}
+.theme-card img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 8 / 5;
+  object-fit: cover;
+  border-radius: 7px;
+}
+.theme-card input {
+  justify-self: start;
+  accent-color: #efcc8e;
+}
+.collectible-choices label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 12px;
+  gap: 8px;
+  cursor: pointer;
+}
+#collectible-preview {
+  width: 256px;
+  max-width: 100%;
+  height: 64px;
+  background-size: 256px 128px;
+  background-repeat: no-repeat;
+  margin: 10px auto;
+}
+#collectible-preview-label {
+  text-align: center;
+  font-size: 13px;
+}
+#appearance-status {
+  min-height: 3em;
+  font-size: 12px;
+  line-height: 1.6;
+}
+#soundtrack-title {
+  font-size: 12px;
+  line-height: 1.6;
+}
+#counter-icon {
+  width: 30px;
+  height: 30px;
+  display: inline-block;
+  flex: 0 0 30px;
+  background-size: 400% 400%;
+}
+@media (max-width: 550px) {
+  #appearance-panel {
+    padding: 16px;
+  }
+  #theme-choices {
+    gap: 5px;
+  }
+  .theme-card {
+    padding: 5px;
+    font-size: 13px;
+  }
+}
+
+/* Compact phone landscape: keep at least three rows visible at 568 × 320. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .topbar {
+    min-height: 48px;
+    padding: 0 max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
+    justify-content: flex-end;
+  }
+  .brand {
+    display: none;
+  }
+  .toolbar button {
+    min-height: 44px;
+    padding: 8px 10px;
+  }
+  #board {
+    --cave-top-inset: 64;
+  }
+  .hud {
+    top: 4px;
+    padding: 4px 8px;
+    gap: 2px 10px;
+    font-size: 10px;
+    max-width: calc(100% - 16px);
+  }
+  footer {
+    display: none;
+  }
+  #touch-controls {
+    height: 88px;
+  }
+  #joystick-zone {
+    height: 88px;
+    bottom: 0;
+  }
+  #joystick {
+    width: 76px;
+    height: 76px;
+    bottom: 6px;
+  }
+  #knob {
+    width: 36px;
+    height: 36px;
+    left: 18px;
+    top: 18px;
+  }
+  #touch-restart {
+    bottom: 20px;
+    min-height: 44px;
+    width: 52px;
+    height: 48px;
+  }
 }

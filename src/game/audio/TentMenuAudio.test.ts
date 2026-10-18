@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { TentMenuAudio, DEFAULT_TENT_CUTOFF, DEFAULT_OPEN_CUTOFF, DEFAULT_TENT_VOLUME } from './TentMenuAudio';
+import {
+  TentMenuAudio,
+  DEFAULT_TENT_CUTOFF,
+  DEFAULT_OPEN_CUTOFF,
+  DEFAULT_TENT_VOLUME,
+} from './TentMenuAudio';
 
 function createMockAudioContext() {
   const gainNode = {

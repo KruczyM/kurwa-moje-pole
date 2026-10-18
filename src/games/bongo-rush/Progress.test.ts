@@ -2,6 +2,41 @@ import { describe, expect, it } from 'vitest';
 import { HEROES, loadProgress, saveProgress } from './Progress';
 
 describe('versioned local campaign progress', () => {
+  it.each([1, 2, 3])('migrates revision %s without losing unlocked levels or preferences', (revision) => {
+    for (let unlocked = 1; unlocked <= 24; unlocked++) {
+      const data = {
+        version: 1,
+        campaignRevision: revision,
+        unlocked,
+        hero: 'korba',
+        muted: true,
+        completed: true,
+      };
+      const result = loadProgress({ getItem: () => JSON.stringify(data) });
+      expect(result.campaignRevision).toBe(3);
+      expect(result.unlocked).toBeGreaterThanOrEqual(unlocked);
+      expect(result.unlocked).toBeLessThanOrEqual(24);
+      expect(result.hero).toBe('korba');
+      expect(result.muted).toBe(true);
+      expect(result.completed).toBe(revision === 3);
+    }
+  });
+  it('retains an unfinished v5 unlock number exactly and does not claim v6 completion', () => {
+    for (let unlocked = 1; unlocked <= 24; unlocked++)
+      expect(
+        loadProgress({
+          getItem: () =>
+            JSON.stringify({
+              version: 1,
+              campaignRevision: 2,
+              unlocked,
+              hero: 'antena',
+              muted: false,
+              completed: false,
+            }),
+        }),
+      ).toMatchObject({ campaignRevision: 3, unlocked, hero: 'antena', muted: false, completed: false });
+  });
   it('offers fifteen cosmetic heroes without character-specific physics', () => {
     expect(new Set(HEROES).size).toBe(15);
     expect([...HEROES] as string[]).not.toContain('kobra');
@@ -21,7 +56,9 @@ describe('versioned local campaign progress', () => {
     const data = { version: 1, unlocked: 99, hero: '<script>', muted: 'yes', completed: false };
     expect(loadProgress({ getItem: () => JSON.stringify(data) })).toEqual({
       version: 1,
-      campaignRevision: 2,
+      campaignRevision: 3,
+      visualTheme: 'storybook',
+      collectibleStyle: 'festival',
       unlocked: 24,
       hero: 'amper',
       muted: false,
@@ -38,8 +75,10 @@ describe('versioned local campaign progress', () => {
   it('round-trips valid preferences and does not block play on failed writes', () => {
     let value = '';
     const progress = {
+      visualTheme: 'storybook' as const,
+      collectibleStyle: 'festival' as const,
       version: 1 as const,
-      campaignRevision: 2 as const,
+      campaignRevision: 3 as const,
       unlocked: 8,
       hero: 'pierscien',
       muted: true,

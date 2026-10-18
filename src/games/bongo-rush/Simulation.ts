@@ -96,7 +96,7 @@ export function createWorld(level: LevelDefinition, chamber = false): World {
             room.rows
               .join('')
               .split('')
-              .filter((c) => c === 'O').length +
+              .filter((c) => 'OQCBUS'.includes(c)).length +
             (room.lootSources?.reduce((m, source) => m + source.count, 0) ?? 0),
           0,
         ) ?? 0) +
@@ -200,6 +200,11 @@ export class Simulation {
     return this.chamber === 'main'
       ? this.level.decorations
       : this.level.chambers?.find((room) => room.id === this.chamber)?.decorations;
+  }
+  get currentScenery() {
+    return this.chamber === 'main'
+      ? this.level.scenery
+      : this.level.chambers?.find((room) => room.id === this.chamber)?.scenery;
   }
   /** Read-only location list used by the existing renderer and HUD. */
   get activePortals() {
@@ -573,7 +578,7 @@ export class Simulation {
           y: body.y,
           previous: { x: body.x, y: body.y },
           kind: 'pickup',
-          required: (this.level.requiredKills ?? 0) > 0,
+          required: w.kills <= (this.level.requiredKills ?? 0),
           variant: victim.id % 4,
           falling: false,
         });

@@ -24,7 +24,7 @@
           aria-label="Kopalnia — poruszaj się klawiszami WASD lub strzałkami"
         ></canvas>
         <div class="hud">
-          <span id="level-title">24 poziomy · 4 biomy</span
+          <span id="level-title">24 poziomy · 4 biomy</span><span id="counter-icon" aria-hidden="true"></span
           ><strong id="counter">Zbieraj. Kop. Nie daj się przygnieść.</strong><strong id="timer"></strong
           ><span id="exit-status"></span>
         </div>
@@ -32,10 +32,11 @@
           <span class="eyebrow">ZRĘCZNOŚĆ × ZAGADKI × AFTER</span>
           <h1>WALKA O<br />TASIOROWE<br /><em>BONGO</em><span class="dot">.</span></h1>
           <p class="intro">
-            Dwanaście rozległych jaskiń. Komory, szyby i lawiny.<br />Cztery dostawy. Jedno legendarne Bongo
-            Tasiora.
+            Dwadzieścia wypraw i cztery wyzwania. Komory, szyby i lawiny.<br />Jedno legendarne Bongo Tasiora.
           </p>
           <button id="play" class="primary">Graj →</button>
+          <button id="choose-level">Wybierz poziom →</button>
+          <button id="appearance-open">Oprawa i muzyka</button>
           <button id="title-help">Jak grać?</button>
           <p class="menu-note">Wybierz bohatera. Przygotuj drogę ucieczki.</p>
           <div class="links">
@@ -75,10 +76,11 @@
             <p>
               WASD / strzałki lub gałka — ruch. Kop ziemię, zbierz wymagane przedmioty i znajdź wyjście ↑.
               Skały pchasz poziomo, tylko na wolne pole. Spadające skały i przedmioty przygniatają. Patrole
-              nie potrafią kopać. Kobra powiela się na sąsiednie wolne pola, także od początku planszy.
-              Przedmioty i ziemia blokują wzrost; zebranie podpory może go uwolnić. Nie zwlekaj, bo krzaki
-              mogą odciąć wyjście! Esc — pauza / powrót (zatrzymuje także wzrost). R — restart. Bez limitu
-              prób. Szukaj odnóg i skrótów; nie musisz zbierać wszystkich przedmiotów. M / Mapa — minimapa.
+              nie potrafią kopać. Usunięcie sąsiedniej podpory odsłania Kobrę, która powiela się na wolne
+              pola. Przedmioty i ziemia blokują wzrost; zebranie podpory może go uwolnić. Nie zwlekaj, bo
+              krzaki mogą odciąć wyjście! Esc — pauza / powrót (zatrzymuje także wzrost). R — restart. Bez
+              limitu prób. Szukaj odnóg i skrótów; nie musisz zbierać wszystkich przedmiotów. M / Mapa —
+              minimapa.
             </p>
           </details>
           <div class="links">
@@ -93,16 +95,17 @@
           <button id="help-close" class="primary">Zamknij pomoc ×</button>
           <h2>Jak przejść jaskinię?</h2>
           <p id="context-hint"></p>
+          <p id="collectible-help"></p>
           <p>
-            Spadający głaz eliminuje patrole i kwadraty z siatką. Łup pojawia się nad głazem: wróć po niego po
-            uderzeniu. Kwadrat obchodzi krawędzie przeszkód i nie kopie. W wyzwaniach obserwuj jego ruch przed
+            Spadający głaz eliminuje patrole i wózki. Łup pojawia się nad głazem: wróć po niego po uderzeniu.
+            Wózek obchodzi krawędzie przeszkód i nie kopie. W wyzwaniach obserwuj jego ruch przed
             uruchomieniem pułapki; po odkopaniu podpory od razu cofnij się w bok.
           </p>
           <ol>
             <li>Zbierz liczbę przedmiotów pokazaną u góry. Nie musisz zebrać wszystkich.</li>
             <li>
-              Łup ze złotą obwódką w komorach skalnych jest obowiązkowy. Nadmiar zwykłych przedmiotów go nie
-              zastąpi.
+              Łup ze złotym znacznikiem w komorach skalnych jest obowiązkowy. Nadmiar zwykłych przedmiotów go
+              nie zastąpi.
             </li>
             <li>
               Portale występują na dwóch planszach i łączą komory w pętle. Przygotuj złoże oraz drogę powrotu.
@@ -136,8 +139,8 @@
           <h2>Pauza</h2>
           <p>Jaskinia poczeka. Wzrost Krzaka jest zatrzymany.</p>
           <button id="resume" class="primary">Wróć do gry</button
-          ><button id="pause-restart">Restart poziomu</button
-          ><button id="to-menu">Wybór poziomu i postaci</button>
+          ><button id="pause-appearance">Oprawa i muzyka</button
+          ><button id="pause-restart">Restart poziomu</button><button id="to-menu">Wybór poziomu</button>
         </section>
         <section id="result" class="panel compact" hidden aria-label="Wynik poziomu">
           <span id="result-label" class="eyebrow"></span>
@@ -148,13 +151,37 @@
         </section>
         <section id="victory" class="panel victory-panel" hidden aria-label="Koniec kampanii">
           <span class="eyebrow">KAMPANIA UKOŃCZONA · ODBLOKOWANO 4 WYZWANIA</span>
-          <h2>Bongo<br /><em>Tasiora</em></h2>
-          <p>
+          <h2 id="victory-heading">Bongo Tasiora</h2>
+          <p id="victory-description">
             Dostawa odebrana! Satyryczny Owsiak opala legendarne bongo — nagroda jest Twoja! W wyborze poziomu
             czekają cztery dodatkowe wyzwania.
           </p>
           <button id="victory-menu" class="primary">Wróć do odblokowanych poziomów</button>
         </section>
+        <dialog id="appearance-panel" aria-labelledby="appearance-title">
+          <span class="eyebrow">TWÓJ KLIMAT WYPRAWY</span>
+          <h2 id="appearance-title">Oprawa i muzyka</h2>
+          <fieldset>
+            <legend>Styl grafiki</legend>
+            <div id="theme-choices"></div>
+          </fieldset>
+          <fieldset class="collectible-choices">
+            <legend>Znajdźki</legend>
+            <label
+              ><input type="radio" name="collectible-style" value="festival" checked /> Festiwalowe</label
+            >
+            <label><input type="radio" name="collectible-style" value="fantasy" /> Skarby fantasy</label>
+          </fieldset>
+          <div id="collectible-preview" aria-hidden="true"></div>
+          <p id="collectible-preview-label"></p>
+          <button id="appearance-listen">Posłuchaj motywu</button>
+          <p id="soundtrack-title"></p>
+          <p id="appearance-status" role="status"></p>
+          <div class="menu-actions">
+            <button id="appearance-close">Wróć</button
+            ><button id="appearance-apply" class="primary">Zastosuj</button>
+          </div>
+        </dialog>
         <nav id="touch-controls" hidden aria-label="Sterowanie dotykowe">
           <div id="joystick-zone">
             <div id="joystick" role="group" aria-label="Gałka ruchu — przeciągnij palcem">

@@ -1,11 +1,11 @@
 /**
  * TentMenuAudio — Efekt „Muzyki słyszanej z namiotu” w menu głównym.
- * 
+ *
  * Zgodnie ze specyfikacją z transkryptu:
  * W menu głównym muzyka festiwalowa (camp-track) gra przez filtr dolnoprzepustowy (BiquadFilterNode
  * ustawiony na 350 Hz) — brzmi dokładnie tak, jakby gracz siedział zamknięty w namiocie obozowym
  * i słyszał tylko dudniący, pulsujący bas festiwalowy z zewnątrz.
- * 
+ *
  * W momencie kliknięcia Start filtr płynnie otwiera się od 350 Hz do 20 000 Hz w ciągu 1 sekundy,
  * a dźwięk nabiera pełnej przestrzeni, blasku i ostrości w trakcie wchodzenia do gry.
  */
@@ -69,7 +69,11 @@ export class TentMenuAudio {
   }
 
   public get currentCutoff(): number {
-    return this.filterNode1 ? this.filterNode1.frequency.value : (this.isMuffled ? this.tentCutoff : this.openCutoff);
+    return this.filterNode1
+      ? this.filterNode1.frequency.value
+      : this.isMuffled
+        ? this.tentCutoff
+        : this.openCutoff;
   }
 
   public setVolume(vol: number): void {
@@ -215,16 +219,19 @@ export class TentMenuAudio {
       this.gainNode.gain.cancelScheduledValues(now);
       this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
       this.gainNode.gain.linearRampToValueAtTime(0.0001, now + fadeDuration);
-      setTimeout(() => {
-        if (!this.isPlaying && this.audio) {
-          try {
-            this.audio.pause();
-            this.audio.currentTime = 0;
-          } catch {
-            // ignore
+      setTimeout(
+        () => {
+          if (!this.isPlaying && this.audio) {
+            try {
+              this.audio.pause();
+              this.audio.currentTime = 0;
+            } catch {
+              // ignore
+            }
           }
-        }
-      }, fadeDuration * 1000 + 50);
+        },
+        fadeDuration * 1000 + 50,
+      );
     } else if (this.audio) {
       try {
         this.audio.pause();
@@ -264,7 +271,7 @@ export class TentMenuAudio {
       const filter1 = this.ctx.createBiquadFilter();
       filter1.type = 'lowpass';
       filter1.frequency.value = this.tentCutoff;
-      filter1.Q.value = 1.30;
+      filter1.Q.value = 1.3;
       this.filterNode1 = filter1;
 
       const filter2 = this.ctx.createBiquadFilter();

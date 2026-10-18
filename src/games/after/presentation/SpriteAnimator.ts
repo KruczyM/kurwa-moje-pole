@@ -7,6 +7,10 @@ export interface SpriteMetadata {
   framesPerDirection: number;
   rows: Record<SpriteDirection, number>;
   animationColumns: { idle: readonly number[]; walk: readonly number[] };
+  pivot?: { x: number; y: number };
+  margin?: number;
+  walkTilesPerCycle?: number;
+  idleFps?: number;
 }
 export interface SpriteFrame {
   x: number;
@@ -21,7 +25,7 @@ const DIRECTIONS: Record<Facing, SpriteDirection> = {
   west: 'left',
 };
 
-/** Reads Gemini's atlas contract without loading images or owning a render loop. */
+/** Reads the shared atlas contract without loading images or owning a render loop. */
 export class SpriteAnimator {
   private readonly meta: SpriteMetadata;
   private phase = 0;
@@ -39,6 +43,20 @@ export class SpriteAnimator {
       !positive(meta.frameWidth) ||
       !positive(meta.frameHeight) ||
       !positive(meta.framesPerDirection) ||
+      (meta.walkTilesPerCycle !== undefined &&
+        (!Number.isFinite(meta.walkTilesPerCycle) || meta.walkTilesPerCycle <= 0)) ||
+      (meta.idleFps !== undefined && (!Number.isFinite(meta.idleFps) || meta.idleFps <= 0)) ||
+      (meta.margin !== undefined &&
+        (!Number.isSafeInteger(meta.margin) ||
+          meta.margin < 0 ||
+          meta.margin * 2 >= Math.min(meta.frameWidth, meta.frameHeight))) ||
+      (meta.pivot !== undefined &&
+        (!Number.isFinite(meta.pivot.x) ||
+          !Number.isFinite(meta.pivot.y) ||
+          meta.pivot.x < 0 ||
+          meta.pivot.y <= 0 ||
+          meta.pivot.x > meta.frameWidth ||
+          meta.pivot.y > meta.frameHeight)) ||
       rows.some((n) => !Number.isSafeInteger(n) || n < 0) ||
       new Set(rows).size !== 4 ||
       Object.values(meta.animationColumns).some(
@@ -53,17 +71,32 @@ export class SpriteAnimator {
   }
 
   /** Advances phase from host delta time; direction changes preserve gait and pause freezes it. */
-  update(dt: number, facing: Facing, moving: boolean, running = false, paused = false): SpriteFrame {
+  update(
+    dt: number,
+    facing: Facing,
+    moving: boolean,
+    running = false,
+    paused = false,
+    distance?: number,
+  ): SpriteFrame {
     if (!paused) {
       if (moving !== this.moving)
         this.phase = this.timing.preservePhase ? this.clipPhases[moving ? 'walk' : 'idle'] : 0;
       this.moving = moving;
       const columns = this.meta.animationColumns[moving ? 'walk' : 'idle'];
-      if (Number.isFinite(dt) && dt > 0)
+      if (moving && this.meta.walkTilesPerCycle !== undefined && distance !== undefined) {
+        if (Number.isFinite(distance) && distance > 0)
+          this.phase =
+            (this.phase + (distance * columns.length) / this.meta.walkTilesPerCycle) % columns.length;
+      } else if (Number.isFinite(dt) && dt > 0)
         this.phase =
           (this.phase +
             Math.min(dt, 0.25) *
-              (running ? 12 : moving ? (this.timing.walkFps ?? 8) : (this.timing.idleFps ?? 8))) %
+              (running
+                ? 12
+                : moving
+                  ? (this.timing.walkFps ?? 8)
+                  : (this.timing.idleFps ?? this.meta.idleFps ?? 8))) %
           columns.length;
       this.clipPhases[moving ? 'walk' : 'idle'] = this.phase;
     }
@@ -74,5 +107,12 @@ export class SpriteAnimator {
       width: this.meta.frameWidth,
       height: this.meta.frameHeight,
     };
+  }
+
+  /** A new run or a room teleport snaps presentation without inventing travelled distance. */
+  reset(): void {
+    this.phase = 0;
+    this.moving = false;
+    this.clipPhases.idle = this.clipPhases.walk = 0;
   }
 }

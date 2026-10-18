@@ -183,4 +183,3 @@ describe('LoadingTipsController', () => {
     expect(controller.index).toBe((manualIndex + 1) % controller.count);
   });
 });
-

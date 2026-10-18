@@ -136,3 +136,207 @@ describe('ambient audio lifecycle', () => {
     audio.dispose();
   });
 });
+
+describe('level soundtrack positions', () => {
+  it('retains phrase position on pause and theme change, resets on level change, and can restore after preview', () => {
+    vi.stubGlobal('AudioContext', FakeContext);
+    const audio = new ArcadeAudio();
+    audio.unlock();
+    audio.updateMusic(0, true, false, { level: 2, biome: 0, theme: 'storybook' });
+    const saved = audio.position();
+    expect(saved.beat).toBe(1);
+    audio.silence(false);
+    expect(audio.position().beat).toBe(1);
+    FakeContext.latest.currentTime += 1;
+    audio.updateMusic(0, true, false, { level: 2, biome: 0, theme: 'luminous' });
+    expect(audio.position().beat).toBe(2);
+    audio.restorePosition(saved);
+    expect(audio.position()).toEqual(saved);
+    audio.updateMusic(0, true, false, { level: 3, biome: 0, theme: 'mysterious' });
+    expect(audio.position().beat).toBe(1);
+    audio.dispose();
+  });
+});
+
+class RecordedContext extends FakeContext {
+  buffers: {
+    buffer: unknown;
+    loop: boolean;
+    loopStart: number;
+    loopEnd: number;
+    start: ReturnType<typeof vi.fn>;
+    stop: ReturnType<typeof vi.fn>;
+    disconnect: ReturnType<typeof vi.fn>;
+    onended?: () => void;
+  }[] = [];
+  decodeAudioData = vi.fn(async () => ({ duration: 8, length: 384000, numberOfChannels: 2 }) as AudioBuffer);
+  createBufferSource() {
+    const source = {
+      buffer: undefined as unknown,
+      loop: false,
+      loopStart: 0,
+      loopEnd: 0,
+      connect: vi.fn(),
+      start: vi.fn(),
+      stop: vi.fn(),
+      disconnect: vi.fn(),
+      onended: undefined,
+    };
+    this.buffers.push(source);
+    return source;
+  }
+}
+
+const profile = (level = 1) => ({ level, biome: 0, theme: 'storybook' as const });
+const response = () => ({ ok: true, status: 200, arrayBuffer: async () => new ArrayBuffer(4) });
+const flushMusic = async () => {
+  for (let i = 0; i < 12; i++) await Promise.resolve();
+};
+
+describe('recorded soundtrack in the existing audio host', () => {
+  it('reuses a returning motif across levels, restarts its phrase and ignores the retired voice ending', async () => {
+    vi.stubGlobal('AudioContext', RecordedContext);
+    const fetcher = vi.fn(async () => response());
+    vi.stubGlobal('fetch', fetcher);
+    const audio = new ArcadeAudio('/');
+    audio.unlock();
+    audio.updateMusic(1, true, false, { ...profile(6), biome: 1 });
+    await flushMusic();
+    audio.updateMusic(1, true, false, { ...profile(6), biome: 1 });
+    const context = FakeContext.latest as RecordedContext;
+    const retired = context.buffers[0];
+    context.currentTime += 2;
+    audio.updateMusic(1, true, false, { ...profile(10), biome: 1 });
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(context.buffers).toHaveLength(2);
+    expect(context.buffers[1].start).toHaveBeenCalledWith(12, 0);
+    retired.onended?.();
+    expect(audio.diagnostics()).toMatchObject({
+      track: 'android-forest',
+      playing: true,
+      voices: 1,
+      buffers: 1,
+    });
+    audio.dispose();
+  });
+
+  it('waits for a gesture, coalesces RAF loads, loops decoded audio and bounds the active buffer', async () => {
+    vi.stubGlobal('AudioContext', RecordedContext);
+    const fetcher = vi.fn(async () => response());
+    vi.stubGlobal('fetch', fetcher);
+    const audio = new ArcadeAudio('/kurwa-moje-pole/');
+    audio.updateMusic(0, true, false, profile());
+    expect(fetcher).not.toHaveBeenCalled();
+    audio.unlock();
+    for (let i = 0; i < 100; i++) audio.updateMusic(0, true, false, profile());
+    await flushMusic();
+    audio.updateMusic(0, true, false, profile());
+    const context = FakeContext.latest as RecordedContext;
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(context.buffers).toHaveLength(1);
+    expect(context.buffers[0].loop).toBe(true);
+    expect(audio.diagnostics()).toMatchObject({
+      state: 'ready',
+      playing: true,
+      voices: 1,
+      buffers: 1,
+      decodedBytes: 3072000,
+    });
+    for (let i = 0; i < 100; i++) audio.updateMusic(0, true, false, profile());
+    expect(context.buffers).toHaveLength(1);
+    audio.dispose();
+    expect(context.buffers[0].disconnect).toHaveBeenCalled();
+    expect(audio.diagnostics().buffers).toBe(0);
+    expect(context.close).toHaveBeenCalledOnce();
+  });
+
+  it('retains exact loop position through pause, mute and preview restore, and resets on level change', async () => {
+    vi.stubGlobal('AudioContext', RecordedContext);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => response()),
+    );
+    const audio = new ArcadeAudio('/');
+    audio.unlock();
+    audio.updateMusic(0, true, false, profile());
+    await flushMusic();
+    audio.updateMusic(0, true, false, profile());
+    const context = FakeContext.latest as RecordedContext;
+    context.currentTime += 3;
+    audio.silence(false);
+    const saved = audio.position();
+    expect(saved.offset).toBe(3);
+    context.currentTime += 100;
+    audio.updateMusic(0, true, false, profile());
+    expect(context.buffers.at(-1)!.start).toHaveBeenCalledWith(113, 3);
+    audio.muted = true;
+    audio.updateMusic(0, true, false, profile());
+    expect(audio.diagnostics().playing).toBe(false);
+    audio.muted = false;
+    audio.updateMusic(0, true, false, profile());
+    context.currentTime += 1;
+    audio.restorePosition(saved);
+    expect(audio.position()).toEqual(saved);
+    audio.updateMusic(0, true, false, profile(2));
+    await flushMusic();
+    audio.updateMusic(0, true, false, profile(2));
+    expect(context.buffers.at(-1)!.start).toHaveBeenLastCalledWith(114, 0);
+    expect(audio.diagnostics().buffers).toBe(1);
+    audio.dispose();
+  });
+
+  it('does not autoplay after a paused load and never revives disposed or stale requests', async () => {
+    vi.stubGlobal('AudioContext', RecordedContext);
+    const pending: ((value: ReturnType<typeof response>) => void)[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise((resolve) => pending.push(resolve))),
+    );
+    const audio = new ArcadeAudio('/');
+    audio.unlock();
+    audio.updateMusic(0, true, false, profile());
+    const context = FakeContext.latest as RecordedContext;
+    audio.updateMusic(0, false, false, profile());
+    pending[0](response());
+    await flushMusic();
+    expect(context.buffers).toHaveLength(0);
+    expect(audio.diagnostics().playing).toBe(false);
+    audio.updateMusic(0, true, false, profile());
+    audio.updateMusic(0, true, false, profile(2));
+    audio.updateMusic(0, true, false, profile(3));
+    pending[2](response());
+    await flushMusic();
+    pending[1](response());
+    await flushMusic();
+    audio.updateMusic(0, true, false, profile(3));
+    expect(audio.diagnostics().track).toBe('intrigued');
+    expect(context.decodeAudioData).toHaveBeenCalledTimes(2);
+    audio.updateMusic(0, true, false, profile(4));
+    audio.dispose();
+    pending[3](response());
+    await flushMusic();
+    expect(audio.diagnostics()).toMatchObject({ buffers: 0, voices: 0, playing: false });
+  });
+
+  it('falls back to original synth after a failed request, with retry only after another gesture', async () => {
+    vi.stubGlobal('AudioContext', RecordedContext);
+    const fetcher = vi.fn(async () => ({ ...response(), ok: false, status: 404 }));
+    vi.stubGlobal('fetch', fetcher);
+    const audio = new ArcadeAudio('/');
+    audio.unlock();
+    audio.updateMusic(0, true, false, profile());
+    await flushMusic();
+    for (let i = 0; i < 100; i++) audio.updateMusic(0, true, false, profile());
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(audio.diagnostics().state).toBe('synth-fallback');
+    expect(FakeContext.latest.oscillators.length).toBeGreaterThan(0);
+    fetcher.mockImplementation(async () => ({ ...response(), status: 200 }));
+    audio.unlock();
+    audio.updateMusic(0, true, false, profile());
+    await flushMusic();
+    audio.updateMusic(0, true, false, profile());
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(audio.diagnostics().playing).toBe(true);
+    audio.dispose();
+  });
+});

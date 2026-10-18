@@ -13,10 +13,48 @@ export interface GuitarSamplerOptions {
 }
 
 export const SAMPLE_NOTE_NAMES: readonly string[] = [
-  'E2', 'F2', 'Gb2', 'G2', 'Ab2', 'A2', 'Bb2', 'B2',
-  'C3', 'Db3', 'D3', 'Eb3', 'E3', 'F3', 'Gb3', 'G3', 'Ab3', 'A3', 'Bb3', 'B3',
-  'C4', 'Db4', 'D4', 'Eb4', 'E4', 'F4', 'Gb4', 'G4', 'Ab4', 'A4', 'Bb4', 'B4',
-  'C5', 'Db5', 'D5', 'Eb5', 'E5', 'F5', 'Gb5', 'G5', 'Ab5', 'A5',
+  'E2',
+  'F2',
+  'Gb2',
+  'G2',
+  'Ab2',
+  'A2',
+  'Bb2',
+  'B2',
+  'C3',
+  'Db3',
+  'D3',
+  'Eb3',
+  'E3',
+  'F3',
+  'Gb3',
+  'G3',
+  'Ab3',
+  'A3',
+  'Bb3',
+  'B3',
+  'C4',
+  'Db4',
+  'D4',
+  'Eb4',
+  'E4',
+  'F4',
+  'Gb4',
+  'G4',
+  'Ab4',
+  'A4',
+  'Bb4',
+  'B4',
+  'C5',
+  'Db5',
+  'D5',
+  'Eb5',
+  'E5',
+  'F5',
+  'Gb5',
+  'G5',
+  'Ab5',
+  'A5',
 ];
 
 export const CHORD_NOTE_MAP: Record<string, readonly string[]> = {
@@ -91,7 +129,11 @@ export function frequencyToMidi(freq: number): number {
 /**
  * Normalizuje zapis nuty (np. C#4 -> Db4) i dopasowuje najbliższą próbkę z obliczonym pitchRatio.
  */
-export function normalizePitchToSample(pitch: string): { sampleName: string; pitchRatio: number; targetMidi: number } {
+export function normalizePitchToSample(pitch: string): {
+  sampleName: string;
+  pitchRatio: number;
+  targetMidi: number;
+} {
   const targetMidi = pitchNameToMidi(pitch);
 
   let bestSample = 'A4';
@@ -133,7 +175,8 @@ export class CampfireGuitarSampler {
   }
 
   constructor(options: GuitarSamplerOptions = {}) {
-    const rawBase = options.baseUrl ?? ((typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/');
+    const rawBase =
+      options.baseUrl ?? ((typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/');
     this.baseUrl = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
     if (options.context) {
       this.init(options.context, options.destinationNode);
@@ -325,7 +368,7 @@ export class CampfireGuitarSampler {
       baseDuration = 2.8;
     } else if (songId === 'pila-tango-midi') {
       // Strachy na Lachy — Piła tango: szybkie, cięte, dynamiczne bicie folk-punkowe
-      baseDelay = 0.010;
+      baseDelay = 0.01;
       baseDuration = 1.9;
     } else if (songId === 'czarny-chleb-midi') {
       // Strachy na Lachy — Czarny chleb i czarna kawa: klasyczny akustyczny rytm ogniskowy
@@ -343,7 +386,7 @@ export class CampfireGuitarSampler {
 
       // Naturalna dynamika strun w akordzie akustycznym: energia uderzenia rozkłada się proporcjonalnie
       const chordEnergyFactor = 0.65 / Math.sqrt(len);
-      let volume = chordEnergyFactor;
+      let volume: number;
       if (lane === 0 && stringIdx === 0) {
         // Mocny akcent basowy na strunie prymy (root note)
         volume = chordEnergyFactor * 1.22;
@@ -351,7 +394,7 @@ export class CampfireGuitarSampler {
         // Jasny akcent wiolinowy
         volume = chordEnergyFactor * 1.18;
       } else if (stringIdx === 0) {
-        volume = chordEnergyFactor * 1.10;
+        volume = chordEnergyFactor * 1.1;
       } else {
         volume = chordEnergyFactor * 0.94;
       }
@@ -389,7 +432,7 @@ export class CampfireGuitarSampler {
     this.playKsPluck(targetFreq, now);
   }
 
-  private playSingleNote(pitch: string, time: number, volume = 0.50, duration = 2.2): void {
+  private playSingleNote(pitch: string, time: number, volume = 0.5, duration = 2.2): void {
     if (!this.ctx || !this.outputNode || this.disposed) return;
 
     const { sampleName, pitchRatio, targetMidi } = normalizePitchToSample(pitch);
@@ -495,7 +538,7 @@ export class CampfireGuitarSampler {
     buffer: AudioBuffer,
     pitchRatio: number,
     time: number,
-    volume = 0.50,
+    volume = 0.5,
     duration = 2.2,
   ): void {
     if (!this.ctx || !this.outputNode || this.disposed) return;
@@ -521,7 +564,7 @@ export class CampfireGuitarSampler {
       // 2. Szybki spadek początkowy (tłumienie początkowego uderzenia kostki, przejście w drganie swobodne)
       if (typeof gain.gain.setTargetAtTime === 'function') {
         gain.gain.setTargetAtTime(safeVol * 0.45, startTime + 0.015, 0.14);
-        gain.gain.setTargetAtTime(0.0001, startTime + 0.35, Math.max(0.35, duration * 0.40));
+        gain.gain.setTargetAtTime(0.0001, startTime + 0.35, Math.max(0.35, duration * 0.4));
       } else {
         gain.gain.linearRampToValueAtTime(safeVol * 0.45, startTime + 0.15);
         gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);

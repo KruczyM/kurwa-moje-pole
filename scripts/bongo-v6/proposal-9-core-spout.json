@@ -1,0 +1,9 @@
+{
+  "id": 9,
+  "reason": "Stage A.8 proposal: the core's right rock column seals the single descending entry. Three excavatable fields form a gravity spout into the original bottom connection; the last field prevents the first discharged rock from plugging the outlet on a wall. Loot180/quota153, five mandatory goals, sealed nest and core floor x17..24 remain unchanged. Pending full replay and review.",
+  "cells": [
+    { "x": 25, "y": 14, "from": "#", "to": "." },
+    { "x": 25, "y": 15, "from": "#", "to": "." },
+    { "x": 25, "y": 16, "from": "#", "to": "." }
+  ]
+}
