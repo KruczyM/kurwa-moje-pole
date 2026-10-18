@@ -74,10 +74,11 @@ async def main(url):
               records.append({'engine':engine,'style':style,'screen':[width,height],'level':level,'layout':data})
               if level==15 and width in [390,844]:
                 await page.screenshot(path=str(OUT/f'{engine}-{style}-{width}x{height}.png'))
-            # Exercise existing joystick and restart handlers without adding a test-only controller.
-            joy=await page.locator('#joystick').bounding_box()
+            # Start on a digital arrow; the centre deliberately does not capture new presses.
+            joy=await page.locator('#joystick [data-direction="right"]').bounding_box()
             await page.mouse.move(joy['x']+joy['width']/2,joy['y']+joy['height']/2)
-            await page.mouse.down();await page.mouse.move(joy['x']+joy['width']-6,joy['y']+joy['height']/2)
+            await page.mouse.down()
+            assert await page.evaluate('window.__bongoSnapshot().input') == 'right'
             await page.wait_for_timeout(180);await page.mouse.up()
             assert await page.evaluate('window.__bongoSnapshot().input') is None
             await page.locator('#touch-restart').click()

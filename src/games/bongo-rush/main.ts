@@ -27,6 +27,7 @@ import type { SpriteMetadata } from '../after/presentation/SpriteAnimator';
 import { ArcadeAudio } from './Audio';
 import { levelSoundtrack } from './Soundtrack';
 import { GridInput } from './Input';
+import type { Direction } from './types';
 import { BIOMES, LEVELS } from './Levels';
 import { HEROES, HERO_LABELS, loadProgress, saveProgress } from './Progress';
 import type { Progress } from './Progress';
@@ -778,7 +779,7 @@ class BongoRush {
     if (mode !== 'menu' || this.menu.screen !== 'heroes') this.gallery.setActive(false);
     element('help-panel').hidden = true;
     this.input.reset();
-    this.updateKnob();
+    this.updatePadHighlights();
     this.lastTime = 0;
     element('menu').hidden = mode !== 'menu' || this.menu.screen !== 'title';
     element('hero-panel').hidden = mode !== 'menu' || this.menu.screen !== 'heroes';
@@ -1133,16 +1134,23 @@ class BongoRush {
     const stick = element('joystick-zone');
     this.events.listen(stick, 'pointerdown', (event) => {
       const pointer = event as PointerEvent;
-      if (this.mode !== 'playing' || !this.input.joystick.begin(pointer.pointerId)) return;
+      const arrow = (pointer.target as HTMLElement).closest<HTMLButtonElement>('button[data-direction]');
+      if (
+        !arrow ||
+        pointer.button !== 0 ||
+        this.mode !== 'playing' ||
+        !this.input.beginPad(pointer.pointerId, arrow.dataset.direction as Direction)
+      )
+        return;
       pointer.preventDefault();
       stick.setPointerCapture(pointer.pointerId);
-      this.moveStick(pointer);
+      this.updatePadHighlights();
     });
-    this.events.listen(stick, 'pointermove', (event) => this.moveStick(event as PointerEvent));
+    this.events.listen(stick, 'pointermove', (event) => this.movePadPointer(event as PointerEvent));
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'])
       this.events.listen(stick, type, (event) => {
-        this.input.joystick.end((event as PointerEvent).pointerId);
-        this.updateKnob();
+        this.input.endPad((event as PointerEvent).pointerId, type !== 'pointerup');
+        this.updatePadHighlights();
       });
     this.events.listen(window, 'pagehide', (event) => {
       if ((event as PageTransitionEvent).persisted) {
@@ -1168,23 +1176,26 @@ class BongoRush {
     if (this.mode === 'playing') this.canvas.focus({ preventScroll: true });
   }
 
-  /** Converts pointer coordinates to existing radial joystick input; foreign fingers are ignored by ownership. */
-  private moveStick(pointer: PointerEvent): void {
+  /** Resolve a four-way slide; an imprecise initial touch is handled by the arrow's whole hit area. */
+  private movePadPointer(pointer: PointerEvent): void {
     if (this.mode !== 'playing') return;
     const rect = element('joystick').getBoundingClientRect();
-    this.input.joystick.move(
+    this.input.movePad(
       pointer.pointerId,
       pointer.clientX - rect.left - rect.width / 2,
       pointer.clientY - rect.top - rect.height / 2,
-      rect.width * 0.28,
+      rect.width,
     );
-    this.updateKnob();
+    this.updatePadHighlights();
   }
 
-  /** Updates only the knob transform; CSS handles responsive control placement. */
-  private updateKnob(): void {
-    const { knobX, knobY } = this.input.joystick.snapshot();
-    element('knob').style.transform = `translate(${knobX}px, ${knobY}px)`;
+  /** Highlights the actual interpreted direction, including cleanup on pause or cancellation. */
+  private updatePadHighlights(): void {
+    const direction = this.input.direction();
+    for (const arrow of Array.from(
+      element('joystick').querySelectorAll<HTMLButtonElement>('button[data-direction]'),
+    ))
+      arrow.setAttribute('aria-pressed', String(arrow.dataset.direction === direction));
   }
 
   /** Keeps mute state accessible and visible independently of platform audio availability. */
@@ -1227,7 +1238,7 @@ class BongoRush {
     // Width/orientation changes still reset pointer ownership; blur/visibility retain their own cleanup.
     if (widthChanged) {
       this.input.reset();
-      this.updateKnob();
+      this.updatePadHighlights();
     }
   }
 
@@ -1256,7 +1267,7 @@ class BongoRush {
       this.accumulator += dt;
       while (this.accumulator >= STEP_SECONDS && this.mode === 'playing') {
         this.accumulator -= STEP_SECONDS;
-        this.game.step(this.input.direction());
+        this.game.step(this.input.consumeDirection());
         this.updateHud();
         const sounds = this.game.drainSounds();
         this.renderer?.effects(this.game.world, sounds);

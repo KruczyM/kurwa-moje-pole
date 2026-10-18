@@ -57,10 +57,8 @@
             <div class="title-small-actions">
               <button id="title-help">? Jak grać</button>
             </div>
-            <small class="menu-track">Fun Indie Game Type Jazz Music · idoberg</small>
             <p id="menu-art-status" role="status"></p>
             <button id="menu-art-retry" hidden>Ponów wczytywanie oprawy</button>
-            <p class="menu-note">Wybierz wyprawę. Przygotuj drogę ucieczki.</p>
           </div>
           <nav class="biome-cards" aria-label="Wybierz biom">
             <button class="biome-card" data-biome="0">
@@ -77,6 +75,7 @@
             </button>
           </nav>
           <div class="title-footer">
+            <small class="menu-track">Fun Indie Game Type Jazz Music · idoberg</small>
             <div class="links">
               <a href="./">Festiwal 3D</a>
             </div>
@@ -112,11 +111,11 @@
           <details>
             <summary>Jak grać?</summary>
             <p>
-              WASD / strzałki lub gałka — ruch. Kop ziemię, zbierz wymagane przedmioty i znajdź wyjście ↑.
-              Skały pchasz poziomo, tylko na wolne pole. Spadające skały i przedmioty przygniatają. Patrole
-              nie potrafią kopać. Usunięcie sąsiedniej podpory odsłania Kobrę, która powiela się na wolne
-              pola. Przedmioty i ziemia blokują wzrost; zebranie podpory może go uwolnić. Nie zwlekaj, bo
-              krzaki mogą odciąć wyjście! Esc — pauza / powrót (zatrzymuje także wzrost). R — restart. Bez
+              WASD / strzałki lub krzyżak dotykowy — ruch. Kop ziemię, zbierz wymagane przedmioty i znajdź
+              wyjście ↑. Skały pchasz poziomo, tylko na wolne pole. Spadające skały i przedmioty przygniatają.
+              Patrole nie potrafią kopać. Usunięcie sąsiedniej podpory odsłania Kobrę, która powiela się na
+              wolne pola. Przedmioty i ziemia blokują wzrost; zebranie podpory może go uwolnić. Nie zwlekaj,
+              bo krzaki mogą odciąć wyjście! Esc — pauza / powrót (zatrzymuje także wzrost). R — restart. Bez
               limitu prób. Szukaj odnóg i skrótów; nie musisz zbierać wszystkich przedmiotów. M / Mapa —
               minimapa.
             </p>
@@ -154,7 +153,7 @@
               Złoty kafelek z liczbą i literą K uwalnia tyle przedmiotów i może odsłonić miejsce dla Kobry.
               Łup pojawia się w ujściu pojedynczo. Najpierw przygotuj drogę odwrotu.
             </li>
-            <li>Kop ziemię WASD, strzałkami lub gałką. M / Mapa pokazuje całą jaskinię.</li>
+            <li>Kop ziemię WASD, strzałkami lub krzyżakiem dotykowym. M / Mapa pokazuje całą jaskinię.</li>
             <li>Skały pchasz tylko poziomo na puste pole. Najpierw przygotuj wnękę i odwrót.</li>
             <li>
               Omijaj patrole i już spadające przedmioty. Stojąca skała nad Tobą ruszy po odejściu — przygotuj
@@ -227,8 +226,16 @@
         </dialog>
         <nav id="touch-controls" hidden aria-label="Sterowanie dotykowe">
           <div id="joystick-zone">
-            <div id="joystick" role="group" aria-label="Gałka ruchu — przeciągnij palcem">
-              <span id="knob"></span>
+            <div
+              id="joystick"
+              role="group"
+              aria-label="Ruch — przytrzymaj strzałkę lub przesuń palec między strzałkami"
+            >
+              <button data-direction="up" aria-label="Idź w górę" aria-pressed="false">↑</button>
+              <button data-direction="left" aria-label="Idź w lewo" aria-pressed="false">←</button>
+              <span class="pad-centre" aria-hidden="true">•</span>
+              <button data-direction="right" aria-label="Idź w prawo" aria-pressed="false">→</button>
+              <button data-direction="down" aria-label="Idź w dół" aria-pressed="false">↓</button>
             </div>
           </div>
           <button id="touch-restart" aria-label="Restart poziomu">↻</button>

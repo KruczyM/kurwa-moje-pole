@@ -454,34 +454,7 @@ footer span {
     linear-gradient(transparent, #080d18d9),
     var(--scene-image) center bottom / cover;
 }
-#joystick {
-  position: absolute;
-  right: max(22px, env(safe-area-inset-right));
-  bottom: 20px;
-  width: 124px;
-  height: 124px;
-  border: 2px solid #fff4;
-  border-radius: 0;
-  clip-path: polygon(18% 0, 82% 0, 100% 18%, 100% 82%, 82% 100%, 18% 100%, 0 82%, 0 18%);
-  background: #10172880;
-  touch-action: none;
-  pointer-events: auto;
-  user-select: none;
-}
-#knob {
-  position: absolute;
-  left: 34px;
-  top: 34px;
-  width: 52px;
-  height: 52px;
-  border: 2px solid #f5ce83aa;
-  border-radius: 0;
-  box-shadow:
-    inset -4px -4px #6a4c2a,
-    inset 4px 4px #f9dfa1;
-  background: #f5ce8355;
-  pointer-events: none;
-}
+
 #touch-restart {
   position: absolute;
   left: max(24px, env(safe-area-inset-left));
@@ -571,17 +544,6 @@ footer span {
   .intro {
     margin: 8px 0;
   }
-  #joystick {
-    width: 100px;
-    height: 100px;
-    bottom: 12px;
-  }
-  #knob {
-    width: 44px;
-    height: 44px;
-    left: 26px;
-    top: 26px;
-  }
 }
 
 /* Controls float over the full cave; the optional minimap does not reserve layout space. */
@@ -607,38 +569,7 @@ footer {
   padding: 0;
   background: linear-gradient(transparent 45%, #080d1833);
 }
-#joystick-zone {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: max(44px, env(safe-area-inset-bottom));
-  width: min(240px, calc(100% - 144px));
-  min-width: 160px;
-  height: 160px;
-  pointer-events: auto;
-  touch-action: none;
-  user-select: none;
-}
-#joystick {
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%);
-  bottom: 8px;
-  width: 124px;
-  height: 124px;
-  clip-path: none;
-  border-radius: 50%;
-  pointer-events: none;
-  background: #10172866;
-  box-shadow: 0 3px 18px #0004;
-}
-#knob {
-  width: 52px;
-  height: 52px;
-  left: 34px;
-  top: 34px;
-  border-radius: 50%;
-}
+
 #touch-restart {
   bottom: max(64px, calc(env(safe-area-inset-bottom) + 24px));
   left: max(12px, env(safe-area-inset-left));
@@ -651,21 +582,7 @@ footer {
   #touch-controls {
     height: 160px;
   }
-  #joystick-zone {
-    bottom: max(28px, env(safe-area-inset-bottom));
-    height: 128px;
-  }
-  #joystick {
-    width: 112px;
-    height: 112px;
-    bottom: 0;
-  }
-  #knob {
-    width: 48px;
-    height: 48px;
-    left: 30px;
-    top: 30px;
-  }
+
   footer {
     max-height: 30px;
     font-size: 10px;
@@ -819,21 +736,7 @@ footer {
   #touch-controls {
     height: 88px;
   }
-  #joystick-zone {
-    height: 88px;
-    bottom: 0;
-  }
-  #joystick {
-    width: 76px;
-    height: 76px;
-    bottom: 6px;
-  }
-  #knob {
-    width: 36px;
-    height: 36px;
-    left: 18px;
-    top: 18px;
-  }
+
   #touch-restart {
     bottom: 20px;
     min-height: 44px;
@@ -909,9 +812,8 @@ footer {
 .title-content {
   width: min(36%, 480px);
   min-height: 0;
-  max-height: 100%;
   align-self: center;
-  overflow-y: auto;
+  overflow: visible;
   padding: 4px 8px;
   scrollbar-width: thin;
 }
@@ -925,7 +827,7 @@ footer {
 #menu-logo-image {
   display: none;
   width: 100%;
-  height: min(22vh, 180px);
+  height: clamp(70px, 15vh, 132px);
   object-fit: contain;
 }
 .title-menu[data-artistic='true'] #menu-logo-image {
@@ -1045,7 +947,7 @@ footer {
   flex: 1;
   font-size: 12px;
   padding: 8px 10px;
-  min-height: 38px;
+  min-height: 44px;
 }
 .title-menu[data-artistic='true'] .title-small-actions button {
   background: #21160fd9;
@@ -1330,5 +1232,110 @@ footer {
   }
   50% {
     filter: brightness(1.03);
+  }
+}
+
+/* One scroll surface: the title column fits normally; small/zoomed screens scroll the whole menu. */
+.title-menu .title-tagline {
+  display: none;
+}
+.title-menu .menu-track {
+  margin: 0;
+}
+#menu-art-status:empty {
+  display: none;
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .title-content {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(110px, 0.8fr) repeat(2, minmax(0, 1fr));
+    gap: 4px 10px;
+    align-items: center;
+  }
+  .title-logo {
+    grid-row: span 2;
+  }
+  #menu-logo-image {
+    height: 100px;
+  }
+  .title-content .painted-control,
+  .title-content .hero-pick {
+    margin: 0;
+    min-height: 48px;
+    padding: 6px 12px;
+  }
+  .title-content .title-small-actions {
+    margin: 0;
+  }
+  .title-content .title-small-actions button {
+    width: 100%;
+  }
+  .title-menu.panel {
+    grid-template-rows: minmax(min-content, 1fr) auto auto;
+  }
+}
+/* Digital four-way pad: large arrow hit areas, an inactive centre and captured slides. */
+#joystick-zone {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(48px, env(safe-area-inset-bottom));
+  width: 168px;
+  height: 168px;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#joystick {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  gap: 2px;
+  filter: drop-shadow(0 3px 8px #0008);
+}
+#joystick button {
+  padding: 0;
+  min-width: 0;
+  min-height: 0;
+  font:
+    bold 30px/1 system-ui,
+    sans-serif;
+  background: #241c14e8;
+  border: 1px solid #c6a16d;
+  touch-action: none;
+}
+#joystick button[aria-pressed='true'] {
+  background: #f1c77c;
+  color: #241c14;
+  box-shadow: inset 0 0 0 2px #fff0bc;
+}
+#joystick [data-direction='up'] {
+  grid-area: 1 / 2;
+}
+#joystick [data-direction='left'] {
+  grid-area: 2 / 1;
+}
+#joystick [data-direction='right'] {
+  grid-area: 2 / 3;
+}
+#joystick [data-direction='down'] {
+  grid-area: 3 / 2;
+}
+.pad-centre {
+  grid-area: 2 / 2;
+  display: grid;
+  place-items: center;
+  background: #241c14a8;
+  color: #c6a16d;
+  border-radius: 8px;
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #joystick-zone {
+    width: 148px;
+    height: 148px;
+    bottom: max(8px, env(safe-area-inset-bottom));
   }
 }
