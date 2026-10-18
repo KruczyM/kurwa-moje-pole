@@ -1307,9 +1307,10 @@ footer {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  bottom: max(48px, env(safe-area-inset-bottom));
-  width: 168px;
-  height: 168px;
+  bottom: max(60px, calc(env(safe-area-inset-bottom) + 12px));
+  width: var(--pad-size, 168px);
+  height: var(--pad-size, 168px);
+  opacity: var(--pad-opacity, 0.9);
   pointer-events: auto;
   touch-action: none;
   user-select: none;
@@ -1361,8 +1362,70 @@ footer {
 }
 @media (max-height: 500px) and (orientation: landscape) {
   #joystick-zone {
-    width: 148px;
-    height: 148px;
+    width: clamp(148px, calc(var(--pad-size, 168px) * 0.88), 168px);
+    height: clamp(148px, calc(var(--pad-size, 168px) * 0.88), 168px);
     bottom: max(8px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Gameplay hints never paint over menus or their sticky action bars. */
+#bongo-app:not([data-screen='playing']) > footer {
+  display: none;
+}
+#bongo-app:is([data-screen='paused'], [data-screen='won'], [data-screen='lost'], [data-screen='victory'])
+  .hud {
+  visibility: hidden;
+}
+#bongo-app[data-touch-position='left'] #joystick-zone {
+  left: max(12px, env(safe-area-inset-left));
+  transform: none;
+}
+#bongo-app[data-touch-position='right'] #joystick-zone {
+  left: auto;
+  right: max(12px, env(safe-area-inset-right));
+  transform: none;
+}
+#bongo-app[data-touch-position='left'] #touch-restart {
+  left: auto;
+  right: max(12px, env(safe-area-inset-right));
+}
+#touch-restart {
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
+}
+.touch-settings label {
+  display: block;
+  margin: 12px 0 6px;
+  color: var(--ui-muted);
+}
+.touch-settings select,
+.touch-settings input {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  accent-color: #efcc8e;
+}
+@media (max-width: 650px) {
+  #bongo-app:is(
+      [data-screen='playing'],
+      [data-screen='paused'],
+      [data-screen='won'],
+      [data-screen='lost'],
+      [data-screen='victory']
+    )
+    .brand {
+    display: none;
+  }
+  #bongo-app:is(
+      [data-screen='playing'],
+      [data-screen='paused'],
+      [data-screen='won'],
+      [data-screen='lost'],
+      [data-screen='victory']
+    )
+    .topbar {
+    padding: 4px max(12px, env(safe-area-inset-right)) 4px max(12px, env(safe-area-inset-left));
+    justify-content: flex-end;
   }
 }

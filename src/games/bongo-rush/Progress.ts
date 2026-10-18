@@ -1,6 +1,8 @@
 import { presentationPreferences } from './Presentation';
 import { musicPack } from './Soundtrack';
 import type { MusicPack } from './Soundtrack';
+import { touchControlPreferences } from './TouchControls';
+import type { TouchControlPreferences } from './TouchControls';
 import type { PresentationPreferences } from './Presentation';
 import { CAMPAIGN_LEVEL_COUNT, LEVEL_COUNT } from './Campaign';
 
@@ -39,6 +41,7 @@ export const HERO_LABELS = [
   'Szerszeń',
 ];
 export interface Progress extends PresentationPreferences {
+  touchControls?: TouchControlPreferences;
   musicPack: MusicPack;
   version: 1;
   unlocked: number;
@@ -77,6 +80,7 @@ export function loadProgress(storage: Pick<Storage, 'getItem'>): Progress {
       Math.min(LEVEL_COUNT, migrated),
     );
     return {
+      ...(data.touchControls ? { touchControls: touchControlPreferences(data.touchControls) } : {}),
       musicPack: musicPack(data.musicPack),
       ...presentationPreferences(data),
       version: 1,

@@ -232,6 +232,29 @@
           </fieldset>
           <div id="collectible-preview" aria-hidden="true"></div>
           <p id="collectible-preview-label"></p>
+          <fieldset class="touch-settings">
+            <legend>Sterowanie mobilne</legend>
+            <label for="touch-position">Położenie krzyżaka</label>
+            <select id="touch-position">
+              <option value="left">Po lewej</option>
+              <option value="center">Na środku</option>
+              <option value="right">Po prawej</option>
+            </select>
+            <label for="touch-size">Rozmiar przycisków</label>
+            <select id="touch-size">
+              <option value="compact">Kompaktowe</option>
+              <option value="normal">Standardowe</option>
+              <option value="large">Duże</option>
+            </select>
+            <label for="touch-opacity"
+              >Widoczność przycisków <output id="touch-opacity-value" for="touch-opacity">90%</output></label
+            >
+            <input id="touch-opacity" type="range" min="60" max="100" step="5" value="90" />
+            <p class="menu-note">
+              Przytrzymaj strzałkę lub przesuń palec między kierunkami. Środek zatrzymuje ruch. Układ
+              zapiszesz przyciskiem Zastosuj.
+            </p>
+          </fieldset>
           <p id="appearance-status" role="status"></p>
           <div class="menu-actions">
             <button id="appearance-close">Wróć</button

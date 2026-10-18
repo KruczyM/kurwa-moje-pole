@@ -28,6 +28,7 @@ import { ArcadeAudio } from './Audio';
 import { levelSoundtrack, musicPack } from './Soundtrack';
 import { GridInput } from './Input';
 import type { Direction } from './types';
+import { touchControlPreferences, TOUCH_PAD_SIZES, cameraSafeInsets } from './TouchControls';
 import { BIOMES, LEVELS } from './Levels';
 import { HEROES, HERO_LABELS, loadProgress, saveProgress } from './Progress';
 import type { Progress } from './Progress';
@@ -135,6 +136,7 @@ class BongoRush {
   private appearanceReturnFocus?: HTMLElement;
   private draftAppearance: PresentationPreferences = presentationPreferences(this.progress);
   private draftMusicPack = this.progress.musicPack;
+  private draftTouchControls = touchControlPreferences(this.progress.touchControls);
 
   /** Loads the chosen hero, Krzak and first backdrop; later selections and biomes reuse the cache. */
   async start(): Promise<void> {
@@ -151,6 +153,8 @@ class BongoRush {
     this.updateMute();
     this.observer.observe(element('board'));
     this.observer.observe(document.querySelector<HTMLElement>('.hud')!);
+    this.observer.observe(element('joystick-zone'));
+    this.applyTouchControls();
     this.resize();
     this.setMode('menu');
     await this.loadRun(this.selected);
@@ -461,6 +465,10 @@ class BongoRush {
     this.appearanceReturnFocus = document.activeElement as HTMLElement;
     this.draftAppearance = presentationPreferences(this.progress);
     this.draftMusicPack = this.progress.musicPack;
+    this.draftTouchControls = touchControlPreferences(this.progress.touchControls);
+    element<HTMLSelectElement>('touch-position').value = this.draftTouchControls.position;
+    element<HTMLSelectElement>('touch-size').value = this.draftTouchControls.size;
+    element<HTMLInputElement>('touch-opacity').value = String(this.draftTouchControls.opacity);
     for (const input of Array.from(document.querySelectorAll<HTMLInputElement>('input[name="music-pack"]')))
       input.checked = input.value === this.draftMusicPack;
     this.musicPosition = this.audio.position();
@@ -502,6 +510,12 @@ class BongoRush {
   }
 
   private readAppearance(): void {
+    this.draftTouchControls = touchControlPreferences({
+      position: element<HTMLSelectElement>('touch-position').value as typeof this.draftTouchControls.position,
+      size: element<HTMLSelectElement>('touch-size').value as typeof this.draftTouchControls.size,
+      opacity: Number(element<HTMLInputElement>('touch-opacity').value),
+    });
+    element('touch-opacity-value').textContent = `${this.draftTouchControls.opacity}%`;
     this.draftMusicPack = musicPack(
       document.querySelector<HTMLInputElement>('input[name="music-pack"]:checked')?.value,
     );
@@ -549,7 +563,11 @@ class BongoRush {
   /** Swaps only presentation; never constructs or steps a simulation. */
   private async applyAppearance(): Promise<void> {
     if (this.loading) return;
-    const preferences = { ...this.draftAppearance, musicPack: this.draftMusicPack };
+    const preferences = {
+      ...this.draftAppearance,
+      musicPack: this.draftMusicPack,
+      touchControls: { ...this.draftTouchControls },
+    };
     const path = presentationPath(BASE, preferences, this.game.level.biome);
     const token = ++this.loadToken;
     this.loading = true;
@@ -632,6 +650,7 @@ class BongoRush {
       this.renderer!.items(sprites);
       this.renderer!.tablets(tablets);
       Object.assign(this.progress, preferences);
+      this.applyTouchControls();
       saveProgress(storage(), this.progress);
       element('bongo-app').style.setProperty('--scene-accent', THEME_ACCENTS[preferences.visualTheme]);
       element('bongo-app').style.setProperty('--scene-image', `url("${far.src}")`);
@@ -1211,6 +1230,18 @@ class BongoRush {
     element('mute').setAttribute('aria-pressed', String(this.progress.muted));
   }
 
+  /** One saved control layout drives CSS and the existing camera's safe area. */
+  private applyTouchControls(): void {
+    const preferences = touchControlPreferences(this.progress.touchControls),
+      app = element('bongo-app');
+    app.dataset.touchPosition = preferences.position;
+    app.style.setProperty('--pad-size', `${TOUCH_PAD_SIZES[preferences.size]}px`);
+    app.style.setProperty('--pad-opacity', String(preferences.opacity / 100));
+    this.input.reset();
+    this.updatePadHighlights();
+    this.resize();
+  }
+
   /** Caps backing-store memory on high-DPI phones and reflows the existing camera rather than recreating it. */
   private resize(): void {
     const rect = element('board').getBoundingClientRect();
@@ -1235,12 +1266,18 @@ class BongoRush {
       height: hudRect.height,
     };
     const minimapTop = hud.hidden ? 58 : Math.max(8, hud.getBoundingClientRect().bottom - rect.top + 4);
-    this.renderer?.resize(
+    const touch = window.matchMedia('(pointer: coarse)').matches;
+    const padStyle = getComputedStyle(element('joystick-zone'));
+    const insets = cameraSafeInsets(
       this.width,
       this.height,
-      window.matchMedia('(pointer: coarse)').matches,
-      minimapTop,
+      hud.hidden ? 0 : hudRect.bottom - rect.top,
+      parseFloat(padStyle.height) || 168,
+      parseFloat(padStyle.bottom) || 0,
+      touchControlPreferences(this.progress.touchControls).position,
+      touch && this.mode !== 'menu',
     );
+    this.renderer?.resize(this.width, this.height, touch, minimapTop, insets);
     // Contextual hints can reflow the footer. A height-only board resize must not release held movement.
     // Width/orientation changes still reset pointer ownership; blur/visibility retain their own cleanup.
     if (widthChanged) {
