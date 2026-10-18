@@ -33,11 +33,11 @@ export class MenuFlow {
     return true;
   }
 
-  /** Advances only from the gallery, never directly from the title screen. */
+  /** Returns to the title so the chosen scene precedes Continue or level selection. */
   confirm(): void {
     if (this.screen !== 'heroes') return;
     this.confirmed = true;
-    this.screen = 'levels';
+    this.screen = 'title';
   }
 
   /** Escape/back moves one menu page without affecting paused gameplay. */

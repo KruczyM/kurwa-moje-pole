@@ -38,6 +38,7 @@ import { measureSpriteCrop } from './SpriteBounds';
 import { BIOME_TILE_ATLASES } from './BiomeTiles';
 import { MenuFlow } from './MenuFlow';
 import { HeroGallery } from './HeroGallery';
+import { menuSceneFile } from './MenuScenes';
 import { SCENES } from './LivingScene';
 import { loadAuthoredScenery, authoredImages } from './AuthoredScenery';
 
@@ -113,6 +114,8 @@ class BongoRush {
   private menuBiome?: number;
   private titleSignature = '';
   private menuArtState: 'idle' | 'loading' | 'ready' | 'failed' = 'idle';
+  private menuArtScene = '';
+  private menuArtToken = 0;
   private accumulator = 0;
   private lastTime = 0;
   private width = 1;
@@ -229,6 +232,11 @@ class BongoRush {
   private pruneAssets(): void {
     if (this.pendingLoads) return;
     const keep = new Set(this.activeAssetUrls);
+    if (!this.disposed && this.progress.visualTheme !== 'standard') {
+      const root = `${BASE}game-assets/2d/bongo-rush/menu-v1/`;
+      for (const file of ['logo.webp', 'interface.webp', menuSceneFile(this.menu.hero)])
+        keep.add(new URL(`${root}${file}`, location.href).href);
+    }
     for (const hero of this.atlases.keys()) {
       if (this.gallery.retains(hero))
         keep.add(
@@ -635,6 +643,12 @@ class BongoRush {
 
   /** UI rasters are browser-owned images; the game renderer and its asset ownership stay unchanged. */
   private updateTitleMenu(): void {
+    const scene = menuSceneFile(this.menu.hero);
+    if (scene !== this.menuArtScene) {
+      this.menuArtScene = scene;
+      this.menuArtState = 'idle';
+      this.menuArtToken++;
+    }
     const signature = `${this.progress.visualTheme}:${this.menu.hero}:${this.availableLevels}:${this.resumeIndex}:${this.menuArtState}`;
     if (signature === this.titleSignature) return;
     this.titleSignature = signature;
@@ -645,23 +659,23 @@ class BongoRush {
     const logo = element<HTMLImageElement>('menu-logo-image');
     if (artistic && this.menuArtState === 'idle') {
       this.menuArtState = 'loading';
+      const token = ++this.menuArtToken;
       void settleImageBatch(
-        ['scene.webp', 'logo.webp', 'interface.webp'].map((file) => loadCachedImage(`${root}${file}`)),
+        [scene, 'logo.webp', 'interface.webp'].map((file) => loadCachedImage(`${root}${file}`)),
       )
         .then(() => {
-          this.menuArtState = 'ready';
+          if (!this.disposed && token === this.menuArtToken) this.menuArtState = 'ready';
         })
         .catch(() => {
-          this.menuArtState = 'failed';
+          if (!this.disposed && token === this.menuArtToken) this.menuArtState = 'failed';
         })
         .finally(() => {
-          if (!this.disposed) {
+          if (!this.disposed && token === this.menuArtToken) {
             this.titleSignature = '';
             this.updateTitleMenu();
-          } else {
-            // A late menu download must not retain rasters after navigation or HMR.
-            this.pruneAssets();
           }
+          // Release older scenes, including responses arriving after selection or disposal.
+          this.pruneAssets();
         });
     }
     element('menu-art-retry').hidden = !artistic || this.menuArtState !== 'failed';
@@ -672,11 +686,13 @@ class BongoRush {
           ? 'Nie udało się wczytać oprawy menu. Możesz grać lub spróbować ponownie.'
           : 'Przygotowuję malarską scenę…';
     if (artistic && this.menuArtState === 'ready') {
-      menu.style.setProperty('--menu-scene', `url("${root}scene.webp")`);
+      menu.style.setProperty('--menu-scene', `url("${root}${scene}")`);
+      menu.dataset.sceneHero = this.menu.hero;
       menu.style.setProperty('--menu-atlas', `url("${root}interface.webp")`);
       logo.src = `${root}logo.webp`;
     } else {
       menu.style.removeProperty('--menu-scene');
+      delete menu.dataset.sceneHero;
       menu.style.removeProperty('--menu-atlas');
       logo.removeAttribute('src');
     }
@@ -1004,8 +1020,9 @@ class BongoRush {
     click('hero-confirm', () => {
       if (!this.gallery.ready(this.menu.hero)) return;
       this.menu.confirm();
+      this.progress.hero = this.menu.hero;
+      saveProgress(storage(), this.progress);
       this.showMenu();
-      void this.loadRun(this.selected);
     });
     for (const id of ['hero-back', 'level-back'])
       click(id, () => {
