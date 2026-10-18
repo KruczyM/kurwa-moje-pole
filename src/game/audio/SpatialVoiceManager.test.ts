@@ -285,4 +285,3 @@ describe('SpatialVoiceManager - WebRTC Synchronization and ICE Handling', () => 
     manager.dispose();
   });
 });
-
