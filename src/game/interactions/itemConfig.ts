@@ -6,12 +6,14 @@ export type InspectableItem = {
   label: string;
   description: string;
   effect: EffectId;
-  /** Liczba egzemplarzy tworzonych na stole przy starcie nowej gry. */
+  /** Liczba egzemplarzy wykładanych przy starcie gry. */
   tableQuantity: number;
+  location: 'camp' | 'market';
 };
 export const inspectableItems: InspectableItem[] = [
   {
     id: 'cigarette',
+    location: 'camp',
     label: 'Papieros',
     description: 'Pojedynczy papieros z filtrem, zostawiony na obozowym stole.',
     effect: 'Papieros',
@@ -19,6 +21,7 @@ export const inspectableItems: InspectableItem[] = [
   },
   {
     id: 'joint',
+    location: 'market',
     label: 'Blant',
     description: 'Blant, ktoś oślinił, ale zioło dobre.',
     effect: 'Joint',
@@ -26,6 +29,7 @@ export const inspectableItems: InspectableItem[] = [
   },
   {
     id: 'cocaine',
+    location: 'market',
     label: 'Kreska',
     description: 'Wczoraj padało, trochę wilgotne, ale trzepie jak trzeba.',
     effect: 'Kreska',
@@ -33,6 +37,7 @@ export const inspectableItems: InspectableItem[] = [
   },
   {
     id: 'mdma',
+    location: 'market',
     label: 'MDMA',
     description: 'Ktoś kiedyś powiedział: weź najpierw ćwierć, ale tutaj próbują najpierw po jednej.',
     effect: 'MDMA',
@@ -40,6 +45,7 @@ export const inspectableItems: InspectableItem[] = [
   },
   {
     id: 'mushrooms',
+    location: 'market',
     label: 'Grzyby',
     description:
       'Czas, przestrzeń, jesteśmy wszystkim, jesteśmy niczym, nie chemia, nie proszki, ale hemoglobina.',
@@ -48,6 +54,7 @@ export const inspectableItems: InspectableItem[] = [
   },
   {
     id: 'lsd',
+    location: 'market',
     label: 'LSD',
     description: 'Jak chcesz zbliżyć się do boga purpury, to weź od razu dwa.',
     effect: 'LSD',
@@ -55,6 +62,7 @@ export const inspectableItems: InspectableItem[] = [
   },
   {
     id: 'water',
+    location: 'camp',
     label: 'Woda mineralna',
     description: 'Butelka chłodnej wody niegazowanej. Znakomicie nawadnia i skraca trwający trip o 40%.',
     effect: 'Woda',
@@ -62,6 +70,7 @@ export const inspectableItems: InspectableItem[] = [
   },
   {
     id: 'sunglasses',
+    location: 'camp',
     label: 'Okulary przeciwsłoneczne',
     description: 'Stylowe ciemne okulary festiwalowe. Redukują oślepiający bloom i ekspozycję o 50%.',
     effect: 'Okulary',

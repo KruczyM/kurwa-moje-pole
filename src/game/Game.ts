@@ -584,6 +584,7 @@ export class Game {
         undefined,
         Math.floor(Math.random() * 0x100000000),
         this.mobileInput,
+        this.world.speakerMount,
       );
       this.remotePlayersManager = new RemotePlayersManager(
         this.scene,
