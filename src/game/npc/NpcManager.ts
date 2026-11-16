@@ -75,7 +75,7 @@ export type Npc = {
   sectorDormant?: boolean;
 };
 const CAMP_RADIUS = 13;
-const SPEAKER_POSITION = { x: -3.1, z: 1.2 };
+const DEFAULT_SPEAKER_POSITION = { x: -3.1, z: 1.2 };
 
 /** Dodaje stabilną strefę interakcji niezależną od aktualnej pozy animowanej siatki. */
 function addNpcInteractionHitbox(root: THREE.Group) {
@@ -147,6 +147,11 @@ export class NpcManager {
   }
   speakerAnchor: THREE.Object3D | null = null;
   speakerPlaying = false;
+  private readonly speakerPosition = new THREE.Vector3(
+    DEFAULT_SPEAKER_POSITION.x,
+    0,
+    DEFAULT_SPEAKER_POSITION.z,
+  );
   private speakerIndicator?: SpeakerIndicator;
   readonly occupiedSeats = new Map<string, Npc>();
   private disposed = false;
@@ -376,10 +381,12 @@ export class NpcManager {
     private readonly watchdogConfig?: NpcWatchdogConfig,
     private readonly seed = 0x51f15e,
     private readonly mobileAreas = false,
+    speakerMount?: THREE.Object3D,
   ) {
+    if (speaker) this.placeSpeaker(speaker, speakerMount);
     characterAssets.forEach((asset, index) => {
       if (mobileAreas && index >= 6) return;
-      this.addNpc(asset, index, models.get(asset.id), speaker);
+      this.addNpc(asset, index, models.get(asset.id));
     });
     if (mobileAreas) this.setMobileArea();
   }
@@ -387,14 +394,13 @@ export class NpcManager {
   /** Add streamed crowd models through the existing controller and animation lifecycle. */
   addFestivalNpc(asset: { id: string; name: string }, model: GLTF) {
     if (this.disposed || this.mobileAreas || this.ids.has(asset.id)) return false;
-    return this.addNpc(asset, this.npcs.length, model, null, true);
+    return this.addNpc(asset, this.npcs.length, model, true);
   }
 
   private addNpc(
     asset: { id: string; name: string },
     index: number,
     model: GLTF | undefined,
-    speaker: GLTF | null,
     festival = false,
   ) {
     const scene = this.scene;
@@ -484,30 +490,6 @@ export class NpcManager {
       fallback.position.y = 1;
       root.add(fallback);
     }
-    if (index === 0 && speaker) {
-      const anchor = new THREE.Object3D();
-      const { x, z } = SPEAKER_POSITION;
-      anchor.position.set(x, terrainHeight(x, z) + 0.02, z);
-      anchor.userData.interaction = { kind: 'speaker' };
-      anchor.userData.entryRadius = 1.8;
-      const speakerHitbox = new THREE.Mesh(
-        new THREE.BoxGeometry(0.9, 1.4, 0.9),
-        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false }),
-      );
-      speakerHitbox.position.y = 0.7;
-      speakerHitbox.name = 'SpeakerInteractionHitbox';
-      anchor.add(speakerHitbox);
-      const accessory = clone(speaker.scene);
-      this.fit(accessory, 0.55);
-      anchor.add(accessory);
-      this.speakerIndicator = new SpeakerIndicator();
-      anchor.add(this.speakerIndicator);
-      anchor.name = 'Static_Camp_Speaker';
-      anchor.traverse((object) => (object.userData.interactionRoot = anchor));
-      enableInteractionLayer(anchor);
-      scene.add(anchor);
-      this.speakerAnchor = anchor;
-    }
     root.position.set(spawn.x, terrainHeight(spawn.x, spawn.z), spawn.z);
     root.name = `NPC_${asset.id}`;
     root.userData.npcId = asset.id;
@@ -558,6 +540,35 @@ export class NpcManager {
       maxZ: road.maxZ - 1.5,
     };
   }
+  private placeSpeaker(speaker: GLTF, mount?: THREE.Object3D) {
+    const anchor = new THREE.Object3D();
+    const { x, z } = DEFAULT_SPEAKER_POSITION;
+    if (!mount) anchor.position.set(x, terrainHeight(x, z) + 0.02, z);
+    anchor.name = 'Static_Camp_Speaker';
+    anchor.userData.interaction = { kind: 'speaker' };
+    anchor.userData.entryRadius = 1.8;
+
+    const accessory = clone(speaker.scene);
+    const height = mount ? 0.35 : 0.55;
+    this.fit(accessory, height);
+    const bounds = new THREE.Box3().setFromObject(accessory);
+    const size = bounds.getSize(new THREE.Vector3());
+    const hitbox = new THREE.Mesh(
+      new THREE.BoxGeometry(size.x + 0.1, size.y + 0.1, size.z + 0.1),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false }),
+    );
+    hitbox.name = 'SpeakerInteractionHitbox';
+    bounds.getCenter(hitbox.position);
+    this.speakerIndicator = new SpeakerIndicator();
+    this.speakerIndicator.position.y = height + 0.18;
+    anchor.add(accessory, hitbox, this.speakerIndicator);
+    anchor.traverse((object) => (object.userData.interactionRoot = anchor));
+    enableInteractionLayer(anchor);
+    (mount ?? this.scene).add(anchor);
+    anchor.getWorldPosition(this.speakerPosition);
+    this.speakerAnchor = anchor;
+  }
+
   /** Normalizuje wysokość modelu NPC i włącza obsługę cieni. */
   private fit(object: THREE.Object3D, height: number) {
     object.traverse((o) => {
@@ -734,9 +745,9 @@ export class NpcManager {
       const angle = npc.behavior.random() * Math.PI * 2;
       const radius = 1.4 + npc.behavior.random() * 1.8;
       const candidate = new THREE.Vector3(
-        SPEAKER_POSITION.x + Math.cos(angle) * radius,
+        this.speakerPosition.x + Math.cos(angle) * radius,
         0,
-        SPEAKER_POSITION.z + Math.sin(angle) * radius,
+        this.speakerPosition.z + Math.sin(angle) * radius,
       );
       candidate.y = terrainHeight(candidate.x, candidate.z);
       if (this.navigation.canStandAt(candidate.x, candidate.z) && this.routeTo(npc, candidate)) {
@@ -1202,8 +1213,8 @@ export class NpcManager {
       // Obsługa dotarcia pod głośnik i rozpoczęcie tańca
       if (npc.behavior.state === 'dance' && !npc.isDancingAtSpeaker && !npc.behavior.travelling) {
         npc.isDancingAtSpeaker = true;
-        const dx = SPEAKER_POSITION.x - npc.root.position.x;
-        const dz = SPEAKER_POSITION.z - npc.root.position.z;
+        const dx = this.speakerPosition.x - npc.root.position.x;
+        const dz = this.speakerPosition.z - npc.root.position.z;
         if (dx * dx + dz * dz > 0.001) {
           npc.root.rotation.y = Math.atan2(dx, dz);
           npc.steeringDirection.set(dx, 0, dz).normalize();
