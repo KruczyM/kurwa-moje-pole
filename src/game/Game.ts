@@ -503,6 +503,7 @@ export class Game {
         npcNavigation,
         undefined,
         Math.floor(Math.random() * 0x100000000),
+        this.world.speakerMount,
       );
       this.remotePlayersManager = new RemotePlayersManager(this.scene, assets.characters, this.networkClient);
       this.npcs.visibility.profile = this.graphics;

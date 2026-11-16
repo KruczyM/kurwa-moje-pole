@@ -11,7 +11,7 @@ import { FestivalStageEffects } from './festivalStageEffects';
 import { ColliderSpatialGrid, type WorldCollider } from './ColliderSpatialGrid';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { inspectableItems } from '../interactions/itemConfig';
+import { inspectableItems, type InspectableItem } from '../interactions/itemConfig';
 import { itemPresentation } from '../interactions/itemPresentationConfig';
 import { enableInteractionLayer } from '../interactions/InteractionManager';
 import { HorizonPanorama, TimeOfDaySkybox, type SkyboxPeriod, type SkyboxVariant } from './HorizonSkybox';
@@ -22,6 +22,8 @@ import { bindGrassWorldMask, createGrassWorldMask } from './grassWorldMask';
 import { DEFAULT_GRASS_PRESET, grassDensityForSurface, type GrassQualityPreset } from './grassQuality';
 import { RECYCLING_CORRALS } from '../interactions/CanCollector';
 import { createEcoPickupModel } from './ecoPickupModels';
+import { createContrabandStall } from './contrabandStall';
+import { cloneDisposableModel, disposeObjectTree } from '../lifecycle/disposeThree';
 
 import { WORLD_SIZE, WORLD_LIMIT } from './festivalLayout';
 export { WORLD_LIMIT } from './festivalLayout';
@@ -171,6 +173,7 @@ export class CampWorld {
   private landmarksRoot: THREE.Group | null = null;
   private sun!: THREE.DirectionalLight;
   authoredRoot!: THREE.Object3D;
+  readonly speakerMount?: THREE.Object3D;
   setShadowResolution(size: number): void {
     this.sun.shadow.mapSize.set(size, size);
     this.sun.shadow.map?.dispose();
@@ -312,7 +315,7 @@ export class CampWorld {
     this.interactables.push(...authored.interactables);
     const madDogRoot = authored.placements.get('MadDog');
     if (madDogRoot) {
-      this.table(madDogRoot, models.interactables);
+      this.speakerMount = this.table(madDogRoot, models.interactables);
       const localFill = new THREE.PointLight(
         0xffdfc2,
         MAD_DOG_CONFIG.localFillIntensity,
@@ -322,6 +325,24 @@ export class CampWorld {
       localFill.position.y = MAD_DOG_CONFIG.localFillHeight;
       madDogRoot.add(localFill);
     }
+    const stall = createContrabandStall();
+    landmarksRoot.add(stall.root);
+    stall.root.updateWorldMatrix(true, true);
+    for (const obstacle of stall.obstacles)
+      this.addCollider({ box: new THREE.Box3().setFromObject(obstacle) });
+    this.mapScenery.push(stall.scenery);
+    const marketItems = inspectableItems.filter((item) => item.location === 'market');
+    marketItems.forEach((item, index) => {
+      this.placeDisplayItem(
+        stall.display,
+        models.interactables,
+        item,
+        (index - (marketItems.length - 1) / 2) * 0.49,
+        0,
+        true,
+      );
+    });
+
     // Sky cones and lasers disabled; keep the authored stage fixtures.
 
     const flankiCanY = terrainHeight(0, -26);
@@ -429,20 +450,26 @@ export class CampWorld {
     });
   }
 
-  /** Buduje stół i układa na nim wszystkie używki w pozycji leżącej. */
+  /** Buduje stół obozowy i zwraca punkt mocowania głośnika na blacie. */
   private table(scene: THREE.Object3D, models: Map<string, GLTF>) {
     const tableRoot = new THREE.Group();
     tableRoot.name = 'CampTable';
     tableRoot.position.set(0, 0, 0);
     tableRoot.rotation.y = -0.5;
 
-    const table = models.get('table')
-      ? clone(models.get('table')!.scene)
-      : new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.16, 1.2), simpleMaterial(0x73451f));
-    const box = new THREE.Box3().setFromObject(table);
-    table.scale.setScalar(1.12 / Math.max(0.01, box.max.y - box.min.y));
-    box.setFromObject(table);
-    table.position.y = -box.min.y;
+    const source = models.get('table');
+    const table = source
+      ? clone(source.scene)
+      : new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.16, 1.03), simpleMaterial(0x73451f));
+    const box = new THREE.Box3();
+    if (source) {
+      box.setFromObject(table);
+      table.scale.setScalar(1.12 / Math.max(0.01, box.max.y - box.min.y));
+      box.setFromObject(table);
+      table.position.y = -box.min.y;
+    } else {
+      table.position.y = 1.04;
+    }
     box.setFromObject(table);
     const tableTop = box.max.y;
     tableRoot.add(table);
@@ -460,72 +487,90 @@ export class CampWorld {
     });
     this.addCollider({ box: new THREE.Box3().setFromObject(table), points });
 
-    inspectableItems.forEach((item) => {
-      for (let copy = 0; copy < item.tableQuantity; copy++) {
-        const source = models.get(item.id);
-        const model = source
-          ? clone(source.scene)
-          : new THREE.Mesh(new THREE.IcosahedronGeometry(0.11), simpleMaterial(0xa8e04a));
-        const presentation = itemPresentation[item.id];
-        model.rotation.set(...presentation.tableRotation);
-        model.scale.setScalar(presentation.tableSize / largestDimension(model));
-        box.setFromObject(model);
-        model.position.y = -box.min.y;
-        box.setFromObject(model);
+    const display = new THREE.Group();
+    display.position.y = tableTop;
+    tableRoot.add(display);
+    for (const item of inspectableItems) {
+      if (item.location !== 'camp') continue;
+      const [x, z] = itemPresentation[item.id].tablePosition;
+      this.placeDisplayItem(display, models, item, x, z);
+    }
 
-        // Osobny, nieskalowany korzeń zapobiega kurczeniu strefy interakcji razem z modelem.
-        const interactionRoot = new THREE.Group();
-        interactionRoot.name = `InspectableItem_${item.id}_${copy + 1}`;
-        const copyOffset = (copy - (item.tableQuantity - 1) / 2) * 0.1;
-        interactionRoot.position.set(
-          presentation.tablePosition[0] + copyOffset,
-          tableTop,
-          presentation.tablePosition[1],
-        );
-        interactionRoot.userData.interaction = { kind: 'item', itemId: item.id };
-        // A tabletop item can be picked up from any side, unlike a directional door.
-        interactionRoot.add(model);
-
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-        const hitbox = new THREE.Mesh(
-          new THREE.BoxGeometry(
-            Math.max(0.18, size.x + 0.1),
-            Math.max(0.14, size.y + 0.1),
-            Math.max(0.18, size.z + 0.1),
-          ),
-          new THREE.MeshBasicMaterial({
-            color: 0xff2f72,
-            transparent: true,
-            opacity: this.debugInteractions ? 0.35 : 0,
-            depthWrite: false,
-            colorWrite: this.debugInteractions,
-            wireframe: this.debugInteractions,
-          }),
-        );
-        hitbox.name = `InteractionHitbox_${item.id}_${copy + 1}`;
-        hitbox.position.copy(center);
-        hitbox.userData.debugInteractionHitbox = true;
-        interactionRoot.add(hitbox);
-        interactionRoot.traverse((child) => (child.userData.interactionRoot = interactionRoot));
-        enableInteractionLayer(interactionRoot);
-        tableRoot.add(interactionRoot);
-        this.interactables.push({
-          object: interactionRoot,
-          label: `Obejrzyj: ${item.label}`,
-          action: 'item',
-          itemId: item.id,
-        });
-      }
-    });
+    const speakerMount = new THREE.Object3D();
+    speakerMount.position.set(-0.39, 0, -0.24);
+    display.add(speakerMount);
+    return speakerMount;
   }
 
-  /** Zdejmuje pojedynczy egzemplarz używki ze stołu po zabraniu lub zużyciu. */
+  private placeDisplayItem(
+    display: THREE.Object3D,
+    models: Map<string, GLTF>,
+    item: InspectableItem,
+    x: number,
+    z: number,
+    frontOnly = false,
+  ) {
+    for (let copy = 0; copy < item.tableQuantity; copy++) {
+      const source = models.get(item.id);
+      const model = source
+        ? cloneDisposableModel(source.scene)
+        : new THREE.Mesh(new THREE.IcosahedronGeometry(0.11), simpleMaterial(0xa8e04a));
+      const presentation = itemPresentation[item.id];
+      model.rotation.set(...presentation.tableRotation);
+      model.scale.setScalar(presentation.tableSize / largestDimension(model));
+      const box = new THREE.Box3().setFromObject(model);
+      model.position.y = -box.min.y;
+      box.setFromObject(model);
+
+      // Osobny, nieskalowany korzeń zapobiega kurczeniu strefy interakcji razem z modelem.
+      const interactionRoot = new THREE.Group();
+      interactionRoot.name = `InspectableItem_${item.id}_${copy + 1}`;
+      const copyOffset = (copy - (item.tableQuantity - 1) / 2) * 0.1;
+      interactionRoot.position.set(x + copyOffset, 0, z);
+      interactionRoot.userData.interaction = { kind: 'item', itemId: item.id };
+      if (frontOnly) interactionRoot.userData.interactionFacing = [0, 0, 1];
+      interactionRoot.add(model);
+
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const hitbox = new THREE.Mesh(
+        new THREE.BoxGeometry(
+          Math.max(0.18, size.x + 0.1),
+          Math.max(0.14, size.y + 0.1),
+          Math.max(0.18, size.z + 0.1),
+        ),
+        new THREE.MeshBasicMaterial({
+          color: 0xff2f72,
+          transparent: true,
+          opacity: this.debugInteractions ? 0.35 : 0,
+          depthWrite: false,
+          colorWrite: this.debugInteractions,
+          wireframe: this.debugInteractions,
+        }),
+      );
+      hitbox.name = `InteractionHitbox_${item.id}_${copy + 1}`;
+      hitbox.position.copy(center);
+      hitbox.userData.debugInteractionHitbox = true;
+      interactionRoot.add(hitbox);
+      interactionRoot.traverse((child) => (child.userData.interactionRoot = interactionRoot));
+      enableInteractionLayer(interactionRoot);
+      display.add(interactionRoot);
+      this.interactables.push({
+        object: interactionRoot,
+        label: `Obejrzyj: ${item.label}`,
+        action: 'item',
+        itemId: item.id,
+      });
+    }
+  }
+
+  /** Zdejmuje pojedynczy egzemplarz z blatu po zabraniu lub zużyciu. */
   removeItem(itemId: string) {
     const index = this.interactables.findIndex((entry) => entry.action === 'item' && entry.itemId === itemId);
     if (index < 0) return false;
     const [entry] = this.interactables.splice(index, 1);
     entry.object.removeFromParent();
+    disposeObjectTree(entry.object);
     return true;
   }
 

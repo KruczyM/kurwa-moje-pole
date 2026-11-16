@@ -1,6 +1,10 @@
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { describe, expect, it, vi } from 'vitest';
+import { InteractionManager } from '../interactions/InteractionManager';
+import { disposeObjectTree } from '../lifecycle/disposeThree';
 import {
+  CampWorld,
   formatTentDimensions,
   interactionDebugEnabled,
   physicalScale,
@@ -87,6 +91,61 @@ describe('CampWorld terrain placement', () => {
         expect(slopeX).toBeLessThan(0.1);
         expect(slopeZ).toBeLessThan(0.1);
       }
+    }
+  });
+});
+
+describe('camp table and contraband stall', () => {
+  it('places the speaker mount on the camp table and makes each drug collectible from the passage', () => {
+    const scene = new THREE.Scene();
+    const authored = new THREE.Group();
+    const camp = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1));
+    camp.userData.runtimePlacement = 'MadDog';
+    camp.position.set(2, 0, 3);
+    authored.add(camp);
+    vi.stubGlobal('document', { createElement: () => ({ getContext: () => null }) });
+    try {
+      const world = new CampWorld(scene, {
+        authoredFestival: { scene: authored } as GLTF,
+        beerCan: null,
+        fogTrial: true,
+        interactables: new Map(),
+      });
+      const table = scene.getObjectByName('CampTable')!;
+      expect(world.speakerMount?.parent?.parent).toBe(table);
+      expect(world.speakerMount?.getWorldPosition(new THREE.Vector3()).y).toBeCloseTo(1.12);
+      const stall = scene.getObjectByName('ContrabandStall')!;
+      const items = world.interactables.filter((entry) => entry.action === 'item');
+      const market = items.filter((item) => item.object.parent?.parent === stall);
+      expect(market.map((item) => item.itemId)).toEqual(['joint', 'cocaine', 'mdma', 'mushrooms', 'lsd']);
+      expect(items.filter((item) => item.object.parent?.parent === table).map((item) => item.itemId)).toEqual(
+        ['cigarette', 'water', 'sunglasses'],
+      );
+      expect(world.canMove(stall.position.x, stall.position.z + 1.25)).toBe(true);
+      expect(world.canMove(stall.position.x, stall.position.z + 0.15)).toBe(false);
+
+      const camera = new THREE.PerspectiveCamera();
+      const manager = new InteractionManager(camera, () => world.interactables.map((item) => item.object));
+      scene.updateMatrixWorld(true);
+      for (const item of market) {
+        const point = item.object.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.08, 0));
+        camera.position.set(point.x, 1.9, stall.position.z - 2);
+        camera.lookAt(point);
+        camera.updateMatrixWorld(true);
+        expect(manager.update()).toBeNull();
+        camera.position.z = stall.position.z + 1.25;
+        camera.lookAt(point);
+        camera.updateMatrixWorld(true);
+        expect(manager.update()).toMatchObject({ kind: 'item', itemId: item.itemId });
+        expect(world.removeItem(item.itemId)).toBe(true);
+        expect(item.object.parent).toBeNull();
+        expect(manager.update()).toBeNull();
+      }
+      manager.dispose();
+      world.dispose();
+    } finally {
+      vi.unstubAllGlobals();
+      disposeObjectTree(scene);
     }
   });
 });
